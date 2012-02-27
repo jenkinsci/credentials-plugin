@@ -34,7 +34,7 @@
   </parent>
 
   <artifactId>credentials</artifactId>
-  <version>1.3</version>
+  <version>1.4-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Credentials Plugin</name>
