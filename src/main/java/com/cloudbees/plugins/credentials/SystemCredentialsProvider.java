@@ -92,7 +92,7 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @Override
     public String getIconFileName() {
-        return CredentialsProvider.allCredentialsDescriptors().isEmpty() ? null : "/plugin/cloudbees-credentials/images/48x48/credentials.png";
+        return CredentialsProvider.allCredentialsDescriptors().isEmpty() ? null : "/plugin/credentials/images/48x48/credentials.png";
     }
 
     /**
