@@ -40,9 +40,20 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> {
      * Constructor.
      *
      * @param clazz The concrete credentials class.
+     * @since 1.2
      */
     protected CredentialsDescriptor(Class<? extends Credentials> clazz) {
         super(clazz);
+    }
+
+    /**
+     * Infers the type of the corresponding {@link Credentials} from the outer class.
+     * This version works when you follow the common convention, where a descriptor
+     * is written as the static nested class of the describable class.
+     *
+     * @since 1.3
+     */
+    protected CredentialsDescriptor() {
     }
 
     /**
