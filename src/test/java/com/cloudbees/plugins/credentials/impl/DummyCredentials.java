@@ -24,6 +24,7 @@
 package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.BaseCredentials;
+import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import hudson.Extension;
@@ -56,6 +57,10 @@ public class DummyCredentials extends BaseCredentials {
 
     @Extension
     public static class DescriptorImpl extends CredentialsDescriptor {
+
+        public DescriptorImpl() {
+            super(DummyCredentials.class);
+        }
 
         @Override
         public String getDisplayName() {

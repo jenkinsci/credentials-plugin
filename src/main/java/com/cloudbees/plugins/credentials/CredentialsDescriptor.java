@@ -37,6 +37,15 @@ import java.util.Set;
 public abstract class CredentialsDescriptor extends Descriptor<Credentials> {
 
     /**
+     * Constructor.
+     *
+     * @param clazz The concrete credentials class.
+     */
+    protected CredentialsDescriptor(Class<? extends Credentials> clazz) {
+        super(clazz);
+    }
+
+    /**
      * Fills in the scopes for a scope list-box.
      *
      * @return the scopes for the nearest request object that acts as a container for credentials.
