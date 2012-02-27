@@ -137,13 +137,13 @@
             </execution>
           </executions>
         </plugin>
-        <plugin>
-          <artifactId>maven-release-plugin</artifactId>
-          <version>2.2.2</version>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.2.2</version>
+      </plugin>
       <plugin>
         <!-- TODO remove when 1.409+ is the rally point for parent version -->
         <groupId>org.jenkins-ci.tools</groupId>
