@@ -38,6 +38,9 @@
   <packaging>hpi</packaging>
 
   <name>Credentials Plugin</name>
+  <description>
+    This plugin allows you to store credentials in Jenkins.
+  </description>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin</url>
   <licenses>
     <license>
