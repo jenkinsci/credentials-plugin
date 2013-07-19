@@ -43,10 +43,7 @@ public class BaseCredentials implements Credentials {
      */
     private final CredentialsScope scope;
 
-    /**
-     * For deserialization, need a route to a no-args constructor for sub-classes
-     */
-    @SuppressWarnings("unused") // used by xstream and java serialization
+    @SuppressWarnings("unused")
     protected BaseCredentials() {
         this.scope = null;
     }
