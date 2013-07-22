@@ -55,7 +55,7 @@ public class UsernameMatcher implements CredentialsMatcher {
      * {@inheritDoc}
      */
     public boolean matches(@NonNull Credentials item) {
-        return item instanceof UsernameMatcher && username.equals(((UsernameCredentials) item).getUsername());
+        return item instanceof UsernameCredentials && username.equals(((UsernameCredentials) item).getUsername());
     }
 
     /**
