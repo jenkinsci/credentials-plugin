@@ -23,6 +23,10 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.domains.DomainCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.DescriptorExtensionList;
@@ -37,6 +41,8 @@ import hudson.model.ManagementLink;
 import hudson.model.ModelObject;
 import hudson.model.Saveable;
 import hudson.security.ACL;
+import hudson.util.CopyOnWriteMap;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
 import org.kohsuke.stapler.HttpResponse;
@@ -52,9 +58,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.always;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.not;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.withScope;
+import static com.cloudbees.plugins.credentials.CredentialsScope.GLOBAL;
+import static com.cloudbees.plugins.credentials.CredentialsScope.SYSTEM;
 
 /**
  * The root store of credentials.
@@ -64,18 +78,29 @@ public class SystemCredentialsProvider extends ManagementLink
         implements Describable<SystemCredentialsProvider>, Saveable, StaplerProxy {
 
     /**
-     * Our logger
+     * Our logger.
      */
     private static final Logger LOGGER = Logger.getLogger(SystemCredentialsProvider.class.getName());
 
     /**
-     * Our credentials.
+     * Old store of credentials
+     *
+     * @deprecated migrate to {@link #domainCredentialsMap}.
      */
-    private List<Credentials> credentials = new ArrayList<Credentials>();
+    @Deprecated
+    private transient List<Credentials> credentials = new CopyOnWriteArrayList<Credentials>();
+
+    /**
+     * Our credentials.
+     *
+     * @since 1.5
+     */
+    private Map<Domain, List<Credentials>> domainCredentialsMap = new CopyOnWriteMap.Hash<Domain, List<Credentials>>();
 
     /**
      * Constructor.
      */
+    @SuppressWarnings("deprecation")
     public SystemCredentialsProvider() {
         try {
             XmlFile xml = getConfigFile();
@@ -85,6 +110,8 @@ public class SystemCredentialsProvider extends ManagementLink
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to read the existing credentials", e);
         }
+        domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
+        credentials = null;
     }
 
     /**
@@ -92,7 +119,9 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @Override
     public String getIconFileName() {
-        return CredentialsProvider.allCredentialsDescriptors().isEmpty() ? null : "/plugin/credentials/images/48x48/credentials.png";
+        return CredentialsProvider.allCredentialsDescriptors().isEmpty()
+                ? null
+                : "/plugin/credentials/images/48x48/credentials.png";
     }
 
     /**
@@ -119,13 +148,46 @@ public class SystemCredentialsProvider extends ManagementLink
     }
 
     /**
-     * Get all the credentials.
+     * Get all the ({@link Domain#global()}) credentials.
      *
-     * @return all the credentials.
+     * @return all the ({@link Domain#global()}) credentials.
      */
     @SuppressWarnings("unused") // used by stapler
     public List<Credentials> getCredentials() {
-        return credentials;
+        return domainCredentialsMap.get(Domain.global());
+    }
+
+    /**
+     * Get all the credentials.
+     *
+     * @return all the credentials.
+     * @since 1.5
+     */
+    @SuppressWarnings("unused") // used by stapler
+    public List<DomainCredentials> getDomainCredentials() {
+        return DomainCredentials.asList(getDomainCredentialsMap());
+    }
+
+    /**
+     * Get all the credentials.
+     *
+     * @return all the credentials.
+     * @since 1.5
+     */
+    @SuppressWarnings("deprecation")
+    @NonNull
+    public synchronized Map<Domain, List<Credentials>> getDomainCredentialsMap() {
+        return domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
+    }
+
+    /**
+     * Set all the credentials.
+     *
+     * @param domainCredentialsMap all the credentials.
+     * @since 1.5
+     */
+    public synchronized void setDomainCredentialsMap(Map<Domain, List<Credentials>> domainCredentialsMap) {
+        this.domainCredentialsMap = DomainCredentials.toCopyOnWriteMap(domainCredentialsMap);
     }
 
     /**
@@ -136,6 +198,17 @@ public class SystemCredentialsProvider extends ManagementLink
     @SuppressWarnings("unused") // used by stapler
     public DescriptorExtensionList<Credentials, Descriptor<Credentials>> getCredentialDescriptors() {
         return CredentialsProvider.allCredentialsDescriptors();
+    }
+
+    /**
+     * Gets all the {@link com.cloudbees.plugins.credentials.domains.DomainSpecification} descriptors.
+     *
+     * @return all the {@link com.cloudbees.plugins.credentials.domains.DomainSpecification} descriptors.
+     * @since 1.5
+     */
+    @SuppressWarnings("unused") // used by stapler
+    public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>> getSpecificationDescriptors() {
+        return Jenkins.getInstance().getDescriptorList(DomainSpecification.class);
     }
 
     /**
@@ -166,7 +239,8 @@ public class SystemCredentialsProvider extends ManagementLink
     public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
         Hudson.getInstance().checkPermission(Hudson.ADMINISTER);
         JSONObject data = req.getSubmittedForm();
-        credentials = req.bindJSONToList(Credentials.class, data.get("credentials"));
+        setDomainCredentialsMap(DomainCredentials.asMap(
+                req.bindJSONToList(DomainCredentials.class, data.get("domainCredentials"))));
         save();
         return HttpResponses.redirectToContextRoot(); // send the user back to the top page
     }
@@ -210,12 +284,9 @@ public class SystemCredentialsProvider extends ManagementLink
         public String getDisplayName() {
             return "";
         }
+
     }
 
-    /**
-     * The {@link CredentialsProvider} that exposes credentials stored in
-     * {@link com.cloudbees.plugins.credentials.SystemCredentialsProvider#getCredentials()}
-     */
     @Extension
     @SuppressWarnings("unused") // used by Jenkins
     public static class ProviderImpl extends CredentialsProvider {
@@ -224,8 +295,7 @@ public class SystemCredentialsProvider extends ManagementLink
          * The scopes that are relevant to the store.
          */
         private static final Set<CredentialsScope> SCOPES =
-                Collections.unmodifiableSet(new LinkedHashSet<CredentialsScope>(
-                        Arrays.asList(CredentialsScope.GLOBAL, CredentialsScope.SYSTEM)));
+                Collections.unmodifiableSet(new LinkedHashSet<CredentialsScope>(Arrays.asList(GLOBAL, SYSTEM)));
 
         /**
          * {@inheritDoc}
@@ -246,17 +316,7 @@ public class SystemCredentialsProvider extends ManagementLink
         public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
                                                               @Nullable ItemGroup itemGroup,
                                                               @Nullable Authentication authentication) {
-            List<C> result = new ArrayList<C>();
-            boolean includeSystemScope = Hudson.getInstance() == itemGroup;
-            if (ACL.SYSTEM.equals(authentication)) {
-                for (Credentials credential : SystemCredentialsProvider.getInstance().getCredentials()) {
-                    if (type.isInstance(credential) && (includeSystemScope || !CredentialsScope.SYSTEM
-                            .equals(credential.getScope()))) {
-                        result.add(type.cast(credential));
-                    }
-                }
-            }
-            return result;
+            return getCredentials(type, itemGroup, authentication, Collections.<DomainRequirement>emptyList());
         }
 
         /**
@@ -266,15 +326,39 @@ public class SystemCredentialsProvider extends ManagementLink
         @Override
         public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @NonNull Item item,
                                                               @Nullable Authentication authentication) {
-            List<C> result = new ArrayList<C>();
-            if (ACL.SYSTEM.equals(authentication)) {
-                for (Credentials credential : SystemCredentialsProvider.getInstance().getCredentials()) {
-                    if (type.isInstance(credential) && !CredentialsScope.SYSTEM.equals(credential.getScope())) {
-                        result.add(type.cast(credential));
-                    }
-                }
-            }
-            return result;
+            return getCredentials(type, item, authentication, Collections.<DomainRequirement>emptyList());
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @NonNull Item item,
+                                                              @Nullable Authentication authentication,
+                                                              @NonNull List<DomainRequirement> domainRequirements) {
+            if (ACL.SYSTEM.equals(authentication)) {
+                return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
+                        .getDomainCredentialsMap(), type, domainRequirements, not(withScope(SYSTEM)));
+            }
+            return new ArrayList<C>();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+                                                              @Nullable Authentication authentication,
+                                                              @NonNull List<DomainRequirement> domainRequirements) {
+            if (ACL.SYSTEM.equals(authentication)) {
+                CredentialsMatcher matcher = Hudson.getInstance() == itemGroup ? always() : not(withScope(SYSTEM));
+                return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
+                        .getDomainCredentialsMap(), type, domainRequirements, matcher);
+            }
+            return new ArrayList<C>();
+        }
+
     }
 }

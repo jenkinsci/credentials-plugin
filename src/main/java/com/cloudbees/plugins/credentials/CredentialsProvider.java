@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -38,6 +39,7 @@ import hudson.security.ACL;
 import org.acegisecurity.Authentication;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -85,6 +87,28 @@ public abstract class CredentialsProvider implements ExtensionPoint {
 
     /**
      * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
+     * for items in the specified {@link ItemGroup} and are appropriate for the specified {@link com.cloudbees
+     * .plugins.credentials.domains.DomainRequirement}s.
+     *
+     * @param type               the type of credentials to return.
+     * @param itemGroup          the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
+     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param domainRequirements the credential domains to match (if the {@link CredentialsProvider} does not support
+     *                           {@link com.cloudbees.plugins.credentials.domains.DomainRequirement}s then it should
+     *                           assume the match is true).
+     * @return the list of credentials.
+     * @since 1.5
+     */
+    @NonNull
+    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+                                                          @Nullable ItemGroup itemGroup,
+                                                          @Nullable Authentication authentication,
+                                                          @NonNull List<DomainRequirement> domainRequirements) {
+        return getCredentials(type, itemGroup, authentication);
+    }
+
+    /**
+     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
      * for the specified {@link Item}
      *
      * @param type           the type of credentials to return.
@@ -101,13 +125,38 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     }
 
     /**
+     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
+     * for items in the specified {@link Item} and are appropriate for the specified {@link com.cloudbees.plugins
+     * .credentials.domains.DomainRequirement}s.
+     *
+     * @param type               the type of credentials to return.
+     * @param item               the item.
+     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param domainRequirements the credential domain to match.
+     * @return the list of credentials.
+     * @since 1.5
+     */
+    @NonNull
+    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+                                                          @NonNull Item item,
+                                                          @Nullable Authentication authentication,
+                                                          @NonNull List<DomainRequirement> domainRequirements) {
+        return getCredentials(type, item.getParent(), authentication, domainRequirements);
+    }
+
+    /**
      * Returns all credentials which are available to the {@link ACL#SYSTEM} {@link Authentication}
      * within the {@link hudson.model.Hudson#getInstance()}.
      *
      * @param type the type of credentials to get.
      * @param <C>  the credentials type.
      * @return the list of credentials.
+     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)},
+     *             {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)},
+     *             {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
+     *             or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
      */
+    @Deprecated
     @NonNull
     @SuppressWarnings("unused") // API entry point for consumers
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type) {
@@ -122,7 +171,12 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param authentication the authentication.
      * @param <C>            the credentials type.
      * @return the list of credentials.
+     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)},
+     *             {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)},
+     *             {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
+     *             or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
      */
+    @Deprecated
     @NonNull
     @SuppressWarnings("unused") // API entry point for consumers
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
@@ -138,7 +192,10 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param item the item.
      * @param <C>  the credentials type.
      * @return the list of credentials.
+     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)}
+     *             or {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)}
      */
+    @Deprecated
     @NonNull
     @SuppressWarnings("unused") // API entry point for consumers
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
@@ -156,7 +213,10 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param itemGroup the item group.
      * @param <C>       the credentials type.
      * @return the list of credentials.
+     * @deprecated use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
+     *             or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
      */
+    @Deprecated
     @NonNull
     @SuppressWarnings("unused") // API entry point for consumers
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
@@ -173,13 +233,15 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param authentication the authentication.
      * @param <C>            the credentials type.
      * @return the list of credentials.
+     * @deprecated use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
+     *             or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
      */
+    @Deprecated
     @NonNull
     @SuppressWarnings({"unchecked", "unused"}) // API entry point for consumers
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable ItemGroup itemGroup,
-                                                                    @Nullable Authentication
-                                                                            authentication) {
+                                                                    @Nullable Authentication authentication) {
         type.getClass(); // throw NPE if null
         itemGroup = itemGroup == null ? Hudson.getInstance() : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
@@ -209,18 +271,63 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param item           the item.
      * @param <C>            the credentials type.
      * @return the list of credentials.
+     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)}
+     *             or {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)}
      */
+    @Deprecated
     @NonNull
     @SuppressWarnings("unused") // API entry point for consumers
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable Item item,
-                                                                    @Nullable Authentication
-                                                                            authentication) {
+                                                                    @Nullable Authentication authentication) {
+        return lookupCredentials(type, item, authentication, Collections.<DomainRequirement>emptyList());
+    }
+
+    /**
+     * Returns all credentials which are available to the specified {@link Authentication}
+     * for use by the {@link Item}s in the specified {@link ItemGroup}.
+     *
+     * @param type               the type of credentials to get.
+     * @param itemGroup          the item group.
+     * @param authentication     the authentication.
+     * @param domainRequirements the credential domains to match.
+     * @param <C>                the credentials type.
+     * @return the list of credentials.
+     * @since 1.5
+     */
+    @NonNull
+    @SuppressWarnings({"unchecked", "unused"}) // API entry point for consumers
+    public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
+                                                                    @Nullable ItemGroup itemGroup,
+                                                                    @Nullable Authentication authentication,
+                                                                    @Nullable DomainRequirement... domainRequirements) {
+        return lookupCredentials(type, itemGroup, authentication, Arrays.asList(domainRequirements));
+    }
+
+    /**
+     * Returns all credentials which are available to the specified {@link Authentication}
+     * for use by the {@link Item}s in the specified {@link ItemGroup}.
+     *
+     * @param type               the type of credentials to get.
+     * @param itemGroup          the item group.
+     * @param authentication     the authentication.
+     * @param domainRequirements the credential domains to match.
+     * @param <C>                the credentials type.
+     * @return the list of credentials.
+     * @since 1.5
+     */
+    @NonNull
+    @SuppressWarnings({"unchecked", "unused"}) // API entry point for consumers
+    public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
+                                                                    @Nullable ItemGroup itemGroup,
+                                                                    @Nullable Authentication authentication,
+                                                                    @Nullable List<DomainRequirement>
+                                                                            domainRequirements) {
         type.getClass(); // throw NPE if null
-        if (item == null) {
-            return lookupCredentials(type, Hudson.getInstance(), authentication);
-        }
+        itemGroup = itemGroup == null ? Hudson.getInstance() : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
+        domainRequirements = domainRequirements
+                == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
         ExtensionList<CredentialsProvider> providers;
         try {
             providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
@@ -230,7 +337,71 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         List<C> result = new ArrayList<C>();
         for (CredentialsProvider provider : providers) {
             try {
-                result.addAll(provider.getCredentials(type, item, authentication));
+                result.addAll(provider.getCredentials(type, itemGroup, authentication, domainRequirements));
+            } catch (NoClassDefFoundError e) {
+                // ignore optional dependency
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns all credentials which are available to the specified {@link Authentication}
+     * for use by the specified {@link Item}.
+     *
+     * @param type               the type of credentials to get.
+     * @param authentication     the authentication.
+     * @param item               the item.
+     * @param domainRequirements the credential domains to match.
+     * @param <C>                the credentials type.
+     * @return the list of credentials.
+     * @since 1.5
+     */
+    @NonNull
+    @SuppressWarnings("unused") // API entry point for consumers
+    public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
+                                                                    @Nullable Item item,
+                                                                    @Nullable Authentication authentication,
+                                                                    DomainRequirement... domainRequirements) {
+        return lookupCredentials(type, item, authentication, Arrays.asList(domainRequirements));
+    }
+
+    /**
+     * Returns all credentials which are available to the specified {@link Authentication}
+     * for use by the specified {@link Item}.
+     *
+     * @param type               the type of credentials to get.
+     * @param authentication     the authentication.
+     * @param item               the item.
+     * @param domainRequirements the credential domains to match.
+     * @param <C>                the credentials type.
+     * @return the list of credentials.
+     * @since 1.5
+     */
+    @NonNull
+    @SuppressWarnings("unused") // API entry point for consumers
+    public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
+                                                                    @Nullable Item item,
+                                                                    @Nullable Authentication authentication,
+                                                                    @Nullable List<DomainRequirement>
+                                                                            domainRequirements) {
+        type.getClass(); // throw NPE if null
+        if (item == null) {
+            return lookupCredentials(type, Hudson.getInstance(), authentication);
+        }
+        authentication = authentication == null ? ACL.SYSTEM : authentication;
+        domainRequirements = domainRequirements
+                == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+        ExtensionList<CredentialsProvider> providers;
+        try {
+            providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+        List<C> result = new ArrayList<C>();
+        for (CredentialsProvider provider : providers) {
+            try {
+                result.addAll(provider.getCredentials(type, item, authentication, domainRequirements));
             } catch (NoClassDefFoundError e) {
                 // ignore optional dependency
             }

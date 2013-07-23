@@ -23,8 +23,13 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.domains.DomainCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
@@ -33,6 +38,8 @@ import hudson.model.User;
 import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
+import hudson.util.CopyOnWriteMap;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.providers.anonymous.AnonymousAuthenticationToken;
@@ -40,10 +47,15 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.io.ObjectStreamException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.always;
 
 /**
  * A store of credentials tied to a specific {@link User}.
@@ -74,12 +86,23 @@ public class UserCredentialsProvider extends CredentialsProvider {
     @Override
     public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
                                                           @Nullable Authentication authentication) {
+        return getCredentials(type, itemGroup, authentication, Collections.<DomainRequirement>emptyList());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @NonNull
+    @Override
+    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+                                                          @Nullable ItemGroup itemGroup,
+                                                          @Nullable Authentication authentication,
+                                                          @NonNull List<DomainRequirement> domainRequirements) {
         // ignore itemGroup, as per-user credentials are available on any object
         if (authentication == null) {
             // assume ACL#SYSTEM
             authentication = ACL.SYSTEM;
         }
-        List<C> result = new ArrayList<C>();
         if (!ACL.SYSTEM.equals(authentication)) {
             User user = authentication == null || authentication instanceof AnonymousAuthenticationToken
                     ? null
@@ -87,11 +110,12 @@ public class UserCredentialsProvider extends CredentialsProvider {
             if (user != null) {
                 UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
                 if (property != null) {
-                    result.addAll(property.getCredentials(type));
+                    return DomainCredentials
+                            .getCredentials(property.getDomainCredentialsMap(), type, domainRequirements, always());
                 }
             }
         }
-        return result;
+        return new ArrayList<C>();
     }
 
     /**
@@ -100,18 +124,55 @@ public class UserCredentialsProvider extends CredentialsProvider {
     public static class UserCredentialsProperty extends UserProperty {
 
         /**
-         * The user's credentials.
+         * Old store of credentials
+         *
+         * @deprecated
          */
-        private final List<Credentials> credentials;
+        @Deprecated
+        private transient List<Credentials> credentials;
+
+        /**
+         * Our credentials.
+         *
+         * @since 1.5
+         */
+        private Map<Domain, List<Credentials>> domainCredentialsMap =
+                new CopyOnWriteMap.Hash<Domain, List<Credentials>>();
+
+        /**
+         * Backwards compatibility.
+         *
+         * @param credentials the credentials.
+         * @deprecated
+         */
+        @Deprecated
+        public UserCredentialsProperty(List<Credentials> credentials) {
+            domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
+        }
 
         /**
          * Constructor for stapler.
          *
-         * @param credentials the credentials.
+         * @param domainCredentials the credentials.
+         * @since 1.5
          */
         @DataBoundConstructor
-        public UserCredentialsProperty(List<Credentials> credentials) {
-            this.credentials = new ArrayList<Credentials>(credentials);
+        public UserCredentialsProperty(DomainCredentials[] domainCredentials) {
+            domainCredentialsMap = DomainCredentials.asMap(Arrays.asList(domainCredentials));
+        }
+
+        /**
+         * Resolve old data store into new data store.
+         *
+         * @since 1.5
+         */
+        @SuppressWarnings("deprecation")
+        private Object readResolve() throws ObjectStreamException {
+            if (domainCredentialsMap == null) {
+                domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
+                credentials = null;
+            }
+            return this;
         }
 
         /**
@@ -123,7 +184,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         public <C extends Credentials> List<C> getCredentials(Class<C> type) {
             List<C> result = new ArrayList<C>();
-            for (Credentials credential : credentials) {
+            for (Credentials credential : getCredentials()) {
                 if (type.isInstance(credential)) {
                     result.add(type.cast(credential));
                 }
@@ -138,7 +199,39 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @SuppressWarnings("unused") // used by stapler
         public List<Credentials> getCredentials() {
-            return credentials;
+            return domainCredentialsMap.get(Domain.global());
+        }
+
+        /**
+         * Returns the {@link com.cloudbees.plugins.credentials.domains.DomainCredentials}
+         *
+         * @return the {@link com.cloudbees.plugins.credentials.domains.DomainCredentials}
+         * @since 1.5
+         */
+        @SuppressWarnings("unused") // used by stapler
+        public List<DomainCredentials> getDomainCredentials() {
+            return DomainCredentials.asList(getDomainCredentialsMap());
+        }
+
+        /**
+         * The Map of domain credentials.
+         *
+         * @since 1.5
+         */
+        @SuppressWarnings("deprecation")
+        @NonNull
+        public synchronized Map<Domain, List<Credentials>> getDomainCredentialsMap() {
+            return domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
+        }
+
+        /**
+         * Sets the map of domain credentials.
+         *
+         * @param domainCredentialsMap the map of domain credentials.
+         * @since 1.5
+         */
+        public synchronized void setDomainCredentialsMap(Map<Domain, List<Credentials>> domainCredentialsMap) {
+            this.domainCredentialsMap = DomainCredentials.toCopyOnWriteMap(domainCredentialsMap);
         }
 
         /**
@@ -167,7 +260,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
              */
             @Override
             public UserProperty newInstance(User user) {
-                return new UserCredentialsProperty(Collections.<Credentials>emptyList());
+                return new UserCredentialsProperty(new DomainCredentials[0]);
             }
 
             /**
@@ -198,7 +291,29 @@ public class UserCredentialsProvider extends CredentialsProvider {
                 User curUser = User.current();
                 // only enable this property for the current user
                 return selUser != null && curUser != null && selUser.equals(curUser);
+            }
 
+            /**
+             * Gets all the credentials descriptors.
+             *
+             * @return all the credentials descriptors.
+             * @since 1.5
+             */
+            @SuppressWarnings("unused") // used by stapler
+            public DescriptorExtensionList<Credentials, Descriptor<Credentials>> getCredentialDescriptors() {
+                return CredentialsProvider.allCredentialsDescriptors();
+            }
+
+            /**
+             * Gets all the {@link com.cloudbees.plugins.credentials.domains.DomainSpecification} descriptors.
+             *
+             * @return all the {@link com.cloudbees.plugins.credentials.domains.DomainSpecification} descriptors.
+             * @since 1.5
+             */
+            @SuppressWarnings("unused") // used by stapler
+            public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>>
+            getSpecificationDescriptors() {
+                return Jenkins.getInstance().getDescriptorList(DomainSpecification.class);
             }
 
             /**
