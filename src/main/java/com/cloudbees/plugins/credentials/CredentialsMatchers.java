@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.matchers.AnyOfMatcher;
 import com.cloudbees.plugins.credentials.matchers.IdMatcher;
 import com.cloudbees.plugins.credentials.matchers.InstanceOfMatcher;
 import com.cloudbees.plugins.credentials.matchers.NotMatcher;
+import com.cloudbees.plugins.credentials.matchers.ScopeMatcher;
 import com.cloudbees.plugins.credentials.matchers.UsernameMatcher;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
@@ -87,6 +88,39 @@ public class CredentialsMatchers {
     @NonNull
     public static CredentialsMatcher withId(@NonNull String id) {
         return new IdMatcher(id);
+    }
+
+    /**
+     * Creates a matcher that matches {@link Credentials} with the supplied {@link CredentialsScope}.
+     *
+     * @param scope the {@link CredentialsScope} to match.
+     * @return a matcher that matches {@link Credentials} with the supplied {@link CredentialsScope}.
+     */
+    @NonNull
+    public static CredentialsMatcher withScope(@NonNull CredentialsScope scope) {
+        return new ScopeMatcher(scope);
+    }
+
+    /**
+     * Creates a matcher that matches {@link Credentials} with the supplied {@link CredentialsScope}.
+     *
+     * @param scopes the {@link CredentialsScope}s to match.
+     * @return a matcher that matches {@link Credentials} with the supplied {@link CredentialsScope}s.
+     */
+    @NonNull
+    public static CredentialsMatcher withScopes(@NonNull CredentialsScope... scopes) {
+        return new ScopeMatcher(scopes);
+    }
+
+    /**
+     * Creates a matcher that matches {@link Credentials} with the supplied {@link CredentialsScope}.
+     *
+     * @param scopes the {@link CredentialsScope}s to match.
+     * @return a matcher that matches {@link Credentials} with the supplied {@link CredentialsScope}s.
+     */
+    @NonNull
+    public static CredentialsMatcher withScopes(@NonNull Collection<CredentialsScope> scopes) {
+        return new ScopeMatcher(scopes);
     }
 
     /**
