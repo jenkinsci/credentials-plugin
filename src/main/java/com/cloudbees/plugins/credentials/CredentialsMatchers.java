@@ -25,6 +25,7 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.matchers.AllOfMatcher;
 import com.cloudbees.plugins.credentials.matchers.AnyOfMatcher;
+import com.cloudbees.plugins.credentials.matchers.ConstantMatcher;
 import com.cloudbees.plugins.credentials.matchers.IdMatcher;
 import com.cloudbees.plugins.credentials.matchers.InstanceOfMatcher;
 import com.cloudbees.plugins.credentials.matchers.NotMatcher;
@@ -53,6 +54,26 @@ public class CredentialsMatchers {
      */
     private CredentialsMatchers() {
         throw new UnsupportedOperationException("Utility class");
+    }
+
+    /**
+     * Creates a matcher that always matches.
+     *
+     * @return a matcher that always matches.
+     */
+    @NonNull
+    public static CredentialsMatcher always() {
+        return new ConstantMatcher(true);
+    }
+
+    /**
+     * Creates a matcher that never matches.
+     *
+     * @return a matcher that never matches.
+     */
+    @NonNull
+    public static CredentialsMatcher never() {
+        return new ConstantMatcher(false);
     }
 
     /**
