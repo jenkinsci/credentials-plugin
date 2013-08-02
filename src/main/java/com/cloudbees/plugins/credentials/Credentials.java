@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionPoint;
 import hudson.model.Describable;
@@ -45,6 +46,7 @@ public interface Credentials extends Describable<Credentials>, Serializable, Ext
      *
      * @return the scope of the credential.
      */
+    @CheckForNull
     CredentialsScope getScope();
 
     /**
