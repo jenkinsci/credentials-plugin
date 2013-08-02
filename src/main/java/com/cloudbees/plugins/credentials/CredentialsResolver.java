@@ -41,6 +41,9 @@ import java.util.logging.Logger;
  * standardized, so the intention is that a plugin that implemented an old credential type and has migrated to the
  * new type would also provide a translator.
  *
+ * @param <F> the class that the resolver resolves from.
+ * @param <T> the class that the resolver resolves to. Typically this class will have a {@code readResolve()} method
+ *           that returns an instance of the class that the resolver resolves from.
  * @see ResolveWith
  * @since 1.6
  */
