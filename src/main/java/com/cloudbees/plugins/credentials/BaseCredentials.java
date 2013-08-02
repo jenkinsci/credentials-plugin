@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.Descriptor;
@@ -41,6 +42,7 @@ public class BaseCredentials implements Credentials {
     /**
      * The scope of the credential.
      */
+    @CheckForNull
     private final CredentialsScope scope;
 
     @SuppressWarnings("unused")
@@ -53,13 +55,14 @@ public class BaseCredentials implements Credentials {
      *
      * @param scope the scope.
      */
-    public BaseCredentials(CredentialsScope scope) {
+    public BaseCredentials(@CheckForNull CredentialsScope scope) {
         this.scope = scope;
     }
 
     /**
      * {@inheritDoc}
      */
+    @CheckForNull
     public CredentialsScope getScope() {
         return scope;
     }
