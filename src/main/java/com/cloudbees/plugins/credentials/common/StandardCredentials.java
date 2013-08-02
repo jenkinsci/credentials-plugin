@@ -23,7 +23,7 @@
  */
 package com.cloudbees.plugins.credentials.common;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * Credentials that have a description to help the user differentiate the specific credential from a collection of
@@ -39,6 +39,6 @@ public interface StandardCredentials extends IdCredentials {
      *
      * @return the Description.
      */
-    @CheckForNull
+    @NonNull
     String getDescription();
 }
