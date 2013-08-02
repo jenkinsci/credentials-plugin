@@ -44,11 +44,20 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An extension point for providing {@link Credentials}.
  */
 public abstract class CredentialsProvider implements ExtensionPoint {
+
+    /**
+     * Our logger.
+     *
+     * @since 1.6
+     */
+    private static final Logger LOGGER = Logger.getLogger(CredentialsProvider.class.getName());
 
     /**
      * Returns all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
@@ -242,24 +251,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable ItemGroup itemGroup,
                                                                     @Nullable Authentication authentication) {
-        type.getClass(); // throw NPE if null
-        itemGroup = itemGroup == null ? Hudson.getInstance() : itemGroup;
-        authentication = authentication == null ? ACL.SYSTEM : authentication;
-        ExtensionList<CredentialsProvider> providers;
-        try {
-            providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
-        } catch (Exception e) {
-            return Collections.emptyList();
-        }
-        List<C> result = new ArrayList<C>();
-        for (CredentialsProvider provider : providers) {
-            try {
-                result.addAll(provider.getCredentials(type, itemGroup, authentication));
-            } catch (NoClassDefFoundError e) {
-                // ignore optional dependency
-            }
-        }
-        return result;
+        return lookupCredentials(type, itemGroup, authentication, Collections.<DomainRequirement>emptyList());
     }
 
     /**
@@ -328,10 +320,20 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
                 == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+        CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
+        if (resolver != null) {
+            LOGGER.log(Level.FINE, "Resolving legacy credentials of type {0} with resolver {1}",
+                    new Object[]{type, resolver});
+            final List<Credentials> originals =
+                    lookupCredentials(resolver.getFromClass(), itemGroup, authentication, domainRequirements);
+            LOGGER.log(Level.FINE, "Original credentials for resolving: {0}", originals);
+            return resolver.resolve(originals);
+        }
         ExtensionList<CredentialsProvider> providers;
         try {
             providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Could not retrieve list of CredentialsProvider instances", e);
             return Collections.emptyList();
         }
         List<C> result = new ArrayList<C>();
@@ -339,7 +341,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             try {
                 result.addAll(provider.getCredentials(type, itemGroup, authentication, domainRequirements));
             } catch (NoClassDefFoundError e) {
-                // ignore optional dependency
+                LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
+                        + " likely due to missing optional dependency", e);
             }
         }
         return result;
@@ -392,10 +395,20 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
                 == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+        CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
+        if (resolver != null) {
+            LOGGER.log(Level.FINE, "Resolving legacy credentials of type {0} with resolver {1}",
+                    new Object[]{type, resolver});
+            final List<Credentials> originals =
+                    lookupCredentials(resolver.getFromClass(), item, authentication, domainRequirements);
+            LOGGER.log(Level.FINE, "Original credentials for resolving: {0}", originals);
+            return resolver.resolve(originals);
+        }
         ExtensionList<CredentialsProvider> providers;
         try {
             providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Could not retrieve list of CredentialsProvider instances", e);
             return Collections.emptyList();
         }
         List<C> result = new ArrayList<C>();
@@ -403,7 +416,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             try {
                 result.addAll(provider.getCredentials(type, item, authentication, domainRequirements));
             } catch (NoClassDefFoundError e) {
-                // ignore optional dependency
+                LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
+                        + " likely due to missing optional dependency", e);
             }
         }
         return result;

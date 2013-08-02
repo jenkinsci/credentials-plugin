@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.BaseCredentials;
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import hudson.Extension;
 import hudson.util.Secret;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -34,7 +35,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 /**
  * A test credentials impl.
  */
-public class DummyCredentials extends BaseCredentials {
+public class DummyCredentials extends BaseCredentials implements UsernamePasswordCredentials {
 
     private final String username;
 
@@ -59,7 +60,7 @@ public class DummyCredentials extends BaseCredentials {
     public static class DescriptorImpl extends CredentialsDescriptor {
 
         public DescriptorImpl() {
-            super(DummyCredentials.class);
+            super();
         }
 
         @Override

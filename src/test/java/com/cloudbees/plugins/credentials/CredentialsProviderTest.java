@@ -23,7 +23,9 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
+import com.cloudbees.plugins.credentials.impl.DummyLegacyCredentials;
 import hudson.model.Descriptor;
 import hudson.model.FreeStyleProject;
 import hudson.model.Hudson;
@@ -32,6 +34,12 @@ import hudson.model.ItemGroup;
 import hudson.security.ACL;
 import org.acegisecurity.Authentication;
 import org.jvnet.hudson.test.HudsonTestCase;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.List;
 
 public class CredentialsProviderTest extends HudsonTestCase {
 
@@ -90,6 +98,31 @@ public class CredentialsProviderTest extends HudsonTestCase {
         }
         assertNotNull(descriptor);
         assertNotNull(new DummyCredentials(CredentialsScope.SYSTEM, "foo", "bar").getDescriptor());
+    }
+
+    public void testLegacyCredentialMigration() throws Exception {
+        DummyLegacyCredentials legacyCredentials = new DummyLegacyCredentials(CredentialsScope.GLOBAL, "foo", "bar");
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(legacyCredentials);
+        oos.close();
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        Credentials c = (Credentials) ois.readObject();
+        assertTrue("Resolved credentials are UsernamePasswordCredentials", c instanceof UsernamePasswordCredentials);
+        assertTrue("Resolved credentials are DummyCredentials", c instanceof DummyCredentials);
+        assertFalse("Resolved credentials are not DummyLegacyCredentials", c instanceof DummyLegacyCredentials);
+
+        assertTrue("No credentials currently", CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
+        SystemCredentialsProvider.getInstance().getCredentials().add(c);
+
+        final List<DummyLegacyCredentials> resolved =
+                CredentialsProvider.lookupCredentials(DummyLegacyCredentials.class);
+        assertFalse("Have resolved credentials", resolved.isEmpty());
+        DummyLegacyCredentials r = resolved.iterator().next();
+        assertEquals(legacyCredentials.getScope(), r.getScope());
+        assertEquals(legacyCredentials.getUsername(), r.getUsername());
+        assertEquals(legacyCredentials.getPassword(), r.getPassword());
     }
 
 }
