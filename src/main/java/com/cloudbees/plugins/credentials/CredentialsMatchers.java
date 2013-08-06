@@ -31,6 +31,7 @@ import com.cloudbees.plugins.credentials.matchers.InstanceOfMatcher;
 import com.cloudbees.plugins.credentials.matchers.NotMatcher;
 import com.cloudbees.plugins.credentials.matchers.ScopeMatcher;
 import com.cloudbees.plugins.credentials.matchers.UsernameMatcher;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -335,5 +336,27 @@ public class CredentialsMatchers {
             }
         }
         return result;
+    }
+
+    /**
+     * Returns the first credential from a collection that matches the supplied matcher or if none match then the
+     * specified default.
+     *
+     * @param credentials   the credentials to select from.
+     * @param matcher       the matcher.
+     * @param defaultIfNone the default value if no match found.
+     * @param <C>           the type of credential.
+     * @return a matching credential or the supplied default.
+     */
+    @CheckForNull
+    public static <C extends Credentials> C firstOrDefault(@NonNull Iterable<C> credentials,
+                                                           @NonNull CredentialsMatcher matcher,
+                                                           @CheckForNull C defaultIfNone) {
+        for (C c : credentials) {
+            if (matcher.matches(c)) {
+                return c;
+            }
+        }
+        return defaultIfNone;
     }
 }
