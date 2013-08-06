@@ -188,14 +188,19 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      * @return the {@link CredentialsResolver} to use or {@code null} if no resolver is required.
      */
     @CheckForNull
-    @SuppressWarnings("unchecked")
     public static <C extends Credentials> CredentialsResolver<Credentials, C> getResolver(@NonNull Class<C> clazz) {
         final ResolveWith resolveWith = clazz.getAnnotation(ResolveWith.class);
         if (resolveWith != null) {
             // if the reflective instantiation proves a hot point, put a cache in front.
-            CredentialsResolver<Credentials, C> resolver;
             try {
-                resolver = resolveWith.value().newInstance();
+                @SuppressWarnings("unchecked")
+                final CredentialsResolver<Credentials, C> resolver = resolveWith.value().newInstance();
+                if (Credentials.class.isAssignableFrom(resolver.getFromClass())
+                        && clazz.isAssignableFrom(resolver.getToClass())) {
+                    return resolver;
+                }
+                LOGGER.log(Level.SEVERE, "Resolver {0} for type {1} resolves to {2} which is not assignable to {1}",
+                        new Object[]{resolver.getClass(), clazz, resolver.getToClass()});
             } catch (InstantiationException e) {
                 LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
                 return null;
@@ -203,11 +208,6 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
                 LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
                 return null;
             }
-            if (clazz.isAssignableFrom(resolver.getToClass())) {
-                return resolver;
-            }
-            LOGGER.log(Level.SEVERE, "Resolver {0} for type {1} resolves to {2} which is not assignable to {1}",
-                    new Object[]{resolver.getClass(), clazz, resolver.getToClass()});
         }
         return null;
     }
