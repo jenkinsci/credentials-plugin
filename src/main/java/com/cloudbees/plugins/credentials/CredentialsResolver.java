@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  *
  * @param <F> the class that the resolver resolves from.
  * @param <T> the class that the resolver resolves to. Typically this class will have a {@code readResolve()} method
- *           that returns an instance of the class that the resolver resolves from.
+ *            that returns an instance of the class that the resolver resolves from.
  * @see ResolveWith
  * @since 1.6
  */
@@ -54,16 +54,19 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      *
      * @since 1.6
      */
+    @NonNull
     private static final Logger LOGGER = Logger.getLogger(CredentialsResolver.class.getName());
 
     /**
      * The class we can resolve from.
      */
+    @NonNull
     private final Class<F> fromClass;
 
     /**
      * The class we can resolve to.
      */
+    @NonNull
     private final Class<T> toClass;
 
     /**
@@ -72,7 +75,10 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      * @param fromClass the class to resolve from.
      * @param toClass   the class to resolve to.
      */
-    protected CredentialsResolver(Class<F> fromClass, Class<T> toClass) {
+    @SuppressWarnings("unused") // API entry point
+    protected CredentialsResolver(@NonNull Class<F> fromClass, @NonNull Class<T> toClass) {
+        fromClass.getClass(); // throw NPE if null
+        toClass.getClass(); // throw NPE if null
         this.fromClass = fromClass;
         this.toClass = toClass;
     }
@@ -84,20 +90,23 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      *
      * @param fromClass the class to resolve from.
      */
-    protected CredentialsResolver(Class<F> fromClass) {
+    @SuppressWarnings("unused") // API entry point
+    protected CredentialsResolver(@NonNull Class<F> fromClass) {
+        fromClass.getClass(); // throw NPE if null
         this.fromClass = fromClass;
-        this.toClass = (Class<T>) getClass().getEnclosingClass();
+        @SuppressWarnings("unchecked") final Class<T> toClass = (Class<T>) getClass().getEnclosingClass();
         if (toClass == null) {
             throw new AssertionError(getClass()
                     + " doesn't have an outer class. Use the constructor that takes the Class object explicitly.");
         }
+        this.toClass = toClass;
 
         // detect an type error
         Type bt = Types.getBaseClass(getClass(), Credentials.class);
         if (bt instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType) bt;
             // this 't' is the closest approximation of T of Descriptor<T>.
-            Class t = Types.erasure(pt.getActualTypeArguments()[0]);
+            Class<?> t = Types.erasure(pt.getActualTypeArguments()[0]);
             if (!t.isAssignableFrom(fromClass)) {
                 throw new AssertionError("Outer class " + fromClass + " of " + getClass() + " is not assignable to " + t
                         + ". Perhaps wrong outer class?");
@@ -110,6 +119,7 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      *
      * @return the class to resolve from.
      */
+    @NonNull
     public Class<F> getFromClass() {
         return fromClass;
     }
@@ -119,6 +129,7 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      *
      * @return the class to resolve to.
      */
+    @NonNull
     public Class<T> getToClass() {
         return toClass;
     }
@@ -129,7 +140,9 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      * @param original the original type of credential.
      * @return the resolved credentials or the original if they already implement the required interface.
      */
-    public T resolve(F original) {
+    @NonNull
+    public T resolve(@NonNull F original) {
+        original.getClass(); // throw NPE if null
         if (toClass.isInstance(original)) {
             return toClass.cast(original);
         }
@@ -145,10 +158,15 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      * @param originals credentials of the original type.
      * @return the resolved credentials.
      */
-    public final List<T> resolve(Collection<? extends F> originals) {
+    @NonNull
+    public final List<T> resolve(@CheckForNull Collection<? extends F> originals) {
         List<T> result = new ArrayList<T>();
-        for (F original : originals) {
-            result.add(resolve(original));
+        if (originals != null) {
+            for (F original : originals) {
+                if (original != null) {
+                    result.add(resolve(original));
+                }
+            }
         }
         return result;
     }
@@ -159,7 +177,8 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      * @param original the original type of credential.
      * @return the resolved credentials.
      */
-    protected abstract T doResolve(F original);
+    @NonNull
+    protected abstract T doResolve(@NonNull F original);
 
     /**
      * Retrieves the {@link CredentialsResolver} for the specified type (if it exists)

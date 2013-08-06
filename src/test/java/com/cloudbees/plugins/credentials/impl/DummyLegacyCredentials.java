@@ -5,6 +5,7 @@ import com.cloudbees.plugins.credentials.CredentialsResolver;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.ResolveWith;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -44,8 +45,9 @@ public class DummyLegacyCredentials extends BaseCredentials implements UsernameP
             super(UsernamePasswordCredentials.class);
         }
 
+        @NonNull
         @Override
-        protected DummyLegacyCredentials doResolve(UsernamePasswordCredentials original) {
+        protected DummyLegacyCredentials doResolve(@NonNull UsernamePasswordCredentials original) {
             return new DummyLegacyCredentials(original.getScope(), original.getUsername(),
                     original.getPassword().getEncryptedValue());
         }
