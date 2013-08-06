@@ -276,6 +276,26 @@ public class CredentialsMatchers {
     }
 
     /**
+     * Filters credentials using the supplied matcher.
+     *
+     * @param credentials the credentials to filter.
+     * @param matcher     the matcher to match on.
+     * @param <C>         the type of credentials.
+     * @return only those credentials that match the supplied matcher.
+     */
+    @NonNull
+    public static <C extends Credentials> Iterable<C> filter(@NonNull Iterable<C> credentials,
+                                                             @NonNull CredentialsMatcher matcher) {
+        List<C> result = new ArrayList<C>();
+        for (C credential : credentials) {
+            if (credential != null && matcher.matches(credential)) {
+                result.add(credential);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Filters a map keyed by credentials using the supplied matcher.
      *
      * @param credentialMap the map keyed by credentials to filter.
