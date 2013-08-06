@@ -359,4 +359,18 @@ public class CredentialsMatchers {
         }
         return defaultIfNone;
     }
+
+    /**
+     * Returns the first credential from a collection that matches the supplied matcher or {@code null} if none match.
+     *
+     * @param credentials   the credentials to select from.
+     * @param matcher       the matcher.
+     * @param <C>           the type of credential.
+     * @return a matching credential or the supplied default.
+     */
+    @CheckForNull
+    public static <C extends Credentials> C firstOrNull(@NonNull Iterable<C> credentials,
+                                                           @NonNull CredentialsMatcher matcher) {
+        return firstOrDefault(credentials, matcher, null);
+    }
 }
