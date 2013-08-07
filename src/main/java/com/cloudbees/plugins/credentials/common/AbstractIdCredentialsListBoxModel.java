@@ -58,7 +58,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @return {@code this} for method chaining.
      */
     @NonNull
-    public AbstractIdCredentialsListBoxModel<T, C> add(@CheckForNull C u) {
+    public AbstractIdCredentialsListBoxModel<T, C> with(@CheckForNull C u) {
         if (u != null) {
             add(describe(u), u.getId());
         }
@@ -71,7 +71,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @return {@code this} for method chaining.
      */
     @NonNull
-    public AbstractIdCredentialsListBoxModel<T, C> addEmptySelection() {
+    public AbstractIdCredentialsListBoxModel<T, C> withEmptySelection() {
         add(Messages.AbstractIdCredentialsListBoxModel_EmptySelection(), "");
         return this;
     }
@@ -83,8 +83,8 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @return {@code this} for method chaining.
      */
     @NonNull
-    public AbstractIdCredentialsListBoxModel<T, C> addAll(@NonNull C... credentials) {
-        return addMatching(CredentialsMatchers.always(), Arrays.asList(credentials));
+    public AbstractIdCredentialsListBoxModel<T, C> withAll(@NonNull C... credentials) {
+        return withMatching(CredentialsMatchers.always(), Arrays.asList(credentials));
     }
 
     /**
@@ -94,8 +94,8 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @return {@code this} for method chaining.
      */
     @NonNull
-    public AbstractIdCredentialsListBoxModel<T, C> addAll(@NonNull Iterable<? extends C> credentials) {
-        return addMatching(CredentialsMatchers.always(), credentials.iterator());
+    public AbstractIdCredentialsListBoxModel<T, C> withAll(@NonNull Iterable<? extends C> credentials) {
+        return withMatching(CredentialsMatchers.always(), credentials.iterator());
     }
 
     /**
@@ -105,8 +105,8 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @return {@code this} for method chaining.
      */
     @NonNull
-    public AbstractIdCredentialsListBoxModel<T, C> addAll(@NonNull Iterator<? extends C> credentials) {
-        return addMatching(CredentialsMatchers.always(), credentials);
+    public AbstractIdCredentialsListBoxModel<T, C> withAll(@NonNull Iterator<? extends C> credentials) {
+        return withMatching(CredentialsMatchers.always(), credentials);
     }
 
     /**
@@ -117,9 +117,9 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @return {@code this} for method chaining.
      */
     @NonNull
-    public AbstractIdCredentialsListBoxModel<T, C> addMatching(@NonNull CredentialsMatcher matcher,
-                                                               @NonNull C... credentials) {
-        return addMatching(matcher, Arrays.asList(credentials));
+    public AbstractIdCredentialsListBoxModel<T, C> withMatching(@NonNull CredentialsMatcher matcher,
+                                                                @NonNull C... credentials) {
+        return withMatching(matcher, Arrays.asList(credentials));
     }
 
     /**
@@ -130,9 +130,9 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @return {@code this} for method chaining.
      */
     @NonNull
-    public AbstractIdCredentialsListBoxModel<T, C> addMatching(@NonNull CredentialsMatcher matcher,
-                                                               @NonNull Iterable<? extends C> credentials) {
-        return addMatching(matcher, credentials.iterator());
+    public AbstractIdCredentialsListBoxModel<T, C> withMatching(@NonNull CredentialsMatcher matcher,
+                                                                @NonNull Iterable<? extends C> credentials) {
+        return withMatching(matcher, credentials.iterator());
     }
 
     /**
@@ -143,12 +143,12 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @return {@code this} for method chaining.
      */
     @NonNull
-    public AbstractIdCredentialsListBoxModel<T, C> addMatching(@NonNull CredentialsMatcher matcher,
-                                                               @NonNull Iterator<? extends C> credentials) {
+    public AbstractIdCredentialsListBoxModel<T, C> withMatching(@NonNull CredentialsMatcher matcher,
+                                                                @NonNull Iterator<? extends C> credentials) {
         while (credentials.hasNext()) {
             C c = credentials.next();
             if (matcher.matches(c)) {
-                add(c);
+                with(c);
             }
         }
         return this;
