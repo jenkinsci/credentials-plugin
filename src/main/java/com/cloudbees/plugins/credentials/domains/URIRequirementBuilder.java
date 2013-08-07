@@ -161,7 +161,7 @@ public class URIRequirementBuilder {
      * @return {@code this}.
      */
     @NonNull
-    public URIRequirementBuilder withScheme(String scheme) {
+    public URIRequirementBuilder withScheme(@CheckForNull String scheme) {
         withoutScheme();
         if (scheme != null) {
             requirements.add(new SchemeRequirement(scheme));
@@ -176,7 +176,7 @@ public class URIRequirementBuilder {
      * @return {@code this}.
      */
     @NonNull
-    public URIRequirementBuilder withHostname(String hostname) {
+    public URIRequirementBuilder withHostname(@CheckForNull String hostname) {
         return withHostnamePort(hostname, -1);
     }
 
@@ -188,7 +188,7 @@ public class URIRequirementBuilder {
      * @return {@code this}.
      */
     @NonNull
-    public URIRequirementBuilder withHostnamePort(String hostname, int port) {
+    public URIRequirementBuilder withHostnamePort(@CheckForNull String hostname, int port) {
         withoutHostname();
         withoutHostnamePort();
         if (hostname != null) {

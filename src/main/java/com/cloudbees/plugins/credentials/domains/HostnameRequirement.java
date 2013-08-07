@@ -24,6 +24,8 @@
 
 package com.cloudbees.plugins.credentials.domains;
 
+import javax.annotation.CheckForNull;
+
 /**
  * A requirement for a {@link Domain} that includes {@link com.cloudbees.plugins.credentials.Credentials} for a
  * specific hostname.
@@ -34,6 +36,7 @@ public class HostnameRequirement extends DomainRequirement {
     /**
      * The hostname.
      */
+    @CheckForNull
     private final String hostname;
 
     /**
@@ -41,7 +44,7 @@ public class HostnameRequirement extends DomainRequirement {
      *
      * @param hostname the host.
      */
-    public HostnameRequirement(String hostname) {
+    public HostnameRequirement(@CheckForNull String hostname) {
         this.hostname = hostname;
     }
 
@@ -50,6 +53,7 @@ public class HostnameRequirement extends DomainRequirement {
      *
      * @return the hostname.
      */
+    @CheckForNull
     public String getHostname() {
         return hostname;
     }

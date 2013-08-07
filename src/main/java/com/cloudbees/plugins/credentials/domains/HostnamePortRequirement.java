@@ -24,6 +24,8 @@
 
 package com.cloudbees.plugins.credentials.domains;
 
+import javax.annotation.CheckForNull;
+
 /**
  * A requirement for a {@link Domain} that includes {@link com.cloudbees.plugins.credentials.Credentials} for a specific hostname and port combination.
  * @since 1.5
@@ -39,7 +41,7 @@ public class HostnamePortRequirement extends HostnameRequirement {
      * @param hostname the host.
      * @param port the port.
      */
-    public HostnamePortRequirement(String hostname, int port) {
+    public HostnamePortRequirement(@CheckForNull String hostname, int port) {
         super(hostname);
         this.port = port;
     }

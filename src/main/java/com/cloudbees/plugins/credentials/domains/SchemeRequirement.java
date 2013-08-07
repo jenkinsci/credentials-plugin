@@ -24,7 +24,9 @@
 
 package com.cloudbees.plugins.credentials.domains;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.Util;
 
 /**
  * A requirement for a specific URI scheme, for example <code>http</code> or <code>smtp</code>
@@ -43,8 +45,8 @@ public class SchemeRequirement extends DomainRequirement {
      *
      * @param scheme the scheme.
      */
-    public SchemeRequirement(String scheme) {
-        this.scheme = scheme;
+    public SchemeRequirement(@CheckForNull String scheme) {
+        this.scheme = Util.fixNull(scheme);
     }
 
     /**
@@ -52,6 +54,7 @@ public class SchemeRequirement extends DomainRequirement {
      *
      * @return the scheme.
      */
+    @NonNull
     public String getScheme() {
         return scheme;
     }

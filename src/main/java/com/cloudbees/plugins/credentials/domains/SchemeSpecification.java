@@ -112,7 +112,8 @@ public class SchemeSpecification extends DomainSpecification {
      * @param scheme the scheme.
      * @return tidy form of provided scheme.
      */
-    private static String toWellFormedScheme(String scheme) {
+    @NonNull
+    private static String toWellFormedScheme(@NonNull String scheme) {
         scheme = scheme.toLowerCase(); // RFC-3986 mandates that scheme's are compared as lowercase
         int index = scheme.indexOf(':'); // do not include the ':'
         if (index != -1) {
