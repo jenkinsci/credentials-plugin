@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.util.Secret;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -52,6 +53,7 @@ public class DummyCredentials extends BaseCredentials implements UsernamePasswor
         return username;
     }
 
+    @NonNull
     public Secret getPassword() {
         return password;
     }

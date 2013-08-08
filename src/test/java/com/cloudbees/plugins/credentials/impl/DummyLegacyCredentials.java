@@ -31,6 +31,7 @@ public class DummyLegacyCredentials extends BaseCredentials implements UsernameP
         return username;
     }
 
+    @NonNull
     public Secret getPassword() {
         return password;
     }
