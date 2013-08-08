@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011-2012, CloudBees, Inc., Stephen Connolly.
+ * Copyright (c) 2011-2013, CloudBees, Inc., Stephen Connolly.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,23 +23,25 @@
  */
 package com.cloudbees.plugins.credentials.common;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Credentials that have a description to help the user differentiate the specific credential from a collection of
- * {@link com.cloudbees.plugins.credentials.Credentials} and an ID to help {@link jenkins.model.Jenkins} locate the
- * specific credential from a collection of {@link com.cloudbees.plugins.credentials.Credentials}. Most credentials
- * should aim to implement this interface.
+ * Marks the common interfaces that are recommended for use.
  *
- * @since 1.6
+ * @since 1.7
  */
-@Recommended(since = "1.6")
-public interface StandardCredentials extends IdCredentials {
+@Documented
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+public @interface Recommended {
     /**
-     * Returns the Description.
+     * The version that this is recommended since.
      *
-     * @return the Description.
+     * @return the version of the credentials plugin that this is recommended since.
      */
-    @NonNull
-    String getDescription();
+    String since();
 }

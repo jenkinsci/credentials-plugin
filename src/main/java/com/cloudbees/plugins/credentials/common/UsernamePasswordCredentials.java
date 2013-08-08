@@ -28,5 +28,6 @@ package com.cloudbees.plugins.credentials.common;
  *
  * @since 1.5
  */
+@LegacyMixIn(preferred = StandardUsernamePasswordCredentials.class)
 public interface UsernamePasswordCredentials extends UsernameCredentials, PasswordCredentials {
 }

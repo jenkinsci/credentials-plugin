@@ -28,5 +28,6 @@ package com.cloudbees.plugins.credentials.common;
  *
  * @since 1.6
  */
+@Recommended(since = "1.6")
 public interface StandardUsernamePasswordCredentials extends StandardUsernameCredentials, UsernamePasswordCredentials {
 }

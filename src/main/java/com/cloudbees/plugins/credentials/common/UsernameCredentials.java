@@ -31,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *
  * @since 1.5
  */
+@LegacyMixIn(preferred = StandardUsernameCredentials.class)
 public interface UsernameCredentials extends Credentials {
     /**
      * Returns the username.

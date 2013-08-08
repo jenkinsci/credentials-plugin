@@ -32,6 +32,7 @@ import hudson.util.Secret;
  *
  * @since 1.5
  */
+@LegacyMixIn(preferred = StandardUsernamePasswordCredentials.class)
 public interface PasswordCredentials extends Credentials {
     /**
      * Returns the Password.
