@@ -320,7 +320,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                                 }
                             }
                         }
-                        return FormValidation.ok("Contents: " + buf.toString());
+                        return FormValidation.ok(StringUtils
+                                .defaultIfEmpty(StandardCertificateCredentials.NameProvider.getSubjectDN(keyStore),
+                                        buf.toString()));
                     } catch (KeyStoreException e) {
                         return FormValidation.warning(e, "Could not load keystore from '" + value + "'");
                     } catch (CertificateException e) {

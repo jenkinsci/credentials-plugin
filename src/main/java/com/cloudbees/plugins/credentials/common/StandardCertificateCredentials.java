@@ -32,8 +32,6 @@ import java.security.KeyStoreException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Credentials that have an ID, description, keystore and password, for example client certificates for SSL.
@@ -54,7 +52,12 @@ public interface StandardCertificateCredentials extends StandardCredentials, Cer
         @Override
         public String getName(StandardCertificateCredentials c) {
             String description = Util.fixEmptyAndTrim(c.getDescription());
-            KeyStore keyStore = c.getKeyStore();
+            String subjectDN = getSubjectDN(c.getKeyStore());
+            return (subjectDN == null ? c.getDescriptor().getDisplayName() : subjectDN)
+                    + (description != null ? " (" + description + ")" : "");
+        }
+
+        public static String getSubjectDN(KeyStore keyStore) {
             try {
                 for (Enumeration<String> enumeration = keyStore.aliases(); enumeration.hasMoreElements(); ) {
                     String alias = enumeration.nextElement();
@@ -64,8 +67,7 @@ public interface StandardCertificateCredentials extends StandardCredentials, Cer
                             Certificate certificate = certificateChain[0];
                             if (certificate instanceof X509Certificate) {
                                 X509Certificate x509 = (X509Certificate) certificate;
-                                return x509.getSubjectDN().getName()
-                                        + (description != null ? " (" + description + ")" : "");
+                                return x509.getSubjectDN().getName();
                             }
                         }
                     }
@@ -73,7 +75,7 @@ public interface StandardCertificateCredentials extends StandardCredentials, Cer
             } catch (KeyStoreException e) {
                 // ignore
             }
-            return c.getDescriptor().getDisplayName() + (description != null ? " (" + description + ")" : "");
+            return null;
         }
     }
 }
