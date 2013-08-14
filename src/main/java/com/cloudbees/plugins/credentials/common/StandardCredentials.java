@@ -23,7 +23,10 @@
  */
 package com.cloudbees.plugins.credentials.common;
 
+import com.cloudbees.plugins.credentials.CredentialsNameProvider;
+import com.cloudbees.plugins.credentials.NameWith;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.Util;
 
 /**
  * Credentials that have a description to help the user differentiate the specific credential from a collection of
@@ -34,6 +37,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * @since 1.6
  */
 @Recommended(since = "1.6")
+@NameWith(value = StandardCredentials.NameProvider.class, priority = -16)
 public interface StandardCredentials extends IdCredentials {
     /**
      * Returns the Description.
@@ -42,4 +46,17 @@ public interface StandardCredentials extends IdCredentials {
      */
     @NonNull
     String getDescription();
+
+    /**
+     * Our name provider.
+     */
+    public static class NameProvider extends CredentialsNameProvider<StandardCredentials> {
+
+        /** {@inheritDoc} */
+        @Override
+        public String getName(StandardCredentials c) {
+            String description = Util.fixEmptyAndTrim(c.getDescription());
+            return c.getId() + (description != null ? " (" + description + ")" : "");
+        }
+    }
 }

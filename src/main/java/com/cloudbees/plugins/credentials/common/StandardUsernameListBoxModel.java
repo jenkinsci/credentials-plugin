@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials.common;
 
+import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
 import hudson.util.ListBoxModel;
@@ -40,8 +41,7 @@ public class StandardUsernameListBoxModel
      */
     @NonNull
     protected String describe(@NonNull StandardUsernameCredentials c) {
-        String description = Util.fixEmptyAndTrim(c.getDescription());
-        return c.getUsername() + (description != null ? " (" + description + ")" : "");
+        return CredentialsNameProvider.name(c);
     }
 
 }

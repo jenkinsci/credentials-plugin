@@ -21,38 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.cloudbees.plugins.credentials.common;
+package com.cloudbees.plugins.credentials;
 
-import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsNameProvider;
-import com.cloudbees.plugins.credentials.NameWith;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * Credentials that have a username.
- *
- * @since 1.5
+ * @author stephenc
+ * @since 14/08/2013 17:02
  */
-@LegacyMixIn(preferred = StandardUsernameCredentials.class)
-@NameWith(UsernameCredentials.NameProvider.class)
-public interface UsernameCredentials extends Credentials {
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Inherited
+public @interface NameWith {
     /**
-     * Returns the username.
-     *
-     * @return the username.
+     * The naming class to use.
+     * @return The naming class to use.
      */
     @NonNull
-    String getUsername();
+    Class<? extends CredentialsNameProvider> value();
 
     /**
-     * Our name provider.
+     * When forced to name via interfaces, the highest priority among all interfaces wins.
+     * @return the priority among interface based providers.
      */
-    public static class NameProvider extends CredentialsNameProvider<UsernameCredentials> {
-
-        /** {@inheritDoc} */
-        @Override
-        public String getName(UsernameCredentials credentials) {
-            return credentials.getUsername();
-        }
-    }
+    int priority() default 0;
 }

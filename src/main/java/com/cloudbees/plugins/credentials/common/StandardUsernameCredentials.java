@@ -23,6 +23,10 @@
  */
 package com.cloudbees.plugins.credentials.common;
 
+import com.cloudbees.plugins.credentials.CredentialsNameProvider;
+import com.cloudbees.plugins.credentials.NameWith;
+import hudson.Util;
+
 /**
  * Credentials that have an ID, description and username. Most credentials that have a username should aim to implement
  * this interface.
@@ -30,5 +34,18 @@ package com.cloudbees.plugins.credentials.common;
  * @since 1.6
  */
 @Recommended(since = "1.6")
+@NameWith(value = StandardUsernameCredentials.NameProvider.class, priority = 16)
 public interface StandardUsernameCredentials extends StandardCredentials, UsernameCredentials {
+    /**
+     * Our name provider.
+     */
+    public static class NameProvider extends CredentialsNameProvider<StandardUsernameCredentials> {
+
+        /** {@inheritDoc} */
+        @Override
+        public String getName(StandardUsernameCredentials c) {
+            String description = Util.fixEmptyAndTrim(c.getDescription());
+            return c.getUsername() + (description != null ? " (" + description + ")" : "");
+        }
+    }
 }

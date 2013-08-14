@@ -23,11 +23,57 @@
  */
 package com.cloudbees.plugins.credentials.common;
 
+import com.cloudbees.plugins.credentials.CredentialsNameProvider;
+import com.cloudbees.plugins.credentials.NameWith;
+import hudson.Util;
+
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Credentials that have an ID, description, keystore and password, for example client certificates for SSL.
  *
  * @since 1.7
  */
 @Recommended(since = "1.7")
+@NameWith(value = StandardCertificateCredentials.NameProvider.class, priority = 8)
 public interface StandardCertificateCredentials extends StandardCredentials, CertificateCredentials {
+    /**
+     * Our name provider.
+     */
+    public static class NameProvider extends CredentialsNameProvider<StandardCertificateCredentials> {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getName(StandardCertificateCredentials c) {
+            String description = Util.fixEmptyAndTrim(c.getDescription());
+            KeyStore keyStore = c.getKeyStore();
+            try {
+                for (Enumeration<String> enumeration = keyStore.aliases(); enumeration.hasMoreElements(); ) {
+                    String alias = enumeration.nextElement();
+                    if (keyStore.isKeyEntry(alias)) {
+                        Certificate[] certificateChain = keyStore.getCertificateChain(alias);
+                        if (certificateChain.length > 0) {
+                            Certificate certificate = certificateChain[0];
+                            if (certificate instanceof X509Certificate) {
+                                X509Certificate x509 = (X509Certificate) certificate;
+                                return x509.getSubjectDN().getName()
+                                        + (description != null ? " (" + description + ")" : "");
+                            }
+                        }
+                    }
+                }
+            } catch (KeyStoreException e) {
+                // ignore
+            }
+            return c.getDescriptor().getDisplayName() + (description != null ? " (" + description + ")" : "");
+        }
+    }
 }
