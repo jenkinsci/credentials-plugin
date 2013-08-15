@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import javax.security.auth.DestroyFailedException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -169,6 +168,59 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         protected KeyStoreSourceDescriptor(Class<? extends KeyStoreSource> clazz) {
             super(clazz);
         }
+
+        protected static FormValidation validateCertificateKeystore(String type, byte[] keystoreBytes, String password) {
+
+            char[] passwordChars = toCharArray(Secret.fromString(password));
+            try {
+                KeyStore keyStore = KeyStore.getInstance(type);
+                keyStore.load(new ByteArrayInputStream(keystoreBytes), passwordChars);
+                int size = keyStore.size();
+                if (size == 0) {
+                    return FormValidation.warning("Empty keystore");
+                }
+                StringBuilder buf = new StringBuilder();
+                boolean first = true;
+                for (Enumeration<String> enumeration = keyStore.aliases(); enumeration.hasMoreElements(); ) {
+                    String alias = enumeration.nextElement();
+                    if (first) {
+                        first = false;
+                    } else {
+                        buf.append(", ");
+                    }
+                    buf.append(alias);
+                    if (keyStore.isCertificateEntry(alias)) {
+                        keyStore.getCertificate(alias);
+                    } else if (keyStore.isKeyEntry(alias)) {
+                        try {
+                            keyStore.getKey(alias, passwordChars);
+                        } catch (UnrecoverableEntryException e) {
+                            if (passwordChars == null || passwordChars.length == 0) {
+                                return FormValidation.warning(e,
+                                        "Could retrieve key '" + alias + "'. You may need to provide a password");
+                            }
+                            return FormValidation.warning(e,
+                                    "Could retrieve key '" + alias + "'");
+                        }
+                    }
+                }
+                return FormValidation.ok(StringUtils
+                        .defaultIfEmpty(StandardCertificateCredentials.NameProvider.getSubjectDN(keyStore),
+                                buf.toString()));
+            } catch (KeyStoreException e) {
+                return FormValidation.warning(e, "Could not load keystore");
+            } catch (CertificateException e) {
+                return FormValidation.warning(e, "Could not load keystore");
+            } catch (NoSuchAlgorithmException e) {
+                return FormValidation.warning(e, "Could not load keystore");
+            } catch (IOException e) {
+                return FormValidation.warning(e, "Could not load keystore");
+            } finally {
+                if (passwordChars != null) {
+                    Arrays.fill(passwordChars, ' ');
+                }
+            }
+        }
     }
 
     /**
@@ -270,82 +322,16 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 }
                 File file = new File(value);
                 if (file.isFile()) {
-                    byte[] bytes;
                     try {
-                        bytes = FileUtils.readFileToByteArray(file);
+                        return validateCertificateKeystore("PKCS12", FileUtils.readFileToByteArray(file), password);
                     } catch (IOException e) {
                         return FormValidation.error("Could not read file '" + value + "'", e);
                     }
-                    char[] passwordChars = toCharArray(Secret.fromString(password));
-                    KeyStore.PasswordProtection passwordProtection = new KeyStore.PasswordProtection(passwordChars);
-                    try {
-                        KeyStore keyStore = KeyStore.getInstance("PKCS12");
-                        keyStore.load(new ByteArrayInputStream(bytes), passwordChars);
-                        int size = keyStore.size();
-                        if (size == 0) {
-                            return FormValidation.warning("Empty keystore");
-                        }
-                        StringBuilder buf = new StringBuilder();
-                        boolean first = true;
-                        for (Enumeration<String> enumeration = keyStore.aliases(); enumeration.hasMoreElements(); ) {
-                            String alias = enumeration.nextElement();
-                            if (first) {
-                                first = false;
-                            } else {
-                                buf.append(", ");
-                            }
-                            buf.append(alias);
-                            if (keyStore.isCertificateEntry(alias)) {
-                                try {
-                                    keyStore.getEntry(alias, null);
-                                } catch (UnrecoverableEntryException e) {
-                                    return FormValidation.warning(e,
-                                            "Could retrieve certificate '" + alias + "' from keystore '" + value + "'");
-                                } catch (UnsupportedOperationException e) {
-                                    // ignore
-                                }
-                            } else if (keyStore.isKeyEntry(alias)) {
-                                try {
-                                    keyStore.getEntry(alias, passwordProtection);
-                                } catch (UnrecoverableEntryException e) {
-                                    if (passwordChars == null || passwordChars.length == 0) {
-                                        return FormValidation.warning(e,
-                                                "Could retrieve key '" + alias + "' from keystore '" + value
-                                                        + "'. You may need to provide a password");
-                                    }
-                                    return FormValidation.warning(e,
-                                            "Could retrieve key '" + alias + "' from keystore '" + value + "'");
-                                } catch (UnsupportedOperationException e) {
-                                    // ignore
-                                }
-                            }
-                        }
-                        return FormValidation.ok(StringUtils
-                                .defaultIfEmpty(StandardCertificateCredentials.NameProvider.getSubjectDN(keyStore),
-                                        buf.toString()));
-                    } catch (KeyStoreException e) {
-                        return FormValidation.warning(e, "Could not load keystore from '" + value + "'");
-                    } catch (CertificateException e) {
-                        return FormValidation.warning(e, "Could not load keystore from '" + value + "'");
-                    } catch (NoSuchAlgorithmException e) {
-                        return FormValidation.warning(e, "Could not load keystore from '" + value + "'");
-                    } catch (IOException e) {
-                        return FormValidation.warning(e, "Could not load keystore from '" + value + "'");
-                    } finally {
-                        try {
-                            passwordProtection.destroy();
-                        } catch (DestroyFailedException e) {
-                            // ignore
-                        }
-                        if (passwordChars != null) {
-                            Arrays.fill(passwordChars, ' ');
-                        }
-                    }
-
                 } else {
                     return FormValidation.error("The file '" + value + "' does not exist");
                 }
             }
+
         }
     }
 
