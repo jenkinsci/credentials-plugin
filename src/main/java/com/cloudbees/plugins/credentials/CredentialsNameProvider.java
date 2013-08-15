@@ -26,6 +26,11 @@ package com.cloudbees.plugins.credentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Stack;
+
 /**
  * Provides names for credentials.
  *
@@ -55,7 +60,13 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
         @CheckForNull
         NameWith nameWith = credentials.getClass().getAnnotation(NameWith.class);
         if (!isValidNameWithAnnotation(nameWith)) {
-            for (Class<?> interfaze : credentials.getClass().getInterfaces()) {
+            Queue<Class<?>> queue = new LinkedList<Class<?>>();
+            queue.addAll(Arrays.asList(credentials.getClass().getInterfaces()));
+            while (!queue.isEmpty()) {
+                Class<?> interfaze = queue.remove();
+                if (interfaze.getInterfaces().length > 0) {
+                    queue.addAll(Arrays.asList(interfaze.getInterfaces()));
+                }
                 NameWith annotation = interfaze.getAnnotation(NameWith.class);
                 if (!isValidNameWithAnnotation(annotation)) {
                     continue;
