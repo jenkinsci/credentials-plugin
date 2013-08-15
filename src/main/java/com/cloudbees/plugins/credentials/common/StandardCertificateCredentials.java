@@ -25,6 +25,8 @@ package com.cloudbees.plugins.credentials.common;
 
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import com.cloudbees.plugins.credentials.NameWith;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
 
 import java.security.KeyStore;
@@ -43,21 +45,32 @@ import java.util.Enumeration;
 public interface StandardCertificateCredentials extends StandardCredentials, CertificateCredentials {
     /**
      * Our name provider.
+     *
+     * @since 1.7
      */
     public static class NameProvider extends CredentialsNameProvider<StandardCertificateCredentials> {
 
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
-        public String getName(StandardCertificateCredentials c) {
+        public String getName(@NonNull StandardCertificateCredentials c) {
             String description = Util.fixEmptyAndTrim(c.getDescription());
             String subjectDN = getSubjectDN(c.getKeyStore());
             return (subjectDN == null ? c.getDescriptor().getDisplayName() : subjectDN)
                     + (description != null ? " (" + description + ")" : "");
         }
 
-        public static String getSubjectDN(KeyStore keyStore) {
+        /**
+         * Returns the Subject DN of the first key with an x509 certificate in its certificate chain.
+         *
+         * @param keyStore the keystore.
+         * @return the subject DN or {@code null}
+         */
+        @CheckForNull
+        public static String getSubjectDN(@NonNull KeyStore keyStore) {
+            keyStore.getClass(); // throw NPE if null
             try {
                 for (Enumeration<String> enumeration = keyStore.aliases(); enumeration.hasMoreElements(); ) {
                     String alias = enumeration.nextElement();

@@ -23,11 +23,32 @@
  */
 package com.cloudbees.plugins.credentials.common;
 
+import com.cloudbees.plugins.credentials.CredentialsNameProvider;
+import com.cloudbees.plugins.credentials.NameWith;
+import edu.umd.cs.findbugs.annotations.NonNull;
+
 /**
  * Credentials that have both a username and a password component.
  *
  * @since 1.5
  */
 @LegacyMixIn(preferred = StandardUsernamePasswordCredentials.class)
+@NameWith(value = UsernamePasswordCredentials.NameProvider.class, priority = 1)
 public interface UsernamePasswordCredentials extends UsernameCredentials, PasswordCredentials {
+    /**
+     * Our name provider.
+     *
+     * @since 1.7
+     */
+    public static class NameProvider extends CredentialsNameProvider<UsernamePasswordCredentials> {
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public String getName(@NonNull UsernamePasswordCredentials credentials) {
+            return credentials.getUsername() + "/******";
+        }
+    }
 }

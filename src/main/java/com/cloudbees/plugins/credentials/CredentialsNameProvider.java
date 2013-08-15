@@ -24,23 +24,40 @@
 package com.cloudbees.plugins.credentials;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * Provides names for credentials.
  *
+ * @see NameWith
  * @since 1.7
  */
 public abstract class CredentialsNameProvider<C extends Credentials> {
 
-    public abstract String getName(C credentials);
+    /**
+     * Name the credential.
+     *
+     * @param credentials the credential to name.
+     * @return the name.
+     */
+    @NonNull
+    public abstract String getName(@NonNull C credentials);
 
-    public static String name(Credentials credentials) {
+    /**
+     * Name the credential.
+     *
+     * @param credentials the credential to name.
+     * @return the name.
+     */
+    @NonNull
+    public static String name(@NonNull Credentials credentials) {
+        credentials.getClass(); // throw NPE if null
         @CheckForNull
         NameWith nameWith = credentials.getClass().getAnnotation(NameWith.class);
-        if (nameWith == null || nameWith.value() == null) {
+        if (!isValidNameWithAnnotation(nameWith)) {
             for (Class<?> interfaze : credentials.getClass().getInterfaces()) {
                 NameWith annotation = interfaze.getAnnotation(NameWith.class);
-                if (annotation == null || annotation.value() == null) {
+                if (!isValidNameWithAnnotation(annotation)) {
                     continue;
                 }
                 if (nameWith == null || nameWith.priority() < annotation.priority()) {
@@ -48,7 +65,7 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
                 }
             }
         }
-        if (nameWith != null) {
+        if (isValidNameWithAnnotation(nameWith)) {
             try {
                 CredentialsNameProvider nameProvider = nameWith.value().newInstance();
                 return nameProvider.getName(credentials);
@@ -65,5 +82,16 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
         } catch (AssertionError e) {
             return credentials.getClass().getSimpleName();
         }
+    }
+
+    /**
+     * Check that the annotation is valid.
+     *
+     * @param nameWith the annotation.
+     * @return {@code true} only if the annotation is valid.
+     */
+    @SuppressWarnings("ConstantConditions")
+    private static boolean isValidNameWithAnnotation(@CheckForNull NameWith nameWith) {
+        return nameWith != null && nameWith.value() != null;
     }
 }

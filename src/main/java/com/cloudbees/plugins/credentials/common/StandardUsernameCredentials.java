@@ -25,6 +25,7 @@ package com.cloudbees.plugins.credentials.common;
 
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import com.cloudbees.plugins.credentials.NameWith;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
 
 /**
@@ -38,12 +39,17 @@ import hudson.Util;
 public interface StandardUsernameCredentials extends StandardCredentials, UsernameCredentials {
     /**
      * Our name provider.
+     *
+     * @since 1.7
      */
     public static class NameProvider extends CredentialsNameProvider<StandardUsernameCredentials> {
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
         @Override
-        public String getName(StandardUsernameCredentials c) {
+        public String getName(@NonNull StandardUsernameCredentials c) {
             String description = Util.fixEmptyAndTrim(c.getDescription());
             return c.getUsername() + (description != null ? " (" + description + ")" : "");
         }

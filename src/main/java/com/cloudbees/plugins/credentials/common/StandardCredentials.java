@@ -49,12 +49,17 @@ public interface StandardCredentials extends IdCredentials {
 
     /**
      * Our name provider.
+     *
+     * @since 1.7
      */
     public static class NameProvider extends CredentialsNameProvider<StandardCredentials> {
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
         @Override
-        public String getName(StandardCredentials c) {
+        public String getName(@NonNull StandardCredentials c) {
             String description = Util.fixEmptyAndTrim(c.getDescription());
             return c.getId() + (description != null ? " (" + description + ")" : "");
         }

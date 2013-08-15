@@ -46,12 +46,17 @@ public interface UsernameCredentials extends Credentials {
 
     /**
      * Our name provider.
+     *
+     * @since 1.7
      */
     public static class NameProvider extends CredentialsNameProvider<UsernameCredentials> {
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
         @Override
-        public String getName(UsernameCredentials credentials) {
+        public String getName(@NonNull UsernameCredentials credentials) {
             return credentials.getUsername();
         }
     }
