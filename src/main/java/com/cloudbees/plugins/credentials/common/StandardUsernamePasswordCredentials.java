@@ -23,11 +23,34 @@
  */
 package com.cloudbees.plugins.credentials.common;
 
+import com.cloudbees.plugins.credentials.CredentialsNameProvider;
+import com.cloudbees.plugins.credentials.NameWith;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.Util;
+
 /**
  * The credential interface that standard username password based credentials should aim to implement.
  *
  * @since 1.6
  */
 @Recommended(since = "1.6")
+@NameWith(value = StandardUsernamePasswordCredentials.NameProvider.class, priority = 32)
 public interface StandardUsernamePasswordCredentials extends StandardUsernameCredentials, UsernamePasswordCredentials {
+    /**
+     * Our name provider.
+     *
+     * @since 1.7.2
+     */
+    public static class NameProvider extends CredentialsNameProvider<StandardUsernameCredentials> {
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public String getName(@NonNull StandardUsernameCredentials c) {
+            String description = Util.fixEmptyAndTrim(c.getDescription());
+            return c.getUsername() + "/******" + (description != null ? " (" + description + ")" : "");
+        }
+    }
 }
