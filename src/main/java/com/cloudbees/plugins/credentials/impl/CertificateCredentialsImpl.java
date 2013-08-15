@@ -3,6 +3,7 @@ package com.cloudbees.plugins.credentials.impl;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
+import com.trilead.ssh2.crypto.Base64;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
@@ -15,14 +16,19 @@ import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.remoting.Channel;
 import hudson.util.FormValidation;
+import hudson.util.HttpResponses;
 import hudson.util.IOUtils;
 import hudson.util.Secret;
 import net.jcip.annotations.GuardedBy;
+import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
+import javax.servlet.ServletException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -116,6 +122,10 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         return password;
     }
 
+    public boolean isPasswordEmpty() {
+        return StringUtils.isEmpty(password.getPlainText());
+    }
+
     public KeyStoreSource getKeyStoreSource() {
         return keyStoreSource;
     }
@@ -169,7 +179,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             super(clazz);
         }
 
-        protected static FormValidation validateCertificateKeystore(String type, byte[] keystoreBytes, String password) {
+        protected static FormValidation validateCertificateKeystore(String type, byte[] keystoreBytes,
+                                                                    String password) {
 
             char[] passwordChars = toCharArray(Secret.fromString(password));
             try {
@@ -335,4 +346,128 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
     }
 
+    /**
+     * Let the user reference a file on the disk.
+     */
+    public static class UploadedKeyStoreSource extends KeyStoreSource {
+        /**
+         * Ensure consistent serialization.
+         */
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Our logger.
+         */
+        private static final Logger LOGGER = Logger.getLogger(FileOnMasterKeyStoreSource.class.getName());
+
+        /**
+         * The uploaded keystore.
+         */
+        @CheckForNull
+        private final Secret uploadedKeystore;
+
+        @SuppressWarnings("unused") // by stapler
+        @DataBoundConstructor
+        public UploadedKeyStoreSource(String uploadedKeystore) {
+            this.uploadedKeystore = StringUtils.isBlank(uploadedKeystore) ? null : Secret.fromString(uploadedKeystore);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public byte[] getKeyStoreBytes() {
+            return DescriptorImpl.toByteArray(uploadedKeystore);
+        }
+
+        @Override
+        public long getKeyStoreLastModified() {
+            return 0L;
+        }
+
+        /**
+         * Returns the private key file name.
+         *
+         * @return the private key file name.
+         */
+        public String getUploadedKeystore() {
+            return uploadedKeystore == null ? "" : uploadedKeystore.getEncryptedValue();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Extension
+        public static class DescriptorImpl extends KeyStoreSourceDescriptor {
+
+            /**
+             * {@inheritDoc}
+             */
+            @Override
+            public String getDisplayName() {
+                return Messages.CertificateCredentialsImpl_UploadedKeyStoreSourceDisplayName();
+            }
+
+            public static byte[] toByteArray(Secret secret) {
+                if (secret != null) {
+                    try {
+                        return Base64.decode(secret.getPlainText().toCharArray());
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                }
+                return new byte[0];
+            }
+
+            public static Secret toSecret(byte[] contents) {
+                return contents == null || contents.length == 0
+                        ? null
+                        : Secret.fromString(new String(Base64.encode(contents)));
+            }
+
+            public FormValidation doCheckUploadedKeystore(@QueryParameter String value,
+                                                          @QueryParameter @RelativePath("..") String password) {
+                if (StringUtils.isBlank(value)) {
+                    return FormValidation.error("No certificate uploaded");
+                }
+                return validateCertificateKeystore("PKCS12", toByteArray(Secret.fromString(value)), password);
+            }
+
+            public Upload getUpload(String divId) {
+                return new Upload(divId, null);
+            }
+
+
+        }
+
+        public static class Upload {
+
+            private final String divId;
+
+            private final Secret uploadedKeystore;
+
+            public Upload(String divId, Secret uploadedKeystore) {
+                this.divId = divId;
+                this.uploadedKeystore = uploadedKeystore;
+            }
+
+            public String getDivId() {
+                return divId;
+            }
+
+            public Secret getUploadedKeystore() {
+                return uploadedKeystore;
+            }
+
+            public HttpResponse doUpload(StaplerRequest req) throws ServletException, IOException {
+                FileItem file = req.getFileItem("certificate.file");
+                if (file == null) {
+                    throw new ServletException("no file upload");
+                }
+                return HttpResponses.forwardToView(
+                        new Upload(getDivId(), UploadedKeyStoreSource.DescriptorImpl.toSecret(file.get())), "complete");
+            }
+        }
+    }
 }
