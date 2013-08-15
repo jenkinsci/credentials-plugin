@@ -188,7 +188,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 keyStore.load(new ByteArrayInputStream(keystoreBytes), passwordChars);
                 int size = keyStore.size();
                 if (size == 0) {
-                    return FormValidation.warning("Empty keystore");
+                    return FormValidation.warning(Messages.CertificateCredentialsImpl_EmptyKeystore());
                 }
                 StringBuilder buf = new StringBuilder();
                 boolean first = true;
@@ -208,10 +208,10 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                         } catch (UnrecoverableEntryException e) {
                             if (passwordChars == null || passwordChars.length == 0) {
                                 return FormValidation.warning(e,
-                                        "Could retrieve key '" + alias + "'. You may need to provide a password");
+                                        Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword(alias));
                             }
                             return FormValidation.warning(e,
-                                    "Could retrieve key '" + alias + "'");
+                                    Messages.CertificateCredentialsImpl_LoadKeyFailed(alias));
                         }
                     }
                 }
@@ -219,13 +219,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                         .defaultIfEmpty(StandardCertificateCredentials.NameProvider.getSubjectDN(keyStore),
                                 buf.toString()));
             } catch (KeyStoreException e) {
-                return FormValidation.warning(e, "Could not load keystore");
+                return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
             } catch (CertificateException e) {
-                return FormValidation.warning(e, "Could not load keystore");
+                return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
             } catch (NoSuchAlgorithmException e) {
-                return FormValidation.warning(e, "Could not load keystore");
+                return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
             } catch (IOException e) {
-                return FormValidation.warning(e, "Could not load keystore");
+                return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
             } finally {
                 if (passwordChars != null) {
                     Arrays.fill(passwordChars, ' ');
@@ -329,17 +329,17 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             public FormValidation doCheckKeyStoreFile(@QueryParameter String value,
                                                       @QueryParameter @RelativePath("..") String password) {
                 if (StringUtils.isBlank(value)) {
-                    return FormValidation.error("You must specify the file path");
+                    return FormValidation.error(Messages.CertificateCredentialsImpl_KeyStoreFileUnspecified());
                 }
                 File file = new File(value);
                 if (file.isFile()) {
                     try {
                         return validateCertificateKeystore("PKCS12", FileUtils.readFileToByteArray(file), password);
                     } catch (IOException e) {
-                        return FormValidation.error("Could not read file '" + value + "'", e);
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_KeyStoreFileUnreadable(value), e);
                     }
                 } else {
-                    return FormValidation.error("The file '" + value + "' does not exist");
+                    return FormValidation.error(Messages.CertificateCredentialsImpl_KeyStoreFileDoesNotExist(value));
                 }
             }
 
@@ -429,7 +429,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             public FormValidation doCheckUploadedKeystore(@QueryParameter String value,
                                                           @QueryParameter @RelativePath("..") String password) {
                 if (StringUtils.isBlank(value)) {
-                    return FormValidation.error("No certificate uploaded");
+                    return FormValidation.error(Messages.CertificateCredentialsImpl_NoCertificateUploaded());
                 }
                 return validateCertificateKeystore("PKCS12", toByteArray(Secret.fromString(value)), password);
             }
