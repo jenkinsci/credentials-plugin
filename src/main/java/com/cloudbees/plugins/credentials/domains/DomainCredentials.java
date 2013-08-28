@@ -221,4 +221,18 @@ public class DomainCredentials {
         }
         return result;
     }
+
+    /**
+     * Helper method used by the {@code domainCredentials.jelly} taglib to ensure the list is valid.
+     * @param list the list.
+     * @return the list with fixes applied.
+     */
+    @NonNull
+    public static List<DomainCredentials> fixList(@CheckForNull List<DomainCredentials> list) {
+        Map<Domain, List<Credentials>> map = asMap(list);
+        if (!map.containsKey(Domain.global())) {
+            map.put(Domain.global(), new CopyOnWriteArrayList<Credentials>());
+        }
+        return asList(map);
+    }
 }
