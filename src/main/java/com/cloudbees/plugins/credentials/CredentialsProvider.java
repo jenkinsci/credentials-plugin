@@ -68,41 +68,41 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     /**
      * The permission group for credentials.
      *
-     * @since 2.0
+     * @since 1.8
      */
-    public final PermissionGroup GROUP = new PermissionGroup(CredentialsProvider.class,
+    public static final PermissionGroup GROUP = new PermissionGroup(CredentialsProvider.class,
             Messages._CredentialsProvider_PermissionGroupTitle());
 
     /**
      * The permission for adding credentials to a {@link CredentialsStore}.
      *
-     * @since 2.0
+     * @since 1.8
      */
-    public final Permission CREATE = new Permission(GROUP, "Create",
+    public static final Permission CREATE = new Permission(GROUP, "Create",
             Messages._CredentialsProvider_CreatePermissionDescription(), Permission.CREATE, PermissionScope.JENKINS);
 
     /**
      * The permission for updating credentials in a {@link CredentialsStore}.
      *
-     * @since 2.0
+     * @since 1.8
      */
-    public final Permission UPDATE = new Permission(GROUP, "Update",
+    public static final Permission UPDATE = new Permission(GROUP, "Update",
             Messages._CredentialsProvider_UpdatePermissionDescription(), Permission.UPDATE, PermissionScope.JENKINS);
 
     /**
      * The permission for viewing credentials in a {@link CredentialsStore}.
      *
-     * @since 2.0
+     * @since 1.8
      */
-    public final Permission VIEW = new Permission(GROUP, "View",
+    public static final Permission VIEW = new Permission(GROUP, "View",
             Messages._CredentialsProvider_ViewPermissionDescription(), Permission.READ, PermissionScope.JENKINS);
 
     /**
      * The permission for removing credentials from a {@link CredentialsStore}.
      *
-     * @since 2.0
+     * @since 1.8
      */
-    public final Permission DELETE = new Permission(GROUP, "Delete",
+    public static final Permission DELETE = new Permission(GROUP, "Delete",
             Messages._CredentialsProvider_DeletePermissionDescription(), Permission.DELETE, PermissionScope.JENKINS);
 
     /**
@@ -134,7 +134,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param object the {@link Item} or {@link ItemGroup} that the store is being requested of.
      * @return either {@code null} or a scoped {@link CredentialsStore} where
      *         {@link com.cloudbees.plugins.credentials.CredentialsStore#getContext()} {@code == object}.
-     * @since 2.0
+     * @since 1.8
      */
     @CheckForNull
     public CredentialsStore getStore(@CheckForNull ModelObject object) {
@@ -525,7 +525,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      *
      * @param object the {@link Item} or {@link ItemGroup} to get the {@link CredentialsStore}s of.
      * @return a lazy {@link Iterable} of all {@link CredentialsStore} instances.
-     * @since 2.0
+     * @since 1.8
      */
     public static Iterable<CredentialsStore> lookupStores(final ModelObject object) {
         final ExtensionList<CredentialsProvider> providers;

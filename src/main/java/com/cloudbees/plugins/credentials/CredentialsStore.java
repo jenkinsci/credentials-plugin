@@ -40,7 +40,7 @@ import java.util.List;
  * A store of {@link Credentials}.
  *
  * @author Stephen Connolly
- * @since 2.0
+ * @since 1.8
  */
 public abstract class CredentialsStore {
 
