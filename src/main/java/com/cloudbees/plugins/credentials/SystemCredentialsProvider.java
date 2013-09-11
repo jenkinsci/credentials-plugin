@@ -40,6 +40,7 @@ import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.ManagementLink;
 import hudson.model.ModelObject;
+import hudson.model.RootAction;
 import hudson.model.Saveable;
 import hudson.security.ACL;
 import hudson.security.Permission;
@@ -581,6 +582,14 @@ public class SystemCredentialsProvider extends ManagementLink
         public boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
                                          @NonNull Credentials replacement) throws IOException {
             return SystemCredentialsProvider.getInstance().updateCredentials(domain, current, replacement);
+        }
+    }
+
+    @Extension
+    public static class UserFacingAction extends CredentialsStoreAction implements RootAction {
+
+        public CredentialsStore getStore() {
+            return SystemCredentialsProvider.getInstance().getStore();
         }
     }
 }
