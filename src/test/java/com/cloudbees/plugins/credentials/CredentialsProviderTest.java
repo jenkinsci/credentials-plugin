@@ -24,6 +24,7 @@
 package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyLegacyCredentials;
 import hudson.model.Descriptor;
@@ -32,6 +33,7 @@ import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.security.ACL;
+import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.jvnet.hudson.test.HudsonTestCase;
 
@@ -65,6 +67,49 @@ public class CredentialsProviderTest extends HudsonTestCase {
 
         SystemCredentialsProvider.getInstance().getCredentials().add(
                 new DummyCredentials(CredentialsScope.GLOBAL, "manchu", "bar"));
+
+        assertFalse(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, ACL.SYSTEM).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, Hudson.ANONYMOUS).isEmpty());
+        assertFalse("null auth -> ACL.SYSTEM",
+                CredentialsProvider.lookupCredentials(DummyCredentials.class, (Authentication) null).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Hudson.getInstance()).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials(DummyCredentials.class, (ItemGroup) null).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, project).isEmpty());
+        assertEquals(CredentialsProvider.lookupCredentials(DummyCredentials.class, project).size(), 1);
+        assertEquals(
+                CredentialsProvider.lookupCredentials(DummyCredentials.class, project).iterator().next().getUsername(),
+                "manchu");
+
+    }
+
+    public void testNoCredentialsUntilWeAddSomeViaStore() throws Exception {
+        FreeStyleProject project = createFreeStyleProject();
+        assertTrue(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
+        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        store.addCredentials(Domain.global(), new DummyCredentials(CredentialsScope.SYSTEM, "foo", "bar"));
+        assertFalse(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, ACL.SYSTEM).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, Hudson.ANONYMOUS).isEmpty());
+        assertFalse("null auth -> ACL.SYSTEM",
+                CredentialsProvider.lookupCredentials(DummyCredentials.class, (Authentication) null).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Hudson.getInstance()).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials(DummyCredentials.class, (ItemGroup) null).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, project).isEmpty());
+
+        store.addCredentials(Domain.global(), new DummyCredentials(CredentialsScope.GLOBAL, "manchu", "bar"));
 
         assertFalse(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
         assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class).isEmpty());

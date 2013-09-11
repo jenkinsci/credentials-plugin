@@ -36,13 +36,19 @@ import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
 import hudson.security.ACL;
+import hudson.security.Permission;
+import hudson.security.PermissionGroup;
+import hudson.security.PermissionScope;
+import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,6 +64,46 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @since 1.6
      */
     private static final Logger LOGGER = Logger.getLogger(CredentialsProvider.class.getName());
+
+    /**
+     * The permission group for credentials.
+     *
+     * @since 2.0
+     */
+    public final PermissionGroup GROUP = new PermissionGroup(CredentialsProvider.class,
+            Messages._CredentialsProvider_PermissionGroupTitle());
+
+    /**
+     * The permission for adding credentials to a {@link CredentialsStore}.
+     *
+     * @since 2.0
+     */
+    public final Permission CREATE = new Permission(GROUP, "Create",
+            Messages._CredentialsProvider_CreatePermissionDescription(), Permission.CREATE, PermissionScope.JENKINS);
+
+    /**
+     * The permission for updating credentials in a {@link CredentialsStore}.
+     *
+     * @since 2.0
+     */
+    public final Permission UPDATE = new Permission(GROUP, "Update",
+            Messages._CredentialsProvider_UpdatePermissionDescription(), Permission.UPDATE, PermissionScope.JENKINS);
+
+    /**
+     * The permission for viewing credentials in a {@link CredentialsStore}.
+     *
+     * @since 2.0
+     */
+    public final Permission VIEW = new Permission(GROUP, "View",
+            Messages._CredentialsProvider_ViewPermissionDescription(), Permission.READ, PermissionScope.JENKINS);
+
+    /**
+     * The permission for removing credentials from a {@link CredentialsStore}.
+     *
+     * @since 2.0
+     */
+    public final Permission DELETE = new Permission(GROUP, "Delete",
+            Messages._CredentialsProvider_DeletePermissionDescription(), Permission.DELETE, PermissionScope.JENKINS);
 
     /**
      * Returns all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
@@ -77,6 +123,21 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      *         container.
      */
     public Set<CredentialsScope> getScopes(ModelObject object) {
+        return null;
+    }
+
+    /**
+     * Returns the {@link CredentialsStore} that this {@link CredentialsProvider} maintains specifically for this
+     * {@link ModelObject} or {@code null} if either the object is not a credentials container or this
+     * {@link CredentialsProvider} does not maintain a store specifically bound to this {@link ModelObject}.
+     *
+     * @param object the {@link Item} or {@link ItemGroup} that the store is being requested of.
+     * @return either {@code null} or a scoped {@link CredentialsStore} where
+     *         {@link com.cloudbees.plugins.credentials.CredentialsStore#getContext()} {@code == object}.
+     * @since 2.0
+     */
+    @CheckForNull
+    public CredentialsStore getStore(@CheckForNull ModelObject object) {
         return null;
     }
 
@@ -455,5 +516,69 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             }
         }
         return result;
+    }
+
+    /**
+     * Returns a lazy {@link Iterable} of all the {@link CredentialsStore} instances contributing credentials to the
+     * supplied
+     * object.
+     *
+     * @param object the {@link Item} or {@link ItemGroup} to get the {@link CredentialsStore}s of.
+     * @return a lazy {@link Iterable} of all {@link CredentialsStore} instances.
+     * @since 2.0
+     */
+    public static Iterable<CredentialsStore> lookupStores(final ModelObject object) {
+        final ExtensionList<CredentialsProvider> providers;
+        try {
+            providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
+        } catch (Exception e) {
+            return Collections.emptySet();
+        }
+        return new Iterable<CredentialsStore>() {
+            public Iterator<CredentialsStore> iterator() {
+                return new Iterator<CredentialsStore>() {
+                    private ModelObject current = object;
+                    private Iterator<CredentialsProvider> iterator= providers.iterator();
+                    private CredentialsStore next;
+
+                    public boolean hasNext() {
+                        if (next != null) {
+                            return true;
+                        }
+                        while (current != null) {
+                            while (iterator.hasNext()) {
+                                CredentialsProvider p = iterator.next();
+                                next = p.getStore(current);
+                                if (next != null) {
+                                    return true;
+                                }
+                            }
+                            if (current instanceof Item) {
+                                current = ((Item) current).getParent();
+                                iterator = providers.iterator();
+                            } else if (current instanceof Jenkins) {
+                                current = null;
+                            }
+                        }
+                        return false;
+                    }
+
+                    public CredentialsStore next() {
+                        if (!hasNext()) {
+                            throw new NoSuchElementException();
+                        }
+                        try {
+                            return next;
+                        } finally {
+                            next = null;
+                        }
+                    }
+
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        };
     }
 }

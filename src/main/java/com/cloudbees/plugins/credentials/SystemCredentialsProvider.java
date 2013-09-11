@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.DescriptorExtensionList;
@@ -41,6 +42,7 @@ import hudson.model.ManagementLink;
 import hudson.model.ModelObject;
 import hudson.model.Saveable;
 import hudson.security.ACL;
+import hudson.security.Permission;
 import hudson.util.CopyOnWriteMap;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -96,6 +98,8 @@ public class SystemCredentialsProvider extends ManagementLink
      * @since 1.5
      */
     private Map<Domain, List<Credentials>> domainCredentialsMap = new CopyOnWriteMap.Hash<Domain, List<Credentials>>();
+
+    private transient StoreImpl store = new StoreImpl();
 
     /**
      * Constructor.
@@ -188,6 +192,122 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     public synchronized void setDomainCredentialsMap(Map<Domain, List<Credentials>> domainCredentialsMap) {
         this.domainCredentialsMap = DomainCredentials.toCopyOnWriteMap(domainCredentialsMap);
+    }
+
+    /**
+     * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+     */
+    private synchronized boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException {
+        Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+        if (domainCredentialsMap.containsKey(domain)) {
+            List<Credentials> list = domainCredentialsMap.get(domain);
+            boolean modified = false;
+            for (Credentials c : credentials) {
+                if (list.contains(c)) {
+                    continue;
+                }
+                list.add(c);
+                modified = true;
+            }
+            if (modified) {
+                save();
+            }
+            return modified;
+        } else {
+            domainCredentialsMap.put(domain, new ArrayList<Credentials>(credentials));
+            save();
+            return true;
+        }
+    }
+
+    /**
+     * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+     */
+    private synchronized boolean removeDomain(@NonNull Domain domain) throws IOException {
+        Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+        if (domainCredentialsMap.containsKey(domain)) {
+            domainCredentialsMap.remove(domain);
+            save();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+     */
+    private synchronized boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials)
+            throws IOException {
+        Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+        if (domainCredentialsMap.containsKey(domain)) {
+            List<Credentials> list = domainCredentialsMap.get(domain);
+            if (list.contains(credentials)) {
+                return false;
+            }
+            list.add(credentials);
+            save();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+     */
+    @NonNull
+    private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
+        List<Credentials> list = getDomainCredentialsMap().get(domain);
+        if (list == null || list.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(new ArrayList<Credentials>(list));
+    }
+
+    /**
+     * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+     */
+    private synchronized boolean removeCredentials(@NonNull Domain domain, @NonNull Credentials credentials)
+            throws IOException {
+        Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+        if (domainCredentialsMap.containsKey(domain)) {
+            List<Credentials> list = domainCredentialsMap.get(domain);
+            if (!list.contains(credentials)) {
+                return false;
+            }
+            list.remove(credentials);
+            save();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+     */
+    private synchronized boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
+                                                   @NonNull Credentials replacement) throws IOException {
+        Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+        if (domainCredentialsMap.containsKey(domain)) {
+            List<Credentials> list = domainCredentialsMap.get(domain);
+            int index = list.indexOf(current);
+            if (index == -1) {
+                return false;
+            }
+            list.set(index, replacement);
+            save();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Implementation for {@link ProviderImpl} to delegate to while keeping the lock synchronization simple.
+     */
+    private synchronized StoreImpl getStore() {
+        if (store == null) {
+            store = new StoreImpl();
+        }
+        return store;
     }
 
     /**
@@ -360,5 +480,107 @@ public class SystemCredentialsProvider extends ManagementLink
             return new ArrayList<C>();
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public CredentialsStore getStore(@CheckForNull ModelObject object) {
+            if (object == Jenkins.getInstance()) {
+                return SystemCredentialsProvider.getInstance().getStore();
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Our {@link CredentialsStore}.
+     */
+    public static class StoreImpl extends CredentialsStore {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public ModelObject getContext() {
+            return Jenkins.getInstance();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
+            // we follow the permissions of Jenkins itself
+            return Jenkins.getInstance().getACL().hasPermission(a, permission);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isDomainsModifiable() {
+            return true;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public List<Domain> getDomains() {
+            return Collections.unmodifiableList(new ArrayList<Domain>(
+                    SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet()
+            ));
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException {
+            return SystemCredentialsProvider.getInstance().addDomain(domain, credentials);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean removeDomain(@NonNull Domain domain) throws IOException {
+            return SystemCredentialsProvider.getInstance().removeDomain(domain);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException {
+            return SystemCredentialsProvider.getInstance().addCredentials(domain, credentials);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public List<Credentials> getCredentials(@NonNull Domain domain) {
+            return SystemCredentialsProvider.getInstance().getCredentials(domain);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean removeCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException {
+            return SystemCredentialsProvider.getInstance().removeCredentials(domain, credentials);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
+                                         @NonNull Credentials replacement) throws IOException {
+            return SystemCredentialsProvider.getInstance().updateCredentials(domain, current, replacement);
+        }
     }
 }
