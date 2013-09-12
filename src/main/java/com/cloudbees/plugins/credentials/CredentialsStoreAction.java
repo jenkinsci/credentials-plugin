@@ -227,6 +227,10 @@ public abstract class CredentialsStoreAction implements Action {
             return domain == Domain.global();
         }
 
+        public CredentialsWrapper.DescriptorImpl getCredentialDescriptor() {
+            return Jenkins.getInstance().getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
+        }
+
         public Map<String, CredentialsWrapper> getCredentials() {
             Map<String, CredentialsWrapper> result = new LinkedHashMap<String, CredentialsWrapper>();
             int index = 0;
@@ -248,6 +252,18 @@ public abstract class CredentialsStoreAction implements Action {
 
         public CredentialsWrapper getCredential(String id) {
             return getCredentials().get(id);
+        }
+
+        public HttpResponse doCreateCredentials(StaplerRequest req) throws ServletException, IOException {
+            if (!"POST".equals(req.getMethod())) {
+                // TODO add @RequirePOST
+                return HttpResponses.status(405);
+            }
+            getStore().checkPermission(CREATE);
+            JSONObject data = req.getSubmittedForm();
+            Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
+            getStore().addCredentials(domain, credentials);
+            return HttpResponses.redirectToDot();
         }
 
         public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
