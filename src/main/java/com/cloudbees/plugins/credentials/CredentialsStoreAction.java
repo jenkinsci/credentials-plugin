@@ -440,6 +440,10 @@ public abstract class CredentialsStoreAction implements Action {
             public String getDisplayName() {
                 return "Credential";
             }
+
+            public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
+                return Jenkins.getInstance().getDescriptorList(Credentials.class);
+            }
         }
     }
 
