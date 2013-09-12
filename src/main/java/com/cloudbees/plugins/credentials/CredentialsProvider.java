@@ -106,6 +106,14 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             Messages._CredentialsProvider_DeletePermissionDescription(), Permission.DELETE, PermissionScope.JENKINS);
 
     /**
+     * The permission for managing credential domains in a {@link CredentialsStore}.
+     *
+     * @since 1.8
+     */
+    public static final Permission MANAGE_DOMAINS = new Permission(GROUP, "ManageDomains",
+            Messages._CredentialsProvider_ManageDomainsPermissionDescription(), Permission.CONFIGURE, PermissionScope.JENKINS);
+
+    /**
      * Returns all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
      *
      * @return all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
