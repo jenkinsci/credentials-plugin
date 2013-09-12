@@ -44,6 +44,8 @@ import java.util.List;
  */
 public abstract class CredentialsStore {
 
+    private transient Boolean domainsModifiable;
+
     /**
      * Returns the context within which this store operates. Credentials in this store will be available to
      * child contexts (unless {@link CredentialsScope#SYSTEM} is valid for the store) but will not be available to
@@ -99,19 +101,37 @@ public abstract class CredentialsStore {
      * Identifies whether this {@link CredentialsStore} supports making changes to the list of domains or
      * whether it only supports a fixed set of domains (which may only be one domain).
      * <p/>
-     * Note: Implementers that return {@code true} are expected to override the following methods:
+     * Note: in order for implementations to return {@code true} all of the following methods must be overridden:
      * <ul>
      * <li>{@link #getDomains}</li>
-     * <li>{@link #addDomain(com.cloudbees.plugins.credentials.domains.Domain, java.util.List)}</li>
-     * <li>{@link #addDomain(com.cloudbees.plugins.credentials.domains.Domain, Credentials...)}</li>
-     * <li>{@link #removeDomain(com.cloudbees.plugins.credentials.domains.Domain)}</li>
+     * <li>{@link #addDomain(Domain, java.util.List)}</li>
+     * <li>{@link #removeDomain(Domain)}</li>
+     * <li>{@link #updateDomain(Domain, Domain)} </li>
      * </ul>
      *
-     * @return {@code true} iff {@link #addDomain(com.cloudbees.plugins.credentials.domains.Domain, java.util.List)}
-     *         {@link #addDomain(com.cloudbees.plugins.credentials.domains.Domain, Credentials...)}
-     *         and {@link #removeDomain(com.cloudbees.plugins.credentials.domains.Domain)} are expected to work
+     * @return {@code true} iff {@link #addDomain(Domain, List)}
+     *         {@link #addDomain(Domain, Credentials...)}, {@link #removeDomain(Domain)}
+     *         and {@link #updateDomain(Domain, Domain)} are expected to work
      */
-    public abstract boolean isDomainsModifiable();
+    public final boolean isDomainsModifiable() {
+        if (domainsModifiable == null) {
+            try {
+                Class<? extends CredentialsStore> c = getClass();
+                domainsModifiable = (c.getMethod("getDomain").getDeclaringClass()
+                        != CredentialsStore.class)
+                        && (c.getMethod("addDomain", Domain.class, List.class).getDeclaringClass()
+                        != CredentialsStore.class)
+                        && (c.getMethod("removeDomain", Domain.class).getDeclaringClass()
+                        != CredentialsStore.class)
+                        && (c.getMethod("updateDomain", Domain.class, Domain.class).getDeclaringClass()
+                        != CredentialsStore.class);
+            } catch (NoSuchMethodException e) {
+                return false;
+            }
+
+        }
+        return domainsModifiable;
+    }
 
     /**
      * Returns an unmodifiable list of credentials for the specified domain.
@@ -156,6 +176,18 @@ public abstract class CredentialsStore {
      */
     public boolean removeDomain(@NonNull Domain domain) throws IOException {
         throw new UnsupportedOperationException("Implementation does not support removing domains");
+    }
+
+    /**
+     * Updates an existing {@link Domain} keeping the existing associated {@link Credentials}.
+     *
+     * @param current     the domain to update.
+     * @param replacement the new replacement domain.
+     * @return {@code true} if the {@link CredentialsStore} was modified.
+     * @throws IOException if the change could not be persisted.
+     */
+    public boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException {
+        throw new UnsupportedOperationException("Implementation does not support updating domains");
     }
 
     /**

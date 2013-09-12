@@ -237,6 +237,19 @@ public class SystemCredentialsProvider extends ManagementLink
     /**
      * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
      */
+    private synchronized boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException {
+        Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+        if (domainCredentialsMap.containsKey(current)) {
+            domainCredentialsMap.put(replacement, domainCredentialsMap.remove(current));
+            save();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+     */
     private synchronized boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials)
             throws IOException {
         Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
@@ -518,14 +531,6 @@ public class SystemCredentialsProvider extends ManagementLink
         /**
          * {@inheritDoc}
          */
-        @Override
-        public boolean isDomainsModifiable() {
-            return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
         @NonNull
         @Override
         public List<Domain> getDomains() {
@@ -548,6 +553,14 @@ public class SystemCredentialsProvider extends ManagementLink
         @Override
         public boolean removeDomain(@NonNull Domain domain) throws IOException {
             return SystemCredentialsProvider.getInstance().removeDomain(domain);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException {
+            return SystemCredentialsProvider.getInstance().updateDomain(current, replacement);
         }
 
         /**
