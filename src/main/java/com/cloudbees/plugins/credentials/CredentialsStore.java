@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A store of {@link Credentials}.
@@ -116,21 +118,31 @@ public abstract class CredentialsStore {
     public final boolean isDomainsModifiable() {
         if (domainsModifiable == null) {
             try {
-                Class<? extends CredentialsStore> c = getClass();
-                domainsModifiable = (c.getMethod("getDomain").getDeclaringClass()
-                        != CredentialsStore.class)
-                        && (c.getMethod("addDomain", Domain.class, List.class).getDeclaringClass()
-                        != CredentialsStore.class)
-                        && (c.getMethod("removeDomain", Domain.class).getDeclaringClass()
-                        != CredentialsStore.class)
-                        && (c.getMethod("updateDomain", Domain.class, Domain.class).getDeclaringClass()
-                        != CredentialsStore.class);
+                domainsModifiable = isOverridden("getDomains")
+                        && isOverridden("addDomain", Domain.class, List.class)
+                        && isOverridden("removeDomain", Domain.class)
+                        && isOverridden("updateDomain", Domain.class, Domain.class);
             } catch (NoSuchMethodException e) {
                 return false;
             }
 
         }
         return domainsModifiable;
+    }
+
+    /**
+     * Verifies if the specified method has been overridden by a subclass.
+     * @param name the name of the method.
+     * @param args the arguments.
+     * @return {@code true} if and only if the method is overridden by a subclass.
+     * @throws NoSuchMethodException if something is seriously wrong.
+     */
+    private boolean isOverridden(String name, Class... args) throws NoSuchMethodException {
+        if (getClass().getMethod(name, args).getDeclaringClass() != CredentialsStore.class) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
