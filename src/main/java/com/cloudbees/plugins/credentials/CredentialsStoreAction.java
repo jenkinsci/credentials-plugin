@@ -23,6 +23,8 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.common.IdCredentials;
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -33,6 +35,8 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Action;
 import hudson.model.Descriptor;
 import hudson.model.Failure;
+import hudson.model.Item;
+import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
 import hudson.security.Permission;
 import hudson.util.FormValidation;
@@ -47,6 +51,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -79,6 +84,40 @@ public abstract class CredentialsStoreAction implements Action {
 
     public String getUrlName() {
         return "credential-store";
+    }
+
+    public final String getFullName() {
+        String n;
+        ModelObject context = getStore().getContext();
+        if (context instanceof Item) {
+            n = ((Item) context).getFullName();
+        } else if (context instanceof ItemGroup) {
+            n = ((ItemGroup) context).getFullName();
+        } else {
+            n = "";
+        }
+        if (n.length() == 0) {
+            return getUrlName();
+        } else {
+            return n + '/' + getUrlName();
+        }
+    }
+
+    public final String getFullDisplayName() {
+        String n;
+        ModelObject context = getStore().getContext();
+        if (context instanceof Item) {
+            n = ((Item) context).getFullDisplayName();
+        } else if (context instanceof ItemGroup) {
+            n = ((ItemGroup) context).getFullDisplayName();
+        } else {
+            n = Jenkins.getInstance().getFullDisplayName();
+        }
+        if (n.length() == 0) {
+            return getDisplayName();
+        } else {
+            return n + " \u00BB " + getDisplayName();
+        }
     }
 
     public Map<String, DomainWrapper> getDomains() {
@@ -162,6 +201,24 @@ public abstract class CredentialsStoreAction implements Action {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDisplayName() : domain.getName();
         }
 
+        public final String getFullName() {
+            String n = getParent().getFullName();
+            if (n.length() == 0) {
+                return getUrlName();
+            } else {
+                return n + '/' + getUrlName();
+            }
+        }
+
+        public final String getFullDisplayName() {
+            String n = getParent().getFullDisplayName();
+            if (n.length() == 0) {
+                return getDisplayName();
+            } else {
+                return n + " \u00BB " + getDisplayName();
+            }
+        }
+
         public String getDescription() {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDescription() : domain.getDescription();
         }
@@ -170,15 +227,41 @@ public abstract class CredentialsStoreAction implements Action {
             return domain == Domain.global();
         }
 
+        public Map<String, CredentialsWrapper> getCredentials() {
+            Map<String, CredentialsWrapper> result = new LinkedHashMap<String, CredentialsWrapper>();
+            int index = 0;
+            for (Credentials c : getStore().getCredentials(domain)) {
+                String id;
+                if (c instanceof IdCredentials) {
+                    id = ((IdCredentials) c).getId();
+                } else {
+                    while (result.containsKey("index-" + index)) {
+                        index++;
+                    }
+                    id = "index-" + index;
+                    index++;
+                }
+                result.put(id, new CredentialsWrapper(this, c, id));
+            }
+            return result;
+        }
+
+        public CredentialsWrapper getCredential(String id) {
+            return getCredentials().get(id);
+        }
+
         public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
             if (!"POST".equals(req.getMethod())) {
                 // TODO add @RequirePOST
                 return HttpResponses.status(405);
             }
+            if (!getStore().isDomainsModifiable()) {
+                return HttpResponses.status(400);
+            }
             getStore().checkPermission(MANAGE_DOMAINS);
             JSONObject data = req.getSubmittedForm();
             Domain domain = req.bindJSON(Domain.class, data);
-            if (getStore().updateDomain(this.domain,domain)) {
+            if (getStore().updateDomain(this.domain, domain)) {
                 return HttpResponses.redirectTo("../../domain/" + Util.rawEncode(domain.getName()));
 
             }
@@ -189,6 +272,9 @@ public abstract class CredentialsStoreAction implements Action {
             if (!"POST".equals(req.getMethod())) {
                 // TODO add @RequirePOST
                 return HttpResponses.status(405);
+            }
+            if (!getStore().isDomainsModifiable()) {
+                return HttpResponses.status(400);
             }
             getStore().checkPermission(MANAGE_DOMAINS);
             if (getStore().removeDomain(domain)) {
@@ -235,4 +321,111 @@ public abstract class CredentialsStoreAction implements Action {
 
         }
     }
+
+    public static class CredentialsWrapper extends AbstractDescribableImpl<CredentialsWrapper> {
+
+        private final DomainWrapper domain;
+
+        private final Credentials credentials;
+
+        private final String id;
+
+        public CredentialsWrapper(DomainWrapper domain, Credentials credentials, String id) {
+            this.domain = domain;
+            this.credentials = credentials;
+            this.id = id;
+        }
+
+        public String getUrlName() {
+            return Util.rawEncode(id);
+        }
+
+        public String getDisplayName() {
+            return CredentialsNameProvider.name(credentials);
+        }
+
+        public String getTypeName() {
+            return credentials.getDescriptor().getDisplayName();
+        }
+
+        public String getDescription() {
+            return credentials instanceof StandardCredentials
+                    ? ((StandardCredentials) credentials).getDescription()
+                    : null;
+        }
+
+        public final String getFullName() {
+            String n = getDomain().getFullName();
+            if (n.length() == 0) {
+                return getUrlName();
+            } else {
+                return n + '/' + getUrlName();
+            }
+        }
+
+        public final String getFullDisplayName() {
+            String n = getDomain().getFullDisplayName();
+            if (n.length() == 0) {
+                return getDisplayName();
+            } else {
+                return n + " \u00BB " + getDisplayName();
+            }
+        }
+
+        public Credentials getCredentials() {
+            return credentials;
+        }
+
+        public DomainWrapper getDomain() {
+            return domain;
+        }
+
+        public DomainWrapper getParent() {
+            return domain;
+        }
+
+        public CredentialsStore getStore() {
+            return domain.getStore();
+        }
+
+        public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
+            if (!"POST".equals(req.getMethod())) {
+                // TODO add @RequirePOST
+                return HttpResponses.status(405);
+            }
+            if (!getStore().isDomainsModifiable()) {
+                return HttpResponses.status(400);
+            }
+            getStore().checkPermission(DELETE);
+            if (getStore().removeCredentials(domain.getDomain(),credentials)) {
+                return HttpResponses.redirectTo("../..");
+            }
+            return HttpResponses.redirectToDot();
+        }
+
+        public HttpResponse doUpdateSubmit(StaplerRequest req) throws ServletException, IOException {
+            if (!"POST".equals(req.getMethod())) {
+                // TODO add @RequirePOST
+                return HttpResponses.status(405);
+            }
+            getStore().checkPermission(UPDATE);
+            JSONObject data = req.getSubmittedForm();
+            Credentials credentials = req.bindJSON(Credentials.class, data);
+            if (!getStore().updateCredentials(this.domain.domain, this.credentials, credentials)) {
+                return HttpResponses.redirectTo("concurrentModification");
+            }
+            return HttpResponses.redirectToDot();
+        }
+
+        @Extension
+        public static class DescriptorImpl extends Descriptor<CredentialsWrapper> {
+
+            @Override
+            public String getDisplayName() {
+                return "Credential";
+            }
+        }
+    }
+
+
 }
