@@ -48,6 +48,7 @@ import hudson.util.CopyOnWriteMap;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
+import org.acegisecurity.context.SecurityContextHolder;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.StaplerProxy;
@@ -196,9 +197,37 @@ public class SystemCredentialsProvider extends ManagementLink
     }
 
     /**
+     * Short-cut method for {@link Jenkins#checkPermission(hudson.security.Permission)}
+     *
+     * @param p the permission to check.
+     */
+    private void checkPermission(Permission p) {
+        Jenkins.getInstance().checkPermission(p);
+    }
+
+    /**
+     * Short-cut method that redundantly checks the specified permission (to catch any typos) and then escalates
+     * authentication in order to save the {@link CredentialsStore}.
+     *
+     * @param p the permissions of the operation being performed.
+     * @throws IOException if something goes wrong.
+     */
+    private void checkedSave(Permission p) throws IOException {
+        checkPermission(p);
+        Authentication old = SecurityContextHolder.getContext().getAuthentication();
+        SecurityContextHolder.getContext().setAuthentication(ACL.SYSTEM);
+        try {
+            save();
+        } finally {
+            SecurityContextHolder.getContext().setAuthentication(old);
+        }
+    }
+
+    /**
      * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
      */
     private synchronized boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException {
+        checkPermission(CredentialsProvider.MANAGE_DOMAINS);
         Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
         if (domainCredentialsMap.containsKey(domain)) {
             List<Credentials> list = domainCredentialsMap.get(domain);
@@ -211,12 +240,12 @@ public class SystemCredentialsProvider extends ManagementLink
                 modified = true;
             }
             if (modified) {
-                save();
+                checkedSave(CredentialsProvider.MANAGE_DOMAINS);
             }
             return modified;
         } else {
             domainCredentialsMap.put(domain, new ArrayList<Credentials>(credentials));
-            save();
+            checkedSave(CredentialsProvider.MANAGE_DOMAINS);
             return true;
         }
     }
@@ -225,10 +254,11 @@ public class SystemCredentialsProvider extends ManagementLink
      * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
      */
     private synchronized boolean removeDomain(@NonNull Domain domain) throws IOException {
+        checkPermission(CredentialsProvider.MANAGE_DOMAINS);
         Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
         if (domainCredentialsMap.containsKey(domain)) {
             domainCredentialsMap.remove(domain);
-            save();
+            checkedSave(CredentialsProvider.MANAGE_DOMAINS);
             return true;
         }
         return false;
@@ -238,10 +268,11 @@ public class SystemCredentialsProvider extends ManagementLink
      * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
      */
     private synchronized boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException {
+        checkPermission(CredentialsProvider.MANAGE_DOMAINS);
         Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
         if (domainCredentialsMap.containsKey(current)) {
             domainCredentialsMap.put(replacement, domainCredentialsMap.remove(current));
-            save();
+            checkedSave(CredentialsProvider.MANAGE_DOMAINS);
             return true;
         }
         return false;
@@ -252,6 +283,7 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     private synchronized boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials)
             throws IOException {
+        checkPermission(CredentialsProvider.CREATE);
         Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
         if (domainCredentialsMap.containsKey(domain)) {
             List<Credentials> list = domainCredentialsMap.get(domain);
@@ -259,7 +291,7 @@ public class SystemCredentialsProvider extends ManagementLink
                 return false;
             }
             list.add(credentials);
-            save();
+            checkedSave(CredentialsProvider.CREATE);
             return true;
         }
         return false;
@@ -270,11 +302,14 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @NonNull
     private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
-        List<Credentials> list = getDomainCredentialsMap().get(domain);
-        if (list == null || list.isEmpty()) {
-            return Collections.emptyList();
+        if (Jenkins.getInstance().hasPermission(CredentialsProvider.VIEW)) {
+            List<Credentials> list = getDomainCredentialsMap().get(domain);
+            if (list == null || list.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return Collections.unmodifiableList(new ArrayList<Credentials>(list));
         }
-        return Collections.unmodifiableList(new ArrayList<Credentials>(list));
+        return Collections.emptyList();
     }
 
     /**
@@ -282,6 +317,7 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     private synchronized boolean removeCredentials(@NonNull Domain domain, @NonNull Credentials credentials)
             throws IOException {
+        checkPermission(CredentialsProvider.DELETE);
         Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
         if (domainCredentialsMap.containsKey(domain)) {
             List<Credentials> list = domainCredentialsMap.get(domain);
@@ -289,7 +325,7 @@ public class SystemCredentialsProvider extends ManagementLink
                 return false;
             }
             list.remove(credentials);
-            save();
+            checkedSave(CredentialsProvider.DELETE);
             return true;
         }
         return false;
@@ -300,6 +336,7 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     private synchronized boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
                                                    @NonNull Credentials replacement) throws IOException {
+        checkPermission(CredentialsProvider.UPDATE);
         Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
         if (domainCredentialsMap.containsKey(domain)) {
             List<Credentials> list = domainCredentialsMap.get(domain);
@@ -308,7 +345,7 @@ public class SystemCredentialsProvider extends ManagementLink
                 return false;
             }
             list.set(index, replacement);
-            save();
+            checkedSave(CredentialsProvider.UPDATE);
             return true;
         }
         return false;
