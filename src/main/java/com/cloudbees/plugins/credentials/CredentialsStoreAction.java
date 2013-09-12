@@ -88,7 +88,7 @@ public abstract class CredentialsStoreAction implements Action {
             if (d == Domain.global()) {
                 name = "_";
             } else {
-                name = Util.rawEncode(d.getName());
+                name = d.getName();
             }
             result.put(name, new DomainWrapper(this, d));
         }
@@ -154,6 +154,10 @@ public abstract class CredentialsStoreAction implements Action {
             return parent;
         }
 
+        public String getUrlName() {
+            return isGlobal() ? "_" : Util.rawEncode(domain.getName());
+        }
+
         public String getDisplayName() {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDisplayName() : domain.getName();
         }
@@ -164,6 +168,21 @@ public abstract class CredentialsStoreAction implements Action {
 
         public boolean isGlobal() {
             return domain == Domain.global();
+        }
+
+        public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
+            if (!"POST".equals(req.getMethod())) {
+                // TODO add @RequirePOST
+                return HttpResponses.status(405);
+            }
+            getStore().checkPermission(MANAGE_DOMAINS);
+            JSONObject data = req.getSubmittedForm();
+            Domain domain = req.bindJSON(Domain.class, data);
+            if (getStore().updateDomain(this.domain,domain)) {
+                return HttpResponses.redirectTo("../../domain/" + Util.rawEncode(domain.getName()));
+
+            }
+            return HttpResponses.redirectToDot();
         }
 
         public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
