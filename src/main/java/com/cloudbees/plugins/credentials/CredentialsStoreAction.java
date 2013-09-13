@@ -263,7 +263,7 @@ public abstract class CredentialsStoreAction implements Action {
             JSONObject data = req.getSubmittedForm();
             Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
             getStore().addCredentials(domain, credentials);
-            return HttpResponses.redirectTo("../../domain/" + Util.rawEncode(domain.getName()));
+            return HttpResponses.redirectTo("../../domain/" + getUrlName());
         }
 
         public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
