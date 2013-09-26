@@ -315,7 +315,7 @@ public abstract class CredentialsStoreAction implements Action {
                                               @AncestorInPath CredentialsStoreAction action,
                                               @QueryParameter String value) {
                 if (StringUtils.isBlank(value)) {
-                    return FormValidation.warning("You must provide a name for the domain");
+                    return FormValidation.warning(Messages.CredentialsStoreAction_EmptyDomainNameMessage());
                 }
                 try {
                     Jenkins.checkGoodName(value);
@@ -328,7 +328,7 @@ public abstract class CredentialsStoreAction implements Action {
                             continue;
                         }
                         if (value.equals(d.getName())) {
-                            return FormValidation.error("A domain with that name already exists");
+                            return FormValidation.error(Messages.CredentialsStoreAction_DuplicateDomainNameMessage());
                         }
                     }
                 }
