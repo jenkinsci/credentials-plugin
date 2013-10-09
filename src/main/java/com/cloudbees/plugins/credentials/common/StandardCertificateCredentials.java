@@ -76,7 +76,7 @@ public interface StandardCertificateCredentials extends StandardCredentials, Cer
                     String alias = enumeration.nextElement();
                     if (keyStore.isKeyEntry(alias)) {
                         Certificate[] certificateChain = keyStore.getCertificateChain(alias);
-                        if (certificateChain.length > 0) {
+                        if (certificateChain != null && certificateChain.length > 0) {
                             Certificate certificate = certificateChain[0];
                             if (certificate instanceof X509Certificate) {
                                 X509Certificate x509 = (X509Certificate) certificate;
