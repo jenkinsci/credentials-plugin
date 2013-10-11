@@ -34,6 +34,13 @@ import javax.annotation.CheckForNull;
  */
 public class HostnameRequirement extends DomainRequirement {
     /**
+     * Standardize serialization format.
+     *
+     * @since 1.9
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
      * The hostname.
      */
     @CheckForNull

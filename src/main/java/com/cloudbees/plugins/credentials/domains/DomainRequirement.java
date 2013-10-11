@@ -26,11 +26,19 @@ package com.cloudbees.plugins.credentials.domains;
 
 import hudson.ExtensionPoint;
 
+import java.io.Serializable;
+
 /**
  * Base class for all requirements that can be fulfilled by {@link Domain}s.
  *
  * @since 1.5
  */
-public class DomainRequirement implements ExtensionPoint {
+public class DomainRequirement implements ExtensionPoint, Serializable {
+    /**
+     * Standardize serialization format.
+     *
+     * @since 1.9
+     */
+    private static final long serialVersionUID = 1L;
 
 }

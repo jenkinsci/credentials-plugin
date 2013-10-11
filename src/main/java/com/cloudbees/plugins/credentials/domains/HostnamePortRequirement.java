@@ -32,6 +32,13 @@ import javax.annotation.CheckForNull;
  */
 public class HostnamePortRequirement extends HostnameRequirement {
     /**
+     * Standardize serialization format.
+     *
+     * @since 1.9
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
      * The port.
      */
     private final int port;
