@@ -151,6 +151,11 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+            <groupId>org.jvnet.localizer</groupId>
+            <artifactId>maven-localizer-plugin</artifactId>
+            <version>1.14</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -174,6 +179,12 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <version>1.99</version>
+        <extensions>true</extensions>
       </plugin>
     </plugins>
   </build>
