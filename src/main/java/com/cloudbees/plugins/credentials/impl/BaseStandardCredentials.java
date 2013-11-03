@@ -31,9 +31,12 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
 
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 /**
  * Base class for {@link StandardCredentials}.
  */
+@ExportedBean
 public abstract class BaseStandardCredentials extends BaseCredentials implements StandardCredentials {
     /**
      * Our ID.
@@ -85,6 +88,7 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
      * {@inheritDoc}
      */
     @NonNull
+    @Exported
     public String getId() {
         return id;
     }

@@ -33,6 +33,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.XmlFile;
+import hudson.model.Api;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
@@ -53,6 +54,8 @@ import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.StaplerProxy;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -546,6 +549,7 @@ public class SystemCredentialsProvider extends ManagementLink
     /**
      * Our {@link CredentialsStore}.
      */
+    @ExportedBean
     public static class StoreImpl extends CredentialsStore {
 
         /**
@@ -570,6 +574,7 @@ public class SystemCredentialsProvider extends ManagementLink
          */
         @NonNull
         @Override
+        @Exported
         public List<Domain> getDomains() {
             return Collections.unmodifiableList(new ArrayList<Domain>(
                     SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet()
@@ -613,6 +618,7 @@ public class SystemCredentialsProvider extends ManagementLink
          */
         @NonNull
         @Override
+        @Exported
         public List<Credentials> getCredentials(@NonNull Domain domain) {
             return SystemCredentialsProvider.getInstance().getCredentials(domain);
         }
@@ -635,9 +641,15 @@ public class SystemCredentialsProvider extends ManagementLink
         }
     }
 
+    @ExportedBean
     @Extension
     public static class UserFacingAction extends CredentialsStoreAction implements RootAction {
 
+        public Api getApi() {
+            return new Api(this);
+        }
+
+        @Exported
         public CredentialsStore getStore() {
             return SystemCredentialsProvider.getInstance().getStore();
         }
