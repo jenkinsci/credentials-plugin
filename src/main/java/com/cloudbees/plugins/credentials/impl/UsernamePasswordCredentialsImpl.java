@@ -93,7 +93,7 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
     /**
      * {@inheritDoc}
      */
-    @Extension
+    @Extension(ordinal = 1)
     public static class DescriptorImpl extends CredentialsDescriptor {
 
         /**

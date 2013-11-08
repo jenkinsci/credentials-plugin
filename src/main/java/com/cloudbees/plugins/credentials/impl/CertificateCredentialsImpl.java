@@ -135,7 +135,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         return plainText == null ? null : plainText.toCharArray();
     }
 
-    @Extension
+    @Extension(ordinal = -1)
     public static class DescriptorImpl extends CredentialsDescriptor {
 
         @Override
