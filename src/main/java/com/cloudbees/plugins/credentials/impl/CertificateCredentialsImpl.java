@@ -327,7 +327,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             }
 
             public FormValidation doCheckKeyStoreFile(@QueryParameter String value,
-                                                      @QueryParameter @RelativePath("..") String password) {
+                                                      @QueryParameter String password) {
                 if (StringUtils.isBlank(value)) {
                     return FormValidation.error(Messages.CertificateCredentialsImpl_KeyStoreFileUnspecified());
                 }
@@ -427,7 +427,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             }
 
             public FormValidation doCheckUploadedKeystore(@QueryParameter String value,
-                                                          @QueryParameter @RelativePath("..") String password) {
+                                                          @QueryParameter String password) {
                 if (StringUtils.isBlank(value)) {
                     return FormValidation.error(Messages.CertificateCredentialsImpl_NoCertificateUploaded());
                 }
