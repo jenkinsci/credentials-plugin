@@ -213,7 +213,20 @@ public class DomainCredentials {
         for (Map.Entry<Domain, List<Credentials>> entry : domainCredentialsMap.entrySet()) {
             if (entry.getKey().test(domainRequirements)) {
                 for (Credentials credential : entry.getValue()) {
-                    if (type.isInstance(credential) && credentialsMatcher.matches(credential)) {
+                    if (!type.isInstance(credential)) {
+                        continue;
+                    }
+                    // If the credentials have a native restriction that isn't imposed
+                    // by the Domain, give the Credentials a chance to self-restrict
+                    // themselves from being surfaced.
+                    if (credential instanceof RestrictedCredentials) {
+                        RestrictedCredentials restrictedCredentials =
+                            (RestrictedCredentials) credential;
+                        if (!restrictedCredentials.test(domainRequirements)) {
+                            continue;
+                        }
+                    }
+                    if (credentialsMatcher.matches(credential)) {
                         result.add(type.cast(credential));
                     }
                 }
