@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @see com.cloudbees.plugins.credentials.domains.DomainRequirement
  * @see com.cloudbees.plugins.credentials.domains.DomainSpecification
- * @since 1.9
+ * @since 1.10
  */
 public interface DomainRestrictedCredentials extends Credentials {
     /**
