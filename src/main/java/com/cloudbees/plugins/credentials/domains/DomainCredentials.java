@@ -50,7 +50,6 @@ public class DomainCredentials {
      */
     @NonNull
     private final Domain domain;
-
     /**
      * The credentials scoped to this domain.
      */
@@ -67,28 +66,6 @@ public class DomainCredentials {
     public DomainCredentials(Domain domain, List<Credentials> credentials) {
         this.domain = domain == null ? Domain.global() : domain.resolve();
         this.credentials = credentials == null ? new ArrayList<Credentials>() : new ArrayList<Credentials>(credentials);
-    }
-
-    /**
-     * Returns the domain.
-     *
-     * @return the domain.
-     */
-    @NonNull
-    @SuppressWarnings("unused") // by stapler
-    public Domain getDomain() {
-        return domain;
-    }
-
-    /**
-     * Returns the credentials.
-     *
-     * @return the credentials.
-     */
-    @NonNull
-    @SuppressWarnings("unused") // by stapler
-    public List<Credentials> getCredentials() {
-        return credentials;
     }
 
     /**
@@ -219,12 +196,9 @@ public class DomainCredentials {
                     // If the credentials have a native restriction that isn't imposed
                     // by the Domain, give the Credentials a chance to self-restrict
                     // themselves from being surfaced.
-                    if (credential instanceof RestrictedCredentials) {
-                        RestrictedCredentials restrictedCredentials =
-                            (RestrictedCredentials) credential;
-                        if (!restrictedCredentials.test(domainRequirements)) {
-                            continue;
-                        }
+                    if (credential instanceof DomainRestrictedCredentials
+                            && !((DomainRestrictedCredentials) credential).matches(domainRequirements)) {
+                        continue;
                     }
                     if (credentialsMatcher.matches(credential)) {
                         result.add(type.cast(credential));
@@ -237,6 +211,7 @@ public class DomainCredentials {
 
     /**
      * Helper method used by the {@code domainCredentials.jelly} taglib to ensure the list is valid.
+     *
      * @param list the list.
      * @return the list with fixes applied.
      */
@@ -247,5 +222,27 @@ public class DomainCredentials {
             map.put(Domain.global(), new CopyOnWriteArrayList<Credentials>());
         }
         return asList(map);
+    }
+
+    /**
+     * Returns the domain.
+     *
+     * @return the domain.
+     */
+    @NonNull
+    @SuppressWarnings("unused") // by stapler
+    public Domain getDomain() {
+        return domain;
+    }
+
+    /**
+     * Returns the credentials.
+     *
+     * @return the credentials.
+     */
+    @NonNull
+    @SuppressWarnings("unused") // by stapler
+    public List<Credentials> getCredentials() {
+        return credentials;
     }
 }

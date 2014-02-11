@@ -24,8 +24,6 @@
 package com.cloudbees.plugins.credentials.domains;
 
 import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsNameProvider;
-import com.cloudbees.plugins.credentials.NameWith;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
@@ -35,14 +33,15 @@ import java.util.List;
  *
  * @see com.cloudbees.plugins.credentials.domains.DomainRequirement
  * @see com.cloudbees.plugins.credentials.domains.DomainSpecification
+ * @since 1.9
  */
-public interface RestrictedCredentials extends Credentials {
-  /**
-   * Determine whether these {@link Credentials} are applicable for
-   * the given requirements.
-   *
-   * @param domainRequirements The requirements imposed on this credential.
-   * @return whether this credential meets the given requirement.
-   */
-  boolean test(@NonNull List<DomainRequirement> domainRequirements);
+public interface DomainRestrictedCredentials extends Credentials {
+    /**
+     * Determine whether these {@link Credentials} are applicable for
+     * the given requirements.
+     *
+     * @param domainRequirements The requirements imposed on this credential.
+     * @return whether this credential meets the given requirement.
+     */
+    boolean matches(@NonNull List<DomainRequirement> domainRequirements);
 }
