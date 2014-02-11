@@ -28,10 +28,13 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
 /**
  * Base class for Credentials.
  */
+@ExportedBean
 public class BaseCredentials implements Credentials {
 
     /**

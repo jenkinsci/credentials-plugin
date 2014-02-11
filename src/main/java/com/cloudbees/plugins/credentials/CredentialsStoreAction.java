@@ -33,6 +33,7 @@ import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Action;
+import hudson.model.Api;
 import hudson.model.Descriptor;
 import hudson.model.Failure;
 import hudson.model.Item;
@@ -48,7 +49,8 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
-
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -120,6 +122,7 @@ public abstract class CredentialsStoreAction implements Action {
         }
     }
 
+    @Exported
     public Map<String, DomainWrapper> getDomains() {
         Map<String, DomainWrapper> result = new TreeMap<String, DomainWrapper>();
         for (Domain d : getStore().getDomains()) {
@@ -171,6 +174,7 @@ public abstract class CredentialsStoreAction implements Action {
         return HttpResponses.redirectToDot();
     }
 
+    @ExportedBean
     public static class DomainWrapper extends AbstractDescribableImpl<DomainWrapper> implements ModelObject {
 
         private final CredentialsStoreAction parent;
@@ -179,6 +183,10 @@ public abstract class CredentialsStoreAction implements Action {
         public DomainWrapper(CredentialsStoreAction parent, Domain domain) {
             this.parent = parent;
             this.domain = domain;
+        }
+
+        public Api getApi() {
+            return new Api(this);
         }
 
         public CredentialsStore getStore() {
@@ -193,6 +201,7 @@ public abstract class CredentialsStoreAction implements Action {
             return parent;
         }
 
+        @Exported
         public String getUrlName() {
             return isGlobal() ? "_" : Util.rawEncode(domain.getName());
         }
@@ -201,6 +210,7 @@ public abstract class CredentialsStoreAction implements Action {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDisplayName() : domain.getName();
         }
 
+        @Exported
         public final String getFullName() {
             String n = getParent().getFullName();
             if (n.length() == 0) {
@@ -223,6 +233,7 @@ public abstract class CredentialsStoreAction implements Action {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDescription() : domain.getDescription();
         }
 
+        @Exported
         public boolean isGlobal() {
             return domain == Domain.global();
         }
@@ -231,6 +242,7 @@ public abstract class CredentialsStoreAction implements Action {
             return Jenkins.getInstance().getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
         }
 
+        @Exported
         public Map<String, CredentialsWrapper> getCredentials() {
             Map<String, CredentialsWrapper> result = new LinkedHashMap<String, CredentialsWrapper>();
             int index = 0;
@@ -338,6 +350,7 @@ public abstract class CredentialsStoreAction implements Action {
         }
     }
 
+    @ExportedBean
     public static class CredentialsWrapper extends AbstractDescribableImpl<CredentialsWrapper> {
 
         private final DomainWrapper domain;
@@ -356,10 +369,15 @@ public abstract class CredentialsStoreAction implements Action {
             return Util.rawEncode(id);
         }
 
+        public Api getApi() {
+            return new Api(this);
+        }
+
         public String getDisplayName() {
             return CredentialsNameProvider.name(credentials);
         }
 
+        @Exported
         public String getTypeName() {
             return credentials.getDescriptor().getDisplayName();
         }
@@ -370,6 +388,7 @@ public abstract class CredentialsStoreAction implements Action {
                     : null;
         }
 
+        @Exported
         public final String getFullName() {
             String n = getDomain().getFullName();
             if (n.length() == 0) {
