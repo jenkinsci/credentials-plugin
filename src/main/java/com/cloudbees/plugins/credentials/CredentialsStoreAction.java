@@ -206,6 +206,7 @@ public abstract class CredentialsStoreAction implements Action {
             return isGlobal() ? "_" : Util.rawEncode(domain.getName());
         }
 
+        @Exported
         public String getDisplayName() {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDisplayName() : domain.getName();
         }
@@ -220,6 +221,7 @@ public abstract class CredentialsStoreAction implements Action {
             }
         }
 
+        @Exported
         public final String getFullDisplayName() {
             String n = getParent().getFullDisplayName();
             if (n.length() == 0) {
@@ -229,6 +231,7 @@ public abstract class CredentialsStoreAction implements Action {
             }
         }
 
+        @Exported
         public String getDescription() {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDescription() : domain.getDescription();
         }
@@ -373,6 +376,7 @@ public abstract class CredentialsStoreAction implements Action {
             return new Api(this);
         }
 
+        @Exported
         public String getDisplayName() {
             return CredentialsNameProvider.name(credentials);
         }
@@ -382,6 +386,7 @@ public abstract class CredentialsStoreAction implements Action {
             return credentials.getDescriptor().getDisplayName();
         }
 
+        @Exported
         public String getDescription() {
             return credentials instanceof StandardCredentials
                     ? ((StandardCredentials) credentials).getDescription()
