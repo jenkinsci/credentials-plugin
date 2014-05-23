@@ -72,6 +72,7 @@
     <project.build.outputEncoding>UTF-8</project.build.outputEncoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.findbugs.failure.strict>true</maven.findbugs.failure.strict>
+    <maven-hpi-plugin.version>1.96</maven-hpi-plugin.version>
   </properties>
 
   <repositories>
@@ -178,6 +179,7 @@
       <plugin>
         <groupId>org.jenkins-ci.tools</groupId>
         <artifactId>maven-hpi-plugin</artifactId>
+        <version>${maven-hpi-plugin.version}</version>
         <executions>
           <execution>
             <goals>
@@ -185,6 +187,11 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <systemProperties>
+            <hudson.bundled.plugins>${basedir}/work/plugins/credentials.hpl</hudson.bundled.plugins>
+          </systemProperties>
+        </configuration>
       </plugin>
     </plugins>
   </build>
