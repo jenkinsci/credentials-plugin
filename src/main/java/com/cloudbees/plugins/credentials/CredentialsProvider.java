@@ -74,12 +74,19 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             Messages._CredentialsProvider_PermissionGroupTitle());
 
     /**
+     * The scopes that we allow credential permissions on.
+     * @since 1.12.
+     */
+    private static final PermissionScope[] SCOPES =
+            new PermissionScope[]{PermissionScope.ITEM, PermissionScope.ITEM_GROUP, PermissionScope.JENKINS};
+
+    /**
      * The permission for adding credentials to a {@link CredentialsStore}.
      *
      * @since 1.8
      */
     public static final Permission CREATE = new Permission(GROUP, "Create",
-            Messages._CredentialsProvider_CreatePermissionDescription(), Permission.CREATE, PermissionScope.ITEM);
+            Messages._CredentialsProvider_CreatePermissionDescription(), Permission.CREATE, true, SCOPES);
 
     /**
      * The permission for updating credentials in a {@link CredentialsStore}.
@@ -87,7 +94,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @since 1.8
      */
     public static final Permission UPDATE = new Permission(GROUP, "Update",
-            Messages._CredentialsProvider_UpdatePermissionDescription(), Permission.UPDATE, PermissionScope.ITEM);
+            Messages._CredentialsProvider_UpdatePermissionDescription(), Permission.UPDATE, true, SCOPES);
 
     /**
      * The permission for viewing credentials in a {@link CredentialsStore}.
@@ -95,7 +102,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @since 1.8
      */
     public static final Permission VIEW = new Permission(GROUP, "View",
-            Messages._CredentialsProvider_ViewPermissionDescription(), Permission.READ, PermissionScope.ITEM);
+            Messages._CredentialsProvider_ViewPermissionDescription(), Permission.READ, true, SCOPES);
 
     /**
      * The permission for removing credentials from a {@link CredentialsStore}.
@@ -103,7 +110,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @since 1.8
      */
     public static final Permission DELETE = new Permission(GROUP, "Delete",
-            Messages._CredentialsProvider_DeletePermissionDescription(), Permission.DELETE, PermissionScope.ITEM);
+            Messages._CredentialsProvider_DeletePermissionDescription(), Permission.DELETE, true, SCOPES);
 
     /**
      * The permission for managing credential domains in a {@link CredentialsStore}.
@@ -111,7 +118,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @since 1.8
      */
     public static final Permission MANAGE_DOMAINS = new Permission(GROUP, "ManageDomains",
-            Messages._CredentialsProvider_ManageDomainsPermissionDescription(), Permission.CONFIGURE, PermissionScope.ITEM);
+            Messages._CredentialsProvider_ManageDomainsPermissionDescription(), Permission.CONFIGURE, true, SCOPES);
 
     /**
      * Returns all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
