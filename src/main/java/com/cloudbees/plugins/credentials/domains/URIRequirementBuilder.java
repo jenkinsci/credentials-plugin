@@ -99,6 +99,7 @@ public class URIRequirementBuilder {
                 URI u = new URI(uri);
                 withScheme(u.getScheme());
                 withHostnamePort(u.getHost(), u.getPort());
+                withPath(u.getRawPath());
             } catch (URISyntaxException e) {
                 withoutScheme().withoutHostname().withoutHostnamePort();
             }
@@ -116,6 +117,23 @@ public class URIRequirementBuilder {
         for (Iterator<DomainRequirement> iterator = requirements.iterator(); iterator.hasNext(); ) {
             DomainRequirement r = iterator.next();
             if (r instanceof SchemeRequirement) {
+                iterator.remove();
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Removes any path requirements.
+     *
+     * @return {@code this}.
+     * @since 1.12
+     */
+    @NonNull
+    public URIRequirementBuilder withoutPath() {
+        for (Iterator<DomainRequirement> iterator = requirements.iterator(); iterator.hasNext(); ) {
+            DomainRequirement r = iterator.next();
+            if (r instanceof PathRequirement) {
                 iterator.remove();
             }
         }
@@ -165,6 +183,22 @@ public class URIRequirementBuilder {
         withoutScheme();
         if (scheme != null) {
             requirements.add(new SchemeRequirement(scheme));
+        }
+        return this;
+    }
+
+    /**
+     * Replace any path requirements with the supplied path.
+     *
+     * @param path the path to use as a requirement
+     * @return {@code this}.
+     * @since 1.12
+     */
+    @NonNull
+    public URIRequirementBuilder withPath(@CheckForNull String path) {
+        withoutScheme();
+        if (path != null) {
+            requirements.add(new PathRequirement(path));
         }
         return this;
     }

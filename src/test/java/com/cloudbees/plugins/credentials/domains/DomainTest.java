@@ -43,4 +43,19 @@ public class DomainTest {
         assertThat(instance.test(), is(true));
         assertThat(instance.test(new HostnamePortRequirement("www.jenkins-ci.org", 80), new SchemeRequirement("http")), is(true));
     }
+
+    @Test
+    public void pathRequirements() throws Exception {
+        Domain instance =
+                new Domain("test federation", "the instance under test", Arrays.<DomainSpecification>asList(
+                        new SchemeSpecification("http, https, svn, git, pop3, imap, spdy"),
+                        new HostnameSpecification("*.jenkins-ci.org", null),
+                        new PathSpecification("/download/**/jenkins.war", null, false)));
+
+        assertThat(instance.test(), is(true));
+        assertThat(instance.test(URIRequirementBuilder.fromUri("https://updates.jenkins-ci.org/download/1.532/jenkins.war").build()), is(true));
+        assertThat(instance.test(URIRequirementBuilder.fromUri("https://updates.jenkins-ci.org/download/jenkins.war").build()), is(true));
+        assertThat(instance.test(URIRequirementBuilder.fromUri("https://updates.jenkins-ci.org/download/1/2/3/jenkins.war").build()), is(true));
+
+    }
 }
