@@ -54,6 +54,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.always;
 
@@ -62,6 +65,11 @@ import static com.cloudbees.plugins.credentials.CredentialsMatchers.always;
  */
 @Extension
 public class UserCredentialsProvider extends CredentialsProvider {
+
+    /**
+     * Our logger.
+     */
+    private static final Logger LOGGER = Logger.getLogger(UserCredentialsProperty.class.getName());
 
     /**
      * We only care about {@link CredentialsScope#USER} scoped credentials.
@@ -104,9 +112,23 @@ public class UserCredentialsProvider extends CredentialsProvider {
             authentication = ACL.SYSTEM;
         }
         if (!ACL.SYSTEM.equals(authentication)) {
-            User user = authentication == null || authentication instanceof AnonymousAuthenticationToken
-                    ? null
-                    : User.get(authentication.getName());
+            User user;
+            try {
+                if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+                    user = null;
+                } else if (authentication == Jenkins.getAuthentication()) {
+                    user = User.current();
+                } else {
+                    user = User.get(authentication.getName());
+                }
+            } catch (NullPointerException e) {
+                LogRecord lr = new LogRecord(Level.FINE,
+                        "Could not find user for specified authentication. User credentials lookup aborted");
+                lr.setThrown(e);
+                lr.setParameters(new Object[]{authentication});
+                LOGGER.log(lr);
+                user = null;
+            }
             if (user != null) {
                 UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
                 if (property != null) {
