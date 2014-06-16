@@ -596,4 +596,53 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             }
         };
     }
+
+    /**
+     * Make a best effort to ensure that the supplied credential is a snapshot credential (i.e. self-contained and
+     * does not reference any external stores). <b>WARNING:</b> May produce unusual results if presented an exotic
+     * credential that implements multiple distinct credential types at the same time, e.g. a credential that is
+     * simultaneously a TLS certificate and a SSH key pair and a GPG key pair all at the same time... unless the
+     * author of that credential type also provides a {@link CredentialsSnapshotTaker} that can handle such a
+     * tripple play.
+     *
+     * @param credential the credential.
+     * @param <C>        the type of credential.
+     * @return the credential or a snapshot of the credential.
+     * @since 1.14
+     */
+    @SuppressWarnings("unchecked")
+    public static <C extends Credentials> C snapshot(C credential) {
+        return (C)snapshot(Credentials.class, credential);
+    }
+
+    /**
+     * Make a best effort to ensure that the supplied credential is a snapshot credential (i.e. self-contained and
+     * does not reference any external stores)
+     *
+     * @param clazz the type of credential that we are trying to snapshot (specified so that if there is more than
+     *              one type of snapshot able credential interface implemented by the credentials,
+     *              then they can be separated out.
+     * @param credential the credential.
+     * @param <C>        the type of credential.
+     * @return the credential or a snapshot of the credential.
+     * @since 1.14
+     */
+    @SuppressWarnings("unchecked")
+    public static <C extends Credentials> C snapshot(Class<C> clazz, C credential) {
+        Class bestType = null;
+        CredentialsSnapshotTaker bestTaker = null;
+        for (CredentialsSnapshotTaker taker :
+                Jenkins.getInstance().getExtensionList(CredentialsSnapshotTaker.class)) {
+            if (clazz.isAssignableFrom(taker.type()) && taker.type().isInstance(credential)) {
+                if (bestTaker == null || bestType.isAssignableFrom(taker.type())) {
+                    bestTaker = taker;
+                    bestType = taker.type();
+                }
+            }
+        }
+        if (bestTaker == null) {
+            return credential;
+        }
+        return clazz.cast(bestTaker.snapshot(credential));
+    }
 }

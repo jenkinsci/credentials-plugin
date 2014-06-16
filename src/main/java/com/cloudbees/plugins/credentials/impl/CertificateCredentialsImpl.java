@@ -2,6 +2,7 @@ package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import com.trilead.ssh2.crypto.Base64;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -9,7 +10,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.RelativePath;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -30,6 +30,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -167,6 +168,16 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         public abstract byte[] getKeyStoreBytes();
 
         public abstract long getKeyStoreLastModified();
+
+        /**
+         * Returns {@code true} if and only if the source is self contained.
+         *
+         * @return {@code true} if and only if the source is self contained.
+         * @since 1.14
+         */
+        public boolean isSnapshotSource() {
+            return false;
+        }
 
     }
 
@@ -398,6 +409,14 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         /**
          * {@inheritDoc}
          */
+        @Override
+        public boolean isSnapshotSource() {
+            return true;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         @Extension
         public static class DescriptorImpl extends KeyStoreSourceDescriptor {
 
@@ -468,6 +487,54 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 return HttpResponses.forwardToView(
                         new Upload(getDivId(), UploadedKeyStoreSource.DescriptorImpl.toSecret(file.get())), "complete");
             }
+        }
+    }
+
+    /**
+     * @since 1.14
+     */
+    @Extension
+    public static class CredentialsSnapshotTakerImpl extends CredentialsSnapshotTaker<StandardCertificateCredentials> {
+
+        @Override
+        public Class<StandardCertificateCredentials> type() {
+            return StandardCertificateCredentials.class;
+        }
+
+        @Override
+        public StandardCertificateCredentials snapshot(StandardCertificateCredentials credentials) {
+            if (credentials instanceof CertificateCredentialsImpl) {
+                final KeyStoreSource keyStoreSource = ((CertificateCredentialsImpl) credentials).getKeyStoreSource();
+                if (keyStoreSource.isSnapshotSource()) {
+                    return credentials;
+                }
+                return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
+                        credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
+                        new UploadedKeyStoreSource(
+                                UploadedKeyStoreSource.DescriptorImpl.toSecret(keyStoreSource.getKeyStoreBytes())
+                                        .getEncryptedValue()));
+            }
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            final char[] password = credentials.getPassword().getPlainText().toCharArray();
+            try {
+                credentials.getKeyStore().store(bos, password);
+                bos.close();
+            } catch (KeyStoreException e) {
+                return credentials;
+            } catch (IOException e) {
+                return credentials;
+            } catch (NoSuchAlgorithmException e) {
+                return credentials;
+            } catch (CertificateException e) {
+                return credentials;
+            } finally {
+                Arrays.fill(password, (char) 0);
+            }
+            return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
+                    credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
+                    new UploadedKeyStoreSource(
+                            UploadedKeyStoreSource.DescriptorImpl.toSecret(bos.toByteArray())
+                                    .getEncryptedValue()));
         }
     }
 }
