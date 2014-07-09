@@ -57,6 +57,7 @@ public class SystemCredentialsProviderTest extends HudsonTestCase {
         assertEquals(true, !CredentialsProvider.allCredentialsDescriptors().isEmpty());
         assertNotNull(SystemCredentialsProvider.getInstance().getDisplayName());
         assertNotNull(SystemCredentialsProvider.getInstance().getIconFileName());
+        assertNotNull(SystemCredentialsProvider.getInstance().getIconClassName());
         assertNotNull(SystemCredentialsProvider.getInstance().getUrlName());
         assertNotNull(SystemCredentialsProvider.getInstance().getDescriptor());
         assertNotNull(SystemCredentialsProvider.getInstance().getCredentials());

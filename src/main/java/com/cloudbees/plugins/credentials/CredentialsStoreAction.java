@@ -45,6 +45,7 @@ import hudson.util.HttpResponses;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
@@ -62,7 +63,7 @@ import java.util.TreeMap;
 /**
  * @author Stephen Connolly
  */
-public abstract class CredentialsStoreAction implements Action {
+public abstract class CredentialsStoreAction implements Action, IconSpec {
 
     public static final Permission VIEW = CredentialsProvider.VIEW;
     public static final Permission CREATE = CredentialsProvider.CREATE;
@@ -79,6 +80,15 @@ public abstract class CredentialsStoreAction implements Action {
         }
         return getStore().hasPermission(CredentialsProvider.VIEW)
                 ? "/plugin/credentials/images/48x48/credentials.png"
+                : null;
+    }
+
+    public String getIconClassName() {
+        if (CredentialsProvider.allCredentialsDescriptors().isEmpty()) {
+            return null;
+        }
+        return getStore().hasPermission(CredentialsProvider.VIEW)
+                ? "icon-credentials-credentials"
                 : null;
     }
 
