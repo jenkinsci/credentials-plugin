@@ -509,6 +509,12 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      */
     @CheckForNull
     public static Set<CredentialsScope> lookupScopes(ModelObject object) {
+        if (object instanceof CredentialsStoreAction.CredentialsWrapper) {
+            object = ((CredentialsStoreAction.CredentialsWrapper) object).getStore().getContext();
+        }
+        if (object instanceof CredentialsStoreAction.DomainWrapper) {
+            object = ((CredentialsStoreAction.DomainWrapper) object).getStore().getContext();
+        }
         ExtensionList<CredentialsProvider> providers;
         try {
             providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);

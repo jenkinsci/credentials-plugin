@@ -142,6 +142,26 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> {
     }
 
     /**
+     * Similar to {@link #isScopeRelevant()} but used by {@link CredentialsStoreAction}.
+     *
+     * @param wrapper the wrapper for the domain that is going to contain the credential.
+     * @return {@code true} if there is more than one {@link CredentialsScope} that can be used for the specified
+     *         object.
+     */
+    @SuppressWarnings("unused") // used by stapler
+    public boolean isScopeRelevant(CredentialsStoreAction.CredentialsWrapper wrapper) {
+        if (wrapper != null) {
+            return isScopeRelevant(wrapper.getStore().getContext());
+        }
+        CredentialsStoreAction action =
+                Stapler.getCurrentRequest().findAncestorObject(CredentialsStoreAction.class);
+        if (action != null) {
+            return isScopeRelevant(action.getStore().getContext());
+        }
+        return isScopeRelevant();
+    }
+
+    /**
      * Returns the config page for the credentials.
      *
      * @return the config page for the credentials.
