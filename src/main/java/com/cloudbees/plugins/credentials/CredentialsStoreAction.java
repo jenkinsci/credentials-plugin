@@ -51,6 +51,8 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
+import org.kohsuke.stapler.interceptor.RequirePOST;
+
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -159,11 +161,8 @@ public abstract class CredentialsStoreAction implements Action {
         return Jenkins.getInstance().getDescriptorList(DomainSpecification.class);
     }
 
+    @RequirePOST
     public HttpResponse doCreateDomain(StaplerRequest req) throws ServletException, IOException {
-        if (!"POST".equals(req.getMethod())) {
-            // TODO add @RequirePOST
-            return HttpResponses.status(405);
-        }
         getStore().checkPermission(MANAGE_DOMAINS);
         JSONObject data = req.getSubmittedForm();
         Domain domain = req.bindJSON(Domain.class, data);
@@ -266,11 +265,8 @@ public abstract class CredentialsStoreAction implements Action {
             return getCredentials().get(id);
         }
 
+        @RequirePOST
         public HttpResponse doCreateCredentials(StaplerRequest req) throws ServletException, IOException {
-            if (!"POST".equals(req.getMethod())) {
-                // TODO add @RequirePOST
-                return HttpResponses.status(405);
-            }
             getStore().checkPermission(CREATE);
             JSONObject data = req.getSubmittedForm();
             Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
@@ -278,11 +274,8 @@ public abstract class CredentialsStoreAction implements Action {
             return HttpResponses.redirectTo("../../domain/" + getUrlName());
         }
 
+        @RequirePOST
         public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
-            if (!"POST".equals(req.getMethod())) {
-                // TODO add @RequirePOST
-                return HttpResponses.status(405);
-            }
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
             }
@@ -296,11 +289,8 @@ public abstract class CredentialsStoreAction implements Action {
             return HttpResponses.redirectToDot();
         }
 
+        @RequirePOST
         public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
-            if (!"POST".equals(req.getMethod())) {
-                // TODO add @RequirePOST
-                return HttpResponses.status(405);
-            }
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
             }
@@ -423,11 +413,8 @@ public abstract class CredentialsStoreAction implements Action {
             return domain.getStore();
         }
 
+        @RequirePOST
         public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
-            if (!"POST".equals(req.getMethod())) {
-                // TODO add @RequirePOST
-                return HttpResponses.status(405);
-            }
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
             }
@@ -438,11 +425,71 @@ public abstract class CredentialsStoreAction implements Action {
             return HttpResponses.redirectToDot();
         }
 
-        public HttpResponse doUpdateSubmit(StaplerRequest req) throws ServletException, IOException {
-            if (!"POST".equals(req.getMethod())) {
-                // TODO add @RequirePOST
-                return HttpResponses.status(405);
+        @RequirePOST
+        public HttpResponse doDoMove(StaplerRequest req, @QueryParameter String destination) throws IOException {
+            if (!getStore().isDomainsModifiable()) {
+                return HttpResponses.status(400);
             }
+            getStore().checkPermission(DELETE);
+            final String splitKey = domain.getParent().getUrlName() + "/";
+            int split = destination.lastIndexOf(splitKey);
+            if (split == -1) {
+                return HttpResponses.status(400);
+            }
+            String contextName = destination.substring(0, split);
+            String domainName = destination.substring(split + splitKey.length());
+            ModelObject context = null;
+            if ("".equals(contextName)) {
+                context = Jenkins.getInstance();
+            } else {
+                while (context == null && split > 0) {
+                    context = Jenkins.getInstance().getItemByFullName(contextName);
+                    if (context == null) {
+                        split = destination.lastIndexOf(splitKey, split - 1);
+                        contextName = destination.substring(0, split);
+                        domainName = destination.substring(split + splitKey.length());
+                    }
+                }
+            }
+            if (context == null) {
+                return HttpResponses.status(400);
+            }
+            CredentialsStore destinationStore = null;
+            Domain destinationDomain = null;
+            for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
+                if (store.getContext() == context) {
+                    for (Domain d : store.getDomains()) {
+                        if (domainName.equals("_") ? d.getName() == null : domainName.equals(d.getName())) {
+                            destinationStore = store;
+                            destinationDomain = d;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (destinationDomain == null) {
+                return HttpResponses.status(400);
+            }
+            if (!destinationStore.isDomainsModifiable()) {
+                return HttpResponses.status(400);
+            }
+            destinationStore.checkPermission(CREATE);
+            if (destinationDomain.equals(domain.getDomain())) {
+                return HttpResponses.redirectToDot();
+            }
+
+            if (destinationStore.addCredentials(destinationDomain, credentials)) {
+                if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+                    return HttpResponses.redirectTo("../..");
+                } else {
+                    destinationStore.removeCredentials(destinationDomain, credentials);
+                }
+            }
+            return HttpResponses.redirectToDot();
+        }
+
+        @RequirePOST
+        public HttpResponse doUpdateSubmit(StaplerRequest req) throws ServletException, IOException {
             getStore().checkPermission(UPDATE);
             JSONObject data = req.getSubmittedForm();
             Credentials credentials = req.bindJSON(Credentials.class, data);
