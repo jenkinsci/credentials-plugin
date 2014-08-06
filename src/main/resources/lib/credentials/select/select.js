@@ -16,7 +16,8 @@ window.credentials.init = function () {
         window.credentials.dialog.render();
     }
 };
-window.credentials.add = function () {
+window.credentials.add = function (e) {
+    console.log(e);
     window.credentials.init();
     new Ajax.Request(rootURL + "/descriptor/com.cloudbees.plugins.credentials.CredentialsSelectHelper/dialog", {
         method: 'get',
@@ -147,3 +148,8 @@ window.credentials.addSubmit = function (e) {
     window.credentials.dialog.hide();
     return false;
 }
+Behaviour.specify("BUTTON.credentials-add", 'select', 0, function (e) {
+    makeButton(e, e.disabled ? null : window.credentials.add);
+    e = null; // avoid memory leak
+});
+
