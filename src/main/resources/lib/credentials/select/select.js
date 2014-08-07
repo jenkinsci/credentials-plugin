@@ -34,7 +34,7 @@ window.credentials.add = function (e) {
     });
     return false;
 };
-window.credentials.refreshAll = function(){
+window.credentials.refreshAll = function () {
     $$('select.credentials-select').each(function (e) {
         var deps = [];
 
@@ -148,8 +148,49 @@ window.credentials.addSubmit = function (e) {
     window.credentials.dialog.hide();
     return false;
 }
-Behaviour.specify("BUTTON.credentials-add", 'select', 0, function (e) {
+Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
     makeButton(e, e.disabled ? null : window.credentials.add);
     e = null; // avoid memory leak
 });
-
+Behaviour.specify("DIV.credentials-select-control", 'credentials-select', 100, function (d) {
+    d = $(d);
+    var buttons = d.getElementsBySelector("INPUT.credentials-select-radio-control");
+    var u = (function () {
+        for (var i = 0; i < this.length; i++) {
+            this[i]();
+        }
+    }).bind(buttons.collect(function (x) {
+                return (function () {
+                    if (x.checked) {
+                        this.addClassName('credentials-select-content-active');
+                        this.removeClassName('credentials-select-content-inactive');
+                        this.removeAttribute('field-disabled');
+                    } else {
+                        this.addClassName('credentials-select-content-inactive');
+                        this.removeClassName('credentials-select-content-active');
+                        this.setAttribute('field-disabled', 'true');
+                    }
+                }).bind(d.getElementsBySelector(x.value == 'select'
+                                ? "DIV.credentials-select-content-select"
+                                : "DIV.credentials-select-content-param")[0]);
+            }));
+    u();
+    for (var i = 0; i < buttons.length; i++) {
+        buttons[i].onclick = buttons[i].onchange = u;
+    }
+    d = null;
+    buttons = null;
+    u = null;
+});
+Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, function (x) {
+  x.onchange = x.oninput = x.onkeyup = (function() {
+    if (!this.value.startsWith('${')) {
+      this.next().show();
+    } else if (this.value=='' || this.value=='${}' || this.value.indexOf('}')!=this.value.length-1) {
+      this.next().show();
+    } else {
+      this.next().hide();
+    }
+  }).bind($(x));
+  x.onchange();
+});
