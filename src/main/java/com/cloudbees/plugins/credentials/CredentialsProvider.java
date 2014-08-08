@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -30,26 +31,38 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
+import hudson.model.Action;
+import hudson.model.Cause;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
 import hudson.model.ModelObject;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.Queue;
+import hudson.model.Run;
 import hudson.model.User;
+import hudson.model.queue.Tasks;
 import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
 import jenkins.model.Jenkins;
+import jenkins.security.QueueItemAuthenticator;
+import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.Authentication;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Level;
@@ -121,6 +134,33 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      */
     public static final Permission MANAGE_DOMAINS = new Permission(GROUP, "ManageDomains",
             Messages._CredentialsProvider_ManageDomainsPermissionDescription(), Permission.CONFIGURE, true, SCOPES);
+
+    /**
+     * Where an immediate action against a job requires that a credential be selected by the user triggering the
+     * action, this permission allows the user to select a credential from their private credential store. Immediate
+     * actions could include: building with parameters, tagging a build, deploying artifacts, etc.
+     *
+     * @since 1.16
+     */
+    public static final Permission USE_OWN = new Permission(GROUP, "UseOwn",
+            Messages._CredentialsProvider_UseOwnPermissionDescription(), Jenkins.ADMINISTER,
+            true, new PermissionScope[]{PermissionScope.ITEM});
+
+    /**
+     * Where an immediate action against a job requires that a credential be selected by the user triggering the
+     * action, this permission allows the user to select a credential from those credentials available within the
+     * scope of the job. Immediate actions could include: building with parameters, tagging a build,
+     * deploying artifacts, etc.
+     *
+     * This permission is implied by {@link Job#CONFIGURE} as anyone who can configure the job can configure the
+     * job to use credentials within the item scope anyway.
+     *
+     * @since 1.16
+     */
+    public static final Permission USE_ITEM = new Permission(GROUP, "UseItem",
+            Messages._CredentialsProvider_UseItemPermissionDescription(), Job.CONFIGURE,
+            Boolean.getBoolean("com.cloudbees.plugins.credentials.UseItemPermission"),
+            new PermissionScope[]{PermissionScope.ITEM});
 
     /**
      * Returns all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
@@ -655,4 +695,145 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         }
         return clazz.cast(bestTaker.snapshot(credential));
     }
+
+    /**
+     * Workaround method until Jenkins 1.560+ is the baseline.
+     */
+    @NonNull
+    /*package*/ static Authentication getDefaultAuthenticationOf(Item item) {
+        if (item instanceof Queue.Task) {
+            Queue.Task task = (Queue.Task) item;
+            // TODO Jenkins 1.560+ use the method directly instead of copy & paste
+            // BEGIN INSERT Jenkins 1.560+
+            // return Tasks.getAuthenticationOf(Task)
+            // END INSERT Jenkins 1.560+
+            // BEGIN REMOVE Jenkins 1.560+
+            final Queue.WaitingItem probe =
+                    new Queue.WaitingItem(Calendar.getInstance(), task, Collections.<Action>emptyList());
+            for (QueueItemAuthenticator qia : QueueItemAuthenticatorConfiguration.get().getAuthenticators()) {
+                Authentication a = qia.authenticate(probe);
+                if (a != null) {
+                    return a;
+                }
+            }
+            return Tasks.getDefaultAuthenticationOf(task);
+            // END REMOVE Jenkins 1.560+
+        } else {
+            return ACL.SYSTEM;
+        }
+    }
+
+    /**
+     * A common requirement for plugins is to resolve a specific credential by id in the context of a specific run.
+     * Given that the credential itself could be resulting from a build parameter expression and the complexities of
+     * determining the scope of items from which the credential should be resolved in a chain of builds, this method
+     * provides the correct answer.
+     *
+     * @param id                 either the id of the credential to find or a parameter expression for the id.
+     * @param type               the type of credential to find.
+     * @param run                the {@link Run} defining the context within which to find the credential.
+     * @param domainRequirements the domain requirements of the credential.
+     * @return the credential or {@code null} if either the credential cannot be found or the user triggering the run
+     * is not permitted to use the credential in the context of the run.
+     * @since 1.16
+     */
+    @CheckForNull
+    public static <C extends IdCredentials> C findCredentialById(@NonNull String id, @NonNull Class<C> type,
+                                                                 @NonNull Run<?, ?> run,
+                                                                 DomainRequirement... domainRequirements) {
+        return findCredentialById(id, type, run, Arrays.asList(domainRequirements));
+    }
+
+    /**
+     * A common requirement for plugins is to resolve a specific credential by id in the context of a specific run.
+     * Given that the credential itself could be resulting from a build parameter expression and the complexities of
+     * determining the scope of items from which the credential should be resolved in a chain of builds, this method
+     * provides the correct answer.
+     *
+     * @param id                 either the id of the credential to find or a parameter expression for the id.
+     * @param type               the type of credential to find.
+     * @param run                the {@link Run} defining the context within which to find the credential.
+     * @param domainRequirements the domain requirements of the credential.
+     * @return the credential or {@code null} if either the credential cannot be found or the user triggering the run
+     * is not permitted to use the credential in the context of the run.
+     * @since 1.16
+     */
+    @CheckForNull
+    public static <C extends IdCredentials> C findCredentialById(@NonNull String id, @NonNull Class<C> type,
+                                                                 @NonNull Run<?, ?> run,
+                                                                 @Nullable List<DomainRequirement> domainRequirements) {
+        id.getClass(); // throw NPE if null;
+        type.getClass(); // throw NPE if null;
+        run.getClass(); // throw NPE if null;
+
+        // first we need to find out if this id is pre-selected or a parameter
+        id = id.trim();
+        boolean isParameter = false;
+        boolean isDefaultValue = false;
+        if (id.startsWith("${") && id.endsWith("}")) {
+            final ParametersAction action = run.getAction(ParametersAction.class);
+            if (action != null) {
+                final ParameterValue parameter = action.getParameter(id.substring(2, id.length() - 1));
+                if (parameter instanceof CredentialsParameterValue) {
+                    isParameter = true;
+                    isDefaultValue = ((CredentialsParameterValue) parameter).isDefaultValue();
+                    id = ((CredentialsParameterValue) parameter).getValue();
+                }
+            }
+        }
+        // non parameters or default parameter values can only come from the job's context
+        if (!isParameter || isDefaultValue) {
+            // we use the default authentication of the job as those are the only ones that can be configured
+            // if a different strategy is in play it doesn't make sense to consider the run-time authentication
+            // as you would have no way to configure it
+            return CredentialsMatchers.firstOrNull(
+                    CredentialsProvider.lookupCredentials(type, run.getParent(),
+                            CredentialsProvider.getDefaultAuthenticationOf(run.getParent()), domainRequirements),
+                    CredentialsMatchers.withId(id));
+        }
+        // this is a parameter and not the default value, we need to determine who triggered the build
+        final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
+        if (triggeredBy != null) {
+            final Authentication a = triggeredBy.getKey().impersonate();
+            List<C> candidates = new ArrayList<C>();
+            if (run == triggeredBy.getValue() && run.getACL().hasPermission(a, CredentialsProvider.USE_OWN)) {
+                // the user triggered this job directly and they are allowed to supply their own credentials, so
+                // add those into the list. We do not want to follow the chain for the user's authentication
+                // though, as there is no way to limit how far the passed-through parameters can be used
+                candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), a, domainRequirements));
+            }
+            if (run.getACL().hasPermission(a, CredentialsProvider.USE_ITEM)) {
+                // the triggering user is allowed to use the item's credentials, so add those into the list
+                // we use the default authentication of the job as those are the only ones that can be configured
+                // if a different strategy is in play it doesn't make sense to consider the run-time authentication
+                // as you would have no way to configure it
+                candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(),
+                        CredentialsProvider.getDefaultAuthenticationOf(run.getParent()), domainRequirements));
+            }
+            return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
+        }
+        return null;
+    }
+
+    private static Map.Entry<User, Run<?, ?>> triggeredBy(Run<?, ?> run) {
+        Cause.UserIdCause cause = run.getCause(Cause.UserIdCause.class);
+        if (cause != null) {
+            User u = User.get(cause.getUserId(), false, Collections.emptyMap());
+            return u == null ? null : new AbstractMap.SimpleImmutableEntry<User, Run<?, ?>>(u, run);
+        }
+        Cause.UpstreamCause c = run.getCause(Cause.UpstreamCause.class);
+        run = (c != null) ? c.getUpstreamRun() : null;
+        while (run != null) {
+            cause = run.getCause(Cause.UserIdCause.class);
+            if (cause != null) {
+                User u = User.get(cause.getUserId(), false, Collections.emptyMap());
+                return u == null ? null : new AbstractMap.SimpleImmutableEntry<User, Run<?, ?>>(u, run);
+            }
+            c = run.getCause(Cause.UpstreamCause.class);
+
+            run = (c != null) ? c.getUpstreamRun() : null;
+        }
+        return null;
+    }
+
 }
