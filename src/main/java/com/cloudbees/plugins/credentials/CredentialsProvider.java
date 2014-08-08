@@ -34,7 +34,9 @@ import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
+import hudson.model.Job;
 import hudson.model.ModelObject;
+import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
@@ -577,6 +579,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                             if (current instanceof Item) {
                                 current = ((Item) current).getParent();
                                 iterator = providers.iterator();
+                            } else if (current instanceof User) {
+                                current = null;
                             } else if (current instanceof Jenkins) {
                                 current = null;
                             }
