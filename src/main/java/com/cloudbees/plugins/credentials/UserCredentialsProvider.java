@@ -27,17 +27,23 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.BulkChange;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
+import hudson.model.Action;
+import hudson.model.Api;
 import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
+import hudson.model.TransientUserActionFactory;
 import hudson.model.User;
 import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
+import hudson.security.Permission;
 import hudson.util.CopyOnWriteMap;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -46,10 +52,14 @@ import org.acegisecurity.providers.anonymous.AnonymousAuthenticationToken;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
+import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -138,6 +148,14 @@ public class UserCredentialsProvider extends CredentialsProvider {
             }
         }
         return new ArrayList<C>();
+    }
+
+    @Override
+    public CredentialsStore getStore(@CheckForNull ModelObject object) {
+        if (object instanceof User) {
+            return new StoreImpl((User) object);
+        }
+        return null;
     }
 
     /**
@@ -257,6 +275,144 @@ public class UserCredentialsProvider extends CredentialsProvider {
         }
 
         /**
+         * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+         */
+        private synchronized boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException {
+            checkPermission(CredentialsProvider.MANAGE_DOMAINS);
+            Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+            if (domainCredentialsMap.containsKey(domain)) {
+                List<Credentials> list = domainCredentialsMap.get(domain);
+                boolean modified = false;
+                for (Credentials c : credentials) {
+                    if (list.contains(c)) {
+                        continue;
+                    }
+                    list.add(c);
+                    modified = true;
+                }
+                if (modified) {
+                    save();
+                }
+                return modified;
+            } else {
+                domainCredentialsMap.put(domain, new ArrayList<Credentials>(credentials));
+                save();
+                return true;
+            }
+        }
+
+        /**
+         * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+         */
+        private synchronized boolean removeDomain(@NonNull Domain domain) throws IOException {
+            checkPermission(CredentialsProvider.MANAGE_DOMAINS);
+            Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+            if (domainCredentialsMap.containsKey(domain)) {
+                domainCredentialsMap.remove(domain);
+                save();
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+         */
+        private synchronized boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException {
+            checkPermission(CredentialsProvider.MANAGE_DOMAINS);
+            Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+            if (domainCredentialsMap.containsKey(current)) {
+                domainCredentialsMap.put(replacement, domainCredentialsMap.remove(current));
+                save();
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+         */
+        private synchronized boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials)
+                throws IOException {
+            checkPermission(CredentialsProvider.CREATE);
+            Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+            if (domainCredentialsMap.containsKey(domain)) {
+                List<Credentials> list = domainCredentialsMap.get(domain);
+                if (list.contains(credentials)) {
+                    return false;
+                }
+                list.add(credentials);
+                save();
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+         */
+        @NonNull
+        private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
+            if (Jenkins.getInstance().hasPermission(CredentialsProvider.VIEW)) {
+                List<Credentials> list = getDomainCredentialsMap().get(domain);
+                if (list == null || list.isEmpty()) {
+                    return Collections.emptyList();
+                }
+                return Collections.unmodifiableList(new ArrayList<Credentials>(list));
+            }
+            return Collections.emptyList();
+        }
+
+        /**
+         * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+         */
+        private synchronized boolean removeCredentials(@NonNull Domain domain, @NonNull Credentials credentials)
+                throws IOException {
+            checkPermission(CredentialsProvider.DELETE);
+            Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+            if (domainCredentialsMap.containsKey(domain)) {
+                List<Credentials> list = domainCredentialsMap.get(domain);
+                if (!list.contains(credentials)) {
+                    return false;
+                }
+                list.remove(credentials);
+                save();
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
+         */
+        private synchronized boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
+                                                       @NonNull Credentials replacement) throws IOException {
+            checkPermission(CredentialsProvider.UPDATE);
+            Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
+            if (domainCredentialsMap.containsKey(domain)) {
+                List<Credentials> list = domainCredentialsMap.get(domain);
+                int index = list.indexOf(current);
+                if (index == -1) {
+                    return false;
+                }
+                list.set(index, replacement);
+                save();
+                return true;
+            }
+            return false;
+        }
+
+        private void checkPermission(Permission p) {
+            user.checkPermission(p);
+        }
+
+        private void save() throws IOException {
+            if (user.equals(User.current())) {
+                user.save();
+            }
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Override
@@ -347,4 +503,139 @@ public class UserCredentialsProvider extends CredentialsProvider {
             }
         }
     }
+
+    @Extension
+    public static class TransientUserActionFactoryImpl extends TransientUserActionFactory {
+        @Override
+        public Collection<? extends Action> createFor(User target) {
+            return Collections.singletonList(new UserFacingAction(target));
+        }
+    }
+
+    @ExportedBean
+    public static class UserFacingAction extends CredentialsStoreAction {
+
+        private final User user;
+
+        public UserFacingAction(User user) {
+            this.user = user;
+        }
+
+        public Api getApi() {
+            return new Api(this);
+        }
+
+        @Exported
+        public CredentialsStore getStore() {
+            return new StoreImpl(user);
+        }
+
+    }
+
+    public static class StoreImpl extends CredentialsStore {
+
+        private final User user;
+
+        private StoreImpl(User user) {
+            this.user = user;
+        }
+
+        private UserCredentialsProperty getInstance() {
+            UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
+            if (property == null) {
+                BulkChange bc = new BulkChange(user);
+                try {
+                    user.addProperty(property = new UserCredentialsProperty(new DomainCredentials[0]));
+                } catch (IOException e) {
+                    // ignore as we are not actually saving
+                } finally {
+                    // we don't want to save the user record unless the credentials are modified.
+                    bc.abort();
+                }
+            }
+            return property;
+        }
+
+        @Override
+        public ModelObject getContext() {
+            return user;
+        }
+
+        @Override
+        public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
+            return user.equals(User.get(a.getName()));
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        @Exported
+        public List<Domain> getDomains() {
+            return Collections.unmodifiableList(new ArrayList<Domain>(
+                    getInstance().getDomainCredentialsMap().keySet()
+            ));
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException {
+            return getInstance().addDomain(domain, credentials);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean removeDomain(@NonNull Domain domain) throws IOException {
+            return getInstance().removeDomain(domain);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException {
+            return getInstance().updateDomain(current, replacement);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException {
+            return getInstance().addCredentials(domain, credentials);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        @Exported
+        public List<Credentials> getCredentials(@NonNull Domain domain) {
+            return getInstance().getCredentials(domain);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean removeCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException {
+            return getInstance().removeCredentials(domain, credentials);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
+                                         @NonNull Credentials replacement) throws IOException {
+            return getInstance().updateCredentials(domain, current, replacement);
+        }
+    }
+
 }

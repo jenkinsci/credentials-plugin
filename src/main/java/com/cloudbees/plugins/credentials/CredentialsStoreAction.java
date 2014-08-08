@@ -39,6 +39,7 @@ import hudson.model.Failure;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
+import hudson.model.User;
 import hudson.security.Permission;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
@@ -55,6 +56,7 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -97,6 +99,8 @@ public abstract class CredentialsStoreAction implements Action {
             n = ((Item) context).getFullName();
         } else if (context instanceof ItemGroup) {
             n = ((ItemGroup) context).getFullName();
+        } else if (context instanceof User) {
+            n = "user:"+((User) context).getId();
         } else {
             n = "";
         }
@@ -114,6 +118,8 @@ public abstract class CredentialsStoreAction implements Action {
             n = ((Item) context).getFullDisplayName();
         } else if (context instanceof ItemGroup) {
             n = ((ItemGroup) context).getFullDisplayName();
+        } else if (context instanceof User) {
+            n = Messages.CredentialsStoreAction_UserDisplayName( ((User) context).getDisplayName());
         } else {
             n = Jenkins.getInstance().getFullDisplayName();
         }
@@ -443,11 +449,15 @@ public abstract class CredentialsStoreAction implements Action {
                 context = Jenkins.getInstance();
             } else {
                 while (context == null && split > 0) {
-                    context = Jenkins.getInstance().getItemByFullName(contextName);
+                    context = contextName.startsWith("user:")
+                            ? User.get(contextName.substring("user:".length(), split - 1), false, Collections.emptyMap())
+                            : Jenkins.getInstance().getItemByFullName(contextName);
                     if (context == null) {
                         split = destination.lastIndexOf(splitKey, split - 1);
-                        contextName = destination.substring(0, split);
-                        domainName = destination.substring(split + splitKey.length());
+                        if (split > 0) {
+                            contextName = destination.substring(0, split);
+                            domainName = destination.substring(split + splitKey.length());
+                        }
                     }
                 }
             }
@@ -464,6 +474,9 @@ public abstract class CredentialsStoreAction implements Action {
                             destinationDomain = d;
                             break;
                         }
+                    }
+                    if (destinationDomain != null) {
+                        break;
                     }
                 }
             }
