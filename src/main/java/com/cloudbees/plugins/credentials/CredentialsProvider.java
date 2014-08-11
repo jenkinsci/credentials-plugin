@@ -143,8 +143,10 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @since 1.16
      */
     public static final Permission USE_OWN = new Permission(GROUP, "UseOwn",
-            Messages._CredentialsProvider_UseOwnPermissionDescription(), Jenkins.ADMINISTER,
-            true, new PermissionScope[]{PermissionScope.ITEM});
+            Messages._CredentialsProvider_UseOwnPermissionDescription(),
+            Boolean.getBoolean("com.cloudbees.plugins.credentials.UseOwnPermission") ? Jenkins.ADMINISTER : Job.BUILD,
+            Boolean.getBoolean("com.cloudbees.plugins.credentials.UseOwnPermission"),
+            new PermissionScope[]{PermissionScope.ITEM});
 
     /**
      * Where an immediate action against a job requires that a credential be selected by the user triggering the
