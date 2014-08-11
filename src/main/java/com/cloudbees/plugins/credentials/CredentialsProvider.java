@@ -797,7 +797,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
         final Authentication a = triggeredBy == null ? Jenkins.ANONYMOUS : triggeredBy.getKey().impersonate();
         List<C> candidates = new ArrayList<C>();
-        if (run == triggeredBy.getValue() && run.getACL().hasPermission(a, CredentialsProvider.USE_OWN)) {
+        if (triggeredBy != null && run == triggeredBy.getValue()
+                && run.getACL().hasPermission(a, CredentialsProvider.USE_OWN)) {
             // the user triggered this job directly and they are allowed to supply their own credentials, so
             // add those into the list. We do not want to follow the chain for the user's authentication
             // though, as there is no way to limit how far the passed-through parameters can be used
