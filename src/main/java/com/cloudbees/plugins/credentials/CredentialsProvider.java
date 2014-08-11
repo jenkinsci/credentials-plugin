@@ -795,26 +795,23 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         }
         // this is a parameter and not the default value, we need to determine who triggered the build
         final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
-        if (triggeredBy != null) {
-            final Authentication a = triggeredBy.getKey().impersonate();
-            List<C> candidates = new ArrayList<C>();
-            if (run == triggeredBy.getValue() && run.getACL().hasPermission(a, CredentialsProvider.USE_OWN)) {
-                // the user triggered this job directly and they are allowed to supply their own credentials, so
-                // add those into the list. We do not want to follow the chain for the user's authentication
-                // though, as there is no way to limit how far the passed-through parameters can be used
-                candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), a, domainRequirements));
-            }
-            if (run.getACL().hasPermission(a, CredentialsProvider.USE_ITEM)) {
-                // the triggering user is allowed to use the item's credentials, so add those into the list
-                // we use the default authentication of the job as those are the only ones that can be configured
-                // if a different strategy is in play it doesn't make sense to consider the run-time authentication
-                // as you would have no way to configure it
-                candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(),
-                        CredentialsProvider.getDefaultAuthenticationOf(run.getParent()), domainRequirements));
-            }
-            return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
+        final Authentication a = triggeredBy == null ? Jenkins.ANONYMOUS : triggeredBy.getKey().impersonate();
+        List<C> candidates = new ArrayList<C>();
+        if (run == triggeredBy.getValue() && run.getACL().hasPermission(a, CredentialsProvider.USE_OWN)) {
+            // the user triggered this job directly and they are allowed to supply their own credentials, so
+            // add those into the list. We do not want to follow the chain for the user's authentication
+            // though, as there is no way to limit how far the passed-through parameters can be used
+            candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), a, domainRequirements));
         }
-        return null;
+        if (run.getACL().hasPermission(a, CredentialsProvider.USE_ITEM)) {
+            // the triggering user is allowed to use the item's credentials, so add those into the list
+            // we use the default authentication of the job as those are the only ones that can be configured
+            // if a different strategy is in play it doesn't make sense to consider the run-time authentication
+            // as you would have no way to configure it
+            candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(),
+                    CredentialsProvider.getDefaultAuthenticationOf(run.getParent()), domainRequirements));
+        }
+        return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
     }
 
     private static Map.Entry<User, Run<?, ?>> triggeredBy(Run<?, ?> run) {
