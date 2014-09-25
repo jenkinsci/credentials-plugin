@@ -80,6 +80,7 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
      * {@inheritDoc}
      */
     @NonNull
+    @Exported
     public String getDescription() {
         return description;
     }
