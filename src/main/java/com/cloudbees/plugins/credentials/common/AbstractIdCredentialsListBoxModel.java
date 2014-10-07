@@ -25,16 +25,86 @@ package com.cloudbees.plugins.credentials.common;
 
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.model.Descriptor;
+import hudson.model.Item;
+import hudson.model.Job;
 import hudson.util.ListBoxModel;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import jenkins.model.Jenkins;
 
 /**
- * Base class for {@link ListBoxModel} types that present a selection of credentials where the selection is keyed
- * by the credential's {@link com.cloudbees.plugins.credentials.common.IdCredentials#getId()}.
+ * {@link ListBoxModel} with support for credentials.
+ * <p/>
+ * This class is convenient for providing the {@code config.groovy} or {@code config.jelly} fragment for a collection of objects of some {@link IdCredentials} subtype.
+ * <p/>
+ * If you want to let the user configure a credentials object, do the following:
+ * <p/>
+ * First, create a field that stores the credentials ID and defines a corresponding parameter in the constructor:
+ * <p/>
+ * <pre>
+ * private String credentialsId;
+ *
+ * &#64;DataBoundConstructor
+ * public MyModel( .... , String credentialsId) {
+ *     this.credentialsId = credentialsId;
+ *     ...
+ * }
+ * public String getCredentialsId() {return credentialsId;}
+ * </pre>
+ * <p/>
+ * Your <tt>config.groovy</tt> should have the following entry to render a drop-down list box:
+ * <p/>
+ * <pre>
+ * f.entry(title:_("Credentials"), field:"credentialsId") {
+ *     f.select()
+ * }
+ * </pre>
+ * <p/>
+ * Finally, your {@link Descriptor} implementation should have the <tt>doFillCredentialsIdItems</tt> method, which
+ * lists up the credentials available in this context:
+ * <p/>
+ * <pre>
+ * public ListBoxModel doFillCredentialsIdItems() {
+ *     if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) { // or whatever permission is appropriate for this page
+ *         // Important! Otherwise you expose credentials metadata to random web requests.
+ *         return new ListBoxModel();
+ *     }
+ *     return new StandardUsernameListBoxModel().withEmptySelection().withAll(
+ *         CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class,...));
+ * }
+ * </pre>
+ * <p/>
+ * <p/>
+ * Exactly which overloaded version of the {@link CredentialsProvider#lookupCredentials(Class)} depends on
+ * the context in which your model operates. Here are a few common examples:
+ * <p/>
+ * <dl>
+ * <dt>System-level settings
+ * <dd>
+ * If your model is a singleton in the whole Jenkins instance, things that belong to the root {@link Jenkins}
+ * (such as slaves), or do not have any ancestors serving as the context, then use {@link Jenkins#getInstance} as the context.
+ * <p/>
+ * <dt>Job-level settings
+ * <dd>
+ * If your model is a configuration fragment added to a {@link Item} (such as its major subtype {@link Job}),
+ * then use that {@link Item} as the context.
+   For example:
+ * <p/>
+ * <pre>
+ * public ListBoxModel doFillCredentialsIdItems(&#64;AncestorInPath Item context, &#64;QueryParameter String source) {
+ *     if (context == null || !context.hasPermission(Item.CONFIGURE)) {
+ *         return new ListBoxModel();
+ *     }
+ *     return new StandardUsernameListBoxModel().withEmptySelection().withAll(
+ *         CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM, URIRequirementBuilder.fromUri(source).build()));
+ * }
+ * </pre>
+ * </dl>
  *
  * @since 1.6
  */

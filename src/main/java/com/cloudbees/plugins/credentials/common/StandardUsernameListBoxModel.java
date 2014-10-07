@@ -25,12 +25,11 @@ package com.cloudbees.plugins.credentials.common;
 
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import hudson.Util;
 import hudson.util.ListBoxModel;
 
 /**
  * {@link ListBoxModel} with {@link StandardUsernameCredentials} support.
- *
+ * See {@link AbstractIdCredentialsListBoxModel} for usage.
  * @since 1.6
  */
 public class StandardUsernameListBoxModel
