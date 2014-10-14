@@ -3,17 +3,12 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.EnvVars;
 import hudson.model.AbstractBuild;
-import hudson.model.Cause;
 import hudson.model.Executor;
-import hudson.model.Job;
 import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
 import hudson.model.Run;
-import hudson.model.User;
 import hudson.model.queue.WorkUnit;
 import hudson.security.ACL;
 import hudson.util.VariableResolver;
@@ -23,12 +18,10 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Stephen Connolly
@@ -64,6 +57,10 @@ public class CredentialsParameterValue extends ParameterValue {
                 return CredentialsParameterValue.this.name.equals(name) ? value : null;
             }
         };
+    }
+
+    /* TODO 1.556+ @Override */ public void buildEnvironment(Run<?,?> build, EnvVars env) {
+        env.put(name, value);
     }
 
     public <C extends IdCredentials> C lookupCredentials(@NonNull Class<C> type, @NonNull Run run,
