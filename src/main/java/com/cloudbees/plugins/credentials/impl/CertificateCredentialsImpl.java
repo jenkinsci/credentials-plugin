@@ -1,6 +1,7 @@
 package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
@@ -9,7 +10,6 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
-import hudson.FilePath;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -93,6 +93,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         this.keyStoreSource = keyStoreSource;
     }
 
+    private Object writeReplace() {
+        if (/* XStream */Channel.current() == null || /* already safe to serialize */ keyStoreSource.isSnapshotSource()) {
+            return this;
+        }
+        return CredentialsProvider.snapshot(this);
+    }
+
     @NonNull
     public synchronized KeyStore getKeyStore() {
         long lastModified = keyStoreSource.getKeyStoreLastModified();
@@ -161,8 +168,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     }
 
-    public static abstract class KeyStoreSource extends AbstractDescribableImpl<KeyStoreSource>
-            implements Serializable {
+    public static abstract class KeyStoreSource extends AbstractDescribableImpl<KeyStoreSource> {
 
         @NonNull
         public abstract byte[] getKeyStoreBytes();
@@ -249,10 +255,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
      * Let the user reference a file on the disk.
      */
     public static class FileOnMasterKeyStoreSource extends KeyStoreSource {
-        /**
-         * Ensure consistent serialization.
-         */
-        private static final long serialVersionUID = 1L;
 
         /**
          * Our logger.
@@ -276,14 +278,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @NonNull
         @Override
         public byte[] getKeyStoreBytes() {
-            InputStream inputStream;
             try {
-                if (Channel.current() == null) {
-                    inputStream = new FileInputStream(new File(keyStoreFile));
-                } else {
-                    // we are not on the master
-                    inputStream = new FilePath(Channel.current(), keyStoreFile).read();
-                }
+                InputStream inputStream = new FileInputStream(new File(keyStoreFile));
                 try {
                     return IOUtils.toByteArray(inputStream);
                 } finally {
@@ -300,18 +296,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         @Override
         public long getKeyStoreLastModified() {
-            if (Channel.current() == null) {
-                return new File(keyStoreFile).lastModified();
-            } else {
-                // we are not on the master
-                try {
-                    return new FilePath(Channel.current(), keyStoreFile).lastModified();
-                } catch (IOException e) {
-                    return 0L;
-                } catch (InterruptedException e) {
-                    return 0L;
-                }
-            }
+            return new File(keyStoreFile).lastModified();
         }
 
         /**
@@ -360,7 +345,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     /**
      * Let the user reference a file on the disk.
      */
-    public static class UploadedKeyStoreSource extends KeyStoreSource {
+    public static class UploadedKeyStoreSource extends KeyStoreSource implements Serializable {
         /**
          * Ensure consistent serialization.
          */
