@@ -76,12 +76,13 @@ public abstract class CredentialsStoreAction implements Action {
     public abstract CredentialsStore getStore();
 
     public String getIconFileName() {
-        if (CredentialsProvider.allCredentialsDescriptors().isEmpty()) {
-            return null;
-        }
-        return getStore().hasPermission(CredentialsProvider.VIEW)
+        return isVisible()
                 ? "/plugin/credentials/images/48x48/credentials.png"
                 : null;
+    }
+
+    public boolean isVisible() {
+        return !CredentialsProvider.allCredentialsDescriptors().isEmpty() && getStore().hasPermission(CredentialsProvider.VIEW);
     }
 
     public String getDisplayName() {
