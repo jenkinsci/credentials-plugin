@@ -26,9 +26,6 @@ package com.cloudbees.plugins.credentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
 
 /**
  * Provides names for credentials.
@@ -55,37 +52,9 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
      */
     @NonNull
     public static String name(@NonNull Credentials credentials) {
-        credentials.getClass(); // throw NPE if null
-        @CheckForNull
-        NameWith nameWith = credentials.getClass().getAnnotation(NameWith.class);
-        if (!isValidNameWithAnnotation(nameWith)) {
-            Queue<Class<?>> queue = new LinkedList<Class<?>>();
-            queue.addAll(Arrays.asList(credentials.getClass().getInterfaces()));
-            while (!queue.isEmpty()) {
-                Class<?> interfaze = queue.remove();
-                if (interfaze.getInterfaces().length > 0) {
-                    queue.addAll(Arrays.asList(interfaze.getInterfaces()));
-                }
-                NameWith annotation = interfaze.getAnnotation(NameWith.class);
-                if (!isValidNameWithAnnotation(annotation)) {
-                    continue;
-                }
-                if (nameWith == null || nameWith.priority() < annotation.priority()) {
-                    nameWith = annotation;
-                }
-            }
-        }
-        if (isValidNameWithAnnotation(nameWith)) {
-            try {
-                CredentialsNameProvider nameProvider = nameWith.value().newInstance();
-                return nameProvider.getName(credentials);
-            } catch (ClassCastException e) {
-                // ignore
-            } catch (InstantiationException e) {
-                // ignore
-            } catch (IllegalAccessException e) {
-                // ignore
-            }
+        Result result = name(credentials, credentials.getClass());
+        if (result != null) {
+            return result.name;
         }
         try {
             return credentials.getDescriptor().getDisplayName();
@@ -94,14 +63,45 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
         }
     }
 
-    /**
-     * Check that the annotation is valid.
-     *
-     * @param nameWith the annotation.
-     * @return {@code true} only if the annotation is valid.
-     */
-    @SuppressWarnings("ConstantConditions")
-    private static boolean isValidNameWithAnnotation(@CheckForNull NameWith nameWith) {
-        return nameWith != null && nameWith.value() != null;
+    private static final class Result {
+        final String name;
+        final int priority;
+        Result(String name, int priority) {
+            this.name = name;
+            this.priority = priority;
+        }
     }
+    
+    @SuppressWarnings({"unchecked", "rawtypes"}) // missing type token in CredentialsNameProvider to get RTTI
+    private static @CheckForNull Result name(@NonNull Credentials credentials, @NonNull Class<?> clazz) {
+        NameWith nameWith = clazz.getAnnotation(NameWith.class);
+        if (nameWith != null) {
+            try {
+                CredentialsNameProvider nameProvider = nameWith.value().newInstance();
+                return new Result(nameProvider.getName(credentials), nameWith.priority());
+            } catch (ClassCastException e) {
+                // ignore
+            } catch (InstantiationException e) {
+                // ignore
+            } catch (IllegalAccessException e) {
+                // ignore
+            }
+        }
+        Class<?> supe = clazz.getSuperclass();
+        Result result = null;
+        if (supe != null) {
+            result = name(credentials, supe);
+            if (result != null) {
+                return result;
+            }
+        }
+        for (Class<?> xface : clazz.getInterfaces()) {
+            Result _result = name(credentials, xface);
+            if (_result != null && (result == null || result.priority < _result.priority)) {
+                result = _result;
+            }
+        }
+        return result;
+    }
+
 }
