@@ -560,13 +560,17 @@ public class SystemCredentialsProvider extends ManagementLink
             return Jenkins.getInstance();
         }
 
+        public ACL getACL() {
+            return Jenkins.getInstance().getACL();
+        }
+
         /**
          * {@inheritDoc}
          */
         @Override
         public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
             // we follow the permissions of Jenkins itself
-            return Jenkins.getInstance().getACL().hasPermission(a, permission);
+            return getACL().hasPermission(a, permission);
         }
 
         /**
@@ -639,6 +643,7 @@ public class SystemCredentialsProvider extends ManagementLink
                                          @NonNull Credentials replacement) throws IOException {
             return SystemCredentialsProvider.getInstance().updateCredentials(domain, current, replacement);
         }
+
     }
 
     @ExportedBean

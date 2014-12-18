@@ -26,6 +26,8 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.ModelObject;
+import hudson.security.ACL;
+import hudson.security.AccessControlled;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
 import jenkins.model.Jenkins;
@@ -44,7 +46,7 @@ import java.util.logging.Logger;
  * @author Stephen Connolly
  * @since 1.8
  */
-public abstract class CredentialsStore {
+public abstract class CredentialsStore implements AccessControlled {
 
     private transient Boolean domainsModifiable;
 
@@ -87,6 +89,18 @@ public abstract class CredentialsStore {
      * Checks if the given principle has the given permission.
      */
     public abstract boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission);
+
+    /** {@inheritDoc} */
+    public ACL getACL() {
+        // we really want people to implement this one, but in case of legacy implementations we need to provide
+        // an effective ACL implementation.
+        return new ACL() {
+            @Override
+            public boolean hasPermission(Authentication a, Permission permission) {
+                return CredentialsStore.this.hasPermission(a, permission);
+            }
+        };
+    }
 
     /**
      * Returns all the {@link com.cloudbees.plugins.credentials.domains.Domain}s that this credential provider has.

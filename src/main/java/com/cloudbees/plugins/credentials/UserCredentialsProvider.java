@@ -566,6 +566,11 @@ public class UserCredentialsProvider extends CredentialsProvider {
             return user.equals(User.get(a.getName()));
         }
 
+        @Override
+        public ACL getACL() {
+            return user.getACL();
+        }
+
         /**
          * {@inheritDoc}
          */
