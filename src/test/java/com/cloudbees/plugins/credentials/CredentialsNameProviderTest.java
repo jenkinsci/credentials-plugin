@@ -108,6 +108,19 @@ public class CredentialsNameProviderTest {
     private static class C11 extends TestCredentials implements I6, I7 {}
     private static class C12 extends TestCredentials implements I7, I6 {}
 
+    @Test public void interfaceViaSuperclassPriorities() {
+        assertEquals("I9N", CredentialsNameProvider.name(new C14()));
+    }
+    @NameWith(value=I8N.class, priority=1)
+    private interface I8 extends Credentials {}
+    public static class I8N extends TestCredentialsNameProvider {}
+    private static class C13 extends TestCredentials implements I8 {}
+    @NameWith(value=I9N.class, priority=2)
+    private interface I9 extends Credentials {}
+    public static class I9N extends TestCredentialsNameProvider {}
+    private interface I10 extends I9 {}
+    private static class C14 extends C13 implements I10 {}
+
     private static abstract class TestCredentials implements Credentials {
         @Override public CredentialsScope getScope() {
             return CredentialsScope.GLOBAL;

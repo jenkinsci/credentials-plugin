@@ -25,6 +25,9 @@ package com.cloudbees.plugins.credentials;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -87,16 +90,15 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
                 // ignore
             }
         }
+        List<Class<?>> supertypes = new ArrayList<Class<?>>();
         Class<?> supe = clazz.getSuperclass();
-        Result result = null;
         if (supe != null) {
-            result = name(credentials, supe);
-            if (result != null) {
-                return result;
-            }
+            supertypes.add(supe);
         }
-        for (Class<?> xface : clazz.getInterfaces()) {
-            Result _result = name(credentials, xface);
+        supertypes.addAll(Arrays.asList(clazz.getInterfaces()));
+        Result result = null;
+        for (Class<?> supertype : supertypes) {
+            Result _result = name(credentials, supertype);
             if (_result != null && (result == null || result.priority < _result.priority)) {
                 result = _result;
             }
