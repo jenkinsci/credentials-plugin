@@ -24,12 +24,15 @@
 package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.BaseCredentials;
+import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
+import hudson.util.FormValidation;
+import org.kohsuke.stapler.QueryParameter;
 
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
@@ -109,4 +112,30 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
     public final int hashCode() {
         return IdCredentials.Helpers.hashCode(this);
     }
+
+    /**
+     * Descriptor to use for subclasses of {@link BaseStandardCredentials}.
+     * <p>{@code <st:include page="id-and-description" class="${descriptor.clazz}"/>} in {@code credentials.jelly} to pick up standard controls for {@link #getId} and {@link #getDescription}.
+     */
+    protected static abstract class BaseStandardCredentialsDescriptor extends CredentialsDescriptor {
+
+        protected BaseStandardCredentialsDescriptor() {
+            clazz.asSubclass(BaseStandardCredentials.class);
+        }
+
+        protected BaseStandardCredentialsDescriptor(Class<? extends BaseStandardCredentials> clazz) {
+            super(clazz);
+        }
+
+        public final FormValidation doCheckId(@QueryParameter String value) {
+            if (value.isEmpty()) {
+                return FormValidation.ok();
+            }
+            // TODO syntax check
+            // TODO look for existing credentials with this ID (perhaps limited to the store associated with a User or ItemGroup in @AncestorInPath)
+            return FormValidation.ok();
+        }
+
+    }
+
 }

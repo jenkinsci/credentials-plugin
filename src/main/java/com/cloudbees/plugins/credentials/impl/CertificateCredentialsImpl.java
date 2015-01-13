@@ -1,6 +1,5 @@
 package com.cloudbees.plugins.credentials.impl;
 
-import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
@@ -144,7 +143,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     }
 
     @Extension(ordinal = -1)
-    public static class DescriptorImpl extends CredentialsDescriptor {
+    public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
 
         @Override
         public String getDisplayName() {
