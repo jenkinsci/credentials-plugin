@@ -154,17 +154,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             return Hudson.getInstance().getDescriptorList(KeyStoreSource.class);
         }
 
-
-        public CertificateCredentialsImpl fixInstance(CertificateCredentialsImpl instance) {
-            if (instance == null) {
-                return new CertificateCredentialsImpl(CredentialsScope.GLOBAL, null, "", "",
-                        new FileOnMasterKeyStoreSource(""));
-            } else {
-                return instance;
-            }
-        }
-
-
     }
 
     public static abstract class KeyStoreSource extends AbstractDescribableImpl<KeyStoreSource> {
