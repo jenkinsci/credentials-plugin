@@ -25,13 +25,18 @@ package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.BaseCredentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
+import hudson.model.ItemGroup;
 import hudson.util.FormValidation;
+import java.util.Collections;
 import org.kohsuke.stapler.QueryParameter;
 
 import org.kohsuke.stapler.export.Exported;
@@ -133,6 +138,10 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             }
             if (!value.matches("[a-zA-Z0-9_.-]+")) { // anything else considered kosher?
                 return FormValidation.error("Unacceptable characters");
+            }
+            // TODO perhaps limit to the store associated with a User or ItemGroup (Jenkins/Folder) in @AncestorInPath
+            if (CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(IdCredentials.class, (ItemGroup<?>) null, null, Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(value)) != null) {
+                return FormValidation.error("This ID is already in use");
             }
             return FormValidation.ok();
         }

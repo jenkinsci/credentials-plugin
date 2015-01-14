@@ -24,6 +24,8 @@
 
 package com.cloudbees.plugins.credentials.impl;
 
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import hudson.util.FormValidation;
 import org.junit.Test;
@@ -40,6 +42,8 @@ public class BaseStandardCredentialsTest {
         assertDoCheckId(/* random UUID */IdCredentials.Helpers.fixEmptyId(null), FormValidation.Kind.OK);
         assertDoCheckId("blah-blah", FormValidation.Kind.OK);
         assertDoCheckId("definitely\nscary", FormValidation.Kind.ERROR);
+        SystemCredentialsProvider.getInstance().getCredentials().add(new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "blah-blah", null, "x", "y"));
+        assertDoCheckId("blah-blah", FormValidation.Kind.ERROR);
     }
 
     private void assertDoCheckId(String id, FormValidation.Kind expectedResult) {
