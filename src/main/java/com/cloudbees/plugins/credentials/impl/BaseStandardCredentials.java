@@ -28,15 +28,18 @@ import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
-import hudson.model.ItemGroup;
+import hudson.model.ModelObject;
+import hudson.model.User;
 import hudson.util.FormValidation;
-import java.util.Collections;
+import jenkins.model.Jenkins;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.QueryParameter;
 
 import org.kohsuke.stapler.export.Exported;
@@ -132,18 +135,54 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             super(clazz);
         }
 
-        public final FormValidation doCheckId(@QueryParameter String value) {
+        public final FormValidation doCheckId(@QueryParameter String value, @AncestorInPath ModelObject context) {
             if (value.isEmpty()) {
                 return FormValidation.ok();
             }
             if (!value.matches("[a-zA-Z0-9_.-]+")) { // anything else considered kosher?
                 return FormValidation.error("Unacceptable characters");
             }
-            // TODO perhaps limit to the store associated with a User or ItemGroup (Jenkins/Folder) in @AncestorInPath
-            if (CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(IdCredentials.class, (ItemGroup<?>) null, null, Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(value)) != null) {
-                return FormValidation.error("This ID is already in use");
+            FormValidation problem = checkForDuplicates(value, context, context);
+            if (problem != null) {
+                return problem;
+            }
+            if (!(context instanceof User)) {
+                User me = User.current();
+                if (me != null) {
+                    problem = checkForDuplicates(value, context, me);
+                    if (problem != null) {
+                        return problem;
+                    }
+                }
+            }
+            if (!(context instanceof Jenkins)) {
+                // CredentialsProvider.lookupStores(User) does not return SystemCredentialsProvider; should it?
+                Jenkins j = Jenkins.getInstance();
+                if (j != null) {
+                    problem = checkForDuplicates(value, context, j);
+                    if (problem != null) {
+                        return problem;
+                    }
+                }
             }
             return FormValidation.ok();
+        }
+        private static @CheckForNull FormValidation checkForDuplicates(String value, ModelObject context, ModelObject object) {
+            for (CredentialsStore store : CredentialsProvider.lookupStores(object)) {
+                if (!store.hasPermission(CredentialsProvider.VIEW)) {
+                    continue;
+                }
+                for (Domain domain : store.getDomains()) {
+                    if (CredentialsMatchers.firstOrNull(store.getCredentials(domain), CredentialsMatchers.withId(value)) != null) {
+                        if (store.getContext() == context) {
+                            return FormValidation.error("This ID is already in use");
+                        } else {
+                            return FormValidation.warning("This ID is already in use in another context");
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
     }
