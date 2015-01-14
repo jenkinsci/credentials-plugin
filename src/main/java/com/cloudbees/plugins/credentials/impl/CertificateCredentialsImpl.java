@@ -208,13 +208,12 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     if (keyStore.isCertificateEntry(alias)) {
                         keyStore.getCertificate(alias);
                     } else if (keyStore.isKeyEntry(alias)) {
+                        if (passwordChars == null) {
+                            return FormValidation.warning(Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword(alias));
+                        }
                         try {
                             keyStore.getKey(alias, passwordChars);
                         } catch (UnrecoverableEntryException e) {
-                            if (passwordChars == null || passwordChars.length == 0) {
-                                return FormValidation.warning(e,
-                                        Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword(alias));
-                            }
                             return FormValidation.warning(e,
                                     Messages.CertificateCredentialsImpl_LoadKeyFailed(alias));
                         }
