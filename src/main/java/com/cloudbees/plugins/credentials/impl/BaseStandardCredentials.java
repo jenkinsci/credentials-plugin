@@ -131,8 +131,9 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             if (value.isEmpty()) {
                 return FormValidation.ok();
             }
-            // TODO syntax check
-            // TODO look for existing credentials with this ID (perhaps limited to the store associated with a User or ItemGroup in @AncestorInPath)
+            if (!value.matches("[a-zA-Z0-9_.-]+")) { // anything else considered kosher?
+                return FormValidation.error("Unacceptable characters");
+            }
             return FormValidation.ok();
         }
 
