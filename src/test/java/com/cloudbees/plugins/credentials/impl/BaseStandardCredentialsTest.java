@@ -24,14 +24,11 @@
 
 package com.cloudbees.plugins.credentials.impl;
 
-import com.cloudbees.hudson.plugins.folder.Folder;
-import com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider.FolderCredentialsProperty;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.ACL;
@@ -43,6 +40,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.MockFolder;
 
 public class BaseStandardCredentialsTest {
 
@@ -72,14 +70,11 @@ public class BaseStandardCredentialsTest {
         addCreds(store, CredentialsScope.GLOBAL, "masked");
         addCreds(store, CredentialsScope.GLOBAL, "root");
         // TODO not currently testing SYSTEM; should this make any difference to behavior here?
-        final Folder top = r.jenkins.createProject(Folder.class, "top");
-        // By default a Folder has no store; you have to add the property first.
-        top.addProperty(new FolderCredentialsProperty(new DomainCredentials[0]));
+        final MockFolder top = r.jenkins.createProject(MockFolder.class, "top");
         store = lookupStore(top);
         addCreds(store, CredentialsScope.GLOBAL, "masked");
         addCreds(store, CredentialsScope.GLOBAL, "top");
-        final Folder bottom = top.createProject(Folder.class, "bottom");
-        bottom.addProperty(new FolderCredentialsProperty(new DomainCredentials[0]));
+        final MockFolder bottom = top.createProject(MockFolder.class, "bottom");
         store = lookupStore(bottom);
         addCreds(store, CredentialsScope.GLOBAL, "masked");
         addCreds(store, CredentialsScope.GLOBAL, "bottom");
