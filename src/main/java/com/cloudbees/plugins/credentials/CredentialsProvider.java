@@ -190,7 +190,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * {@link ModelObject} or {@code null} if either the object is not a credentials container or this
      * {@link CredentialsProvider} does not maintain a store specifically bound to this {@link ModelObject}.
      *
-     * @param object the {@link Item} or {@link ItemGroup} that the store is being requested of.
+     * @param object the {@link Item} or {@link ItemGroup} or {@link User} that the store is being requested of.
      * @return either {@code null} or a scoped {@link CredentialsStore} where
      *         {@link com.cloudbees.plugins.credentials.CredentialsStore#getContext()} {@code == object}.
      * @since 1.8
@@ -588,7 +588,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * supplied
      * object.
      *
-     * @param object the {@link Item} or {@link ItemGroup} to get the {@link CredentialsStore}s of.
+     * @param object the {@link Item} or {@link ItemGroup} or {@link User} to get the {@link CredentialsStore}s of.
      * @return a lazy {@link Iterable} of all {@link CredentialsStore} instances.
      * @since 1.8
      */

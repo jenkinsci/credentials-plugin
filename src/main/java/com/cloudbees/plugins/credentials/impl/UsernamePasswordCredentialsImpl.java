@@ -23,8 +23,6 @@
  */
 package com.cloudbees.plugins.credentials.impl;
 
-import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -94,7 +92,7 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
      * {@inheritDoc}
      */
     @Extension(ordinal = 1)
-    public static class DescriptorImpl extends CredentialsDescriptor {
+    public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
 
         /**
          * {@inheritDoc}
