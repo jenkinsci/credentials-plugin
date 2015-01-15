@@ -35,6 +35,7 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
+import hudson.model.Item;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.util.FormValidation;
@@ -178,7 +179,7 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
                         if (storeContext == context) {
                             return FormValidation.error("This ID is already in use");
                         } else {
-                            return FormValidation.warning("This ID is already in use in " + storeContext.getDisplayName());
+                            return FormValidation.warning("The ID ‘%s’ is already in use in %s", value, storeContext instanceof Item ? ((Item) storeContext).getFullDisplayName() : storeContext.getDisplayName());
                         }
                     }
                 }
