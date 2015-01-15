@@ -172,12 +172,13 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
                 if (!store.hasPermission(CredentialsProvider.VIEW)) {
                     continue;
                 }
+                ModelObject storeContext = store.getContext();
                 for (Domain domain : store.getDomains()) {
                     if (CredentialsMatchers.firstOrNull(store.getCredentials(domain), CredentialsMatchers.withId(value)) != null) {
-                        if (store.getContext() == context) {
+                        if (storeContext == context) {
                             return FormValidation.error("This ID is already in use");
                         } else {
-                            return FormValidation.warning("This ID is already in use in another context");
+                            return FormValidation.warning("This ID is already in use in " + storeContext.getDisplayName());
                         }
                     }
                 }
