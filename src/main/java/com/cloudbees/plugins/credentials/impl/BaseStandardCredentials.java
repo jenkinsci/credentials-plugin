@@ -156,7 +156,7 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
                 }
             }
             if (!(context instanceof Jenkins)) {
-                // CredentialsProvider.lookupStores(User) does not return SystemCredentialsProvider; should it?
+                // CredentialsProvider.lookupStores(User) does not return SystemCredentialsProvider.
                 Jenkins j = Jenkins.getInstance();
                 if (j != null) {
                     problem = checkForDuplicates(value, context, j);
