@@ -196,7 +196,7 @@ public class URIRequirementBuilder {
      */
     @NonNull
     public URIRequirementBuilder withPath(@CheckForNull String path) {
-        withoutScheme();
+        withoutPath();
         if (path != null) {
             requirements.add(new PathRequirement(path));
         }
