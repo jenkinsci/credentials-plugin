@@ -36,7 +36,6 @@ import hudson.XmlFile;
 import hudson.model.Api;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.ManagementLink;
@@ -205,7 +204,12 @@ public class SystemCredentialsProvider extends ManagementLink
      * @param p the permission to check.
      */
     private void checkPermission(Permission p) {
-        Jenkins.getInstance().checkPermission(p);
+                // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        jenkins.checkPermission(p);
     }
 
     /**
@@ -305,7 +309,12 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @NonNull
     private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
-        if (Jenkins.getInstance().hasPermission(CredentialsProvider.VIEW)) {
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        if (jenkins.hasPermission(CredentialsProvider.VIEW)) {
             List<Credentials> list = getDomainCredentialsMap().get(domain);
             if (list == null || list.isEmpty()) {
                 return Collections.emptyList();
@@ -370,7 +379,7 @@ public class SystemCredentialsProvider extends ManagementLink
      * @return all the credentials descriptors.
      */
     @SuppressWarnings("unused") // used by stapler
-    public DescriptorExtensionList<Credentials, Descriptor<Credentials>> getCredentialDescriptors() {
+    public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
         return CredentialsProvider.allCredentialsDescriptors();
     }
 
@@ -382,7 +391,12 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @SuppressWarnings("unused") // used by stapler
     public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>> getSpecificationDescriptors() {
-        return Jenkins.getInstance().getDescriptorList(DomainSpecification.class);
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        return jenkins.getDescriptorList(DomainSpecification.class);
     }
 
     /**
@@ -390,14 +404,19 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @SuppressWarnings("unchecked")
     public Descriptor<SystemCredentialsProvider> getDescriptor() {
-        return Hudson.getInstance().getDescriptorOrDie(getClass());
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        return jenkins.getDescriptorOrDie(getClass());
     }
 
     /**
      * Only sysadmin can access this page.
      */
     public Object getTarget() {
-        Hudson.getInstance().checkPermission(Hudson.ADMINISTER);
+        checkPermission(Jenkins.ADMINISTER);
         return this;
     }
 
@@ -411,7 +430,7 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @SuppressWarnings("unused") // by stapler
     public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
-        Hudson.getInstance().checkPermission(Hudson.ADMINISTER);
+        checkPermission(Jenkins.ADMINISTER);
         JSONObject data = req.getSubmittedForm();
         setDomainCredentialsMap(DomainCredentials.asMap(
                 req.bindJSONToList(DomainCredentials.class, data.get("domainCredentials"))));
@@ -423,7 +442,7 @@ public class SystemCredentialsProvider extends ManagementLink
      * {@inheritDoc}
      */
     public void save() throws IOException {
-        Hudson.getInstance().checkPermission(Hudson.ADMINISTER);
+        checkPermission(Jenkins.ADMINISTER);
         getConfigFile().write(this);
     }
 
@@ -433,7 +452,12 @@ public class SystemCredentialsProvider extends ManagementLink
      * @return the configuration file that this {@link CredentialsProvider} uses to store its credentials.
      */
     public static XmlFile getConfigFile() {
-        return new XmlFile(new File(Hudson.getInstance().getRootDir(), "credentials.xml"));
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        return new XmlFile(new File(jenkins.getRootDir(), "credentials.xml"));
     }
 
     /**
@@ -476,7 +500,7 @@ public class SystemCredentialsProvider extends ManagementLink
          */
         @Override
         public Set<CredentialsScope> getScopes(ModelObject object) {
-            if (object instanceof Hudson || object instanceof SystemCredentialsProvider) {
+            if (object instanceof Jenkins || object instanceof SystemCredentialsProvider) {
                 return SCOPES;
             }
             return super.getScopes(object);
@@ -527,7 +551,7 @@ public class SystemCredentialsProvider extends ManagementLink
                                                               @Nullable Authentication authentication,
                                                               @NonNull List<DomainRequirement> domainRequirements) {
             if (ACL.SYSTEM.equals(authentication)) {
-                CredentialsMatcher matcher = Hudson.getInstance() == itemGroup ? always() : not(withScope(SYSTEM));
+                CredentialsMatcher matcher = Jenkins.getInstance() == itemGroup ? always() : not(withScope(SYSTEM));
                 return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
                         .getDomainCredentialsMap(), type, domainRequirements, matcher);
             }
@@ -557,11 +581,21 @@ public class SystemCredentialsProvider extends ManagementLink
          */
         @Override
         public ModelObject getContext() {
-            return Jenkins.getInstance();
+            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null) {
+                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+            }
+            return jenkins;
         }
 
         public ACL getACL() {
-            return Jenkins.getInstance().getACL();
+            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null) {
+                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+            }
+            return jenkins.getACL();
         }
 
         /**

@@ -65,8 +65,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         return this;
     }
 
-    public DescriptorExtensionList<Credentials, Descriptor<Credentials>> getCredentialsDescriptors() {
-        return Jenkins.getInstance().getDescriptorList(Credentials.class);
+    public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialsDescriptors() {
+        return CredentialsProvider.allCredentialsDescriptors();
     }
 
     public CredentialsStoreAction.DomainWrapper getWrapper() {

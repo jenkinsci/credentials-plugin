@@ -122,7 +122,12 @@ public abstract class CredentialsStoreAction implements Action {
         } else if (context instanceof User) {
             n = Messages.CredentialsStoreAction_UserDisplayName( ((User) context).getDisplayName());
         } else {
-            n = Jenkins.getInstance().getFullDisplayName();
+            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null) {
+                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+            }
+            n = jenkins.getFullDisplayName();
         }
         if (n.length() == 0) {
             return getDisplayName();
@@ -155,7 +160,12 @@ public abstract class CredentialsStoreAction implements Action {
     }
 
     public DomainWrapper.DescriptorImpl getDomainDescriptor() {
-        return Jenkins.getInstance().getDescriptorByType(DomainWrapper.DescriptorImpl.class);
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        return jenkins.getDescriptorByType(DomainWrapper.DescriptorImpl.class);
     }
 
     /**
@@ -165,7 +175,12 @@ public abstract class CredentialsStoreAction implements Action {
      */
     @SuppressWarnings("unused") // used by stapler
     public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>> getSpecificationDescriptors() {
-        return Jenkins.getInstance().getDescriptorList(DomainSpecification.class);
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        return jenkins.getDescriptorList(DomainSpecification.class);
     }
 
     @RequirePOST
@@ -248,7 +263,12 @@ public abstract class CredentialsStoreAction implements Action {
         }
 
         public CredentialsWrapper.DescriptorImpl getCredentialDescriptor() {
-            return Jenkins.getInstance().getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
+            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null) {
+                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+            }
+            return jenkins.getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
         }
 
         @Exported
@@ -442,6 +462,11 @@ public abstract class CredentialsStoreAction implements Action {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
             }
+            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null) {
+                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+            }
             getStore().checkPermission(DELETE);
             final String splitKey = domain.getParent().getUrlName() + "/";
             int split = destination.lastIndexOf(splitKey);
@@ -452,12 +477,12 @@ public abstract class CredentialsStoreAction implements Action {
             String domainName = destination.substring(split + splitKey.length());
             ModelObject context = null;
             if ("".equals(contextName)) {
-                context = Jenkins.getInstance();
+                context = jenkins;
             } else {
                 while (context == null && split > 0) {
                     context = contextName.startsWith("user:")
                             ? User.get(contextName.substring("user:".length(), split - 1), false, Collections.emptyMap())
-                            : Jenkins.getInstance().getItemByFullName(contextName);
+                            : jenkins.getItemByFullName(contextName);
                     if (context == null) {
                         split = destination.lastIndexOf(splitKey, split - 1);
                         if (split > 0) {
@@ -527,7 +552,7 @@ public abstract class CredentialsStoreAction implements Action {
             }
 
             public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
-                return Jenkins.getInstance().getDescriptorList(Credentials.class);
+                return CredentialsProvider.allCredentialsDescriptors();
             }
         }
     }
