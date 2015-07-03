@@ -33,8 +33,6 @@ import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.model.Action;
 import hudson.model.Cause;
-import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
@@ -169,8 +167,13 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      *
      * @return all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
      */
-    public static DescriptorExtensionList<Credentials, Descriptor<Credentials>> allCredentialsDescriptors() {
-        return Hudson.getInstance().getDescriptorList(Credentials.class);
+    public static DescriptorExtensionList<Credentials, CredentialsDescriptor> allCredentialsDescriptors() {
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        return jenkins.getDescriptorList(Credentials.class);
     }
 
     /**
@@ -275,7 +278,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
 
     /**
      * Returns all credentials which are available to the {@link ACL#SYSTEM} {@link Authentication}
-     * within the {@link hudson.model.Hudson#getInstance()}.
+     * within the {@link jenkins.model.Jenkins#getInstance()}.
      *
      * @param type the type of credentials to get.
      * @param <C>  the credentials type.
@@ -294,7 +297,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
 
     /**
      * Returns all credentials which are available to the specified {@link Authentication}
-     * within the {@link hudson.model.Hudson#getInstance()}.
+     * within the {@link jenkins.model.Jenkins#getInstance()}.
      *
      * @param type           the type of credentials to get.
      * @param authentication the authentication.
@@ -310,7 +313,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     @SuppressWarnings("unused") // API entry point for consumers
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable Authentication authentication) {
-        return lookupCredentials(type, Hudson.getInstance(), authentication);
+        return lookupCredentials(type, Jenkins.getInstance(), authentication);
     }
 
     /**
@@ -330,7 +333,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable Item item) {
         return item == null
-                ? lookupCredentials(type, Hudson.getInstance(), ACL.SYSTEM)
+                ? lookupCredentials(type, Jenkins.getInstance(), ACL.SYSTEM)
                 : lookupCredentials(type, item, ACL.SYSTEM);
     }
 
@@ -436,7 +439,12 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                                                                     @Nullable List<DomainRequirement>
                                                                             domainRequirements) {
         type.getClass(); // throw NPE if null
-        itemGroup = itemGroup == null ? Hudson.getInstance() : itemGroup;
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        itemGroup = itemGroup == null ? jenkins : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
                 == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
@@ -449,15 +457,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             LOGGER.log(Level.FINE, "Original credentials for resolving: {0}", originals);
             return resolver.resolve(originals);
         }
-        ExtensionList<CredentialsProvider> providers;
-        try {
-            providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Could not retrieve list of CredentialsProvider instances", e);
-            return Collections.emptyList();
-        }
         List<C> result = new ArrayList<C>();
-        for (CredentialsProvider provider : providers) {
+        for (CredentialsProvider provider : all()) {
             try {
                 result.addAll(provider.getCredentials(type, itemGroup, authentication, domainRequirements));
             } catch (NoClassDefFoundError e) {
@@ -510,7 +511,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                                                                             domainRequirements) {
         type.getClass(); // throw NPE if null
         if (item == null) {
-            return lookupCredentials(type, Hudson.getInstance(), authentication);
+            return lookupCredentials(type, Jenkins.getInstance(), authentication);
         }
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
@@ -524,15 +525,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             LOGGER.log(Level.FINE, "Original credentials for resolving: {0}", originals);
             return resolver.resolve(originals);
         }
-        ExtensionList<CredentialsProvider> providers;
-        try {
-            providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Could not retrieve list of CredentialsProvider instances", e);
-            return Collections.emptyList();
-        }
         List<C> result = new ArrayList<C>();
-        for (CredentialsProvider provider : providers) {
+        for (CredentialsProvider provider : all()) {
             try {
                 result.addAll(provider.getCredentials(type, item, authentication, domainRequirements));
             } catch (NoClassDefFoundError e) {
@@ -559,14 +553,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         if (object instanceof CredentialsStoreAction.DomainWrapper) {
             object = ((CredentialsStoreAction.DomainWrapper) object).getStore().getContext();
         }
-        ExtensionList<CredentialsProvider> providers;
-        try {
-            providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
-        } catch (Exception e) {
-            return Collections.emptySet();
-        }
         Set<CredentialsScope> result = null;
-        for (CredentialsProvider provider : providers) {
+        for (CredentialsProvider provider : all()) {
             try {
                 Set<CredentialsScope> scopes = provider.getScopes(object);
                 if (scopes != null) {
@@ -593,12 +581,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @since 1.8
      */
     public static Iterable<CredentialsStore> lookupStores(final ModelObject object) {
-        final ExtensionList<CredentialsProvider> providers;
-        try {
-            providers = Hudson.getInstance().getExtensionList(CredentialsProvider.class);
-        } catch (Exception e) {
-            return Collections.emptySet();
-        }
+        final ExtensionList<CredentialsProvider> providers = all();
         return new Iterable<CredentialsStore>() {
             public Iterator<CredentialsStore> iterator() {
                 return new Iterator<CredentialsStore>() {
@@ -683,12 +666,15 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     public static <C extends Credentials> C snapshot(Class<C> clazz, C credential) {
         Class bestType = null;
         CredentialsSnapshotTaker bestTaker = null;
-        for (CredentialsSnapshotTaker taker :
-                Jenkins.getInstance().getExtensionList(CredentialsSnapshotTaker.class)) {
-            if (clazz.isAssignableFrom(taker.type()) && taker.type().isInstance(credential)) {
-                if (bestTaker == null || bestType.isAssignableFrom(taker.type())) {
-                    bestTaker = taker;
-                    bestType = taker.type();
+        // TODO use ExtensionList.lookup once Jenkins 1.572+
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins != null) {
+            for (CredentialsSnapshotTaker taker : jenkins.getExtensionList(CredentialsSnapshotTaker.class)) {
+                if (clazz.isAssignableFrom(taker.type()) && taker.type().isInstance(credential)) {
+                    if (bestTaker == null || bestType.isAssignableFrom(taker.type())) {
+                        bestTaker = taker;
+                        bestType = taker.type();
+                    }
                 }
             }
         }
@@ -704,22 +690,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     @NonNull
     /*package*/ static Authentication getDefaultAuthenticationOf(Item item) {
         if (item instanceof Queue.Task) {
-            Queue.Task task = (Queue.Task) item;
-            // TODO Jenkins 1.560+ use the method directly instead of copy & paste
-            // BEGIN INSERT Jenkins 1.560+
-            // return Tasks.getAuthenticationOf(Task)
-            // END INSERT Jenkins 1.560+
-            // BEGIN REMOVE Jenkins 1.560+
-            final Queue.WaitingItem probe =
-                    new Queue.WaitingItem(Calendar.getInstance(), task, Collections.<Action>emptyList());
-            for (QueueItemAuthenticator qia : QueueItemAuthenticatorConfiguration.get().getAuthenticators()) {
-                Authentication a = qia.authenticate(probe);
-                if (a != null) {
-                    return a;
-                }
-            }
-            return Tasks.getDefaultAuthenticationOf(task);
-            // END REMOVE Jenkins 1.560+
+            return Tasks.getAuthenticationOf((Queue.Task) item);
         } else {
             return ACL.SYSTEM;
         }
@@ -834,6 +805,14 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             run = (c != null) ? c.getUpstreamRun() : null;
         }
         return null;
+    }
+
+    public static ExtensionList<CredentialsProvider> all() {
+        // TODO switch to ExtensionList.lookup once Jenkins 1.572+ is the baseline
+        final Jenkins jenkins = Jenkins.getInstance();
+        return jenkins == null
+                ? ExtensionList.create((Jenkins)null, CredentialsProvider.class)
+                : jenkins.getExtensionList(CredentialsProvider.class);
     }
 
 }

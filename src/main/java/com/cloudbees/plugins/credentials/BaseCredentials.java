@@ -27,7 +27,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -76,6 +76,11 @@ public class BaseCredentials implements Credentials {
     @NonNull
     @SuppressWarnings("unchecked")
     public CredentialsDescriptor getDescriptor() {
-        return (CredentialsDescriptor) Hudson.getInstance().getDescriptorOrDie(getClass());
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        return (CredentialsDescriptor) jenkins.getDescriptorOrDie(getClass());
     }
 }

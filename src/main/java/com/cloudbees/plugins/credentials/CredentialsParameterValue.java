@@ -59,7 +59,8 @@ public class CredentialsParameterValue extends ParameterValue {
         };
     }
 
-    /* TODO 1.556+ @Override */ public void buildEnvironment(Run<?,?> build, EnvVars env) {
+    @Override
+    public void buildEnvironment(Run<?,?> build, EnvVars env) {
         env.put(name, value);
     }
 
@@ -77,9 +78,6 @@ public class CredentialsParameterValue extends ParameterValue {
             if (workUnit != null) {
                 authentication = workUnit.context.item.authenticate();
             }
-        }
-        if (authentication == null) {
-            return null;
         }
         List<C> candidates = new ArrayList<C>();
         final boolean isSystem = ACL.SYSTEM.equals(authentication);

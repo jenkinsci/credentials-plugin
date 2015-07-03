@@ -12,12 +12,12 @@ import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.remoting.Channel;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
 import hudson.util.IOUtils;
 import hudson.util.Secret;
+import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.FileUtils;
@@ -151,7 +151,12 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         public DescriptorExtensionList<KeyStoreSource, Descriptor<KeyStoreSource>> getKeyStoreSources() {
-            return Hudson.getInstance().getDescriptorList(KeyStoreSource.class);
+            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null) {
+                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+            }
+            return jenkins.getDescriptorList(KeyStoreSource.class);
         }
 
     }

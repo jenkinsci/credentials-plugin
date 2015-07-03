@@ -98,7 +98,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         public ListBoxModel doFillCredentialTypeItems() {
             ListBoxModel result = new ListBoxModel();
             result.add("Any", StandardCredentials.class.getName());
-            for (Descriptor<Credentials> d : Jenkins.getInstance().getDescriptorList(Credentials.class)) {
+            for (Descriptor<Credentials> d : CredentialsProvider.allCredentialsDescriptors()) {
                 if (!(d instanceof CredentialsDescriptor)) {
                     continue;
                 }
@@ -110,7 +110,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         }
 
         private Class<? extends StandardCredentials> decodeType(String credentialType) {
-            for (Descriptor<Credentials> d: Jenkins.getInstance().getDescriptorList(Credentials.class)) {
+            for (Descriptor<Credentials> d: CredentialsProvider.allCredentialsDescriptors()) {
                 if (!(d instanceof CredentialsDescriptor)) {
                     continue;
                 }
@@ -135,7 +135,12 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
 
         public StandardListBoxModel doFillDefaultValueItems(@AncestorInPath Item context,
                                                             @QueryParameter(required = true) String credentialType) {
-            final ACL acl = context == null ? Jenkins.getInstance().getACL() : context.getACL();
+            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null) {
+                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+            }
+            final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Set<String> ids = new HashSet<String>();
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
             final List<DomainRequirement> domainRequirements = Collections.<DomainRequirement>emptyList();
@@ -156,7 +161,12 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         public StandardListBoxModel doFillValueItems(@AncestorInPath Item context,
                                                      @QueryParameter(required = true) String credentialType,
                                                      @QueryParameter boolean required) {
-            final ACL acl = context == null ? Jenkins.getInstance().getACL() : context.getACL();
+            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null) {
+                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+            }
+            final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Authentication authentication = Jenkins.getAuthentication();
             final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf(context);
             final boolean isSystem = ACL.SYSTEM.equals(authentication);
