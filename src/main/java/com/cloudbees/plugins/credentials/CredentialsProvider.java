@@ -759,10 +759,19 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             // we use the default authentication of the job as those are the only ones that can be configured
             // if a different strategy is in play it doesn't make sense to consider the run-time authentication
             // as you would have no way to configure it
-            return CredentialsMatchers.firstOrNull(
-                    CredentialsProvider.lookupCredentials(type, run.getParent(),
-                            CredentialsProvider.getDefaultAuthenticationOf(run.getParent()), domainRequirements),
-                    CredentialsMatchers.withId(id));
+            Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf(run.getParent());
+            List<C> candidates = new ArrayList<C>();
+            // we want the credentials available to the user the build is running as
+            candidates.addAll(
+                    CredentialsProvider.lookupCredentials(type, run.getParent(), runAuth, domainRequirements)
+            );
+            // if that user can use the item's credentials, add those in too
+            if (runAuth != ACL.SYSTEM && run.getACL().hasPermission(runAuth, CredentialsProvider.USE_ITEM)) {
+                candidates.addAll(
+                        CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM, domainRequirements)
+                );
+            }
+            return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
         }
         // this is a parameter and not the default value, we need to determine who triggered the build
         final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
@@ -780,8 +789,17 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             // we use the default authentication of the job as those are the only ones that can be configured
             // if a different strategy is in play it doesn't make sense to consider the run-time authentication
             // as you would have no way to configure it
-            candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(),
-                    CredentialsProvider.getDefaultAuthenticationOf(run.getParent()), domainRequirements));
+            Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf(run.getParent());
+            // we want the credentials available to the user the build is running as
+            candidates.addAll(
+                    CredentialsProvider.lookupCredentials(type, run.getParent(), runAuth, domainRequirements)
+            );
+            // if that user can use the item's credentials, add those in too
+            if (runAuth != ACL.SYSTEM && run.getACL().hasPermission(runAuth, CredentialsProvider.USE_ITEM)) {
+                candidates.addAll(
+                        CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM, domainRequirements)
+                );
+            }
         }
         return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
     }
