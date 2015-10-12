@@ -485,11 +485,10 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 if (keyStoreSource.isSnapshotSource()) {
                     return credentials;
                 }
+                final Secret secret = UploadedKeyStoreSource.DescriptorImpl.toSecret(keyStoreSource.getKeyStoreBytes());
                 return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
                         credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
-                        new UploadedKeyStoreSource(
-                                UploadedKeyStoreSource.DescriptorImpl.toSecret(keyStoreSource.getKeyStoreBytes())
-                                        .getEncryptedValue()));
+                        new UploadedKeyStoreSource(secret == null ? null : secret.getEncryptedValue()));
             }
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             final char[] password = credentials.getPassword().getPlainText().toCharArray();
