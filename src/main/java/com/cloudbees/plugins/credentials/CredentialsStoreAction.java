@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
+import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
@@ -53,6 +54,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.kohsuke.stapler.WebMethod;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -60,6 +62,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import org.apache.commons.io.IOUtils;
 
 /**
  * @author Stephen Connolly
@@ -195,6 +198,19 @@ public abstract class CredentialsStoreAction implements Action {
         return HttpResponses.redirectToDot();
     }
 
+    @RequirePOST
+    @WebMethod(name = "apiCreateDomain")
+    public HttpResponse doApiCreateDomain(StaplerRequest req) throws ServletException, IOException {
+        getStore().checkPermission(MANAGE_DOMAINS);
+        JSONObject data = JSONObject.fromObject(IOUtils.toString(req.getReader()));
+        Domain domain = req.bindJSON(Domain.class, data);
+        if (getStore().addDomain(domain)) {
+            return HttpResponses.status(201);
+        }
+        // Domain already exists
+        return HttpResponses.status(409);
+    }
+
     @ExportedBean
     public static class DomainWrapper extends AbstractDescribableImpl<DomainWrapper> implements ModelObject {
 
@@ -305,6 +321,20 @@ public abstract class CredentialsStoreAction implements Action {
         }
 
         @RequirePOST
+        @WebMethod(name = "apiCreateCredentials")
+        public JSONObject doApiCreateCredentials(StaplerRequest req) throws ServletException, IOException {
+            getStore().checkPermission(CREATE);
+            JSONObject data = JSONObject.fromObject(IOUtils.toString(req.getReader()));
+            Credentials credentials = req.bindJSON(Credentials.class, data);
+            if (getStore().addCredentials(domain, credentials)) {
+                String id = ((BaseStandardCredentials) credentials).getId();
+                return new JSONObject().accumulate("id", id);
+            }
+            // Credentials already exist
+            throw HttpResponses.status(409);
+        }
+
+        @RequirePOST
         public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
@@ -329,6 +359,19 @@ public abstract class CredentialsStoreAction implements Action {
                 return HttpResponses.redirectTo("../..");
             }
             return HttpResponses.redirectToDot();
+        }
+
+        @RequirePOST
+        @WebMethod(name = "apiDeleteDomain")
+        public HttpResponse doApiDeleteDomain() throws ServletException, IOException {
+            if (!getStore().isDomainsModifiable()) {
+                return HttpResponses.status(400);
+            }
+            getStore().checkPermission(MANAGE_DOMAINS);
+            if (getStore().removeDomain(domain)) {
+                return HttpResponses.status(204);
+            }
+            return HttpResponses.status(500);
         }
 
         @Extension
@@ -458,6 +501,19 @@ public abstract class CredentialsStoreAction implements Action {
         }
 
         @RequirePOST
+        @WebMethod(name = "apiDeleteCredentials")
+        public HttpResponse doApiDeleteCredentials() throws ServletException, IOException {
+            if (!getStore().isDomainsModifiable()) {
+                return HttpResponses.status(400);
+            }
+            getStore().checkPermission(DELETE);
+            if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+                return HttpResponses.status(204);
+            }
+            return HttpResponses.status(500);
+        }
+
+        @RequirePOST
         public HttpResponse doDoMove(StaplerRequest req, @QueryParameter String destination) throws IOException {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
@@ -541,6 +597,18 @@ public abstract class CredentialsStoreAction implements Action {
                 return HttpResponses.redirectTo("concurrentModification");
             }
             return HttpResponses.redirectToDot();
+        }
+
+        @RequirePOST
+        @WebMethod(name = "apiUpdateCredentials")
+        public HttpResponse doApiUpdateCredentials(StaplerRequest req) throws ServletException, IOException {
+            getStore().checkPermission(UPDATE);
+            JSONObject data = JSONObject.fromObject(IOUtils.toString(req.getReader()));
+            Credentials credentials = req.bindJSON(Credentials.class, data);
+            if (!getStore().updateCredentials(this.domain.domain, this.credentials, credentials)) {
+                return HttpResponses.status(409);
+            }
+            return HttpResponses.status(204);
         }
 
         @Extension
