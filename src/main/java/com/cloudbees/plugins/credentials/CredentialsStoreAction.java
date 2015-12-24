@@ -46,6 +46,7 @@ import hudson.util.HttpResponses;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
@@ -378,7 +379,7 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
     }
 
     @ExportedBean
-    public static class CredentialsWrapper extends AbstractDescribableImpl<CredentialsWrapper> {
+    public static class CredentialsWrapper extends AbstractDescribableImpl<CredentialsWrapper> implements IconSpec {
 
         private final DomainWrapper domain;
 
@@ -390,6 +391,10 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             this.domain = domain;
             this.credentials = credentials;
             this.id = id;
+        }
+
+        public String getIconClassName() {
+            return credentials.getDescriptor().getIconClassName();
         }
 
         public String getUrlName() {
