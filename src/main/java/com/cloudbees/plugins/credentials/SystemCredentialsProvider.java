@@ -49,6 +49,7 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.StaplerProxy;
@@ -81,7 +82,7 @@ import static com.cloudbees.plugins.credentials.CredentialsScope.SYSTEM;
  */
 @Extension
 public class SystemCredentialsProvider extends ManagementLink
-        implements Describable<SystemCredentialsProvider>, Saveable, StaplerProxy {
+        implements Describable<SystemCredentialsProvider>, Saveable, StaplerProxy, IconSpec {
 
     /**
      * Our logger.
@@ -130,6 +131,15 @@ public class SystemCredentialsProvider extends ManagementLink
         return CredentialsProvider.allCredentialsDescriptors().isEmpty()
                 ? null
                 : "/plugin/credentials/images/48x48/credentials.png";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getIconClassName() {
+        return CredentialsProvider.allCredentialsDescriptors().isEmpty()
+                ? null
+                : "icon-credentials-credentials";
     }
 
     /**
