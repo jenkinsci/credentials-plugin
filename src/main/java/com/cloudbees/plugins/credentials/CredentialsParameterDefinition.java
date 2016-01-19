@@ -69,7 +69,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
 
     @Override
     public ParameterValue getDefaultParameterValue() {
-        return new CredentialsParameterValue(getName(), getDefaultValue(), getDescription());
+        return new CredentialsParameterValue(getName(), getDefaultValue(), getDescription(), true);
     }
 
     public String getDefaultValue() {
