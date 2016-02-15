@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials;
 import hudson.model.Descriptor;
 import hudson.model.ModelObject;
 import hudson.util.ListBoxModel;
+import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.Ancestor;
 import org.kohsuke.stapler.Stapler;
 
@@ -34,7 +35,7 @@ import java.util.Set;
 /**
  * Descriptor for credentials.
  */
-public abstract class CredentialsDescriptor extends Descriptor<Credentials> {
+public abstract class CredentialsDescriptor extends Descriptor<Credentials> implements IconSpec {
 
     /**
      * Constructor.
@@ -169,5 +170,14 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> {
     @SuppressWarnings("unused") // used by stapler
     public String getCredentialsPage() {
         return getViewPage(clazz, "credentials.jelly");
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.25
+     * @return Icon Class Name
+     */
+    public String getIconClassName() {
+        return "icon-credentials-credential";
     }
 }
