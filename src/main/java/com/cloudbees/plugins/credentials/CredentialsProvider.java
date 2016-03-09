@@ -840,6 +840,10 @@ public abstract class CredentialsProvider implements ExtensionPoint {
 
 }
 
+/**
+ * Comparator to alphabetically sort credentials drop down list in ascending order by Credential Name.
+ *
+ */
 class CredentialsNameComparator implements Comparator<Credentials>{
 	 
     @Override
