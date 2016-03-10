@@ -844,8 +844,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
  * Comparator to alphabetically sort credentials drop down list in ascending order by Credential Name.
  *
  */
-class CredentialsNameComparator implements Comparator<Credentials>, java.io.Serializable{
-	private static final long serialVersionUID = 1;
+class CredentialsNameComparator implements Comparator<Credentials>, java.io.Serializable {
+    private static final long serialVersionUID = 1;
     @Override
     public int compare(Credentials cred1, Credentials cred2) {
         return CredentialsNameProvider.name(cred1).compareTo(CredentialsNameProvider.name(cred2));
