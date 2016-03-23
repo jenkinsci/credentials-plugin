@@ -33,14 +33,20 @@ import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
-import static hudson.util.FormValidation.Kind.*;
 import java.io.IOException;
 import java.util.Iterator;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
 import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockFolder;
+
+import static hudson.util.FormValidation.Kind.ERROR;
+import static hudson.util.FormValidation.Kind.OK;
+import static hudson.util.FormValidation.Kind.WARNING;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class BaseStandardCredentialsTest {
 
@@ -57,16 +63,26 @@ public class BaseStandardCredentialsTest {
         // First set up two users, each of which has an existing credentials named ‘per-user’.
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         final User alice = User.get("alice");
-        CredentialsStore store = lookupStore(alice);
-        addCreds(store, CredentialsScope.USER, "alice");
-        addCreds(store, CredentialsScope.USER, "per-user");
+        SecurityContext ctx = ACL.impersonate(alice.impersonate());
+        try {
+            CredentialsStore store = lookupStore(alice);
+            addCreds(store, CredentialsScope.USER, "alice");
+            addCreds(store, CredentialsScope.USER, "per-user");
+        } finally {
+            SecurityContextHolder.setContext(ctx);
+        }
         User bob = User.get("bob");
-        store = lookupStore(bob);
-        addCreds(store, CredentialsScope.USER, "bob");
-        addCreds(store, CredentialsScope.USER, "per-user");
+        ctx = ACL.impersonate(bob.impersonate());
+        try {
+            CredentialsStore store = lookupStore(bob);
+            addCreds(store, CredentialsScope.USER, "bob");
+            addCreds(store, CredentialsScope.USER, "per-user");
+        } finally {
+            SecurityContextHolder.setContext(ctx);
+        }
 
         // Now set up a folder tree with some masking of credentials.
-        store = lookupStore(r.jenkins);
+        CredentialsStore store = lookupStore(r.jenkins);
         addCreds(store, CredentialsScope.GLOBAL, "masked");
         addCreds(store, CredentialsScope.GLOBAL, "root");
         // TODO not currently testing SYSTEM; should this make any difference to behavior here?

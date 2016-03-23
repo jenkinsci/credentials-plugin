@@ -43,18 +43,9 @@ import hudson.model.User;
 import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
+import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
 import hudson.util.CopyOnWriteMap;
-import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
-import org.acegisecurity.Authentication;
-import org.acegisecurity.providers.anonymous.AnonymousAuthenticationToken;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.export.Exported;
-import org.kohsuke.stapler.export.ExportedBean;
-
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.util.ArrayList;
@@ -67,6 +58,17 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
+import org.acegisecurity.Authentication;
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
+import org.acegisecurity.providers.anonymous.AnonymousAuthenticationToken;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.always;
 
@@ -142,14 +144,27 @@ public class UserCredentialsProvider extends CredentialsProvider {
             if (user != null) {
                 UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
                 if (property != null) {
-                    return DomainCredentials
-                            .getCredentials(property.getDomainCredentialsMap(), type, domainRequirements, always());
+                    // we need to impersonate if the requesting authentication is not the current authentication.
+                    boolean needImpersonation = user.equals(User.current());
+                    SecurityContext old = needImpersonation ? null : ACL.impersonate(user.impersonate());
+                    try {
+                        return DomainCredentials
+                                .getCredentials(property.getDomainCredentialsMap(), type, domainRequirements, always());
+                    } finally {
+                        if (needImpersonation) {
+                            // restore the current authentication if we impersonated.
+                            SecurityContextHolder.setContext(old);
+                        }
+                    }
                 }
             }
         }
         return new ArrayList<C>();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CredentialsStore getStore(@CheckForNull ModelObject object) {
         if (object instanceof User) {
@@ -223,6 +238,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * @return the subset of the user's credentials that are of the specified type.
          */
         public <C extends Credentials> List<C> getCredentials(Class<C> type) {
+            checkPermission(CredentialsProvider.VIEW);
             List<C> result = new ArrayList<C>();
             for (Credentials credential : getCredentials()) {
                 if (type.isInstance(credential)) {
@@ -239,6 +255,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @SuppressWarnings("unused") // used by stapler
         public List<Credentials> getCredentials() {
+            checkPermission(CredentialsProvider.VIEW);
             return domainCredentialsMap.get(Domain.global());
         }
 
@@ -250,6 +267,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @SuppressWarnings("unused") // used by stapler
         public List<DomainCredentials> getDomainCredentials() {
+            checkPermission(CredentialsProvider.VIEW);
             return DomainCredentials.asList(getDomainCredentialsMap());
         }
 
@@ -261,6 +279,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @SuppressWarnings("deprecation")
         @NonNull
         public synchronized Map<Domain, List<Credentials>> getDomainCredentialsMap() {
+            checkPermission(CredentialsProvider.VIEW);
             return domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
         }
 
@@ -271,6 +290,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * @since 1.5
          */
         public synchronized void setDomainCredentialsMap(Map<Domain, List<Credentials>> domainCredentialsMap) {
+            checkPermission(CredentialsProvider.MANAGE_DOMAINS);
             this.domainCredentialsMap = DomainCredentials.toCopyOnWriteMap(domainCredentialsMap);
         }
 
@@ -408,7 +428,11 @@ public class UserCredentialsProvider extends CredentialsProvider {
         }
 
         private void checkPermission(Permission p) {
-            user.checkPermission(p);
+            if (user.equals(User.current())) {
+                user.checkPermission(p);
+            } else {
+                throw new AccessDeniedException2(Jenkins.getAuthentication(), p);
+            }
         }
 
         private void save() throws IOException {
