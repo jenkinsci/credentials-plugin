@@ -66,7 +66,7 @@ public enum CredentialsScope implements Serializable {
      * in the scope of the request. Where the request is something that happens automatically, e.g. a build triggered
      * by SCM polling, then USER scoped credentials are not usually appropriate (unless the action is one that can fail
      * gracefully)
-     * <p/>
+     * <p>
      * Another way of looking at this is, if the action is one that is configured from the {@link hudson.model.Job}'s
      * Configure page, then don't use USER scope, as that prevents another user from modifying the job configuration
      * (because they will only be able to see their own credentials)

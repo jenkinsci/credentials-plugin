@@ -39,13 +39,13 @@ import jenkins.model.Jenkins;
 
 /**
  * {@link ListBoxModel} with support for credentials.
- * <p/>
+ * <p>
  * This class is convenient for providing the {@code config.groovy} or {@code config.jelly} fragment for a collection of objects of some {@link IdCredentials} subtype.
- * <p/>
+ * <p>
  * If you want to let the user configure a credentials object, do the following:
- * <p/>
+ * <p>
  * First, create a field that stores the credentials ID and defines a corresponding parameter in the constructor:
- * <p/>
+ * <p>
  * <pre>
  * private String credentialsId;
  *
@@ -56,18 +56,18 @@ import jenkins.model.Jenkins;
  * }
  * public String getCredentialsId() {return credentialsId;}
  * </pre>
- * <p/>
+ * <p>
  * Your <tt>config.groovy</tt> should have the following entry to render a drop-down list box:
- * <p/>
+ * <p>
  * <pre>
  * f.entry(title:_("Credentials"), field:"credentialsId") {
  *     f.select()
  * }
  * </pre>
- * <p/>
+ * <p>
  * Finally, your {@link Descriptor} implementation should have the <tt>doFillCredentialsIdItems</tt> method, which
  * lists up the credentials available in this context:
- * <p/>
+ * <p>
  * <pre>
  * public ListBoxModel doFillCredentialsIdItems() {
  *     if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) { // or whatever permission is appropriate for this page
@@ -78,23 +78,23 @@ import jenkins.model.Jenkins;
  *         CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class,...));
  * }
  * </pre>
- * <p/>
- * <p/>
+ * <p>
+ * <p>
  * Exactly which overloaded version of the {@link CredentialsProvider#lookupCredentials(Class)} depends on
  * the context in which your model operates. Here are a few common examples:
- * <p/>
+ * <p>
  * <dl>
  * <dt>System-level settings
  * <dd>
  * If your model is a singleton in the whole Jenkins instance, things that belong to the root {@link Jenkins}
  * (such as slaves), or do not have any ancestors serving as the context, then use {@link Jenkins#getInstance} as the context.
- * <p/>
+ * <p>
  * <dt>Job-level settings
  * <dd>
  * If your model is a configuration fragment added to a {@link Item} (such as its major subtype {@link Job}),
  * then use that {@link Item} as the context.
    For example:
- * <p/>
+ * <p>
  * <pre>
  * public ListBoxModel doFillCredentialsIdItems(&#64;AncestorInPath Item context, &#64;QueryParameter String source) {
  *     if (context == null || !context.hasPermission(Item.CONFIGURE)) {

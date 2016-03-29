@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * multiple equivalent credentials. With Java 8 defender methods we could add a default method to {@link Credentials}
  * however given the Java requirements of Jenkins we do not have this luxury. In any case different types of credentials
  * will have different types of naming schemes, eg certificates vs username/password.
- * <p/>
+ * <p>
  * This annotation is applied to implementations or to marker interfaces. Where an implementation class is annotated,
  * that annotation will always win, even if inherited. In the absence of the base class being annotated all the
  * interfaces that the credential implements will be checked for the annotation. When checking multiple interfaces,
