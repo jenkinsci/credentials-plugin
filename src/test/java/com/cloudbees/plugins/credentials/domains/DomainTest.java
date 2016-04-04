@@ -24,15 +24,34 @@
 
 package com.cloudbees.plugins.credentials.domains;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.impl.DummyCredentials;
+
+import hudson.security.ACL;
+import jenkins.model.Jenkins;
+
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class DomainTest {
 
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
     @Test
     public void smokes() throws Exception {
         Domain instance =
@@ -58,5 +77,52 @@ public class DomainTest {
         assertThat(instance.test(URIRequirementBuilder.fromUri("https://updates.jenkins-ci.org/download/1/2/3/jenkins.war").build()), is(true));
         assertThat(instance.test(URIRequirementBuilder.fromUri("http://updates.jenkins-ci.org/download/1/2/3/jenkins.war").build()), is(false));
 
+    }
+    
+    @Test
+    public void testCredentialsInCustomDomains() throws IOException {
+        Domain domainFoo = new Domain("domainFoo", "Hostname domain", Arrays.asList(new DomainSpecification[] { new HostnameSpecification("foo.com", "") }));
+        Domain domainBar = new Domain("domainBar", "Path domain", Arrays.asList(new DomainSpecification[] { new HostnameSpecification("bar.com", "") }));
+        DummyCredentials systemCred = new DummyCredentials(CredentialsScope.SYSTEM, "systemCred", "pwd");
+        DummyCredentials systemCred1 = new DummyCredentials(CredentialsScope.SYSTEM, "systemCred1", "pwd");
+        DummyCredentials systemCredMod = new DummyCredentials(CredentialsScope.SYSTEM, "systemCredMod", "pwd");
+
+        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        
+        // Add domains with credentials
+        store.addDomain(domainFoo, Collections.<Credentials>emptyList());
+        store.addDomain(domainBar, Collections.<Credentials>emptyList());
+        
+        // Domain requirements for credential queries
+        List<DomainRequirement> reqFoo = Arrays.asList(new DomainRequirement[] { new HostnameRequirement("foo.com") });
+        List<DomainRequirement> reqBar = Arrays.asList(new DomainRequirement[] { new HostnameRequirement("bar.com") });
+        
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).isEmpty());
+    
+        // Add credentials to domains
+        store.addCredentials(domainFoo, systemCred);
+        store.addCredentials(domainBar, systemCred1);
+    
+        // Search creadentials with specific domain restrictions
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).size());
+        assertEquals(systemCred.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).get(0).getUsername());
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).size());
+        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).get(0).getUsername());
+    
+        // Update credential from domain
+        store.updateCredentials(domainFoo, systemCred, systemCredMod);
+        
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).size());
+        assertEquals(systemCredMod.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).get(0).getUsername());
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).size());
+        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).get(0).getUsername());
+  
+        // Remove credential from domain
+        store.removeCredentials(domainFoo, systemCredMod);
+        
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).isEmpty());
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).size());
+        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).get(0).getUsername());
     }
 }

@@ -145,8 +145,8 @@ public class UserCredentialsProvider extends CredentialsProvider {
                 UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
                 if (property != null) {
                     // we need to impersonate if the requesting authentication is not the current authentication.
-                    boolean needImpersonation = user.equals(User.current());
-                    SecurityContext old = needImpersonation ? null : ACL.impersonate(user.impersonate());
+                    boolean needImpersonation = !user.equals(User.current());
+                    SecurityContext old = needImpersonation ? ACL.impersonate(user.impersonate()) : null;
                     try {
                         return DomainCredentials
                                 .getCredentials(property.getDomainCredentialsMap(), type, domainRequirements, always());
