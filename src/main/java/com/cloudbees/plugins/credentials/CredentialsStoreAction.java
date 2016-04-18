@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.Util;
@@ -196,8 +197,9 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         getStore().checkPermission(MANAGE_DOMAINS);
         JSONObject data = req.getSubmittedForm();
         Domain domain = req.bindJSON(Domain.class, data);
-        if (getStore().addDomain(domain)) {
-            return HttpResponses.redirectTo("./domain/" + Util.rawEncode(domain.getName()));
+        String domainName = domain.getName();
+        if (domainName != null && getStore().addDomain(domain)) {
+            return HttpResponses.redirectTo("./domain/" + Util.rawEncode(domainName));
 
         }
         return HttpResponses.redirectToDot();
@@ -231,6 +233,7 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         }
 
         @Exported
+        @SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="isGlobal() check implies that domain.getName() is null")
         public String getUrlName() {
             return isGlobal() ? "_" : Util.rawEncode(domain.getName());
         }
@@ -320,8 +323,9 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             getStore().checkPermission(MANAGE_DOMAINS);
             JSONObject data = req.getSubmittedForm();
             Domain domain = req.bindJSON(Domain.class, data);
-            if (getStore().updateDomain(this.domain, domain)) {
-                return HttpResponses.redirectTo("../../domain/" + Util.rawEncode(domain.getName()));
+            String domainName = domain.getName();
+            if (domainName != null && getStore().updateDomain(this.domain, domain)) {
+                return HttpResponses.redirectTo("../../domain/" + Util.rawEncode(domainName));
 
             }
             return HttpResponses.redirectToDot();
