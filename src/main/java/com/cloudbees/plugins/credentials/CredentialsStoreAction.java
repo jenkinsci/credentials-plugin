@@ -355,7 +355,7 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
                                               @AncestorInPath CredentialsStoreAction action,
                                               @QueryParameter String value) {
                 if (StringUtils.isBlank(value)) {
-                    return FormValidation.warning(Messages.CredentialsStoreAction_EmptyDomainNameMessage());
+                    return FormValidation.error(Messages.CredentialsStoreAction_EmptyDomainNameMessage());
                 }
                 try {
                     Jenkins.checkGoodName(value);
