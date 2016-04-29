@@ -102,6 +102,17 @@ public class UserCredentialsProvider extends CredentialsProvider {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public CredentialsStore getStore(@CheckForNull ModelObject object) {
+        if (object instanceof User) {
+            return new StoreImpl((User) object);
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @NonNull
     @Override
     public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
@@ -160,17 +171,6 @@ public class UserCredentialsProvider extends CredentialsProvider {
             }
         }
         return new ArrayList<C>();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public CredentialsStore getStore(@CheckForNull ModelObject object) {
-        if (object instanceof User) {
-            return new StoreImpl((User) object);
-        }
-        return null;
     }
 
     /**
@@ -272,8 +272,9 @@ public class UserCredentialsProvider extends CredentialsProvider {
         }
 
         /**
-         * The Map of domain credentials.
+         * The map of domain credentials.
          *
+         * @return The map of domain credentials.
          * @since 1.5
          */
         @SuppressWarnings("deprecation")
@@ -297,7 +298,8 @@ public class UserCredentialsProvider extends CredentialsProvider {
         /**
          * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
          */
-        private synchronized boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException {
+        private synchronized boolean addDomain(@NonNull Domain domain, List<Credentials> credentials)
+                throws IOException {
             checkPermission(CredentialsProvider.MANAGE_DOMAINS);
             Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
             if (domainCredentialsMap.containsKey(domain)) {
@@ -338,7 +340,8 @@ public class UserCredentialsProvider extends CredentialsProvider {
         /**
          * Implementation for {@link StoreImpl} to delegate to while keeping the lock synchronization simple.
          */
-        private synchronized boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException {
+        private synchronized boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement)
+                throws IOException {
             checkPermission(CredentialsProvider.MANAGE_DOMAINS);
             Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
             if (domainCredentialsMap.containsKey(current)) {
@@ -474,6 +477,14 @@ public class UserCredentialsProvider extends CredentialsProvider {
              * {@inheritDoc}
              */
             @Override
+            public boolean isEnabled() {
+                return !all().isEmpty();
+            }
+
+            /**
+             * {@inheritDoc}
+             */
+            @Override
             public String getDisplayName() {
                 return Messages.UserCredentialsProvider_DisplayName();
             }
@@ -526,14 +537,6 @@ public class UserCredentialsProvider extends CredentialsProvider {
                     throw new IllegalStateException("Jenkins has not been started, or was already shut down");
                 }
                 return jenkins.getDescriptorList(DomainSpecification.class);
-            }
-
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public boolean isEnabled() {
-                return !all().isEmpty();
             }
         }
     }
@@ -620,6 +623,16 @@ public class UserCredentialsProvider extends CredentialsProvider {
         /**
          * {@inheritDoc}
          */
+        @NonNull
+        @Override
+        @Exported
+        public List<Credentials> getCredentials(@NonNull Domain domain) {
+            return getInstance().getCredentials(domain);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException {
             return getInstance().addDomain(domain, credentials);
@@ -647,16 +660,6 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @Override
         public boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException {
             return getInstance().addCredentials(domain, credentials);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        @Exported
-        public List<Credentials> getCredentials(@NonNull Domain domain) {
-            return getInstance().getCredentials(domain);
         }
 
         /**

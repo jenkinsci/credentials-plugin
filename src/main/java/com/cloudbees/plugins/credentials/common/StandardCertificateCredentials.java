@@ -28,7 +28,6 @@ import com.cloudbees.plugins.credentials.NameWith;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
-
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.Certificate;
@@ -48,19 +47,7 @@ public interface StandardCertificateCredentials extends StandardCredentials, Cer
      *
      * @since 1.7
      */
-    public static class NameProvider extends CredentialsNameProvider<StandardCertificateCredentials> {
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        public String getName(@NonNull StandardCertificateCredentials c) {
-            String description = Util.fixEmptyAndTrim(c.getDescription());
-            String subjectDN = getSubjectDN(c.getKeyStore());
-            return (subjectDN == null ? c.getDescriptor().getDisplayName() : subjectDN)
-                    + (description != null ? " (" + description + ")" : "");
-        }
+    class NameProvider extends CredentialsNameProvider<StandardCertificateCredentials> {
 
         /**
          * Returns the Subject DN of the first key with an x509 certificate in its certificate chain.
@@ -89,6 +76,18 @@ public interface StandardCertificateCredentials extends StandardCredentials, Cer
                 // ignore
             }
             return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public String getName(@NonNull StandardCertificateCredentials c) {
+            String description = Util.fixEmptyAndTrim(c.getDescription());
+            String subjectDN = getSubjectDN(c.getKeyStore());
+            return (subjectDN == null ? c.getDescriptor().getDisplayName() : subjectDN)
+                    + (description != null ? " (" + description + ")" : "");
         }
     }
 }

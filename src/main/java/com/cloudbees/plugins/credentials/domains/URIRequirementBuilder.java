@@ -26,7 +26,6 @@ package com.cloudbees.plugins.credentials.domains;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -66,16 +65,6 @@ public class URIRequirementBuilder {
     }
 
     /**
-     * Creates a new builder with the same requirements as this builder.
-     *
-     * @return a new builder with the same requirements as this builder.
-     */
-    @NonNull
-    public URIRequirementBuilder duplicate() {
-        return new URIRequirementBuilder(requirements);
-    }
-
-    /**
      * Creates a new builder using the supplied URI.
      *
      * @param uri the URI to create the requirements of.
@@ -84,6 +73,16 @@ public class URIRequirementBuilder {
     @NonNull
     public static URIRequirementBuilder fromUri(@CheckForNull String uri) {
         return create().withUri(uri);
+    }
+
+    /**
+     * Creates a new builder with the same requirements as this builder.
+     *
+     * @return a new builder with the same requirements as this builder.
+     */
+    @NonNull
+    public URIRequirementBuilder duplicate() {
+        return new URIRequirementBuilder(requirements);
     }
 
     /**

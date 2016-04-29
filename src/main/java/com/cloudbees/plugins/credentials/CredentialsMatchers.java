@@ -33,7 +33,6 @@ import com.cloudbees.plugins.credentials.matchers.ScopeMatcher;
 import com.cloudbees.plugins.credentials.matchers.UsernameMatcher;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -105,7 +104,7 @@ public class CredentialsMatchers {
      *
      * @param id the {@link com.cloudbees.plugins.credentials.common.IdCredentials#getId()} to match.
      * @return a matcher that matches {@link com.cloudbees.plugins.credentials.common.IdCredentials} with the
-     *         supplied {@link com.cloudbees.plugins.credentials.common.IdCredentials#getId()}
+     * supplied {@link com.cloudbees.plugins.credentials.common.IdCredentials#getId()}
      */
     @NonNull
     public static CredentialsMatcher withId(@NonNull String id) {
@@ -151,7 +150,7 @@ public class CredentialsMatchers {
      *
      * @param username the {@link com.cloudbees.plugins.credentials.common.UsernameCredentials#getUsername()} to match.
      * @return a matcher that matches {@link com.cloudbees.plugins.credentials.common.UsernameCredentials} with the
-     *         supplied {@link com.cloudbees.plugins.credentials.common.UsernameCredentials#getUsername()}
+     * supplied {@link com.cloudbees.plugins.credentials.common.UsernameCredentials#getUsername()}
      */
     @NonNull
     public static CredentialsMatcher withUsername(@NonNull String username) {
@@ -363,14 +362,14 @@ public class CredentialsMatchers {
     /**
      * Returns the first credential from a collection that matches the supplied matcher or {@code null} if none match.
      *
-     * @param credentials   the credentials to select from.
-     * @param matcher       the matcher.
-     * @param <C>           the type of credential.
+     * @param credentials the credentials to select from.
+     * @param matcher     the matcher.
+     * @param <C>         the type of credential.
      * @return a matching credential or the supplied default.
      */
     @CheckForNull
     public static <C extends Credentials> C firstOrNull(@NonNull Iterable<C> credentials,
-                                                           @NonNull CredentialsMatcher matcher) {
+                                                        @NonNull CredentialsMatcher matcher) {
         return firstOrDefault(credentials, matcher, null);
     }
 }

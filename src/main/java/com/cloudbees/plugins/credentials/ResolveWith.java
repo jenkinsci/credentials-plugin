@@ -23,15 +23,19 @@
  */
 package com.cloudbees.plugins.credentials;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * As credentials evolve we need to be able to map legacy credential types to newer common interfaces and implementations.
+ * As credentials evolve we need to be able to map legacy credential types to newer common interfaces and
+ * implementations.
  * For example code that requires a credential that holds a username and password should be looking for
  * {@link com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials}, and existing legacy
- * implementations of corresponding credential types should be using {@code readResolve()} to map down to that interface.
+ * implementations of corresponding credential types should be using {@code readResolve()} to map down to that
+ * interface.
  * But what happens to legacy code that is looking for the legacy type? By annotating the legacy type with
  * {@link ResolveWith} we can provide the legacy code with the credentials it seeks while migrating those legacy
  * types to the common parent. For example
@@ -60,8 +64,9 @@ import java.lang.annotation.RetentionPolicy;
 @Target(ElementType.TYPE)
 public @interface ResolveWith {
     /**
-     * The resolver class to
-     * @return
+     * The {@link CredentialsResolver} to use for the annotated class.
+     *
+     * @return the {@link CredentialsResolver} to use for the annotated class.
      */
     Class<? extends CredentialsResolver> value();
 }

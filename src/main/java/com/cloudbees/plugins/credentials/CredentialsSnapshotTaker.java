@@ -27,7 +27,7 @@ public abstract class CredentialsSnapshotTaker<C extends Credentials> implements
      *
      * @param credentials the credentials
      * @return either the original credentials if the {@link Credentials} is already self-contained or a new identical
-     *         instance that is self-contained.
+     * instance that is self-contained.
      */
     public abstract C snapshot(C credentials);
 

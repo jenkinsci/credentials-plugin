@@ -27,7 +27,6 @@ package com.cloudbees.plugins.credentials.domains;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionPoint;
 import hudson.model.AbstractDescribableImpl;
-
 import java.io.Serializable;
 
 /**

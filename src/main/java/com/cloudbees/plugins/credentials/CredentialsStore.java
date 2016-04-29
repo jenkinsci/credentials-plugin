@@ -30,15 +30,12 @@ import hudson.security.ACL;
 import hudson.security.AccessControlled;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
-import jenkins.model.Jenkins;
-import org.acegisecurity.Authentication;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import jenkins.model.Jenkins;
+import org.acegisecurity.Authentication;
 
 /**
  * A store of {@link Credentials}.
@@ -60,13 +57,35 @@ public abstract class CredentialsStore implements AccessControlled {
     public abstract ModelObject getContext();
 
     /**
+     * Checks if the given principle has the given permission.
+     *
+     * @param a          the principle.
+     * @param permission the permission.
+     * @return {@code false} if the user doesn't have the permission.
+     */
+    public abstract boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission);
+
+    /**
+     * {@inheritDoc}
+     */
+    public ACL getACL() {
+        // we really want people to implement this one, but in case of legacy implementations we need to provide
+        // an effective ACL implementation.
+        return new ACL() {
+            @Override
+            public boolean hasPermission(Authentication a, Permission permission) {
+                return CredentialsStore.this.hasPermission(a, permission);
+            }
+        };
+    }
+
+    /**
      * Checks if the current security principal has this permission.
      * <p>
-     * <p>
-     * This is just a convenience function.
+     * Note: This is just a convenience function.
+     * </p>
      *
-     * @throws org.acegisecurity.AccessDeniedException
-     *          if the user doesn't have the permission.
+     * @throws org.acegisecurity.AccessDeniedException if the user doesn't have the permission.
      */
     public final void checkPermission(@NonNull Permission p) {
         Authentication a = Jenkins.getAuthentication();
@@ -78,28 +97,10 @@ public abstract class CredentialsStore implements AccessControlled {
     /**
      * Checks if the current security principal has this permission.
      *
-     * @return false
-     *         if the user doesn't have the permission.
+     * @return {@code false} if the user doesn't have the permission.
      */
     public final boolean hasPermission(@NonNull Permission p) {
         return hasPermission(Jenkins.getAuthentication(), p);
-    }
-
-    /**
-     * Checks if the given principle has the given permission.
-     */
-    public abstract boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission);
-
-    /** {@inheritDoc} */
-    public ACL getACL() {
-        // we really want people to implement this one, but in case of legacy implementations we need to provide
-        // an effective ACL implementation.
-        return new ACL() {
-            @Override
-            public boolean hasPermission(Authentication a, Permission permission) {
-                return CredentialsStore.this.hasPermission(a, permission);
-            }
-        };
     }
 
     /**
@@ -118,6 +119,7 @@ public abstract class CredentialsStore implements AccessControlled {
      * whether it only supports a fixed set of domains (which may only be one domain).
      * <p>
      * Note: in order for implementations to return {@code true} all of the following methods must be overridden:
+     * </p>
      * <ul>
      * <li>{@link #getDomains}</li>
      * <li>{@link #addDomain(Domain, java.util.List)}</li>
@@ -126,8 +128,8 @@ public abstract class CredentialsStore implements AccessControlled {
      * </ul>
      *
      * @return {@code true} iff {@link #addDomain(Domain, List)}
-     *         {@link #addDomain(Domain, Credentials...)}, {@link #removeDomain(Domain)}
-     *         and {@link #updateDomain(Domain, Domain)} are expected to work
+     * {@link #addDomain(Domain, Credentials...)}, {@link #removeDomain(Domain)}
+     * and {@link #updateDomain(Domain, Domain)} are expected to work
      */
     public final boolean isDomainsModifiable() {
         if (domainsModifiable == null) {
@@ -146,6 +148,7 @@ public abstract class CredentialsStore implements AccessControlled {
 
     /**
      * Verifies if the specified method has been overridden by a subclass.
+     *
      * @param name the name of the method.
      * @param args the arguments.
      * @return {@code true} if and only if the method is overridden by a subclass.
@@ -164,7 +167,7 @@ public abstract class CredentialsStore implements AccessControlled {
      *
      * @param domain the domain.
      * @return the possibly empty (e.g. for an unknown {@link Domain}) unmodifiable list of credentials for the
-     *         specified domain.
+     * specified domain.
      */
     @NonNull
     public abstract List<Credentials> getCredentials(@NonNull Domain domain);

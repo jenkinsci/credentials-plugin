@@ -42,9 +42,9 @@ import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.QueryParameter;
-
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
+
 /**
  * Base class for {@link StandardCredentials}.
  */
@@ -110,21 +110,22 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
      * {@inheritDoc}
      */
     @Override
-    public final boolean equals(Object o) {
-        return IdCredentials.Helpers.equals(this, o);
+    public final int hashCode() {
+        return IdCredentials.Helpers.hashCode(this);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public final int hashCode() {
-        return IdCredentials.Helpers.hashCode(this);
+    public final boolean equals(Object o) {
+        return IdCredentials.Helpers.equals(this, o);
     }
 
     /**
      * Descriptor to use for subclasses of {@link BaseStandardCredentials}.
-     * <p>{@code <st:include page="id-and-description" class="${descriptor.clazz}"/>} in {@code credentials.jelly} to pick up standard controls for {@link #getId} and {@link #getDescription}.
+     * <p>{@code <st:include page="id-and-description" class="${descriptor.clazz}"/>} in {@code credentials.jelly} to
+     * pick up standard controls for {@link #getId} and {@link #getDescription}.
      */
     protected static abstract class BaseStandardCredentialsDescriptor extends CredentialsDescriptor {
 
@@ -134,6 +135,30 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
 
         protected BaseStandardCredentialsDescriptor(Class<? extends BaseStandardCredentials> clazz) {
             super(clazz);
+        }
+
+        @CheckForNull
+        private static FormValidation checkForDuplicates(String value, ModelObject context, ModelObject object) {
+            for (CredentialsStore store : CredentialsProvider.lookupStores(object)) {
+                if (!store.hasPermission(CredentialsProvider.VIEW)) {
+                    continue;
+                }
+                ModelObject storeContext = store.getContext();
+                for (Domain domain : store.getDomains()) {
+                    if (CredentialsMatchers.firstOrNull(store.getCredentials(domain), CredentialsMatchers.withId(value))
+                            != null) {
+                        if (storeContext == context) {
+                            return FormValidation.error("This ID is already in use");
+                        } else {
+                            return FormValidation.warning("The ID ‘%s’ is already in use in %s", value,
+                                    storeContext instanceof Item
+                                            ? ((Item) storeContext).getFullDisplayName()
+                                            : storeContext.getDisplayName());
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         public final FormValidation doCheckId(@QueryParameter String value, @AncestorInPath ModelObject context) {
@@ -167,24 +192,6 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
                 }
             }
             return FormValidation.ok();
-        }
-        private static @CheckForNull FormValidation checkForDuplicates(String value, ModelObject context, ModelObject object) {
-            for (CredentialsStore store : CredentialsProvider.lookupStores(object)) {
-                if (!store.hasPermission(CredentialsProvider.VIEW)) {
-                    continue;
-                }
-                ModelObject storeContext = store.getContext();
-                for (Domain domain : store.getDomains()) {
-                    if (CredentialsMatchers.firstOrNull(store.getCredentials(domain), CredentialsMatchers.withId(value)) != null) {
-                        if (storeContext == context) {
-                            return FormValidation.error("This ID is already in use");
-                        } else {
-                            return FormValidation.warning("The ID ‘%s’ is already in use in %s", value, storeContext instanceof Item ? ((Item) storeContext).getFullDisplayName() : storeContext.getDisplayName());
-                        }
-                    }
-                }
-            }
-            return null;
         }
 
     }

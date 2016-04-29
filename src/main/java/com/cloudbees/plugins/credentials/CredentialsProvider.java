@@ -25,14 +25,12 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
-import hudson.model.Action;
 import hudson.model.Cause;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
@@ -48,17 +46,10 @@ import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
-import jenkins.model.Jenkins;
-import jenkins.security.QueueItemAuthenticator;
-import jenkins.security.QueueItemAuthenticatorConfiguration;
-import org.acegisecurity.Authentication;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -67,18 +58,13 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
+import org.acegisecurity.Authentication;
 
 /**
  * An extension point for providing {@link Credentials}.
  */
 public abstract class CredentialsProvider implements ExtensionPoint {
-
-    /**
-     * Our logger.
-     *
-     * @since 1.6
-     */
-    private static final Logger LOGGER = Logger.getLogger(CredentialsProvider.class.getName());
 
     /**
      * The permission group for credentials.
@@ -87,54 +73,6 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      */
     public static final PermissionGroup GROUP = new PermissionGroup(CredentialsProvider.class,
             Messages._CredentialsProvider_PermissionGroupTitle());
-
-    /**
-     * The scopes that we allow credential permissions on.
-     * @since 1.12.
-     */
-    private static final PermissionScope[] SCOPES =
-            new PermissionScope[]{PermissionScope.ITEM, PermissionScope.ITEM_GROUP, PermissionScope.JENKINS};
-
-    /**
-     * The permission for adding credentials to a {@link CredentialsStore}.
-     *
-     * @since 1.8
-     */
-    public static final Permission CREATE = new Permission(GROUP, "Create",
-            Messages._CredentialsProvider_CreatePermissionDescription(), Permission.CREATE, true, SCOPES);
-
-    /**
-     * The permission for updating credentials in a {@link CredentialsStore}.
-     *
-     * @since 1.8
-     */
-    public static final Permission UPDATE = new Permission(GROUP, "Update",
-            Messages._CredentialsProvider_UpdatePermissionDescription(), Permission.UPDATE, true, SCOPES);
-
-    /**
-     * The permission for viewing credentials in a {@link CredentialsStore}.
-     *
-     * @since 1.8
-     */
-    public static final Permission VIEW = new Permission(GROUP, "View",
-            Messages._CredentialsProvider_ViewPermissionDescription(), Permission.READ, true, SCOPES);
-
-    /**
-     * The permission for removing credentials from a {@link CredentialsStore}.
-     *
-     * @since 1.8
-     */
-    public static final Permission DELETE = new Permission(GROUP, "Delete",
-            Messages._CredentialsProvider_DeletePermissionDescription(), Permission.DELETE, true, SCOPES);
-
-    /**
-     * The permission for managing credential domains in a {@link CredentialsStore}.
-     *
-     * @since 1.8
-     */
-    public static final Permission MANAGE_DOMAINS = new Permission(GROUP, "ManageDomains",
-            Messages._CredentialsProvider_ManageDomainsPermissionDescription(), Permission.CONFIGURE, true, SCOPES);
-
     /**
      * Where an immediate action against a job requires that a credential be selected by the user triggering the
      * action, this permission allows the user to select a credential from their private credential store. Immediate
@@ -147,7 +85,6 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             Boolean.getBoolean("com.cloudbees.plugins.credentials.UseOwnPermission") ? Jenkins.ADMINISTER : Job.BUILD,
             Boolean.getBoolean("com.cloudbees.plugins.credentials.UseOwnPermission"),
             new PermissionScope[]{PermissionScope.ITEM});
-
     /**
      * Where an immediate action against a job requires that a credential be selected by the user triggering the
      * action, this permission allows the user to select a credential from those credentials available within the
@@ -163,6 +100,54 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             Messages._CredentialsProvider_UseItemPermissionDescription(), Job.CONFIGURE,
             Boolean.getBoolean("com.cloudbees.plugins.credentials.UseItemPermission"),
             new PermissionScope[]{PermissionScope.ITEM});
+    /**
+     * Our logger.
+     *
+     * @since 1.6
+     */
+    private static final Logger LOGGER = Logger.getLogger(CredentialsProvider.class.getName());
+    /**
+     * The scopes that we allow credential permissions on.
+     *
+     * @since 1.12.
+     */
+    private static final PermissionScope[] SCOPES =
+            new PermissionScope[]{PermissionScope.ITEM, PermissionScope.ITEM_GROUP, PermissionScope.JENKINS};
+    /**
+     * The permission for adding credentials to a {@link CredentialsStore}.
+     *
+     * @since 1.8
+     */
+    public static final Permission CREATE = new Permission(GROUP, "Create",
+            Messages._CredentialsProvider_CreatePermissionDescription(), Permission.CREATE, true, SCOPES);
+    /**
+     * The permission for updating credentials in a {@link CredentialsStore}.
+     *
+     * @since 1.8
+     */
+    public static final Permission UPDATE = new Permission(GROUP, "Update",
+            Messages._CredentialsProvider_UpdatePermissionDescription(), Permission.UPDATE, true, SCOPES);
+    /**
+     * The permission for viewing credentials in a {@link CredentialsStore}.
+     *
+     * @since 1.8
+     */
+    public static final Permission VIEW = new Permission(GROUP, "View",
+            Messages._CredentialsProvider_ViewPermissionDescription(), Permission.READ, true, SCOPES);
+    /**
+     * The permission for removing credentials from a {@link CredentialsStore}.
+     *
+     * @since 1.8
+     */
+    public static final Permission DELETE = new Permission(GROUP, "Delete",
+            Messages._CredentialsProvider_DeletePermissionDescription(), Permission.DELETE, true, SCOPES);
+    /**
+     * The permission for managing credential domains in a {@link CredentialsStore}.
+     *
+     * @since 1.8
+     */
+    public static final Permission MANAGE_DOMAINS = new Permission(GROUP, "ManageDomains",
+            Messages._CredentialsProvider_ManageDomainsPermissionDescription(), Permission.CONFIGURE, true, SCOPES);
 
     /**
      * Returns all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
@@ -179,106 +164,6 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     }
 
     /**
-     * Returns the scopes allowed for credentials stored within the specified object or {@code null} if the
-     * object is not relevant for scopes and the object's container should be considered instead.
-     *
-     * @param object the object.
-     * @return the set of scopes that are relevant for the object or {@code null} if the object is not a credentials
-     *         container.
-     */
-    public Set<CredentialsScope> getScopes(ModelObject object) {
-        return null;
-    }
-
-    /**
-     * Returns the {@link CredentialsStore} that this {@link CredentialsProvider} maintains specifically for this
-     * {@link ModelObject} or {@code null} if either the object is not a credentials container or this
-     * {@link CredentialsProvider} does not maintain a store specifically bound to this {@link ModelObject}.
-     *
-     * @param object the {@link Item} or {@link ItemGroup} or {@link User} that the store is being requested of.
-     * @return either {@code null} or a scoped {@link CredentialsStore} where
-     *         {@link com.cloudbees.plugins.credentials.CredentialsStore#getContext()} {@code == object}.
-     * @since 1.8
-     */
-    @CheckForNull
-    public CredentialsStore getStore(@CheckForNull ModelObject object) {
-        return null;
-    }
-
-    /**
-     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for items in the specified {@link ItemGroup}
-     *
-     * @param type           the type of credentials to return.
-     * @param itemGroup      the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
-     * @param authentication the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
-     * @return the list of credentials.
-     */
-    @NonNull
-    public abstract <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
-                                                                   @Nullable ItemGroup itemGroup,
-                                                                   @Nullable Authentication authentication);
-
-    /**
-     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for items in the specified {@link ItemGroup} and are appropriate for the specified {@link com.cloudbees
-     * .plugins.credentials.domains.DomainRequirement}s.
-     *
-     * @param type               the type of credentials to return.
-     * @param itemGroup          the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
-     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
-     * @param domainRequirements the credential domains to match (if the {@link CredentialsProvider} does not support
-     *                           {@link com.cloudbees.plugins.credentials.domains.DomainRequirement}s then it should
-     *                           assume the match is true).
-     * @return the list of credentials.
-     * @since 1.5
-     */
-    @NonNull
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
-                                                          @Nullable ItemGroup itemGroup,
-                                                          @Nullable Authentication authentication,
-                                                          @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials(type, itemGroup, authentication);
-    }
-
-    /**
-     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for the specified {@link Item}
-     *
-     * @param type           the type of credentials to return.
-     * @param item           the item.
-     * @param authentication the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
-     * @return the list of credentials.
-     */
-    @NonNull
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
-                                                          @NonNull Item item,
-                                                          @Nullable Authentication authentication) {
-        item.getClass();
-        return getCredentials(type, item.getParent(), authentication);
-    }
-
-    /**
-     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for items in the specified {@link Item} and are appropriate for the specified {@link com.cloudbees.plugins
-     * .credentials.domains.DomainRequirement}s.
-     *
-     * @param type               the type of credentials to return.
-     * @param item               the item.
-     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
-     * @param domainRequirements the credential domain to match.
-     * @return the list of credentials.
-     * @since 1.5
-     */
-    @NonNull
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
-                                                          @NonNull Item item,
-                                                          @Nullable Authentication authentication,
-                                                          @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials(type, item.getParent(), authentication, domainRequirements);
-    }
-
-    /**
      * Returns all credentials which are available to the {@link ACL#SYSTEM} {@link Authentication}
      * within the {@link jenkins.model.Jenkins#getInstance()}.
      *
@@ -286,9 +171,9 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param <C>  the credentials type.
      * @return the list of credentials.
      * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)},
-     *             {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)},
-     *             {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
-     *             or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
+     * {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)},
+     * {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
+     * or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
      */
     @Deprecated
     @NonNull
@@ -306,9 +191,9 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param <C>            the credentials type.
      * @return the list of credentials.
      * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)},
-     *             {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)},
-     *             {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
-     *             or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
+     * {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)},
+     * {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
+     * or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
      */
     @Deprecated
     @NonNull
@@ -327,7 +212,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param <C>  the credentials type.
      * @return the list of credentials.
      * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)}
-     *             or {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)}
+     * or {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)}
      */
     @Deprecated
     @NonNull
@@ -348,7 +233,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param <C>       the credentials type.
      * @return the list of credentials.
      * @deprecated use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
-     *             or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
+     * or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
      */
     @Deprecated
     @NonNull
@@ -368,7 +253,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param <C>            the credentials type.
      * @return the list of credentials.
      * @deprecated use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
-     *             or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
+     * or {@link #lookupCredentials(Class, ItemGroup, Authentication, DomainRequirement...)}
      */
     @Deprecated
     @NonNull
@@ -389,7 +274,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param <C>            the credentials type.
      * @return the list of credentials.
      * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)}
-     *             or {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)}
+     * or {@link #lookupCredentials(Class, Item, Authentication, DomainRequirement...)}
      */
     @Deprecated
     @NonNull
@@ -537,18 +422,18 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                         + " likely due to missing optional dependency", e);
             }
         }
-        
+
         Collections.sort(result, new CredentialsNameComparator());
         return result;
     }
-    
+
     /**
      * Returns the scopes allowed for credentials stored within the specified object or {@code null} if the
      * object is not relevant for scopes and the object's container should be considered instead.
      *
      * @param object the object.
      * @return the set of scopes that are relevant for the object or {@code null} if the object is not a credentials
-     *         container.
+     * container.
      */
     @CheckForNull
     public static Set<CredentialsScope> lookupScopes(ModelObject object) {
@@ -591,7 +476,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
             public Iterator<CredentialsStore> iterator() {
                 return new Iterator<CredentialsStore>() {
                     private ModelObject current = object;
-                    private Iterator<CredentialsProvider> iterator= providers.iterator();
+                    private Iterator<CredentialsProvider> iterator = providers.iterator();
                     private CredentialsStore next;
 
                     public boolean hasNext() {
@@ -652,16 +537,16 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      */
     @SuppressWarnings("unchecked")
     public static <C extends Credentials> C snapshot(C credential) {
-        return (C)snapshot(Credentials.class, credential);
+        return (C) snapshot(Credentials.class, credential);
     }
 
     /**
      * Make a best effort to ensure that the supplied credential is a snapshot credential (i.e. self-contained and
      * does not reference any external stores)
      *
-     * @param clazz the type of credential that we are trying to snapshot (specified so that if there is more than
-     *              one type of snapshot able credential interface implemented by the credentials,
-     *              then they can be separated out.
+     * @param clazz      the type of credential that we are trying to snapshot (specified so that if there is more than
+     *                   one type of snapshot able credential interface implemented by the credentials,
+     *                   then they can be separated out.
      * @param credential the credential.
      * @param <C>        the type of credential.
      * @return the credential or a snapshot of the credential.
@@ -711,6 +596,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param type               the type of credential to find.
      * @param run                the {@link Run} defining the context within which to find the credential.
      * @param domainRequirements the domain requirements of the credential.
+     * @param <C>                the credentials type.
      * @return the credential or {@code null} if either the credential cannot be found or the user triggering the run
      * is not permitted to use the credential in the context of the run.
      * @since 1.16
@@ -732,6 +618,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @param type               the type of credential to find.
      * @param run                the {@link Run} defining the context within which to find the credential.
      * @param domainRequirements the domain requirements of the credential.
+     * @param <C>                the credentials type.
      * @return the credential or {@code null} if either the credential cannot be found or the user triggering the run
      * is not permitted to use the credential in the context of the run.
      * @since 1.16
@@ -834,8 +721,112 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         // TODO switch to ExtensionList.lookup once Jenkins 1.572+ is the baseline
         final Jenkins jenkins = Jenkins.getInstance();
         return jenkins == null
-                ? ExtensionList.create((Jenkins)null, CredentialsProvider.class)
+                ? ExtensionList.create((Jenkins) null, CredentialsProvider.class)
                 : jenkins.getExtensionList(CredentialsProvider.class);
+    }
+
+    /**
+     * Returns the scopes allowed for credentials stored within the specified object or {@code null} if the
+     * object is not relevant for scopes and the object's container should be considered instead.
+     *
+     * @param object the object.
+     * @return the set of scopes that are relevant for the object or {@code null} if the object is not a credentials
+     * container.
+     */
+    public Set<CredentialsScope> getScopes(ModelObject object) {
+        return null;
+    }
+
+    /**
+     * Returns the {@link CredentialsStore} that this {@link CredentialsProvider} maintains specifically for this
+     * {@link ModelObject} or {@code null} if either the object is not a credentials container or this
+     * {@link CredentialsProvider} does not maintain a store specifically bound to this {@link ModelObject}.
+     *
+     * @param object the {@link Item} or {@link ItemGroup} or {@link User} that the store is being requested of.
+     * @return either {@code null} or a scoped {@link CredentialsStore} where
+     * {@link com.cloudbees.plugins.credentials.CredentialsStore#getContext()} {@code == object}.
+     * @since 1.8
+     */
+    @CheckForNull
+    public CredentialsStore getStore(@CheckForNull ModelObject object) {
+        return null;
+    }
+
+    /**
+     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
+     * for items in the specified {@link ItemGroup}
+     *
+     * @param type           the type of credentials to return.
+     * @param itemGroup      the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
+     * @param authentication the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param <C>            the credentials type.
+     * @return the list of credentials.
+     */
+    @NonNull
+    public abstract <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+                                                                   @Nullable ItemGroup itemGroup,
+                                                                   @Nullable Authentication authentication);
+
+    /**
+     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
+     * for items in the specified {@link ItemGroup} and are appropriate for the specified {@link com.cloudbees
+     * .plugins.credentials.domains.DomainRequirement}s.
+     *
+     * @param type               the type of credentials to return.
+     * @param itemGroup          the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
+     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param domainRequirements the credential domains to match (if the {@link CredentialsProvider} does not support
+     *                           {@link com.cloudbees.plugins.credentials.domains.DomainRequirement}s then it should
+     *                           assume the match is true).
+     * @param <C>                the credentials type.
+     * @return the list of credentials.
+     * @since 1.5
+     */
+    @NonNull
+    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+                                                          @Nullable ItemGroup itemGroup,
+                                                          @Nullable Authentication authentication,
+                                                          @NonNull List<DomainRequirement> domainRequirements) {
+        return getCredentials(type, itemGroup, authentication);
+    }
+
+    /**
+     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
+     * for the specified {@link Item}
+     *
+     * @param type           the type of credentials to return.
+     * @param item           the item.
+     * @param authentication the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param <C>            the credentials type.
+     * @return the list of credentials.
+     */
+    @NonNull
+    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+                                                          @NonNull Item item,
+                                                          @Nullable Authentication authentication) {
+        item.getClass();
+        return getCredentials(type, item.getParent(), authentication);
+    }
+
+    /**
+     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
+     * for items in the specified {@link Item} and are appropriate for the specified {@link com.cloudbees.plugins
+     * .credentials.domains.DomainRequirement}s.
+     *
+     * @param type               the type of credentials to return.
+     * @param item               the item.
+     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param domainRequirements the credential domain to match.
+     * @param <C>                the credentials type.
+     * @return the list of credentials.
+     * @since 1.5
+     */
+    @NonNull
+    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+                                                          @NonNull Item item,
+                                                          @Nullable Authentication authentication,
+                                                          @NonNull List<DomainRequirement> domainRequirements) {
+        return getCredentials(type, item.getParent(), authentication, domainRequirements);
     }
 
 }

@@ -25,10 +25,7 @@ package com.cloudbees.plugins.credentials;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import hudson.DescriptorExtensionList;
-import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
-import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
 /**

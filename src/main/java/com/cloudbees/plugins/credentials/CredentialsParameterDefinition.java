@@ -11,6 +11,10 @@ import hudson.model.ParameterValue;
 import hudson.model.SimpleParameterDefinition;
 import hudson.security.ACL;
 import hudson.util.ListBoxModel;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
@@ -20,41 +24,48 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 /**
- * @author Stephen Connolly
+ * A {@link ParameterDefinition} for a parameter that supplies a {@link Credentials}.
  */
 public class CredentialsParameterDefinition extends SimpleParameterDefinition {
+    /**
+     * The default credential id.
+     */
     private final String defaultValue;
+    /**
+     * The type of credential (a class name).
+     */
     private final String credentialType;
+    /**
+     * Whether to fail the build if the credential cannot be resolved.
+     */
     private final boolean required;
 
     @DataBoundConstructor
-    public CredentialsParameterDefinition(String name, String description, String defaultValue, String credentialType, boolean required) {
+    public CredentialsParameterDefinition(String name, String description, String defaultValue, String credentialType,
+                                          boolean required) {
         super(name, description);
         this.defaultValue = defaultValue;
         this.credentialType = credentialType;
         this.required = required;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ParameterDefinition copyWithDefaultValue(ParameterValue defaultValue) {
         if (defaultValue instanceof CredentialsParameterValue) {
             CredentialsParameterValue value = (CredentialsParameterValue) defaultValue;
-            return new CredentialsParameterDefinition(getName(), getDescription(), value.getValue(), getCredentialType(), isRequired());
+            return new CredentialsParameterDefinition(getName(), getDescription(), value.getValue(),
+                    getCredentialType(), isRequired());
         }
         return this;
     }
 
-    @Override
-    public ParameterValue createValue(String value) {
-        return new CredentialsParameterValue(getName(), value, getDescription(), StringUtils.equals(value, defaultValue));
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ParameterValue createValue(StaplerRequest req, JSONObject jo) {
         CredentialsParameterValue value = req.bindJSON(CredentialsParameterValue.class, jo);
@@ -67,9 +78,21 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ParameterValue getDefaultParameterValue() {
         return new CredentialsParameterValue(getName(), getDefaultValue(), getDescription(), true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ParameterValue createValue(String value) {
+        return new CredentialsParameterValue(getName(), value, getDescription(),
+                StringUtils.equals(value, defaultValue));
     }
 
     public String getDefaultValue() {
@@ -85,11 +108,14 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
     }
 
     /**
-     * @author Stephen Connolly
+     * Our descriptor.
      */
     @Extension
     public static class DescriptorImpl extends ParameterDescriptor {
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public String getDisplayName() {
             return Messages.CredentialsParameterDefinition_DisplayName();
@@ -103,14 +129,15 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
                     continue;
                 }
                 CredentialsDescriptor descriptor = (CredentialsDescriptor) d;
-                if (StandardCredentials.class.isAssignableFrom(descriptor.clazz))
+                if (StandardCredentials.class.isAssignableFrom(descriptor.clazz)) {
                     result.add(descriptor.getDisplayName(), descriptor.clazz.getName());
+                }
             }
             return result;
         }
 
         private Class<? extends StandardCredentials> decodeType(String credentialType) {
-            for (Descriptor<Credentials> d: CredentialsProvider.allCredentialsDescriptors()) {
+            for (Descriptor<Credentials> d : CredentialsProvider.allCredentialsDescriptors()) {
                 if (!(d instanceof CredentialsDescriptor)) {
                     continue;
                 }
@@ -126,9 +153,10 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         }
 
         private boolean match(Set<Class<? extends StandardCredentials>> allowed, StandardCredentials instance) {
-            for (Class<? extends StandardCredentials> b: allowed) {
-                if (b.isInstance(instance))
+            for (Class<? extends StandardCredentials> b : allowed) {
+                if (b.isInstance(instance)) {
                     return true;
+                }
             }
             return false;
         }
@@ -148,7 +176,8 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             result.withEmptySelection();
             if (acl.hasPermission(CredentialsProvider.USE_ITEM)) {
                 for (StandardCredentials s : CredentialsProvider
-                        .lookupCredentials(typeClass, context, CredentialsProvider.getDefaultAuthenticationOf(context), domainRequirements)) {
+                        .lookupCredentials(typeClass, context, CredentialsProvider.getDefaultAuthenticationOf(context),
+                                domainRequirements)) {
                     if (!ids.contains(s.getId())) {
                         result.with(s);
                         ids.add(s.getId());
@@ -186,7 +215,8 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
                     }
                 }
             }
-            if (acl.hasPermission(CredentialsProvider.USE_ITEM) || isSystem || itemAuthentication.equals(authentication)) {
+            if (acl.hasPermission(CredentialsProvider.USE_ITEM) || isSystem || itemAuthentication
+                    .equals(authentication)) {
                 for (StandardCredentials s : CredentialsProvider
                         .lookupCredentials(typeClass, context, itemAuthentication, domainRequirements)) {
                     if (!ids.contains(s.getId())) {

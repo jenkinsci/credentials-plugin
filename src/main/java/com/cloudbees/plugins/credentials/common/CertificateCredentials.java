@@ -25,7 +25,6 @@ package com.cloudbees.plugins.credentials.common;
 
 import com.cloudbees.plugins.credentials.Credentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.security.KeyStore;
 
 /**

@@ -25,7 +25,6 @@
 package com.cloudbees.plugins.credentials.domains;
 
 import hudson.ExtensionPoint;
-
 import java.io.Serializable;
 
 /**

@@ -26,11 +26,10 @@ package com.cloudbees.plugins.credentials;
 import hudson.model.Descriptor;
 import hudson.model.ModelObject;
 import hudson.util.ListBoxModel;
+import java.util.Set;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.Ancestor;
 import org.kohsuke.stapler.Stapler;
-
-import java.util.Set;
 
 /**
  * Descriptor for credentials.
@@ -90,7 +89,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      * field is relevant.
      *
      * @return {@code true} if the nearest request object that acts as a container for credentials needs a scope
-     *         to be specified.
+     * to be specified.
      */
     @SuppressWarnings("unused") // used by stapler
     public boolean isScopeRelevant() {
@@ -114,7 +113,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      *
      * @param object the object that is going to contain the credential.
      * @return {@code true} if there is more than one {@link CredentialsScope} that can be used for the specified
-     *         object.
+     * object.
      */
     @SuppressWarnings("unused") // used by stapler
     public boolean isScopeRelevant(ModelObject object) {
@@ -127,7 +126,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      *
      * @param wrapper the wrapper for the domain that is going to contain the credential.
      * @return {@code true} if there is more than one {@link CredentialsScope} that can be used for the specified
-     *         object.
+     * object.
      */
     @SuppressWarnings("unused") // used by stapler
     public boolean isScopeRelevant(CredentialsStoreAction.DomainWrapper wrapper) {
@@ -147,7 +146,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      *
      * @param wrapper the wrapper for the domain that is going to contain the credential.
      * @return {@code true} if there is more than one {@link CredentialsScope} that can be used for the specified
-     *         object.
+     * object.
      */
     @SuppressWarnings("unused") // used by stapler
     public boolean isScopeRelevant(CredentialsStoreAction.CredentialsWrapper wrapper) {
@@ -175,7 +174,6 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
     /**
      * {@inheritDoc}
      * @since 1.25
-     * @return Icon Class Name
      */
     public String getIconClassName() {
         return "icon-credentials-credential";

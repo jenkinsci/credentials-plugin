@@ -24,16 +24,17 @@
 package com.cloudbees.plugins.credentials;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.io.Serializable;
 
 /**
  * Something that matches credentials.
+ *
  * @since 1.5
  */
 public interface CredentialsMatcher extends Serializable {
     /**
      * Evaluates the matcher for the specified credentials.
+     *
      * @param item the specified credentials.
      * @return {@code true} if and only if the specified credentials match.
      */

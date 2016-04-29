@@ -24,7 +24,6 @@
 package com.cloudbees.plugins.credentials.common;
 
 import com.cloudbees.plugins.credentials.Credentials;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

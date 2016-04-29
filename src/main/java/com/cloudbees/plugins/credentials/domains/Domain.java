@@ -27,14 +27,13 @@ package com.cloudbees.plugins.credentials.domains;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * A domain, within which credentials are common. For example a company may have a single sign-on domain where
@@ -66,11 +65,13 @@ public class Domain implements Serializable {
     @NonNull
     private final List<DomainSpecification> specifications;
 
-    /**
-     * Lazy singleton thread-safe initialization.
-     */
-    private static final class ResourceHolder {
-        private static final Domain GLOBAL = new Domain(null, null, Collections.<DomainSpecification>emptyList());
+    @DataBoundConstructor
+    public Domain(String name, String description, List<DomainSpecification> specifications) {
+        this.name = Util.fixEmptyAndTrim(name);
+        this.description = Util.fixEmptyAndTrim(description);
+        this.specifications = specifications == null
+                ? new ArrayList<DomainSpecification>()
+                : new ArrayList<DomainSpecification>(specifications);
     }
 
     /**
@@ -81,15 +82,6 @@ public class Domain implements Serializable {
     @NonNull
     public static Domain global() {
         return ResourceHolder.GLOBAL;
-    }
-
-    @DataBoundConstructor
-    public Domain(String name, String description, List<DomainSpecification> specifications) {
-        this.name = Util.fixEmptyAndTrim(name);
-        this.description = Util.fixEmptyAndTrim(description);
-        this.specifications = specifications == null
-                        ? new ArrayList<DomainSpecification>()
-                        : new ArrayList<DomainSpecification>(specifications);
     }
 
     /**
@@ -192,6 +184,14 @@ public class Domain implements Serializable {
      * {@inheritDoc}
      */
     @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -210,10 +210,9 @@ public class Domain implements Serializable {
     }
 
     /**
-     * {@inheritDoc}
+     * Lazy singleton thread-safe initialization.
      */
-    @Override
-    public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+    private static final class ResourceHolder {
+        private static final Domain GLOBAL = new Domain(null, null, Collections.<DomainSpecification>emptyList());
     }
 }

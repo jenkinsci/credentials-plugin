@@ -17,17 +17,6 @@ import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
 import hudson.util.IOUtils;
 import hudson.util.Secret;
-import jenkins.model.Jenkins;
-import net.jcip.annotations.GuardedBy;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-
-import javax.servlet.ServletException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -44,6 +33,16 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.ServletException;
+import jenkins.model.Jenkins;
+import net.jcip.annotations.GuardedBy;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.HttpResponse;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * @author stephenc
@@ -92,8 +91,14 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         this.keyStoreSource = keyStoreSource;
     }
 
+    private static char[] toCharArray(Secret password) {
+        String plainText = Util.fixEmpty(password.getPlainText());
+        return plainText == null ? null : plainText.toCharArray();
+    }
+
     private Object writeReplace() {
-        if (/* XStream */Channel.current() == null || /* already safe to serialize */ keyStoreSource.isSnapshotSource()) {
+        if (/* XStream */Channel.current() == null || /* already safe to serialize */ keyStoreSource
+                .isSnapshotSource()) {
             return this;
         }
         return CredentialsProvider.snapshot(this);
@@ -135,11 +140,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     public KeyStoreSource getKeyStoreSource() {
         return keyStoreSource;
-    }
-
-    private static char[] toCharArray(Secret password) {
-        String plainText = Util.fixEmpty(password.getPlainText());
-        return plainText == null ? null : plainText.toCharArray();
     }
 
     @Extension(ordinal = -1)
@@ -214,7 +214,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                         keyStore.getCertificate(alias);
                     } else if (keyStore.isKeyEntry(alias)) {
                         if (passwordChars == null) {
-                            return FormValidation.warning(Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword(alias));
+                            return FormValidation.warning(
+                                    Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword(alias));
                         }
                         try {
                             keyStore.getKey(alias, passwordChars);
@@ -284,6 +285,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         /**
+         * Returns the private key file name.
+         *
+         * @return the private key file name.
+         */
+        public String getKeyStoreFile() {
+            return keyStoreFile;
+        }        /**
          * {@inheritDoc}
          */
         @Override
@@ -292,27 +300,10 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         /**
-         * Returns the private key file name.
-         *
-         * @return the private key file name.
-         */
-        public String getKeyStoreFile() {
-            return keyStoreFile;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @Extension
         public static class DescriptorImpl extends KeyStoreSourceDescriptor {
-
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public String getDisplayName() {
-                return Messages.CertificateCredentialsImpl_FileOnMasterKeyStoreSourceDisplayName();
-            }
 
             public FormValidation doCheckKeyStoreFile(@QueryParameter String value,
                                                       @QueryParameter String password) {
@@ -324,14 +315,25 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     try {
                         return validateCertificateKeystore("PKCS12", FileUtils.readFileToByteArray(file), password);
                     } catch (IOException e) {
-                        return FormValidation.error(Messages.CertificateCredentialsImpl_KeyStoreFileUnreadable(value), e);
+                        return FormValidation
+                                .error(Messages.CertificateCredentialsImpl_KeyStoreFileUnreadable(value), e);
                     }
                 } else {
                     return FormValidation.error(Messages.CertificateCredentialsImpl_KeyStoreFileDoesNotExist(value));
                 }
+            }            /**
+             * {@inheritDoc}
+             */
+            @Override
+            public String getDisplayName() {
+                return Messages.CertificateCredentialsImpl_FileOnMasterKeyStoreSourceDisplayName();
             }
 
+
+
         }
+
+
     }
 
     /**
@@ -361,6 +363,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         /**
+         * Returns the private key file name.
+         *
+         * @return the private key file name.
+         */
+        public String getUploadedKeystore() {
+            return uploadedKeystore == null ? "" : uploadedKeystore.getEncryptedValue();
+        }        /**
          * {@inheritDoc}
          */
         @NonNull
@@ -369,41 +378,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             return DescriptorImpl.toByteArray(uploadedKeystore);
         }
 
-        @Override
-        public long getKeyStoreLastModified() {
-            return 0L;
-        }
-
-        /**
-         * Returns the private key file name.
-         *
-         * @return the private key file name.
-         */
-        public String getUploadedKeystore() {
-            return uploadedKeystore == null ? "" : uploadedKeystore.getEncryptedValue();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean isSnapshotSource() {
-            return true;
-        }
-
         /**
          * {@inheritDoc}
          */
         @Extension
         public static class DescriptorImpl extends KeyStoreSourceDescriptor {
-
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public String getDisplayName() {
-                return Messages.CertificateCredentialsImpl_UploadedKeyStoreSourceDisplayName();
-            }
 
             public static byte[] toByteArray(Secret secret) {
                 if (secret != null) {
@@ -414,6 +393,12 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     }
                 }
                 return new byte[0];
+            }            /**
+             * {@inheritDoc}
+             */
+            @Override
+            public String getDisplayName() {
+                return Messages.CertificateCredentialsImpl_UploadedKeyStoreSourceDisplayName();
             }
 
             public static Secret toSecret(byte[] contents) {
@@ -435,6 +420,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             }
 
 
+
+
+        }        @Override
+        public long getKeyStoreLastModified() {
+            return 0L;
         }
 
         public static class Upload {
@@ -465,6 +455,18 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                         new Upload(getDivId(), UploadedKeyStoreSource.DescriptorImpl.toSecret(file.get())), "complete");
             }
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isSnapshotSource() {
+            return true;
+        }
+
+
+
+
     }
 
     /**

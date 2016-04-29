@@ -23,7 +23,6 @@
  */
 package com.cloudbees.plugins.credentials;
 
-import com.cloudbees.plugins.credentials.domains.Domain;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
@@ -31,14 +30,13 @@ import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.security.Permission;
 import hudson.util.FormApply;
+import java.io.IOException;
+import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.interceptor.RequirePOST;
-
-import javax.servlet.ServletException;
-import java.io.IOException;
 
 /**
  * A descriptor used to assist the c:select tag with allowing in-place addition of credentials.
@@ -71,6 +69,9 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
 
     public CredentialsStoreAction.DomainWrapper getWrapper() {
         return new CredentialsStoreAction() {
+            /**
+             * {@inheritDoc}
+             */
             @NonNull
             @Override
             public CredentialsStore getStore() {

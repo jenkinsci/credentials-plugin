@@ -28,10 +28,9 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.Util;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * A {@link DomainSpecification} that matches {@link SchemeRequirement}s where the URI scheme is on a whitelist
@@ -66,6 +65,22 @@ public class SchemeSpecification extends DomainSpecification {
                 }
             }
         }
+    }
+
+    /**
+     * Tidy up the provided scheme.
+     *
+     * @param scheme the scheme.
+     * @return tidy form of provided scheme.
+     */
+    @NonNull
+    private static String toWellFormedScheme(@NonNull String scheme) {
+        scheme = scheme.toLowerCase(); // RFC-3986 mandates that scheme's are compared as lowercase
+        int index = scheme.indexOf(':'); // do not include the ':'
+        if (index != -1) {
+            scheme = scheme.substring(0, index);
+        }
+        return scheme;
     }
 
     /**
@@ -104,22 +119,6 @@ public class SchemeSpecification extends DomainSpecification {
             return Result.NEGATIVE;
         }
         return Result.UNKNOWN;
-    }
-
-    /**
-     * Tidy up the provided scheme.
-     *
-     * @param scheme the scheme.
-     * @return tidy form of provided scheme.
-     */
-    @NonNull
-    private static String toWellFormedScheme(@NonNull String scheme) {
-        scheme = scheme.toLowerCase(); // RFC-3986 mandates that scheme's are compared as lowercase
-        int index = scheme.indexOf(':'); // do not include the ':'
-        if (index != -1) {
-            scheme = scheme.substring(0, index);
-        }
-        return scheme;
     }
 
     /**

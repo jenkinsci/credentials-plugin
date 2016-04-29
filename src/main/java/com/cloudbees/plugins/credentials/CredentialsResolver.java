@@ -25,8 +25,6 @@ package com.cloudbees.plugins.credentials;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.jvnet.tiger_types.Types;
-
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -34,6 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jvnet.tiger_types.Types;
 
 /**
  * Translates {@link Credentials} from one type into another. We only support point-to-point translation, not a chain.
@@ -94,7 +93,8 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
     protected CredentialsResolver(@NonNull Class<F> fromClass) {
         fromClass.getClass(); // throw NPE if null
         this.fromClass = fromClass;
-        @SuppressWarnings("unchecked") final Class<T> toClass = (Class<T>) getClass().getEnclosingClass();
+        @SuppressWarnings("unchecked")
+        final Class<T> toClass = (Class<T>) getClass().getEnclosingClass();
         if (toClass == null) {
             throw new AssertionError(getClass()
                     + " doesn't have an outer class. Use the constructor that takes the Class object explicitly.");
@@ -112,6 +112,38 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
                         + ". Perhaps wrong outer class?");
             }
         }
+    }
+
+    /**
+     * Retrieves the {@link CredentialsResolver} for the specified type (if it exists)
+     *
+     * @param clazz the type.
+     * @param <C>   the type.
+     * @return the {@link CredentialsResolver} to use or {@code null} if no resolver is required.
+     */
+    @CheckForNull
+    public static <C extends Credentials> CredentialsResolver<Credentials, C> getResolver(@NonNull Class<C> clazz) {
+        final ResolveWith resolveWith = clazz.getAnnotation(ResolveWith.class);
+        if (resolveWith != null) {
+            // if the reflective instantiation proves a hot point, put a cache in front.
+            try {
+                @SuppressWarnings("unchecked")
+                final CredentialsResolver<Credentials, C> resolver = resolveWith.value().newInstance();
+                if (Credentials.class.isAssignableFrom(resolver.getFromClass())
+                        && clazz.isAssignableFrom(resolver.getToClass())) {
+                    return resolver;
+                }
+                LOGGER.log(Level.SEVERE, "Resolver {0} for type {1} resolves to {2} which is not assignable to {1}",
+                        new Object[]{resolver.getClass(), clazz, resolver.getToClass()});
+            } catch (InstantiationException e) {
+                LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
+                return null;
+            } catch (IllegalAccessException e) {
+                LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
+                return null;
+            }
+        }
+        return null;
     }
 
     /**
@@ -179,36 +211,4 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      */
     @NonNull
     protected abstract T doResolve(@NonNull F original);
-
-    /**
-     * Retrieves the {@link CredentialsResolver} for the specified type (if it exists)
-     *
-     * @param clazz the type.
-     * @param <C>   the type.
-     * @return the {@link CredentialsResolver} to use or {@code null} if no resolver is required.
-     */
-    @CheckForNull
-    public static <C extends Credentials> CredentialsResolver<Credentials, C> getResolver(@NonNull Class<C> clazz) {
-        final ResolveWith resolveWith = clazz.getAnnotation(ResolveWith.class);
-        if (resolveWith != null) {
-            // if the reflective instantiation proves a hot point, put a cache in front.
-            try {
-                @SuppressWarnings("unchecked")
-                final CredentialsResolver<Credentials, C> resolver = resolveWith.value().newInstance();
-                if (Credentials.class.isAssignableFrom(resolver.getFromClass())
-                        && clazz.isAssignableFrom(resolver.getToClass())) {
-                    return resolver;
-                }
-                LOGGER.log(Level.SEVERE, "Resolver {0} for type {1} resolves to {2} which is not assignable to {1}",
-                        new Object[]{resolver.getClass(), clazz, resolver.getToClass()});
-            } catch (InstantiationException e) {
-                LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
-                return null;
-            } catch (IllegalAccessException e) {
-                LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
-                return null;
-            }
-        }
-        return null;
-    }
 }

@@ -45,19 +45,6 @@ import hudson.model.Saveable;
 import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.util.CopyOnWriteMap;
-import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
-import org.acegisecurity.Authentication;
-import org.acegisecurity.context.SecurityContextHolder;
-import org.jenkins.ui.icon.IconSpec;
-import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.HttpResponses;
-import org.kohsuke.stapler.StaplerProxy;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.export.Exported;
-import org.kohsuke.stapler.export.ExportedBean;
-
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,6 +57,18 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.ServletException;
+import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
+import org.acegisecurity.Authentication;
+import org.acegisecurity.context.SecurityContextHolder;
+import org.jenkins.ui.icon.IconSpec;
+import org.kohsuke.stapler.HttpResponse;
+import org.kohsuke.stapler.HttpResponses;
+import org.kohsuke.stapler.StaplerProxy;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.always;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.not;
@@ -124,6 +123,29 @@ public class SystemCredentialsProvider extends ManagementLink
     }
 
     /**
+     * Gets the configuration file that this {@link CredentialsProvider} uses to store its credentials.
+     *
+     * @return the configuration file that this {@link CredentialsProvider} uses to store its credentials.
+     */
+    public static XmlFile getConfigFile() {
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
+        }
+        return new XmlFile(new File(jenkins.getRootDir(), "credentials.xml"));
+    }
+
+    /**
+     * Gets the singleton instance.
+     *
+     * @return the singleton instance.
+     */
+    public static SystemCredentialsProvider getInstance() {
+        return all().get(SystemCredentialsProvider.class);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -131,22 +153,6 @@ public class SystemCredentialsProvider extends ManagementLink
         return CredentialsProvider.allCredentialsDescriptors().isEmpty()
                 ? null
                 : "/plugin/credentials/images/48x48/credentials.png";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getIconClassName() {
-        return CredentialsProvider.allCredentialsDescriptors().isEmpty()
-                ? null
-                : "icon-credentials-credentials";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getDisplayName() {
-        return Messages.SystemCredentialsProvider_DisplayName();
     }
 
     /**
@@ -163,6 +169,22 @@ public class SystemCredentialsProvider extends ManagementLink
     @Override
     public String getUrlName() {
         return "credentials";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getIconClassName() {
+        return CredentialsProvider.allCredentialsDescriptors().isEmpty()
+                ? null
+                : "icon-credentials-credentials";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getDisplayName() {
+        return Messages.SystemCredentialsProvider_DisplayName();
     }
 
     /**
@@ -214,7 +236,7 @@ public class SystemCredentialsProvider extends ManagementLink
      * @param p the permission to check.
      */
     private void checkPermission(Permission p) {
-                // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
+        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
         Jenkins jenkins = Jenkins.getInstance();
         if (jenkins == null) {
             throw new IllegalStateException("Jenkins has not been started, or was already shut down");
@@ -457,29 +479,6 @@ public class SystemCredentialsProvider extends ManagementLink
     }
 
     /**
-     * Gets the configuration file that this {@link CredentialsProvider} uses to store its credentials.
-     *
-     * @return the configuration file that this {@link CredentialsProvider} uses to store its credentials.
-     */
-    public static XmlFile getConfigFile() {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        return new XmlFile(new File(jenkins.getRootDir(), "credentials.xml"));
-    }
-
-    /**
-     * Gets the singleton instance.
-     *
-     * @return the singleton instance.
-     */
-    public static SystemCredentialsProvider getInstance() {
-        return all().get(SystemCredentialsProvider.class);
-    }
-
-    /**
      * Our management link descriptor.
      */
     @Extension
@@ -519,12 +518,39 @@ public class SystemCredentialsProvider extends ManagementLink
         /**
          * {@inheritDoc}
          */
+        @Override
+        public CredentialsStore getStore(@CheckForNull ModelObject object) {
+            if (object == Jenkins.getInstance()) {
+                return SystemCredentialsProvider.getInstance().getStore();
+            }
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         @NonNull
         @Override
         public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
                                                               @Nullable ItemGroup itemGroup,
                                                               @Nullable Authentication authentication) {
             return getCredentials(type, itemGroup, authentication, Collections.<DomainRequirement>emptyList());
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+                                                              @Nullable Authentication authentication,
+                                                              @NonNull List<DomainRequirement> domainRequirements) {
+            if (ACL.SYSTEM.equals(authentication)) {
+                CredentialsMatcher matcher = Jenkins.getInstance() == itemGroup ? always() : not(withScope(SYSTEM));
+                return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
+                        .getDomainCredentialsMap(), type, domainRequirements, matcher);
+            }
+            return new ArrayList<C>();
         }
 
         /**
@@ -551,33 +577,6 @@ public class SystemCredentialsProvider extends ManagementLink
             }
             return new ArrayList<C>();
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
-                                                              @Nullable Authentication authentication,
-                                                              @NonNull List<DomainRequirement> domainRequirements) {
-            if (ACL.SYSTEM.equals(authentication)) {
-                CredentialsMatcher matcher = Jenkins.getInstance() == itemGroup ? always() : not(withScope(SYSTEM));
-                return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
-                        .getDomainCredentialsMap(), type, domainRequirements, matcher);
-            }
-            return new ArrayList<C>();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public CredentialsStore getStore(@CheckForNull ModelObject object) {
-            if (object == Jenkins.getInstance()) {
-                return SystemCredentialsProvider.getInstance().getStore();
-            }
-            return null;
-        }
     }
 
     /**
@@ -599,6 +598,15 @@ public class SystemCredentialsProvider extends ManagementLink
             return jenkins;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
+            // we follow the permissions of Jenkins itself
+            return getACL().hasPermission(a, permission);
+        }
+
         public ACL getACL() {
             // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
             Jenkins jenkins = Jenkins.getInstance();
@@ -611,10 +619,13 @@ public class SystemCredentialsProvider extends ManagementLink
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
-        public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
-            // we follow the permissions of Jenkins itself
-            return getACL().hasPermission(a, permission);
+        @Exported
+        public List<Domain> getDomains() {
+            return Collections.unmodifiableList(new ArrayList<Domain>(
+                    SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet()
+            ));
         }
 
         /**
@@ -623,10 +634,8 @@ public class SystemCredentialsProvider extends ManagementLink
         @NonNull
         @Override
         @Exported
-        public List<Domain> getDomains() {
-            return Collections.unmodifiableList(new ArrayList<Domain>(
-                    SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet()
-            ));
+        public List<Credentials> getCredentials(@NonNull Domain domain) {
+            return SystemCredentialsProvider.getInstance().getCredentials(domain);
         }
 
         /**
@@ -659,16 +668,6 @@ public class SystemCredentialsProvider extends ManagementLink
         @Override
         public boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException {
             return SystemCredentialsProvider.getInstance().addCredentials(domain, credentials);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        @Exported
-        public List<Credentials> getCredentials(@NonNull Domain domain) {
-            return SystemCredentialsProvider.getInstance().getCredentials(domain);
         }
 
         /**

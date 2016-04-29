@@ -24,7 +24,6 @@
 package com.cloudbees.plugins.credentials;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;

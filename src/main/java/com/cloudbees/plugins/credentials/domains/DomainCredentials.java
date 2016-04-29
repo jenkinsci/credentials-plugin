@@ -29,8 +29,6 @@ import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.CopyOnWriteMap;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * Represents a {@link Domain} and an associated set of {@link Credentials}.
@@ -137,8 +136,8 @@ public class DomainCredentials {
         if (map != null) {
             for (Map.Entry<Domain, List<Credentials>> entry : map.entrySet()) {
                 tmp.put(entry.getKey() == null
-                        ? Domain.global()
-                        : entry.getKey().resolve(),
+                                ? Domain.global()
+                                : entry.getKey().resolve(),
                         new CopyOnWriteArrayList<Credentials>(
                                 entry.getValue() == null
                                         ? Collections.<Credentials>emptyList()

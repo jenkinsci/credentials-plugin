@@ -111,6 +111,16 @@ public class CredentialsNameComparator implements Comparator<Credentials>, Seria
      * {@inheritDoc}
      */
     @Override
+    public int hashCode() {
+        int result = locale.hashCode();
+        result = 31 * result + (ignoreCase ? 1 : 0);
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -125,16 +135,6 @@ public class CredentialsNameComparator implements Comparator<Credentials>, Seria
             return false;
         }
         return locale.equals(that.locale);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        int result = locale.hashCode();
-        result = 31 * result + (ignoreCase ? 1 : 0);
-        return result;
     }
 
     /**

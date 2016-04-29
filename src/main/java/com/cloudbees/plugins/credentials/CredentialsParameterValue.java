@@ -12,22 +12,29 @@ import hudson.model.Run;
 import hudson.model.queue.WorkUnit;
 import hudson.security.ACL;
 import hudson.util.VariableResolver;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 /**
- * @author Stephen Connolly
+ * A {@link ParameterValue} produced from a {@link CredentialsParameterDefinition}.
  */
 public class CredentialsParameterValue extends ParameterValue {
+    /**
+     * The {@link StandardCredentials#getId()} of the selected credentials.
+     */
     private final String value;
+    /**
+     * {@code true} if and only if the {@link #value} corresponds to
+     * {@link CredentialsParameterDefinition#getDefaultValue()} (as this affects the authentication that is
+     * used to resolve the actual credential.
+     */
     private final boolean isDefaultValue;
 
     @DataBoundConstructor
@@ -41,15 +48,21 @@ public class CredentialsParameterValue extends ParameterValue {
         this.isDefaultValue = isDefaultValue;
     }
 
-    @Override
-    public boolean isSensitive() {
-        return true;
-    }
-
     public String getValue() {
         return value;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void buildEnvironment(Run<?, ?> build, EnvVars env) {
+        env.put(name, value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public VariableResolver<String> createVariableResolver(AbstractBuild<?, ?> build) {
         return new VariableResolver<String>() {
@@ -59,9 +72,12 @@ public class CredentialsParameterValue extends ParameterValue {
         };
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void buildEnvironment(Run<?,?> build, EnvVars env) {
-        env.put(name, value);
+    public boolean isSensitive() {
+        return true;
     }
 
     public <C extends IdCredentials> C lookupCredentials(@NonNull Class<C> type, @NonNull Run run,

@@ -55,6 +55,9 @@ public class PathSpecification extends DomainSpecification {
      */
     @CheckForNull
     private final String excludes;
+    /**
+     * Flag to indicate that the patch specification is case sensitive.
+     */
     private final boolean caseSensitive;
 
     /**
@@ -66,7 +69,7 @@ public class PathSpecification extends DomainSpecification {
      * @param excludes      Paths to explicitly not match. A comma separated set of
      *                      <var>path</var> with <code>*</code> wildcards supported.
      *                      {@code null} signifies exclude nothing.
-     * @param caseSensitive
+     * @param caseSensitive {@code true} if the path match should be case sensitive.
      */
     @DataBoundConstructor
     @SuppressWarnings("unused")// by stapler

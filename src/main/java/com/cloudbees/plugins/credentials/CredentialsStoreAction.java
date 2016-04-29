@@ -44,10 +44,15 @@ import hudson.model.User;
 import hudson.security.Permission;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
-import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
@@ -57,15 +62,8 @@ import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
-
 /**
- * @author Stephen Connolly
+ * An action for a {@link CredentialsStore}
  */
 public abstract class CredentialsStoreAction implements Action, IconSpec {
 
@@ -78,28 +76,45 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
     @NonNull
     public abstract CredentialsStore getStore();
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getIconFileName() {
         return isVisible()
                 ? "/plugin/credentials/images/48x48/credentials.png"
                 : null;
     }
 
-    public boolean isVisible() {
-        return !CredentialsProvider.allCredentialsDescriptors().isEmpty() && getStore().hasPermission(CredentialsProvider.VIEW);
-    }
-
-    public String getIconClassName() {
-        return isVisible()
-                ? "icon-credentials-credentials"
-                : null;
-    }
-
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getDisplayName() {
         return Messages.CredentialsStoreAction_DisplayName();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getUrlName() {
         return "credential-store";
+    }
+
+    public boolean isVisible() {
+        return !CredentialsProvider.allCredentialsDescriptors().isEmpty() && getStore()
+                .hasPermission(CredentialsProvider.VIEW);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getIconClassName() {
+        return isVisible()
+                ? "icon-credentials-credentials"
+                : null;
     }
 
     public final String getFullName() {
@@ -110,7 +125,7 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         } else if (context instanceof ItemGroup) {
             n = ((ItemGroup) context).getFullName();
         } else if (context instanceof User) {
-            n = "user:"+((User) context).getId();
+            n = "user:" + ((User) context).getId();
         } else {
             n = "";
         }
@@ -129,7 +144,7 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         } else if (context instanceof ItemGroup) {
             n = ((ItemGroup) context).getFullDisplayName();
         } else if (context instanceof User) {
-            n = Messages.CredentialsStoreAction_UserDisplayName( ((User) context).getDisplayName());
+            n = Messages.CredentialsStoreAction_UserDisplayName(((User) context).getDisplayName());
         } else {
             // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
             Jenkins jenkins = Jenkins.getInstance();
@@ -233,7 +248,8 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         }
 
         @Exported
-        @SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="isGlobal() check implies that domain.getName() is null")
+        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+                            justification = "isGlobal() check implies that domain.getName() is null")
         public String getUrlName() {
             return isGlobal() ? "_" : Util.rawEncode(domain.getName());
         }
@@ -397,12 +413,10 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             this.id = id;
         }
 
-        public String getIconClassName() {
-            return credentials.getDescriptor().getIconClassName();
-        }
-
         public String getUrlName() {
             return Util.rawEncode(id);
+        }        public String getIconClassName() {
+            return credentials.getDescriptor().getIconClassName();
         }
 
         public Api getApi() {
@@ -467,7 +481,7 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
                 return HttpResponses.status(400);
             }
             getStore().checkPermission(DELETE);
-            if (getStore().removeCredentials(domain.getDomain(),credentials)) {
+            if (getStore().removeCredentials(domain.getDomain(), credentials)) {
                 return HttpResponses.redirectTo("../..");
             }
             return HttpResponses.redirectToDot();
@@ -497,7 +511,8 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             } else {
                 while (context == null && split > 0) {
                     context = contextName.startsWith("user:")
-                            ? User.get(contextName.substring("user:".length(), split - 1), false, Collections.emptyMap())
+                            ? User
+                            .get(contextName.substring("user:".length(), split - 1), false, Collections.emptyMap())
                             : jenkins.getItemByFullName(contextName);
                     if (context == null) {
                         split = destination.lastIndexOf(splitKey, split - 1);
@@ -562,15 +577,22 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         @Extension
         public static class DescriptorImpl extends Descriptor<CredentialsWrapper> {
 
+            public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
+                return CredentialsProvider.allCredentialsDescriptors();
+            }
+
+            /**
+             * {@inheritDoc}
+             */
             @Override
             public String getDisplayName() {
                 return "Credential";
             }
 
-            public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
-                return CredentialsProvider.allCredentialsDescriptors();
-            }
+
         }
+
+
     }
 
 

@@ -45,15 +45,6 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
      * @return the name.
      */
     @NonNull
-    public abstract String getName(@NonNull C credentials);
-
-    /**
-     * Name the credential.
-     *
-     * @param credentials the credential to name.
-     * @return the name.
-     */
-    @NonNull
     public static String name(@NonNull Credentials credentials) {
         Result result = name(credentials, credentials.getClass());
         if (result != null) {
@@ -66,17 +57,10 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
         }
     }
 
-    private static final class Result {
-        final String name;
-        final int priority;
-        Result(String name, int priority) {
-            this.name = name;
-            this.priority = priority;
-        }
-    }
-    
     @SuppressWarnings({"unchecked", "rawtypes"}) // missing type token in CredentialsNameProvider to get RTTI
-    private static @CheckForNull Result name(@NonNull Credentials credentials, @NonNull Class<?> clazz) {
+    private static
+    @CheckForNull
+    Result name(@NonNull Credentials credentials, @NonNull Class<?> clazz) {
         NameWith nameWith = clazz.getAnnotation(NameWith.class);
         if (nameWith != null) {
             try {
@@ -104,6 +88,25 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
             }
         }
         return result;
+    }
+
+    /**
+     * Name the credential.
+     *
+     * @param credentials the credential to name.
+     * @return the name.
+     */
+    @NonNull
+    public abstract String getName(@NonNull C credentials);
+
+    private static final class Result {
+        final String name;
+        final int priority;
+
+        Result(String name, int priority) {
+            this.name = name;
+            this.priority = priority;
+        }
     }
 
 }
