@@ -33,7 +33,7 @@ import java.util.UUID;
 /**
  * Credentials that have an unique ID that assists in retrieving the specific credential from a collection of
  * {@link Credentials}.
- * <p/>
+ * <p>
  * Note: This credential interface is a marker interface
  *
  * @since 1.5

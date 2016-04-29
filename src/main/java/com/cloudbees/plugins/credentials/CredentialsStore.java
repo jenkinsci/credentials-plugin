@@ -61,8 +61,8 @@ public abstract class CredentialsStore implements AccessControlled {
 
     /**
      * Checks if the current security principal has this permission.
-     * <p/>
-     * <p/>
+     * <p>
+     * <p>
      * This is just a convenience function.
      *
      * @throws org.acegisecurity.AccessDeniedException
@@ -116,7 +116,7 @@ public abstract class CredentialsStore implements AccessControlled {
     /**
      * Identifies whether this {@link CredentialsStore} supports making changes to the list of domains or
      * whether it only supports a fixed set of domains (which may only be one domain).
-     * <p/>
+     * <p>
      * Note: in order for implementations to return {@code true} all of the following methods must be overridden:
      * <ul>
      * <li>{@link #getDomains}</li>
