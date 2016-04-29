@@ -155,12 +155,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      * @return all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
      */
     public static DescriptorExtensionList<Credentials, CredentialsDescriptor> allCredentialsDescriptors() {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        return jenkins.getDescriptorList(Credentials.class);
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        return Jenkins.getActiveInstance().getDescriptorList(Credentials.class);
     }
 
     /**
@@ -326,11 +322,8 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                                                                     @Nullable List<DomainRequirement>
                                                                             domainRequirements) {
         type.getClass(); // throw NPE if null
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        Jenkins jenkins = Jenkins.getActiveInstance();
         itemGroup = itemGroup == null ? jenkins : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
@@ -556,15 +549,11 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     public static <C extends Credentials> C snapshot(Class<C> clazz, C credential) {
         Class bestType = null;
         CredentialsSnapshotTaker bestTaker = null;
-        // TODO use ExtensionList.lookup once Jenkins 1.572+
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins != null) {
-            for (CredentialsSnapshotTaker taker : jenkins.getExtensionList(CredentialsSnapshotTaker.class)) {
-                if (clazz.isAssignableFrom(taker.type()) && taker.type().isInstance(credential)) {
-                    if (bestTaker == null || bestType.isAssignableFrom(taker.type())) {
-                        bestTaker = taker;
-                        bestType = taker.type();
-                    }
+        for (CredentialsSnapshotTaker taker : ExtensionList.lookup(CredentialsSnapshotTaker.class)) {
+            if (clazz.isAssignableFrom(taker.type()) && taker.type().isInstance(credential)) {
+                if (bestTaker == null || bestType.isAssignableFrom(taker.type())) {
+                    bestTaker = taker;
+                    bestType = taker.type();
                 }
             }
         }
@@ -575,7 +564,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     }
 
     /**
-     * Workaround method until Jenkins 1.560+ is the baseline.
+     * Helper method to get the default authentication to use for an {@link Item}.
      */
     @NonNull
     /*package*/ static Authentication getDefaultAuthenticationOf(Item item) {
@@ -718,11 +707,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     }
 
     public static ExtensionList<CredentialsProvider> all() {
-        // TODO switch to ExtensionList.lookup once Jenkins 1.572+ is the baseline
-        final Jenkins jenkins = Jenkins.getInstance();
-        return jenkins == null
-                ? ExtensionList.create((Jenkins) null, CredentialsProvider.class)
-                : jenkins.getExtensionList(CredentialsProvider.class);
+        return ExtensionList.lookup(CredentialsProvider.class);
     }
 
     /**

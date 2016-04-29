@@ -163,11 +163,8 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
 
         public StandardListBoxModel doFillDefaultValueItems(@AncestorInPath Item context,
                                                             @QueryParameter(required = true) String credentialType) {
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            Jenkins jenkins = Jenkins.getActiveInstance();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Set<String> ids = new HashSet<String>();
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
@@ -190,11 +187,8 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         public StandardListBoxModel doFillValueItems(@AncestorInPath Item context,
                                                      @QueryParameter(required = true) String credentialType,
                                                      @QueryParameter boolean required) {
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            Jenkins jenkins = Jenkins.getActiveInstance();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Authentication authentication = Jenkins.getAuthentication();
             final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf(context);

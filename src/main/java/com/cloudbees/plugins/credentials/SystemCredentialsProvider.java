@@ -128,12 +128,8 @@ public class SystemCredentialsProvider extends ManagementLink
      * @return the configuration file that this {@link CredentialsProvider} uses to store its credentials.
      */
     public static XmlFile getConfigFile() {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        return new XmlFile(new File(jenkins.getRootDir(), "credentials.xml"));
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        return new XmlFile(new File(Jenkins.getActiveInstance().getRootDir(), "credentials.xml"));
     }
 
     /**
@@ -236,12 +232,8 @@ public class SystemCredentialsProvider extends ManagementLink
      * @param p the permission to check.
      */
     private void checkPermission(Permission p) {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        jenkins.checkPermission(p);
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        Jenkins.getActiveInstance().checkPermission(p);
     }
 
     /**
@@ -341,12 +333,8 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @NonNull
     private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        if (jenkins.hasPermission(CredentialsProvider.VIEW)) {
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        if (Jenkins.getActiveInstance().hasPermission(CredentialsProvider.VIEW)) {
             List<Credentials> list = getDomainCredentialsMap().get(domain);
             if (list == null || list.isEmpty()) {
                 return Collections.emptyList();
@@ -423,12 +411,8 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @SuppressWarnings("unused") // used by stapler
     public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>> getSpecificationDescriptors() {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        return jenkins.getDescriptorList(DomainSpecification.class);
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        return Jenkins.getActiveInstance().getDescriptorList(DomainSpecification.class);
     }
 
     /**
@@ -436,12 +420,8 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     @SuppressWarnings("unchecked")
     public Descriptor<SystemCredentialsProvider> getDescriptor() {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        return jenkins.getDescriptorOrDie(getClass());
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        return Jenkins.getActiveInstance().getDescriptorOrDie(getClass());
     }
 
     /**
@@ -590,12 +570,8 @@ public class SystemCredentialsProvider extends ManagementLink
          */
         @Override
         public ModelObject getContext() {
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
-            return jenkins;
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            return Jenkins.getActiveInstance();
         }
 
         /**
@@ -608,12 +584,8 @@ public class SystemCredentialsProvider extends ManagementLink
         }
 
         public ACL getACL() {
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
-            return jenkins.getACL();
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            return Jenkins.getActiveInstance().getACL();
         }
 
         /**

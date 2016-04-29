@@ -73,11 +73,7 @@ public class BaseCredentials implements Credentials {
     @NonNull
     @SuppressWarnings("unchecked")
     public CredentialsDescriptor getDescriptor() {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        return (CredentialsDescriptor) jenkins.getDescriptorOrDie(getClass());
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        return (CredentialsDescriptor) Jenkins.getActiveInstance().getDescriptorOrDie(getClass());
     }
 }

@@ -151,12 +151,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         public DescriptorExtensionList<KeyStoreSource, Descriptor<KeyStoreSource>> getKeyStoreSources() {
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
-            return jenkins.getDescriptorList(KeyStoreSource.class);
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            return Jenkins.getActiveInstance().getDescriptorList(KeyStoreSource.class);
         }
 
     }

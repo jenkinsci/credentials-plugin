@@ -146,12 +146,8 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         } else if (context instanceof User) {
             n = Messages.CredentialsStoreAction_UserDisplayName(((User) context).getDisplayName());
         } else {
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
-            n = jenkins.getFullDisplayName();
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            n = Jenkins.getActiveInstance().getFullDisplayName();
         }
         if (n.length() == 0) {
             return getDisplayName();
@@ -184,12 +180,8 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
     }
 
     public DomainWrapper.DescriptorImpl getDomainDescriptor() {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        return jenkins.getDescriptorByType(DomainWrapper.DescriptorImpl.class);
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        return Jenkins.getActiveInstance().getDescriptorByType(DomainWrapper.DescriptorImpl.class);
     }
 
     /**
@@ -199,12 +191,8 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
      */
     @SuppressWarnings("unused") // used by stapler
     public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>> getSpecificationDescriptors() {
-        // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-        Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-        }
-        return jenkins.getDescriptorList(DomainSpecification.class);
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        return Jenkins.getActiveInstance().getDescriptorList(DomainSpecification.class);
     }
 
     @RequirePOST
@@ -290,12 +278,8 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         }
 
         public CredentialsWrapper.DescriptorImpl getCredentialDescriptor() {
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
-            return jenkins.getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            return Jenkins.getActiveInstance().getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
         }
 
         @Exported
@@ -492,11 +476,8 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
             }
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            Jenkins jenkins = Jenkins.getActiveInstance();
             getStore().checkPermission(DELETE);
             final String splitKey = domain.getParent().getUrlName() + "/";
             int split = destination.lastIndexOf(splitKey);

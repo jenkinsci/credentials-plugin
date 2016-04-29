@@ -376,12 +376,8 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @NonNull
         private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
-            // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-            Jenkins jenkins = Jenkins.getInstance();
-            if (jenkins == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
-            if (jenkins.hasPermission(CredentialsProvider.VIEW)) {
+            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+            if (Jenkins.getActiveInstance().hasPermission(CredentialsProvider.VIEW)) {
                 List<Credentials> list = getDomainCredentialsMap().get(domain);
                 if (list == null || list.isEmpty()) {
                     return Collections.emptyList();
@@ -531,12 +527,8 @@ public class UserCredentialsProvider extends CredentialsProvider {
             @SuppressWarnings("unused") // used by stapler
             public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>>
             getSpecificationDescriptors() {
-                // TODO switch to Jenkins.getActiveInstance() once 1.590+ is the baseline
-                Jenkins jenkins = Jenkins.getInstance();
-                if (jenkins == null) {
-                    throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-                }
-                return jenkins.getDescriptorList(DomainSpecification.class);
+                // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+                return Jenkins.getActiveInstance().getDescriptorList(DomainSpecification.class);
             }
         }
     }
