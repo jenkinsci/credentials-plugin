@@ -25,6 +25,7 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -57,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -466,6 +468,7 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                         + " likely due to missing optional dependency", e);
             }
         }
+        Collections.sort(result, new CredentialsNameComparator());
         return result;
     }
 
@@ -534,9 +537,11 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                         + " likely due to missing optional dependency", e);
             }
         }
+        
+        Collections.sort(result, new CredentialsNameComparator());
         return result;
     }
-
+    
     /**
      * Returns the scopes allowed for credentials stored within the specified object or {@code null} if the
      * object is not relevant for scopes and the object's container should be considered instead.
@@ -834,3 +839,16 @@ public abstract class CredentialsProvider implements ExtensionPoint {
     }
 
 }
+
+/**
+ * Comparator to alphabetically sort credentials drop down list in ascending order by Credential Name.
+ * It does not differentiate between uppercase and lowercase
+ *
+ */
+class CredentialsNameComparator implements Comparator<Credentials>, java.io.Serializable {
+    private static final long serialVersionUID = 1;
+    @Override
+    public int compare(Credentials cred1, Credentials cred2) {
+        return CredentialsNameProvider.name(cred1).toLowerCase().compareTo(CredentialsNameProvider.name(cred2).toLowerCase());
+    }
+};
