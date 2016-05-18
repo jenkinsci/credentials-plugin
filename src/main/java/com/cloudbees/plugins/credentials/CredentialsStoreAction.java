@@ -552,7 +552,6 @@ public abstract class CredentialsStoreAction implements Action, IconSpec, Access
          *
          * @param req the request.
          * @return the response.
-         * @throws ServletException if something goes wrong.
          * @throws IOException      if something goes wrong.
          */
         @RequirePOST
@@ -789,8 +788,7 @@ public abstract class CredentialsStoreAction implements Action, IconSpec, Access
          *
          * @param req the request.
          * @return the response.
-         * @throws ServletException if something goes wrong.
-         * @throws IOException      if something goes wrong.
+         * @throws IOException if something goes wrong.
          */
         @RequirePOST
         @Restricted(NoExternalUse.class)
@@ -809,10 +807,10 @@ public abstract class CredentialsStoreAction implements Action, IconSpec, Access
         /**
          * Moves the credential.
          *
-         * @param req the request.
+         * @param req         the request.
+         * @param destination the destination
          * @return the response.
-         * @throws ServletException if something goes wrong.
-         * @throws IOException      if something goes wrong.
+         * @throws IOException if something goes wrong.
          */
         @RequirePOST
         @Restricted(NoExternalUse.class)
