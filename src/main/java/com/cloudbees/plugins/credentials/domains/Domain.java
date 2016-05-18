@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials.domains;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Util;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -145,6 +146,8 @@ public class Domain implements Serializable {
      * Return the store relative URL of this domain.
      * @return the store relative URL of this domain.
      */
+    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+                        justification = "isGlobal() check implies that domain.getName() is null")
     public String getUrl() {
         return isGlobal() ? "domain/_/" : "domain/" + Util.rawEncode(name) + "/";
     }
@@ -153,7 +156,7 @@ public class Domain implements Serializable {
      * Tests if this is the {@link #global()} domain.
      *
      * @return {@code true} if and only if this is the {@link #global()} domain.
-     * @since 2.0
+     * @since TODO
      */
     public boolean isGlobal() {
         return equals(global());
