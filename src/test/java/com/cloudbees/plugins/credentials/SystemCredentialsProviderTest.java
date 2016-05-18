@@ -55,13 +55,8 @@ public class SystemCredentialsProviderTest extends HudsonTestCase {
 
     public void testSmokes() throws Exception {
         assertEquals(true, !CredentialsProvider.allCredentialsDescriptors().isEmpty());
-        assertNotNull(SystemCredentialsProvider.getInstance().getDisplayName());
-        assertNotNull(SystemCredentialsProvider.getInstance().getIconFileName());
-        assertNotNull(SystemCredentialsProvider.getInstance().getIconClassName());
-        assertNotNull(SystemCredentialsProvider.getInstance().getUrlName());
         assertNotNull(SystemCredentialsProvider.getInstance().getDescriptor());
         assertNotNull(SystemCredentialsProvider.getInstance().getCredentials());
-        assertNotNull(SystemCredentialsProvider.getInstance().getTarget());
     }
 
 }

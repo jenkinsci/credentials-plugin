@@ -359,6 +359,7 @@ import org.jvnet.hudson.test.MockFolder;
 
         private class StoreImpl extends CredentialsStore {
 
+            @NonNull
             @Override
             public ModelObject getContext() {
                 return owner;

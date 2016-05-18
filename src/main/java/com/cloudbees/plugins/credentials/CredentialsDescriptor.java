@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011-2012, CloudBees, Inc., Stephen Connolly.
+ * Copyright (c) 2011-2016, CloudBees, Inc., Stephen Connolly.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 package com.cloudbees.plugins.credentials;
 
 import hudson.model.Descriptor;
+import hudson.model.DescriptorVisibilityFilter;
 import hudson.model.ModelObject;
 import hudson.util.ListBoxModel;
 import java.util.Set;
@@ -177,5 +178,18 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      */
     public String getIconClassName() {
         return "icon-credentials-credential";
+    }
+
+    /**
+     * Determines if this {@link CredentialsDescriptor} is applicable to the specified {@link CredentialsProvider}.
+     * <p>
+     * This method will be called by {@link CredentialsProvider#isApplicable(Descriptor)}
+     *
+     * @param provider the {@link CredentialsProvider} to check.
+     * @return {@code true} if this {@link CredentialsDescriptor} is applicable in the specified {@link CredentialsProvider}
+     * @since 2.0
+     */
+    public boolean isApplicable(CredentialsProvider provider) {
+        return true;
     }
 }

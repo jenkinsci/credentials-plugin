@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011-2012, CloudBees, Inc., Stephen Connolly.
+ * Copyright (c) 2011-2016, CloudBees, Inc., Stephen Connolly.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,9 @@ import hudson.DescriptorExtensionList;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.model.Cause;
+import hudson.model.Describable;
+import hudson.model.Descriptor;
+import hudson.model.DescriptorVisibilityFilter;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
@@ -60,11 +63,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
+import org.apache.commons.lang.StringUtils;
+import org.jenkins.ui.icon.IconSpec;
 
 /**
  * An extension point for providing {@link Credentials}.
  */
-public abstract class CredentialsProvider implements ExtensionPoint {
+public abstract class CredentialsProvider extends Descriptor<CredentialsProvider>
+        implements ExtensionPoint, Describable<CredentialsProvider>, IconSpec {
 
     /**
      * The permission group for credentials.
@@ -148,6 +154,14 @@ public abstract class CredentialsProvider implements ExtensionPoint {
      */
     public static final Permission MANAGE_DOMAINS = new Permission(GROUP, "ManageDomains",
             Messages._CredentialsProvider_ManageDomainsPermissionDescription(), Permission.CONFIGURE, true, SCOPES);
+
+    /**
+     * Default constructor.
+     */
+    @SuppressWarnings("unchecked")
+    public CredentialsProvider() {
+        super(Descriptor.self());
+    }
 
     /**
      * Returns all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
@@ -339,11 +353,13 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         }
         List<C> result = new ArrayList<C>();
         for (CredentialsProvider provider : all()) {
-            try {
-                result.addAll(provider.getCredentials(type, itemGroup, authentication, domainRequirements));
-            } catch (NoClassDefFoundError e) {
-                LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
-                        + " likely due to missing optional dependency", e);
+            if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
+                try {
+                    result.addAll(provider.getCredentials(type, itemGroup, authentication, domainRequirements));
+                } catch (NoClassDefFoundError e) {
+                    LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
+                            + " likely due to missing optional dependency", e);
+                }
             }
         }
         Collections.sort(result, new CredentialsNameComparator());
@@ -408,11 +424,13 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         }
         List<C> result = new ArrayList<C>();
         for (CredentialsProvider provider : all()) {
-            try {
-                result.addAll(provider.getCredentials(type, item, authentication, domainRequirements));
-            } catch (NoClassDefFoundError e) {
-                LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
-                        + " likely due to missing optional dependency", e);
+            if (provider.isEnabled(item) && provider.isApplicable(type)) {
+                try {
+                    result.addAll(provider.getCredentials(type, item, authentication, domainRequirements));
+                } catch (NoClassDefFoundError e) {
+                    LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
+                            + " likely due to missing optional dependency", e);
+                }
             }
         }
 
@@ -438,17 +456,19 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         }
         Set<CredentialsScope> result = null;
         for (CredentialsProvider provider : all()) {
-            try {
-                Set<CredentialsScope> scopes = provider.getScopes(object);
-                if (scopes != null) {
-                    // if multiple providers for the same object, then combine scopes
-                    if (result == null) {
-                        result = new LinkedHashSet<CredentialsScope>();
+            if (provider.isEnabled(object)) {
+                try {
+                    Set<CredentialsScope> scopes = provider.getScopes(object);
+                    if (scopes != null) {
+                        // if multiple providers for the same object, then combine scopes
+                        if (result == null) {
+                            result = new LinkedHashSet<CredentialsScope>();
+                        }
+                        result.addAll(scopes);
                     }
-                    result.addAll(scopes);
+                } catch (NoClassDefFoundError e) {
+                    // ignore optional dependency
                 }
-            } catch (NoClassDefFoundError e) {
-                // ignore optional dependency
             }
         }
         return result;
@@ -479,6 +499,9 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                         while (current != null) {
                             while (iterator.hasNext()) {
                                 CredentialsProvider p = iterator.next();
+                                if (!p.isEnabled(object)) {
+                                    continue;
+                                }
                                 next = p.getStore(current);
                                 if (next != null) {
                                     return true;
@@ -685,6 +708,13 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
     }
 
+    /**
+     * Identifies the {@link User} and {@link Run} that triggered the supplied {@link Run}.
+     *
+     * @param run the {@link Run} to find the trigger of.
+     * @return the trigger of the supplied run or {@code null} if this could not be determined.
+     */
+    @CheckForNull
     private static Map.Entry<User, Run<?, ?>> triggeredBy(Run<?, ?> run) {
         Cause.UserIdCause cause = run.getCause(Cause.UserIdCause.class);
         if (cause != null) {
@@ -706,8 +736,103 @@ public abstract class CredentialsProvider implements ExtensionPoint {
         return null;
     }
 
+    /**
+     * Returns the list of all {@link CredentialsProvider}.
+     *
+     * @return the list of all {@link CredentialsProvider}.
+     */
     public static ExtensionList<CredentialsProvider> all() {
         return ExtensionList.lookup(CredentialsProvider.class);
+    }
+
+    /**
+     * Returns only those {@link CredentialsProvider} that are {@link #isEnabled()}.
+     *
+     * @return a list of {@link CredentialsProvider} that are {@link #isEnabled()}.
+     * @since 2.0
+     */
+    public static List<CredentialsProvider> enabled() {
+        List<CredentialsProvider> providers =
+                new ArrayList<CredentialsProvider>(ExtensionList.lookup(CredentialsProvider.class));
+        for (Iterator<CredentialsProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
+            CredentialsProvider p = iterator.next();
+            if (!p.isEnabled()) {
+                iterator.remove();
+            }
+        }
+        return providers;
+    }
+
+    /**
+     * Returns only those {@link CredentialsProvider} that are {@link #isEnabled()} within a specific context.
+     *
+     * @param context the context in which to get the list.
+     * @return a list of {@link CredentialsProvider} that are {@link #isEnabled()}.
+     * @since 2.0
+     */
+    public static List<CredentialsProvider> enabled(Object context) {
+        List<CredentialsProvider> providers =
+                new ArrayList<CredentialsProvider>(ExtensionList.lookup(CredentialsProvider.class));
+        for (Iterator<CredentialsProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
+            CredentialsProvider p = iterator.next();
+            if (!p.isEnabled(context)) {
+                iterator.remove();
+            }
+        }
+        return providers;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Descriptor<CredentialsProvider> getDescriptor() {
+        return this;
+    }
+
+    /**
+     * Returns {@code true} if this {@link CredentialsProvider} is enabled.
+     *
+     * @return {@code true} if this {@link CredentialsProvider} is enabled.
+     * @since 2.0
+     */
+    public final boolean isEnabled() {
+        return CredentialsProviderManager.isEnabled(this);
+    }
+
+    /**
+     * Returns {@code true} if this {@link CredentialsProvider} is enabled in the specified context.
+     *
+     * @param context the context.
+     * @return {@code true} if this {@link CredentialsProvider} is enabled in the specified context.
+     * @since 2.0
+     */
+    public boolean isEnabled(Object context) {
+        if (!isEnabled()) {
+            return false;
+        }
+        for (DescriptorVisibilityFilter filter : DescriptorVisibilityFilter.all()) {
+            if (!filter.filter(context, this)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getDisplayName() {
+        return StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(getClass().getSimpleName()), ' ');
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getIconClassName() {
+        return "icon-credentials-credentials";
     }
 
     /**
@@ -812,6 +937,113 @@ public abstract class CredentialsProvider implements ExtensionPoint {
                                                           @Nullable Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
         return getCredentials(type, item.getParent(), authentication, domainRequirements);
+    }
+
+    /**
+     * Returns {@code true} if this {@link CredentialsProvider} can provide credentials of the supplied type.
+     *
+     * @param clazz the base type of {@link Credentials} to check.
+     * @return {@code true} if and only if there is at least one {@link CredentialsDescriptor} matching the required
+     * {@link Credentials} interface that {@link #isApplicable(Descriptor)}.
+     * @since 2.0
+     */
+    public final boolean isApplicable(Class<? extends Credentials> clazz) {
+        if (!isEnabled()) {
+            return false;
+        }
+        for (CredentialsDescriptor d : ExtensionList.lookup(CredentialsDescriptor.class)) {
+            if (clazz.isAssignableFrom(d.clazz) && isApplicable(d)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if the supplied {@link Descriptor} is applicable to this {@link CredentialsProvider}.
+     *
+     * @param descriptor the {@link Descriptor} to check.
+     * @return {@code true} if and only if the supplied {@link Descriptor} is applicable in this
+     * {@link CredentialsProvider}.
+     * @since 2.0
+     */
+    public final boolean isApplicable(Descriptor<?> descriptor) {
+        if (!isEnabled()) {
+            return false;
+        }
+        if (descriptor instanceof CredentialsDescriptor) {
+            if (!((CredentialsDescriptor) descriptor).isApplicable(this)) {
+                return false;
+            }
+        }
+        for (DescriptorVisibilityFilter filter : DescriptorVisibilityFilter.all()) {
+            if (!filter.filter(this, descriptor)) {
+                return false;
+            }
+        }
+        return _isApplicable(descriptor);
+    }
+
+    /**
+     * {@link CredentialsProvider} subtypes can override this method to veto some {@link Descriptor}s
+     * from being available from their store. This is often useful when you are building
+     * a custom store that holds a specific type of credentials or where you want to limit the
+     * number of choices given to the users.
+     *
+     * @param descriptor the {@link Descriptor} to check.
+     * @return {@code true} if the supplied {@link Descriptor} is applicable in this {@link CredentialsProvider}
+     * @since 2.0
+     */
+    protected boolean _isApplicable(Descriptor<?> descriptor) {
+        return true;
+    }
+
+    /**
+     * Returns the list of {@link CredentialsDescriptor} instances that are applicable within this
+     * {@link CredentialsProvider}.
+     *
+     * @return the list of {@link CredentialsDescriptor} instances that are applicable within this
+     * {@link CredentialsProvider}.
+     * @since 2.0
+     */
+    public final List<CredentialsDescriptor> getCredentialsDescriptors() {
+        List<CredentialsDescriptor> result =
+                DescriptorVisibilityFilter.apply(this, ExtensionList.lookup(CredentialsDescriptor.class));
+        if (!(result instanceof ArrayList)) {
+            // should never happen, but let's be defensive in case the DescriptorVisibilityFilter contract changes
+            result = new ArrayList<CredentialsDescriptor>(result);
+        }
+        for (Iterator<CredentialsDescriptor> iterator = result.iterator(); iterator.hasNext(); ) {
+            CredentialsDescriptor d = iterator.next();
+            if (!_isApplicable(d)) {
+                iterator.remove();
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Checks if there is at least one {@link CredentialsDescriptor} applicable within this {@link CredentialsProvider}.
+     *
+     * @return {@code true} if and ony if there is at least one {@link CredentialsDescriptor} applicable within this
+     * {@link CredentialsProvider}.
+     * @since 2.0
+     */
+    public final boolean hasCredentialsDescriptors() {
+        ExtensionList<DescriptorVisibilityFilter> filters = DescriptorVisibilityFilter.all();
+        OUTER:
+        for (CredentialsDescriptor d : ExtensionList.lookup(CredentialsDescriptor.class)) {
+            for (DescriptorVisibilityFilter f : filters) {
+                if (!f.filter(this, d)) {
+                    // not visible, let's try the next descriptor
+                    continue OUTER;
+                }
+            }
+            if (_isApplicable(d)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

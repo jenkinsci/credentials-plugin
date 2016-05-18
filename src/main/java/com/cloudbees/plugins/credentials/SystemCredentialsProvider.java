@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011-2012, CloudBees, Inc., Stephen Connolly.
+ * Copyright (c) 2011-2016, CloudBees, Inc., Stephen Connolly.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +26,16 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import hudson.DescriptorExtensionList;
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.XmlFile;
-import hudson.model.Api;
-import hudson.model.Describable;
+import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
-import hudson.model.ManagementLink;
 import hudson.model.ModelObject;
 import hudson.model.RootAction;
 import hudson.model.Saveable;
@@ -57,16 +54,9 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.context.SecurityContextHolder;
-import org.jenkins.ui.icon.IconSpec;
-import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.HttpResponses;
-import org.kohsuke.stapler.StaplerProxy;
-import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -80,8 +70,8 @@ import static com.cloudbees.plugins.credentials.CredentialsScope.SYSTEM;
  * The root store of credentials.
  */
 @Extension
-public class SystemCredentialsProvider extends ManagementLink
-        implements Describable<SystemCredentialsProvider>, Saveable, StaplerProxy, IconSpec {
+public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCredentialsProvider>
+        implements Saveable {
 
     /**
      * Our logger.
@@ -103,6 +93,9 @@ public class SystemCredentialsProvider extends ManagementLink
      */
     private Map<Domain, List<Credentials>> domainCredentialsMap = new CopyOnWriteMap.Hash<Domain, List<Credentials>>();
 
+    /**
+     * Our backing store.
+     */
     private transient StoreImpl store = new StoreImpl();
 
     /**
@@ -138,49 +131,7 @@ public class SystemCredentialsProvider extends ManagementLink
      * @return the singleton instance.
      */
     public static SystemCredentialsProvider getInstance() {
-        return all().get(SystemCredentialsProvider.class);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getIconFileName() {
-        return CredentialsProvider.allCredentialsDescriptors().isEmpty()
-                ? null
-                : "/plugin/credentials/images/48x48/credentials.png";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getDescription() {
-        return Messages.SystemCredentialsProvider_Description();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getUrlName() {
-        return "credentials";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getIconClassName() {
-        return CredentialsProvider.allCredentialsDescriptors().isEmpty()
-                ? null
-                : "icon-credentials-credentials";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getDisplayName() {
-        return Messages.SystemCredentialsProvider_DisplayName();
+        return ExtensionList.lookup(SystemCredentialsProvider.class).get(SystemCredentialsProvider.class);
     }
 
     /**
@@ -394,63 +345,6 @@ public class SystemCredentialsProvider extends ManagementLink
     }
 
     /**
-     * Gets all the credentials descriptors.
-     *
-     * @return all the credentials descriptors.
-     */
-    @SuppressWarnings("unused") // used by stapler
-    public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
-        return CredentialsProvider.allCredentialsDescriptors();
-    }
-
-    /**
-     * Gets all the {@link com.cloudbees.plugins.credentials.domains.DomainSpecification} descriptors.
-     *
-     * @return all the {@link com.cloudbees.plugins.credentials.domains.DomainSpecification} descriptors.
-     * @since 1.5
-     */
-    @SuppressWarnings("unused") // used by stapler
-    public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>> getSpecificationDescriptors() {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return Jenkins.getActiveInstance().getDescriptorList(DomainSpecification.class);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @SuppressWarnings("unchecked")
-    public Descriptor<SystemCredentialsProvider> getDescriptor() {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return Jenkins.getActiveInstance().getDescriptorOrDie(getClass());
-    }
-
-    /**
-     * Only sysadmin can access this page.
-     */
-    public Object getTarget() {
-        checkPermission(Jenkins.ADMINISTER);
-        return this;
-    }
-
-    /**
-     * Handles form submission.
-     *
-     * @param req the request.
-     * @return the response.
-     * @throws ServletException if something goes wrong.
-     * @throws IOException      if something goes wrong.
-     */
-    @SuppressWarnings("unused") // by stapler
-    public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
-        checkPermission(Jenkins.ADMINISTER);
-        JSONObject data = req.getSubmittedForm();
-        setDomainCredentialsMap(DomainCredentials.asMap(
-                req.bindJSONToList(DomainCredentials.class, data.get("domainCredentials"))));
-        save();
-        return HttpResponses.redirectToContextRoot(); // send the user back to the top page
-    }
-
-    /**
      * {@inheritDoc}
      */
     public void save() throws IOException {
@@ -477,6 +371,14 @@ public class SystemCredentialsProvider extends ManagementLink
     @Extension
     @SuppressWarnings("unused") // used by Jenkins
     public static class ProviderImpl extends CredentialsProvider {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getDisplayName() {
+            return Messages.SystemCredentialsProvider_ProviderImpl_DisplayName();
+        }
 
         /**
          * The scopes that are relevant to the store.
@@ -557,6 +459,11 @@ public class SystemCredentialsProvider extends ManagementLink
             }
             return new ArrayList<C>();
         }
+
+        @Override
+        public String getIconClassName() {
+            return "icon-credentials-system-store";
+        }
     }
 
     /**
@@ -566,8 +473,16 @@ public class SystemCredentialsProvider extends ManagementLink
     public static class StoreImpl extends CredentialsStore {
 
         /**
+         * Default constructor.
+         */
+        public StoreImpl() {
+            super(ProviderImpl.class);
+        }
+
+        /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public ModelObject getContext() {
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
@@ -661,17 +576,47 @@ public class SystemCredentialsProvider extends ManagementLink
 
     }
 
+    /**
+     * Expose the store.
+     */
     @ExportedBean
-    @Extension
+    @Extension(ordinal = -1001)
     public static class UserFacingAction extends CredentialsStoreAction implements RootAction {
 
-        public Api getApi() {
-            return new Api(this);
-        }
-
-        @Exported
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
         public CredentialsStore getStore() {
             return SystemCredentialsProvider.getInstance().getStore();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getIconFileName() {
+            return isVisible()
+                    ? "/plugin/credentials/images/48x48/system-store.png"
+                    : null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getIconClassName() {
+            return isVisible()
+                    ? "icon-credentials-system-store"
+                    : null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getDisplayName() {
+            return "Jenkins Vault";
         }
     }
 }

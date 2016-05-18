@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc., Stephen Connolly.
+ * Copyright (c) 2013-2016, CloudBees, Inc., Stephen Connolly.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,28 +24,122 @@
 package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.domains.Domain;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.ExtensionList;
+import hudson.Functions;
+import hudson.Util;
+import hudson.model.Actionable;
+import hudson.model.Descriptor;
+import hudson.model.DescriptorVisibilityFilter;
+import hudson.model.Item;
+import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
+import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.AccessControlled;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
 import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
- * A store of {@link Credentials}.
+ * A store of {@link Credentials}. Each {@link CredentialsStore} is associated with one and only one
+ * {@link CredentialsProvider} though a {@link CredentialsProvider} may provide multiple {@link CredentialsStore}s
+ * (for example a folder scoped {@link CredentialsProvider} may provide a {@link CredentialsStore} for each folder
+ * or a user scoped {@link CredentialsProvider} may provide a {@link CredentialsStore} for each user).
  *
  * @author Stephen Connolly
  * @since 1.8
  */
 public abstract class CredentialsStore implements AccessControlled {
 
+    /**
+     * The {@link CredentialsProvider} class.
+     *
+     * @since 2.0
+     */
+    private final Class<? extends CredentialsProvider> providerClass;
+
+    /**
+     * Cache for {@link #isDomainsModifiable()}.
+     */
     private transient Boolean domainsModifiable;
+
+    /**
+     * Constructor for use when the {@link CredentialsStore} is not an inner class of its {@link CredentialsProvider}.
+     *
+     * @param providerClass the {@link CredentialsProvider} class.
+     * @since 2.0
+     */
+    public CredentialsStore(Class<? extends CredentialsProvider> providerClass) {
+        this.providerClass = providerClass;
+    }
+
+    /**
+     * Constructor that auto-detects the {@link CredentialsProvider} that this {@link CredentialsStore} is associated
+     * with by examining the outer classes until an outer class that implements {@link CredentialsProvider} is found.
+     *
+     * @since 2.0
+     */
+    @SuppressWarnings("unchecked")
+    public CredentialsStore() {
+        // now let's infer our provider, Jesse will not like this evil
+        Class<?> clazz = getClass().getEnclosingClass();
+        while (clazz != null && !CredentialsProvider.class.isAssignableFrom(clazz)) {
+            clazz = clazz.getEnclosingClass();
+        }
+        if (clazz == null) {
+            throw new AssertionError(getClass() + " doesn't have an outer class. "
+                    + "Use the constructor that takes the Class object explicitly.");
+        }
+        if (!CredentialsProvider.class.isAssignableFrom(clazz)) {
+            throw new AssertionError(getClass() + " doesn't have an outer class implementing CredentialsProvider. "
+                    + "Use the constructor that takes the Class object explicitly");
+        }
+        providerClass = (Class<? extends CredentialsProvider>) clazz;
+    }
+
+    /**
+     * Returns the {@link CredentialsProvider} or dies trying.
+     *
+     * @return the {@link CredentialsProvider}
+     * @since 2.0
+     */
+    @NonNull
+    public final CredentialsProvider getProviderOrDie() {
+        CredentialsProvider provider = getProvider();
+        if (provider == null) {
+            // we can only construct an instance if we were given the providerClass or we successfully inferred it
+            // thus if the provider is missing it must have been removed from the extension list, e.g. by an admin
+            // that wanted to block that provider from users before the addition of provider visibility controls
+            throw new IllegalStateException("The credentials provider " + providerClass
+                    + " has been removed from the list of active extension points");
+        }
+        return provider;
+    }
+
+    /**
+     * Returns the {@link CredentialsProvider}.
+     *
+     * @return the {@link CredentialsProvider} (may be {@code null} if the admin has removed the provider from
+     * the {@link ExtensionList})
+     * @since 2.0
+     */
+    @Nullable
+    public final CredentialsProvider getProvider() {
+        return ExtensionList.lookup(CredentialsProvider.class).get(providerClass);
+    }
 
     /**
      * Returns the context within which this store operates. Credentials in this store will be available to
@@ -54,6 +148,7 @@ public abstract class CredentialsStore implements AccessControlled {
      *
      * @return the context within which this store operates.
      */
+    @NonNull
     public abstract ModelObject getContext();
 
     /**
@@ -255,5 +350,164 @@ public abstract class CredentialsStore implements AccessControlled {
     public abstract boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
                                               @NonNull Credentials replacement)
             throws IOException;
+
+    /**
+     * Determines if the specified {@link Descriptor} is applicable to this {@link CredentialsStore}.
+     * <p>
+     * The default implementation consults the {@link DescriptorVisibilityFilter}s, {@link #_isApplicable(Descriptor)}
+     * and the {@link #getProviderOrDie()}.
+     *
+     * @param descriptor the {@link Descriptor} to check.
+     * @return {@code true} if the supplied {@link Descriptor} is applicable in this {@link CredentialsStore}
+     * @since 2.0
+     */
+    public final boolean isApplicable(Descriptor<?> descriptor) {
+        for (DescriptorVisibilityFilter filter : DescriptorVisibilityFilter.all()) {
+            if (!filter.filter(this, descriptor)) {
+                return false;
+            }
+        }
+        CredentialsProvider provider = getProvider();
+        return _isApplicable(descriptor) && (provider == null || provider.isApplicable(descriptor));
+    }
+
+    /**
+     * {@link CredentialsStore} subtypes can override this method to veto some  {@link Descriptor}s
+     * from being available from their store. This is often useful when you are building
+     * a custom store that holds a specific type of credentials or where you want to limit the
+     * number of choices given to the users.
+     *
+     * @param descriptor the {@link Descriptor} to check.
+     * @return {@code true} if the supplied {@link Descriptor} is applicable in this {@link CredentialsStore}
+     * @since 2.0
+     */
+    protected boolean _isApplicable(Descriptor<?> descriptor) {
+        return true;
+    }
+
+    /**
+     * Returns the list of {@link CredentialsDescriptor} instances that are applicable within this
+     * {@link CredentialsStore}.
+     *
+     * @return the list of {@link CredentialsDescriptor} instances that are applicable within this
+     * {@link CredentialsStore}.
+     * @since 2.0
+     */
+    public final List<CredentialsDescriptor> getCredentialsDescriptors() {
+        CredentialsProvider provider = getProvider();
+        List<CredentialsDescriptor> result =
+                DescriptorVisibilityFilter.apply(this, ExtensionList.lookup(CredentialsDescriptor.class));
+        if (provider != null && provider.isEnabled()) {
+            if (!(result instanceof ArrayList)) {
+                // should never happen, but let's be defensive in case the DescriptorVisibilityFilter contract changes
+                result = new ArrayList<CredentialsDescriptor>(result);
+            }
+            for (Iterator<CredentialsDescriptor> iterator = result.iterator(); iterator.hasNext(); ) {
+                CredentialsDescriptor d = iterator.next();
+                if (!_isApplicable(d) || !provider._isApplicable(d)) {
+                    iterator.remove();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Computes the relative path from the current page to this store.
+     *
+     * @return the relative path from the current page or {@code null}
+     * @since 2.0
+     */
+    @CheckForNull
+    public String getRelativeLinkToContext() {
+        ModelObject context = getContext();
+        if (context instanceof Item) {
+            return Functions.getRelativeLinkTo((Item) context);
+        }
+        StaplerRequest request = Stapler.getCurrentRequest();
+        if (request == null) {
+            return null;
+        }
+        if (context instanceof Jenkins) {
+            return URI.create(request.getContextPath() + "/").normalize().toString();
+        }
+        if (context instanceof User) {
+            return URI.create(request.getContextPath() + "/" + ((User) context).getUrl())
+                    .normalize().toString();
+        }
+        return null;
+    }
+
+    /**
+     * Computes the relative path from the current page to this store.
+     *
+     * @return the relative path from the current page or {@code null}
+     * @since 2.0
+     */
+    @CheckForNull
+    public String getRelativeLinkToAction() {
+        ModelObject context = getContext();
+        String relativeLink = getRelativeLinkToContext();
+        if (relativeLink == null) {
+            return null;
+        }
+        List<CredentialsStoreAction> actions;
+        if (context instanceof Actionable) {
+            actions = ((Actionable) context).getActions(CredentialsStoreAction.class);
+        } else if (context instanceof Jenkins) {
+            actions = Util.filter(((Jenkins) context).getActions(), CredentialsStoreAction.class);
+        } else if (context instanceof User) {
+            actions = Util.filter(((User) context).getTransientActions(), CredentialsStoreAction.class);
+        } else {
+            return null;
+        }
+        for (CredentialsStoreAction action : actions) {
+            if (action.getStore() == this) {
+                return relativeLink + action.getUrlName() + "/";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Computes the relative path from the current page to the specified domain.
+     *
+     * @param domain the domain
+     * @return the relative path from the current page or {@code null}
+     * @since 2.0
+     */
+    @CheckForNull
+    public String getRelativeLinkTo(Domain domain) {
+        String relativeLink = getRelativeLinkToAction();
+        if (relativeLink == null) {
+            return null;
+        }
+        return relativeLink + domain.getUrl();
+    }
+
+    /**
+     * Returns the display name of the {@link #getContext()} of this {@link CredentialsStore}. The default
+     * implementation can handle both {@link Item} and {@link ItemGroup} as long as these are accessible from
+     * {@link Jenkins}, and {@link User}. If the {@link CredentialsStore} provides an alternative
+     * {@link #getContext()} that is outside of the normal tree then that implementation is responsible for
+     * overriding this method to produce the correct display name.
+     *
+     * @return the display name.
+     * @since 2.0
+     */
+    public final String getContextDisplayName() {
+        ModelObject context = getContext();
+        if (context instanceof Item) {
+            return ((Item) context).getFullDisplayName();
+        } else if (context instanceof Jenkins) {
+            return ((Jenkins) context).getDisplayName();
+        } else if (context instanceof ItemGroup) {
+            return ((ItemGroup) context).getFullDisplayName();
+        } else if (context instanceof User) {
+            return Messages.CredentialsStoreAction_UserDisplayName(context.getDisplayName());
+        } else {
+            return context.getDisplayName();
+        }
+    }
 
 }

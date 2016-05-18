@@ -142,6 +142,24 @@ public class Domain implements Serializable {
     }
 
     /**
+     * Return the store relative URL of this domain.
+     * @return the store relative URL of this domain.
+     */
+    public String getUrl() {
+        return isGlobal() ? "domain/_/" : "domain/" + Util.rawEncode(name) + "/";
+    }
+
+    /**
+     * Tests if this is the {@link #global()} domain.
+     *
+     * @return {@code true} if and only if this is the {@link #global()} domain.
+     * @since 2.0
+     */
+    public boolean isGlobal() {
+        return equals(global());
+    }
+
+    /**
      * Returns {@code true} if and only if the supplied {@link DomainRequirement}s are a match for this {@link Domain}.
      *
      * @param requirements the {@link DomainRequirement}s  to test.

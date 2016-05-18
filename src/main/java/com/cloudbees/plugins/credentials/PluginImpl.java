@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2004-2009, Sun Microsystems, Inc., Kohsuke Kawaguchi
+ * Copyright (c) 2014-2016, CloudBees, Inc..
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,13 @@
 package com.cloudbees.plugins.credentials;
 
 import hudson.Plugin;
+import java.util.Arrays;
 import org.jenkins.ui.icon.Icon;
 import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconType;
 
 /**
  * Jenkins Plugin impl.
- *
- * @author <a href="mailto:tom.fennelly@gmail.com">tom.fennelly@gmail.com</a>
  */
 public class PluginImpl extends Plugin {
 
@@ -42,62 +41,37 @@ public class PluginImpl extends Plugin {
     public void start() throws Exception {
         super.start();
 
-        // Register the small (16x16) icons...
-        IconSet.icons.addIcon(new Icon("icon-credentials-credential icon-sm", "credentials/images/16x16/credential.png",
-                Icon.ICON_SMALL_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-credentials icon-sm", "credentials/images/16x16/credentials.png",
-                        Icon.ICON_SMALL_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(new Icon("icon-credentials-domain icon-sm", "credentials/images/16x16/domain.png",
-                Icon.ICON_SMALL_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-new-credential icon-sm", "credentials/images/16x16/new-credential.png",
-                        Icon.ICON_SMALL_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(new Icon("icon-credentials-new-domain icon-sm", "credentials/images/16x16/new-domain.png",
-                Icon.ICON_SMALL_STYLE, IconType.PLUGIN));
-
-        // Register the medium (24x24) icons...
-        IconSet.icons.addIcon(new Icon("icon-credentials-credential icon-md", "credentials/images/24x24/credential.png",
-                Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-credentials icon-md", "credentials/images/24x24/credentials.png",
-                        Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(new Icon("icon-credentials-domain icon-md", "credentials/images/24x24/domain.png",
-                Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-new-credential icon-md", "credentials/images/24x24/new-credential.png",
-                        Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(new Icon("icon-credentials-new-domain icon-md", "credentials/images/24x24/new-domain.png",
-                Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN));
-
-        // Register the large (32x32) icons...
-        IconSet.icons.addIcon(new Icon("icon-credentials-credential icon-lg", "credentials/images/32x32/credential.png",
-                Icon.ICON_LARGE_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-credentials icon-lg", "credentials/images/32x32/credentials.png",
-                        Icon.ICON_LARGE_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(new Icon("icon-credentials-domain icon-lg", "credentials/images/32x32/domain.png",
-                Icon.ICON_LARGE_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-new-credential icon-lg", "credentials/images/32x32/new-credential.png",
-                        Icon.ICON_LARGE_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(new Icon("icon-credentials-new-domain icon-lg", "credentials/images/32x32/new-domain.png",
-                Icon.ICON_LARGE_STYLE, IconType.PLUGIN));
-
-        // Register the x-large (48x48) icons...
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-credential icon-xlg", "credentials/images/48x48/credential.png",
-                        Icon.ICON_XLARGE_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-credentials icon-xlg", "credentials/images/48x48/credentials.png",
-                        Icon.ICON_XLARGE_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(new Icon("icon-credentials-domain icon-xlg", "credentials/images/48x48/domain.png",
-                Icon.ICON_XLARGE_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-new-credential icon-xlg", "credentials/images/48x48/new-credential.png",
-                        Icon.ICON_XLARGE_STYLE, IconType.PLUGIN));
-        IconSet.icons.addIcon(
-                new Icon("icon-credentials-new-domain icon-xlg", "credentials/images/48x48/new-domain.png",
-                        Icon.ICON_XLARGE_STYLE, IconType.PLUGIN));
+        for (String name: new String[]{
+                "credential",
+                "credentials",
+                "domain",
+                "new-credential",
+                "certificate",
+                "userpass",
+                "system-store",
+                "user-store",
+                "folder-store",
+        }) {
+            IconSet.icons.addIcon(new Icon(
+                    String.format("icon-credentials-%s icon-sm", name),
+                    String.format("credentials/images/16x16/%s.png", name),
+                            Icon.ICON_SMALL_STYLE, IconType.PLUGIN)
+            );
+            IconSet.icons.addIcon(new Icon(
+                    String.format("icon-credentials-%s icon-md", name),
+                    String.format("credentials/images/24x24/%s.png", name),
+                            Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN)
+            );
+            IconSet.icons.addIcon(new Icon(
+                    String.format("icon-credentials-%s icon-lg", name),
+                    String.format("credentials/images/32x32/%s.png", name),
+                            Icon.ICON_LARGE_STYLE, IconType.PLUGIN)
+            );
+            IconSet.icons.addIcon(new Icon(
+                    String.format("icon-credentials-%s icon-xlg", name),
+                    String.format("credentials/images/48x48/%s.png", name),
+                            Icon.ICON_XLARGE_STYLE, IconType.PLUGIN)
+            );
+        }
     }
 }

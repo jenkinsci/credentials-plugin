@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011-2012, CloudBees, Inc., Stephen Connolly.
+ * Copyright (c) 2011-2016, CloudBees, Inc., Stephen Connolly.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -100,6 +100,14 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
         @Override
         public String getDisplayName() {
             return Messages.UsernamePasswordCredentialsImpl_DisplayName();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getIconClassName() {
+            return "icon-credentials-userpass";
         }
     }
 }

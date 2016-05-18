@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc..
+ * Copyright (c) 2013-2016, CloudBees, Inc..
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.DescriptorExtensionList;
@@ -41,6 +42,8 @@ import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
 import hudson.model.User;
+import hudson.security.ACL;
+import hudson.security.AccessControlled;
 import hudson.security.Permission;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
@@ -49,11 +52,15 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import org.acegisecurity.AccessDeniedException;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
@@ -65,15 +72,36 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 /**
  * An action for a {@link CredentialsStore}
  */
-public abstract class CredentialsStoreAction implements Action, IconSpec {
+public abstract class CredentialsStoreAction implements Action, IconSpec, AccessControlled {
 
+    /**
+     * Expose {@link CredentialsProvider#VIEW} for Jelly.
+     */
     public static final Permission VIEW = CredentialsProvider.VIEW;
+    /**
+     * Expose {@link CredentialsProvider#CREATE} for Jelly.
+     */
     public static final Permission CREATE = CredentialsProvider.CREATE;
+    /**
+     * Expose {@link CredentialsProvider#UPDATE} for Jelly.
+     */
     public static final Permission UPDATE = CredentialsProvider.UPDATE;
+    /**
+     * Expose {@link CredentialsProvider#DELETE} for Jelly.
+     */
     public static final Permission DELETE = CredentialsProvider.DELETE;
+    /**
+     * Expose {@link CredentialsProvider#MANAGE_DOMAINS} for Jelly.
+     */
     public static final Permission MANAGE_DOMAINS = CredentialsProvider.MANAGE_DOMAINS;
 
+    /**
+     * Returns the {@link CredentialsStore} backing this action.
+     *
+     * @return the {@link CredentialsStore}.
+     */
     @NonNull
+    @Exported
     public abstract CredentialsStore getStore();
 
     /**
@@ -102,9 +130,26 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         return "credential-store";
     }
 
+    /**
+     * Expose the action's {@link Api}.
+     *
+     * @return the action's {@link Api}.
+     */
+    public Api getApi() {
+        return new Api(this);
+    }
+
+    /**
+     * Checks if this action should be visible.
+     *
+     * @return {@code true} if the action should be visible.
+     */
     public boolean isVisible() {
-        return !CredentialsProvider.allCredentialsDescriptors().isEmpty() && getStore()
-                .hasPermission(CredentialsProvider.VIEW);
+        CredentialsStore store = getStore();
+        if (!store.getProvider().isEnabled()) {
+            return false;
+        }
+        return store.hasPermission(CredentialsProvider.VIEW) && !store.getCredentialsDescriptors().isEmpty();
     }
 
     /**
@@ -117,6 +162,11 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
                 : null;
     }
 
+    /**
+     * Returns the {@link Item#getFullName()} or nearest approximation.
+     *
+     * @return the {@link Item#getFullName()} or nearest approximation.
+     */
     public final String getFullName() {
         String n;
         ModelObject context = getStore().getContext();
@@ -136,6 +186,11 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         }
     }
 
+    /**
+     * Returns the {@link Item#getFullDisplayName()} or nearest approximation.
+     *
+     * @return the {@link Item#getFullDisplayName()} or nearest approximation.
+     */
     public final String getFullDisplayName() {
         String n;
         ModelObject context = getStore().getContext();
@@ -156,12 +211,18 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         }
     }
 
+    /**
+     * Returns the map of {@link DomainWrapper} instances.
+     *
+     * @return the map of {@link DomainWrapper} instances.
+     */
     @Exported
+    @NonNull
     public Map<String, DomainWrapper> getDomains() {
         Map<String, DomainWrapper> result = new TreeMap<String, DomainWrapper>();
         for (Domain d : getStore().getDomains()) {
             String name;
-            if (d == Domain.global()) {
+            if (d.isGlobal()) {
                 name = "_";
             } else {
                 name = d.getName();
@@ -171,14 +232,31 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         return result;
     }
 
+    /**
+     * Gets the named {@link DomainWrapper}.
+     *
+     * @param name the name.
+     * @return the named {@link DomainWrapper}.
+     */
+    @CheckForNull
     public DomainWrapper getDomain(String name) {
         return getDomains().get(name);
     }
 
+    /**
+     * Exposes {@link CredentialsStore#isDomainsModifiable()} for Jelly.
+     *
+     * @return {@link CredentialsStore#isDomainsModifiable()}.
+     */
     public boolean isDomainsModifiable() {
         return getStore().isDomainsModifiable();
     }
 
+    /**
+     * Exposes {@link DomainWrapper.DescriptorImpl} for Jelly.
+     *
+     * @return {@link DomainWrapper.DescriptorImpl}.
+     */
     public DomainWrapper.DescriptorImpl getDomainDescriptor() {
         // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
         return Jenkins.getActiveInstance().getDescriptorByType(DomainWrapper.DescriptorImpl.class);
@@ -195,6 +273,16 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         return Jenkins.getActiveInstance().getDescriptorList(DomainSpecification.class);
     }
 
+    /**
+     * Creates a domain.
+     *
+     * @param req the request.
+     * @return the response.
+     * @throws ServletException if something goes wrong.
+     * @throws IOException      if something goes wrong.
+     */
+    @SuppressWarnings("unused") // stapler web method
+    @Restricted(NoExternalUse.class)
     @RequirePOST
     public HttpResponse doCreateDomain(StaplerRequest req) throws ServletException, IOException {
         getStore().checkPermission(MANAGE_DOMAINS);
@@ -208,33 +296,98 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         return HttpResponses.redirectToDot();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Nonnull
+    @Override
+    public ACL getACL() {
+        return getStore().getACL();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void checkPermission(@Nonnull Permission permission) throws AccessDeniedException {
+        getACL().checkPermission(permission);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasPermission(@Nonnull Permission permission) {
+        return getACL().hasPermission(permission);
+    }
+
+    /**
+     * A wrapper object to bind and expose {@link Domain} instances into the web UI.
+     */
     @ExportedBean
     public static class DomainWrapper extends AbstractDescribableImpl<DomainWrapper> implements ModelObject {
 
+        /**
+         * The {@link CredentialsStoreAction} that we belong to.
+         */
         private final CredentialsStoreAction parent;
+        /**
+         * The {@link Domain} that we are exposing.
+         */
         private final Domain domain;
 
+        /**
+         * Our constructor.
+         *
+         * @param parent our parent action.
+         * @param domain the domain we are wrapping.
+         */
         public DomainWrapper(CredentialsStoreAction parent, Domain domain) {
             this.parent = parent;
             this.domain = domain;
         }
 
+        /**
+         * Expose a Jenkins {@link Api}.
+         *
+         * @return the {@link Api}.
+         */
         public Api getApi() {
             return new Api(this);
         }
 
+        /**
+         * Expose the backing {@link CredentialsStore}.
+         *
+         * @return the backing {@link CredentialsStore}.
+         */
         public CredentialsStore getStore() {
             return getParent().getStore();
         }
 
+        /**
+         * Expose the backing {@link Domain}.
+         *
+         * @return the backing {@link Domain}.
+         */
         public Domain getDomain() {
             return domain;
         }
 
+        /**
+         * Expose the parent {@link CredentialsStoreAction}.
+         *
+         * @return the parent {@link CredentialsStoreAction}.
+         */
         public CredentialsStoreAction getParent() {
             return parent;
         }
 
+        /**
+         * Return the URL name.
+         *
+         * @return the URL name.
+         */
         @Exported
         @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
                             justification = "isGlobal() check implies that domain.getName() is null")
@@ -242,11 +395,21 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             return isGlobal() ? "_" : Util.rawEncode(domain.getName());
         }
 
+        /**
+         * Return the display name.
+         *
+         * @return the display name.
+         */
         @Exported
         public String getDisplayName() {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDisplayName() : domain.getName();
         }
 
+        /**
+         * Return the full name.
+         *
+         * @return the full name.
+         */
         @Exported
         public final String getFullName() {
             String n = getParent().getFullName();
@@ -257,6 +420,11 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             }
         }
 
+        /**
+         * Return the full display name.
+         *
+         * @return the full display name.
+         */
         @Exported
         public final String getFullDisplayName() {
             String n = getParent().getFullDisplayName();
@@ -267,22 +435,43 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             }
         }
 
+        /**
+         * Expose the {@link Domain#getDescription()}.
+         *
+         * @return the {@link Domain#getDescription()}.
+         */
         @Exported
         public String getDescription() {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDescription() : domain.getDescription();
         }
 
+        /**
+         * Expose a flag to indicate that the wrapped domain is the global domain.
+         *
+         * @return {@code true} if and only if the wrapped domain is the global domain.
+         */
         @Exported
         public boolean isGlobal() {
             return domain == Domain.global();
         }
 
+        /**
+         * Expose {@link CredentialsWrapper.DescriptorImpl} to Jelly.
+         *
+         * @return the {@link CredentialsWrapper.DescriptorImpl} singleton.
+         */
         public CredentialsWrapper.DescriptorImpl getCredentialDescriptor() {
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
             return Jenkins.getActiveInstance().getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
         }
 
+        /**
+         * Exposes a map of the wrapped credentials.
+         *
+         * @return a map of the wrapped credentials.
+         */
         @Exported
+        @NonNull
         public Map<String, CredentialsWrapper> getCredentials() {
             Map<String, CredentialsWrapper> result = new LinkedHashMap<String, CredentialsWrapper>();
             int index = 0;
@@ -302,11 +491,28 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             return result;
         }
 
+        /**
+         * Get a credential by id.
+         *
+         * @param id the id.
+         * @return the {@link CredentialsWrapper}.
+         */
+        @CheckForNull
         public CredentialsWrapper getCredential(String id) {
             return getCredentials().get(id);
         }
 
+        /**
+         * Creates a credential.
+         *
+         * @param req the request.
+         * @return the response.
+         * @throws ServletException if something goes wrong.
+         * @throws IOException      if something goes wrong.
+         */
         @RequirePOST
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
         public HttpResponse doCreateCredentials(StaplerRequest req) throws ServletException, IOException {
             getStore().checkPermission(CREATE);
             JSONObject data = req.getSubmittedForm();
@@ -315,7 +521,17 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             return HttpResponses.redirectTo("../../domain/" + getUrlName());
         }
 
+        /**
+         * Updates the domain configuration.
+         *
+         * @param req the request.
+         * @return the response.
+         * @throws ServletException if something goes wrong.
+         * @throws IOException      if something goes wrong.
+         */
         @RequirePOST
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
         public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
@@ -331,7 +547,17 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             return HttpResponses.redirectToDot();
         }
 
+        /**
+         * Deletes a domain.
+         *
+         * @param req the request.
+         * @return the response.
+         * @throws ServletException if something goes wrong.
+         * @throws IOException      if something goes wrong.
+         */
         @RequirePOST
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
@@ -343,18 +569,37 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             return HttpResponses.redirectToDot();
         }
 
+        /**
+         * Our Descriptor.
+         */
         @Extension
         public static class DescriptorImpl extends Descriptor<DomainWrapper> {
 
+            /**
+             * Default constructor.
+             */
             public DescriptorImpl() {
                 super(DomainWrapper.class);
             }
 
+            /**
+             * {@inheritDoc}
+             */
             @Override
             public String getDisplayName() {
                 return "Domain";
             }
 
+            /**
+             * Form validation for creating a new domain / renaming an existing domain.
+             *
+             * @param wrapper the existing domain or {@code null}
+             * @param action  the {@link CredentialsStoreAction} in the request.
+             * @param value   the proposed name.
+             * @return the {@link FormValidation}
+             */
+            @SuppressWarnings("unused") // stapler form validation
+            @Restricted(NoExternalUse.class)
             public FormValidation doCheckName(@AncestorInPath DomainWrapper wrapper,
                                               @AncestorInPath CredentialsStoreAction action,
                                               @QueryParameter String value) {
@@ -382,41 +627,91 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
         }
     }
 
+    /**
+     * A wrapper object to bind and expose {@link Credentials} instances into the web UI.
+     */
     @ExportedBean
     public static class CredentialsWrapper extends AbstractDescribableImpl<CredentialsWrapper> implements IconSpec {
 
+        /**
+         * Our {@link DomainWrapper}.
+         */
         private final DomainWrapper domain;
 
+        /**
+         * The {@link Credentials} that we are wrapping.
+         */
         private final Credentials credentials;
 
+        /**
+         * The {@link IdCredentials#getId()} of the {@link Credentials}.
+         */
         private final String id;
 
+        /**
+         * Constructor.
+         *
+         * @param domain      the wrapped domain.
+         * @param credentials the credentials.
+         * @param id          the id.
+         */
         public CredentialsWrapper(DomainWrapper domain, Credentials credentials, String id) {
             this.domain = domain;
             this.credentials = credentials;
             this.id = id;
         }
 
+        /**
+         * Return the URL name.
+         *
+         * @return the URL name.
+         */
         public String getUrlName() {
             return Util.rawEncode(id);
-        }        public String getIconClassName() {
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getIconClassName() {
             return credentials.getDescriptor().getIconClassName();
         }
 
+        /**
+         * Expose a Jenkins {@link Api}.
+         *
+         * @return the {@link Api}.
+         */
         public Api getApi() {
             return new Api(this);
         }
 
+        /**
+         * Gets the display name of the {@link Credentials}.
+         *
+         * @return the display name of the {@link Credentials}.
+         */
         @Exported
         public String getDisplayName() {
             return CredentialsNameProvider.name(credentials);
         }
 
+        /**
+         * Gets the display name of the {@link CredentialsDescriptor}.
+         *
+         * @return the display name of the {@link CredentialsDescriptor}.
+         */
         @Exported
         public String getTypeName() {
             return credentials.getDescriptor().getDisplayName();
         }
 
+        /**
+         * Gets the description of the {@link Credentials}.
+         *
+         * @return the description of the {@link Credentials}.
+         */
         @Exported
         public String getDescription() {
             return credentials instanceof StandardCredentials
@@ -424,6 +719,11 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
                     : null;
         }
 
+        /**
+         * Gets the full name of the {@link Credentials}.
+         *
+         * @return the full name of the {@link Credentials}.
+         */
         @Exported
         public final String getFullName() {
             String n = getDomain().getFullName();
@@ -434,6 +734,11 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             }
         }
 
+        /**
+         * Gets the full display name of the {@link Credentials}.
+         *
+         * @return the full display name of the {@link Credentials}.
+         */
         public final String getFullDisplayName() {
             String n = getDomain().getFullDisplayName();
             if (n.length() == 0) {
@@ -443,23 +748,53 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             }
         }
 
+        /**
+         * Exposes the backing {@link Credentials}.
+         *
+         * @return the backing {@link Credentials}.
+         */
         public Credentials getCredentials() {
             return credentials;
         }
 
+        /**
+         * Exposes the backing {@link DomainWrapper}.
+         *
+         * @return the backing {@link DomainWrapper}.
+         */
         public DomainWrapper getDomain() {
             return domain;
         }
 
+        /**
+         * Exposes the backing {@link DomainWrapper}.
+         *
+         * @return the backing {@link DomainWrapper}.
+         */
         public DomainWrapper getParent() {
             return domain;
         }
 
+        /**
+         * Exposes the backing {@link CredentialsStore}.
+         *
+         * @return the backing {@link CredentialsStore}.
+         */
         public CredentialsStore getStore() {
             return domain.getStore();
         }
 
+        /**
+         * Deletes the credentials.
+         *
+         * @param req the request.
+         * @return the response.
+         * @throws ServletException if something goes wrong.
+         * @throws IOException      if something goes wrong.
+         */
         @RequirePOST
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
@@ -471,7 +806,17 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             return HttpResponses.redirectToDot();
         }
 
+        /**
+         * Moves the credential.
+         *
+         * @param req the request.
+         * @return the response.
+         * @throws ServletException if something goes wrong.
+         * @throws IOException      if something goes wrong.
+         */
         @RequirePOST
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoMove(StaplerRequest req, @QueryParameter String destination) throws IOException {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
@@ -544,7 +889,17 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             return HttpResponses.redirectToDot();
         }
 
+        /**
+         * Updates the credentials.
+         *
+         * @param req the request.
+         * @return the response.
+         * @throws ServletException if something goes wrong.
+         * @throws IOException      if something goes wrong.
+         */
         @RequirePOST
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
         public HttpResponse doUpdateSubmit(StaplerRequest req) throws ServletException, IOException {
             getStore().checkPermission(UPDATE);
             JSONObject data = req.getSubmittedForm();
@@ -555,10 +910,19 @@ public abstract class CredentialsStoreAction implements Action, IconSpec {
             return HttpResponses.redirectToDot();
         }
 
+        /**
+         * Our {@link Descriptor}.
+         */
         @Extension
         public static class DescriptorImpl extends Descriptor<CredentialsWrapper> {
 
+            /**
+             * Exposes {@link CredentialsProvider#allCredentialsDescriptors()} to Jelly
+             *
+             * @return {@link CredentialsProvider#allCredentialsDescriptors()}
+             */
             public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
+                // TODO delete me
                 return CredentialsProvider.allCredentialsDescriptors();
             }
 

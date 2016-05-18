@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011-2012, CloudBees, Inc., Stephen Connolly.
+ * Copyright (c) 2011-2016, CloudBees, Inc., Stephen Connolly.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,6 @@ import hudson.BulkChange;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.model.Action;
-import hudson.model.Api;
 import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
@@ -58,6 +57,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
@@ -171,6 +171,14 @@ public class UserCredentialsProvider extends CredentialsProvider {
             }
         }
         return new ArrayList<C>();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getIconClassName() {
+        return "icon-credentials-user-store";
     }
 
     /**
@@ -426,6 +434,11 @@ public class UserCredentialsProvider extends CredentialsProvider {
             return false;
         }
 
+        /**
+         * Helper method to check the specified permission.
+         *
+         * @param p the permission to checl.
+         */
         private void checkPermission(Permission p) {
             if (user.equals(User.current())) {
                 user.checkPermission(p);
@@ -434,6 +447,11 @@ public class UserCredentialsProvider extends CredentialsProvider {
             }
         }
 
+        /**
+         * Save all changes.
+         *
+         * @throws IOException if something goes wrong.
+         */
         private void save() throws IOException {
             if (user.equals(User.current())) {
                 user.save();
@@ -515,6 +533,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
              */
             @SuppressWarnings("unused") // used by stapler
             public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
+                // TODO delete me
                 return CredentialsProvider.allCredentialsDescriptors();
             }
 
@@ -533,8 +552,14 @@ public class UserCredentialsProvider extends CredentialsProvider {
         }
     }
 
-    @Extension
+    /**
+     * Create the {@link UserFacingAction}.
+     */
+    @Extension(ordinal = -1001)
     public static class TransientUserActionFactoryImpl extends TransientUserActionFactory {
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Collection<? extends Action> createFor(User target) {
             return Collections.singletonList(new UserFacingAction(target));
@@ -544,31 +569,82 @@ public class UserCredentialsProvider extends CredentialsProvider {
     @ExportedBean
     public static class UserFacingAction extends CredentialsStoreAction {
 
+        /**
+         * The user that this action belongs to.
+         */
         private final User user;
 
+        /**
+         * Constructor.
+         *
+         * @param user the user with the {@link CredentialsStore} that is being exposed.
+         */
         public UserFacingAction(User user) {
             this.user = user;
         }
 
-        public Api getApi() {
-            return new Api(this);
-        }
-
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
         @Exported
         public CredentialsStore getStore() {
             return new StoreImpl(user);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getIconFileName() {
+            return isVisible()
+                    ? "/plugin/credentials/images/48x48/user-store.png"
+                    : null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getIconClassName() {
+            return isVisible()
+                    ? "icon-credentials-user-store"
+                    : null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getDisplayName() {
+            return "User Credentials";
+        }
     }
 
+    /**
+     * Our implementation
+     */
     public static class StoreImpl extends CredentialsStore {
 
+        /**
+         * The user that this store belongs to.
+         */
         private final User user;
 
+        /**
+         * Constructor.
+         *
+         * @param user the user.
+         */
         private StoreImpl(User user) {
             this.user = user;
         }
 
+        /**
+         * Looks up the {@link UserCredentialsProperty} that we store the credentials in.
+         *
+         * @return the {@link UserCredentialsProperty} that we store the credentials in.
+         */
         private UserCredentialsProperty getInstance() {
             UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
             if (property == null) {
@@ -585,19 +661,34 @@ public class UserCredentialsProvider extends CredentialsProvider {
             return property;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
         @Override
         public ModelObject getContext() {
             return user;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
-            return user.equals(User.get(a.getName()));
+            return getACL().hasPermission(a, permission);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public ACL getACL() {
-            return user.getACL();
+            return new ACL() {
+                @Override
+                public boolean hasPermission(@Nonnull Authentication a, @Nonnull Permission permission) {
+                    return user.equals(User.get(a.getName())) && user.getACL().hasPermission(a, permission);
+                }
+            };
         }
 
         /**
