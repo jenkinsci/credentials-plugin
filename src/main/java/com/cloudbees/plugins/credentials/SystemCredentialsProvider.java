@@ -473,6 +473,11 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
     public static class StoreImpl extends CredentialsStore {
 
         /**
+         * Our store action.
+         */
+        private final UserFacingAction storeAction = new UserFacingAction();
+
+        /**
          * Default constructor.
          */
         public StoreImpl() {
@@ -574,14 +579,21 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
             return SystemCredentialsProvider.getInstance().updateCredentials(domain, current, replacement);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Nullable
+        @Override
+        public CredentialsStoreAction getStoreAction() {
+            return storeAction;
+        }
     }
 
     /**
      * Expose the store.
      */
     @ExportedBean
-    @Extension(ordinal = -1001)
-    public static class UserFacingAction extends CredentialsStoreAction implements RootAction {
+    public static class UserFacingAction extends CredentialsStoreAction  {
 
         /**
          * {@inheritDoc}

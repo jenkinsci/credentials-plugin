@@ -552,35 +552,21 @@ public class UserCredentialsProvider extends CredentialsProvider {
         }
     }
 
-    /**
-     * Create the {@link UserFacingAction}.
-     */
-    @Extension(ordinal = -1001)
-    public static class TransientUserActionFactoryImpl extends TransientUserActionFactory {
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Collection<? extends Action> createFor(User target) {
-            return Collections.singletonList(new UserFacingAction(target));
-        }
-    }
-
     @ExportedBean
     public static class UserFacingAction extends CredentialsStoreAction {
 
         /**
          * The user that this action belongs to.
          */
-        private final User user;
+        private final StoreImpl store;
 
         /**
          * Constructor.
          *
-         * @param user the user with the {@link CredentialsStore} that is being exposed.
+         * @param store the {@link CredentialsStore} that is being exposed.
          */
-        public UserFacingAction(User user) {
-            this.user = user;
+        public UserFacingAction(StoreImpl store) {
+            this.store = store;
         }
 
         /**
@@ -589,7 +575,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @NonNull
         @Exported
         public CredentialsStore getStore() {
-            return new StoreImpl(user);
+            return store;
         }
 
         /**
@@ -632,12 +618,25 @@ public class UserCredentialsProvider extends CredentialsProvider {
         private final User user;
 
         /**
+         * Our store action.
+         */
+        private final UserFacingAction storeAction;
+
+        /**
          * Constructor.
          *
          * @param user the user.
          */
         private StoreImpl(User user) {
             this.user = user;
+            this.storeAction = new UserFacingAction(this);
+        }
+
+        /** {@inheritDoc} */
+        @Nullable
+        @Override
+        public CredentialsStoreAction getStoreAction() {
+            return storeAction;
         }
 
         /**

@@ -46,6 +46,8 @@ public class PluginImpl extends Plugin {
                 "credentials",
                 "domain",
                 "new-credential",
+                "new-domain",
+                "move",
                 "certificate",
                 "userpass",
                 "system-store",

@@ -510,4 +510,18 @@ public abstract class CredentialsStore implements AccessControlled {
         }
     }
 
+    /**
+     * Return the {@link CredentialsStoreAction} for this store. The action will be displayed as a sub-item of the
+     * {@link ViewCredentialsAction}. Return {@code null} if this store will take control of displaying its action
+     * (which will be the case for legacy implementations)
+     *
+     * @return the {@link CredentialsStoreAction} for this store to be rendered in {@link ViewCredentialsAction} or
+     * {@code null} for old implementations compiled against pre 2.0 versions of credentials plugin.
+     * @since 2.0
+     */
+    @Nullable
+    public CredentialsStoreAction getStoreAction() {
+        return null;
+    }
+
 }

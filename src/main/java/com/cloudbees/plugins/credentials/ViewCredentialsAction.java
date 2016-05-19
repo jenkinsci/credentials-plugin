@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Action;
@@ -47,15 +48,19 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
+import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.model.TransientActionFactory;
 import org.acegisecurity.AccessDeniedException;
 import org.acegisecurity.Authentication;
+import org.jenkins.ui.icon.Icon;
 import org.jenkins.ui.icon.IconSpec;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 
 /**
  * An {@link Action} that lets you view the available credentials for any {@link ModelObject}.
  */
-public class ViewCredentialsAction implements Action, IconSpec, AccessControlled {
+public class ViewCredentialsAction implements Action, IconSpec, AccessControlled, ModelObjectWithContextMenu {
 
     /**
      * Expose {@link CredentialsProvider#VIEW} for Jelly.
@@ -101,14 +106,69 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      * @return the {@link CredentialsStore} instances available to the {@link #getContext()}.
      */
     @NonNull
-    public List<CredentialsStore> getStores() {
+    public List<CredentialsStore> getParentStores() {
         List<CredentialsStore> result = new ArrayList<CredentialsStore>();
         for (CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
-            if (s.hasPermission(CredentialsProvider.VIEW)) {
+            if (context != s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
                 result.add(s);
             }
         }
         return result;
+    }
+
+    /**
+     * Exposes the {@link CredentialsStore} instances available to the {@link #getContext()}.
+     *
+     * @return the {@link CredentialsStore} instances available to the {@link #getContext()}.
+     */
+    @NonNull
+    public List<CredentialsStore> getLocalStores() {
+        List<CredentialsStore> result = new ArrayList<CredentialsStore>();
+        for (CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
+            if (context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
+                result.add(s);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Exposes the {@link #getLocalStores()} {@link CredentialsStore#getStoreAction()}.
+     *
+     * @return the {@link #getLocalStores()} {@link CredentialsStore#getStoreAction()}.
+     */
+    @NonNull
+    @SuppressWarnings("unused") // Jelly EL
+    public List<CredentialsStoreAction> getStoreActions() {
+        List<CredentialsStoreAction> result = new ArrayList<CredentialsStoreAction>();
+        for (final CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
+            if (context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
+                CredentialsStoreAction action = s.getStoreAction();
+                if (action != null) {
+                    result.add(action);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Exposes the {@link #getStoreActions()} by {@link CredentialsStoreAction#getUrlName()} for Stapler.
+     * @param name the {@link CredentialsStoreAction#getUrlName()} to match.
+     * @return the {@link CredentialsStoreAction} or {@code null}
+     */
+    @CheckForNull
+    @SuppressWarnings("unused") // Stapler binding
+    public CredentialsStoreAction getStore(String name) {
+        for (final CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
+            if (context == s.getContext()) { // local stores only
+                CredentialsStoreAction action = s.getStoreAction();
+                if (action != null && name.equals(action.getUrlName())) {
+                    return s.hasPermission(CredentialsProvider.VIEW) ? action : null;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -125,6 +185,12 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public String getUrlName() {
         return "credentials";
+    }
+
+    public String getStoreBaseUrl(String itUrl) {
+        return itUrl.isEmpty() || itUrl.endsWith("/")
+                ? itUrl + getUrlName() + "/store/"
+                : itUrl + "/" + getUrlName() + "/store/";
     }
 
     /**
@@ -189,21 +255,12 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     }
 
     /**
-     * Returns the full name of the {@link #getContext()}.
+     * Returns the full name of this action.
      *
-     * @return the full name of the {@link #getContext()}.
+     * @return the full name of this action.
      */
     public final String getFullName() {
-        String n;
-        if (context instanceof Item) {
-            n = ((Item) context).getFullName();
-        } else if (context instanceof ItemGroup) {
-            n = ((ItemGroup) context).getFullName();
-        } else if (context instanceof User) {
-            n = "user:" + ((User) context).getId();
-        } else {
-            n = "";
-        }
+        String n = getContextFullName();
         if (n.length() == 0) {
             return getUrlName();
         } else {
@@ -212,14 +269,49 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     }
 
     /**
+     * Returns the full name of the {@link #getContext()}.
+     *
+     * @return the full name of the {@link #getContext()}.
+     */
+    public String getContextFullName() {
+        String n;
+        if (context instanceof Item) {
+            n = ((Item) context).getFullName();
+        } else if (context instanceof ItemGroup) {
+            n = ((ItemGroup) context).getFullName();
+        } else if (context instanceof User) {
+            n = "user/" + ((User) context).getId();
+        } else {
+            n = "";
+        }
+        return n;
+    }
+
+    /**
+     * Returns the full display name of this action.
+     *
+     * @return the full display name of this action.
+     */
+    public final String getFullDisplayName() {
+        String n = getContextFullDisplayName();
+        if (n.length() == 0) {
+            return getDisplayName();
+        } else {
+            return n + " \u00BB " + getDisplayName();
+        }
+    }
+
+    /**
      * Returns the full display name of the {@link #getContext()}.
      *
      * @return the full display name of the {@link #getContext()}.
      */
-    public final String getFullDisplayName() {
+    public String getContextFullDisplayName() {
         String n;
         if (context instanceof Item) {
             n = ((Item) context).getFullDisplayName();
+        } else if (context instanceof Jenkins) {
+            n = context.getDisplayName();
         } else if (context instanceof ItemGroup) {
             n = ((ItemGroup) context).getFullDisplayName();
         } else if (context instanceof User) {
@@ -228,11 +320,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
             n = Jenkins.getActiveInstance().getFullDisplayName();
         }
-        if (n.length() == 0) {
-            return getDisplayName();
-        } else {
-            return n + " \u00BB " + getDisplayName();
-        }
+        return n;
     }
 
     /**
@@ -247,7 +335,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             @Override
             public boolean hasPermission(@Nonnull Authentication a, @Nonnull Permission permission) {
                 if (accessControlled.getACL().hasPermission(a, permission)) {
-                    for (CredentialsStore s : getStores()) {
+                    for (CredentialsStore s : getLocalStores()) {
                         if (s.hasPermission(a, permission)) {
                             return true;
                         }
@@ -272,6 +360,25 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public boolean hasPermission(@Nonnull Permission permission) {
         return getACL().hasPermission(permission);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    // In the general case we would implement ModelObjectWithChildren as the child actions could be viewed as children
+    // but in this case we expose them in the sidebar, so they are more correctly part of the context menu.
+    @Override
+    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) throws Exception {
+        ContextMenu menu = new ContextMenu();
+        for (CredentialsStoreAction action : getStoreActions()) {
+            ContextMenuIconUtils.addMenuItem(
+                    menu,
+                    "store",
+                    action,
+                    action.getContextMenu(ContextMenuIconUtils.buildUrl("store", action.getUrlName()))
+            );
+        }
+        return menu;
     }
 
     /**
