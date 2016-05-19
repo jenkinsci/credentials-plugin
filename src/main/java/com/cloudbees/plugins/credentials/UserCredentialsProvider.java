@@ -603,7 +603,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @Override
         public String getDisplayName() {
-            return "User Credentials";
+            return "User"; // TODO i18n
         }
     }
 

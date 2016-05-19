@@ -127,7 +127,20 @@ public abstract class CredentialsStoreAction
      */
     @Override
     public String getDisplayName() {
-        return Messages.CredentialsStoreAction_DisplayName();
+        CredentialsStore store = getStore();
+        if (this == store.getStoreAction()) {
+            Class<?> c = store.getClass();
+            while (c.getEnclosingClass() != null) {
+                c = c.getEnclosingClass();
+            }
+            String name = c.getSimpleName().replaceAll("(?i)(Impl|Credentials|Provider|Store)+", "");
+            if (StringUtils.isBlank(name)) {
+                name = c.getSimpleName();
+            }
+            return StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(name), ' ');
+        } else {
+            return Messages.CredentialsStoreAction_DisplayName();
+        }
     }
 
     /**

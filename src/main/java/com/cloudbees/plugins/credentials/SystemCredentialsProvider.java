@@ -628,7 +628,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          */
         @Override
         public String getDisplayName() {
-            return "Jenkins Vault";
+            return "System"; // TODO i18n
         }
     }
 }
