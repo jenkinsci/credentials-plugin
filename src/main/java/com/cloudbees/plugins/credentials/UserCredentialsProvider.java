@@ -33,11 +33,9 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.BulkChange;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
-import hudson.model.Action;
 import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
-import hudson.model.TransientUserActionFactory;
 import hudson.model.User;
 import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
@@ -49,7 +47,6 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -603,7 +600,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @Override
         public String getDisplayName() {
-            return "User"; // TODO i18n
+            return Messages.UserCredentialsProvider_UserFacingAction_DisplayName();
         }
     }
 
@@ -632,7 +629,9 @@ public class UserCredentialsProvider extends CredentialsProvider {
             this.storeAction = new UserFacingAction(this);
         }
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
         @Nullable
         @Override
         public CredentialsStoreAction getStoreAction() {

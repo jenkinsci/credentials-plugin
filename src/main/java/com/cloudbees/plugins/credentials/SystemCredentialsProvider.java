@@ -37,7 +37,6 @@ import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
-import hudson.model.RootAction;
 import hudson.model.Saveable;
 import hudson.security.ACL;
 import hudson.security.Permission;
@@ -593,7 +592,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      * Expose the store.
      */
     @ExportedBean
-    public static class UserFacingAction extends CredentialsStoreAction  {
+    public static class UserFacingAction extends CredentialsStoreAction {
 
         /**
          * {@inheritDoc}
@@ -628,7 +627,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          */
         @Override
         public String getDisplayName() {
-            return "System"; // TODO i18n
+            return Messages.SystemCredentialsProvider_UserFacingAction_DisplayName();
         }
     }
 }

@@ -144,6 +144,7 @@ public class Domain implements Serializable {
 
     /**
      * Return the store relative URL of this domain.
+     *
      * @return the store relative URL of this domain.
      */
     @SuppressFBWarnings(value = "NP_NULL_PARAM_DEREF",
@@ -156,7 +157,7 @@ public class Domain implements Serializable {
      * Tests if this is the {@link #global()} domain.
      *
      * @return {@code true} if and only if this is the {@link #global()} domain.
-     * @since TODO
+     * @since 2.0
      */
     public boolean isGlobal() {
         return equals(global());

@@ -189,7 +189,7 @@ public abstract class CredentialsStoreAction
         if (getStore().isDomainsModifiable() && getStore().hasPermission(MANAGE_DOMAINS)) {
             menu.add(ContextMenuIconUtils.buildUrl(prefix, "newDomain"),
                     getMenuItemIconUrlByClassSpec("icon-credentials-new-domain icon-xlg"),
-                    "Add domain" // TODO i18n
+                    Messages.CredentialsStoreAction_AddDomainAction()
             );
         }
         for (Action action : getActions()) {
@@ -722,17 +722,17 @@ public abstract class CredentialsStoreAction
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "newCredentials"),
                             getMenuItemIconUrlByClassSpec("icon-credentials-new-credential icon-xlg"),
-                            "Add Credentials" // TODO i18n
+                            Messages.CredentialsStoreAction_AddCredentialsAction()
                     ));
                 }
                 if (getStore().hasPermission(MANAGE_DOMAINS) && !domain.isGlobal()) {
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "configure"),
                             getMenuItemIconUrlByClassSpec("icon-setting icon-xlg"),
-                            "Configure" // TODO i18n
+                            Messages.CredentialsStoreAction_ConfigureDomainAction()
                     ));
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "delete"),
                             getMenuItemIconUrlByClassSpec("icon-edit-delete icon-md"),
-                            "Delete domain" // TODO i18n
+                            Messages.CredentialsStoreAction_DeleteDomainAction()
                     ));
                 }
                 return result.items.isEmpty() ? null : result;
@@ -754,7 +754,7 @@ public abstract class CredentialsStoreAction
                 String p = ContextMenuIconUtils.buildUrl(prefix, "credential", entry.getKey());
                 MenuItem item =
                         new MenuItem(p,
-                                getMenuItemIconUrlByClassSpec(entry.getValue().getIconClassName()),
+                                getMenuItemIconUrlByClassSpec(entry.getValue().getIconClassName() + " icon-xlg"),
                                 entry.getValue().getDisplayName()
                         );
                 item.subMenu = entry.getValue().getContextMenu(p);
@@ -1137,17 +1137,17 @@ public abstract class CredentialsStoreAction
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "update"),
                             getMenuItemIconUrlByClassSpec("icon-setting icon-md"),
-                            "Update" // TODO i18n
+                            Messages.CredentialsStoreAction_UpdateCredentialAction()
                     ));
                 }
                 if (getStore().hasPermission(DELETE)) {
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "delete"),
                             getMenuItemIconUrlByClassSpec("icon-edit-delete icon-md"),
-                            "Delete" // TODO i18n
+                            Messages.CredentialsStoreAction_DeleteCredentialAction()
                     ));
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "move"),
                             getMenuItemIconUrlByClassSpec("icon-credentials-move icon-xlg"),
-                            "Move" // TODO i18n
+                            Messages.CredentialsStoreAction_MoveCredentialAction()
                     ));
                 }
                 return result.items.isEmpty() ? null : result;
@@ -1187,12 +1187,6 @@ public abstract class CredentialsStoreAction
             public String getDisplayName() {
                 return "Credential";
             }
-
-
         }
-
-
     }
-
-
 }
