@@ -45,14 +45,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.model.TransientActionFactory;
 import org.acegisecurity.AccessDeniedException;
 import org.acegisecurity.Authentication;
-import org.jenkins.ui.icon.Icon;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
@@ -154,6 +155,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
 
     /**
      * Exposes the {@link #getStoreActions()} by {@link CredentialsStoreAction#getUrlName()} for Stapler.
+     *
      * @param name the {@link CredentialsStoreAction#getUrlName()} to match.
      * @return the {@link CredentialsStoreAction} or {@code null}
      */
@@ -232,11 +234,20 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         Item item = context instanceof Item ? (Item) context : null;
         ItemGroup group = context instanceof ItemGroup ? (ItemGroup) context
                 : context instanceof User ? Jenkins.getActiveInstance() : null;
+        Set<String> ids = new HashSet<String>();
         for (CredentialsStore p : CredentialsProvider.lookupStores(context)) {
             if (p.hasPermission(CredentialsProvider.VIEW)) {
                 for (Domain domain : p.getDomains()) {
                     for (Credentials c : p.getCredentials(domain)) {
-                        result.add(new TableEntry(p.getProvider(), p, domain, c));
+                        boolean masked;
+                        if (c instanceof IdCredentials) {
+                            String id = ((IdCredentials) c).getId();
+                            masked = ids.contains(id);
+                            ids.add(id);
+                        } else {
+                            masked = false;
+                        }
+                        result.add(new TableEntry(p.getProvider(), p, domain, c, masked));
                     }
                 }
             }
@@ -453,6 +464,10 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
          * The backing {@link Domain}.
          */
         private final Domain domain;
+        /**
+         * Whether this entry's ID is being masked by another entry.
+         */
+        private final boolean masked;
 
         /**
          * Constructor.
@@ -461,13 +476,15 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
          * @param store       the backing {@link CredentialsStore}.
          * @param domain      the backing {@link Domain}.
          * @param credentials the backing {@link Credentials}.
+         * @param masked      whether this entry is masked or not.
          */
         public TableEntry(CredentialsProvider provider, CredentialsStore store,
-                          Domain domain, Credentials credentials) {
+                          Domain domain, Credentials credentials, boolean masked) {
             this.provider = provider;
             this.store = store;
             this.domain = domain;
             this.credentials = credentials;
+            this.masked = masked;
         }
 
         /**
@@ -550,6 +567,15 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         @Override
         public String getIconClassName() {
             return credentials.getDescriptor().getIconClassName();
+        }
+
+        /**
+         * Exposes if this {@link Credentials}'s ID is masked by another credential.
+         *
+         * @return {@code true} if there is a closer credential with the same ID.
+         */
+        public boolean isMasked() {
+            return masked;
         }
     }
 
