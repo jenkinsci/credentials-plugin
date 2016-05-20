@@ -432,7 +432,7 @@ public abstract class CredentialsStore implements AccessControlled {
             return URI.create(request.getContextPath() + "/").normalize().toString();
         }
         if (context instanceof User) {
-            return URI.create(request.getContextPath() + "/" + ((User) context).getUrl())
+            return URI.create(request.getContextPath() + "/" + ((User) context).getUrl()+"/")
                     .normalize().toString();
         }
         return null;

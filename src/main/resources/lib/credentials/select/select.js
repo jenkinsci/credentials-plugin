@@ -1,3 +1,26 @@
+/*
+ * The MIT License
+ *
+ * Copyright (c) 2013-2016, CloudBees, Inc., Stephen Connolly.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 window.credentials = window.credentials || {'dialog': null, 'body': null};
 window.credentials.init = function () {
     if (!(window.credentials.dialog)) {
@@ -17,14 +40,15 @@ window.credentials.init = function () {
     }
 };
 window.credentials.add = function (e) {
-    console.log(e);
     window.credentials.init();
-    new Ajax.Request(rootURL + "/descriptor/com.cloudbees.plugins.credentials.CredentialsSelectHelper/dialog", {
+    new Ajax.Request(e, {
         method: 'get',
         requestHeaders: {'Crumb': crumb},
         onSuccess: function (t) {
             window.credentials.body.innerHTML = t.responseText;
             Behaviour.applySubtree(window.credentials.body, false);
+            window.credentials.form = $('credentials-dialog-form');
+            // window.credentials.form.action = e;
             var r = YAHOO.util.Dom.getClientRegion();
             window.credentials.dialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
             window.credentials.dialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
@@ -147,7 +171,30 @@ window.credentials.addSubmit = function (e) {
     }
     window.credentials.dialog.hide();
     return false;
-}
+};
+Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, function(e){
+    var btn=$(e);
+    var menu=btn.next('DIV.credentials-add-menu-items');
+    var menuAlign = (btn.getAttribute("menualign") || "tl-bl");
+
+    var menuButton = new YAHOO.widget.Button(btn, {
+        type: "menu",
+        menu: menu,
+        menualignment: menuAlign.split("-"),
+        menuminscrollheight: 250
+    });
+    $(menuButton._button).addClassName(btn.className);    // copy class names
+    $(menuButton._button).setAttribute("suffix", btn.getAttribute("suffix"));
+    menuButton.getMenu().clickEvent.subscribe(function (type, args, value) {
+        var item = args[1];
+        if (item.cfg.getProperty("disabled")) {
+            return;
+        }
+        console.log(item.srcElement.getAttribute('data-url'));
+        window.credentials.add(item.srcElement.getAttribute('data-url'));
+    });
+    e=null;
+});
 Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
     makeButton(e, e.disabled ? null : window.credentials.add);
     e = null; // avoid memory leak
