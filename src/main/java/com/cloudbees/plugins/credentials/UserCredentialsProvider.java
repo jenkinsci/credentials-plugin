@@ -382,7 +382,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @NonNull
         private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            if (Jenkins.getActiveInstance().hasPermission(CredentialsProvider.VIEW)) {
+            if (user.equals(User.current())) {
                 List<Credentials> list = getDomainCredentialsMap().get(domain);
                 if (list == null || list.isEmpty()) {
                     return Collections.emptyList();
@@ -460,12 +460,6 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @Override
         public UserProperty reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
-            User selUser = req.findAncestorObject(User.class);
-            User curUser = User.current();
-            // only process changes to this property for the current user
-            if (selUser != null && curUser != null && selUser.getId().equals(curUser.getId())) {
-                return getDescriptor().newInstance(req, form);
-            }
             return this;
         }
 
@@ -498,28 +492,6 @@ public class UserCredentialsProvider extends CredentialsProvider {
             @Override
             public String getDisplayName() {
                 return Messages.UserCredentialsProvider_DisplayName();
-            }
-
-            /**
-             * Whether the credentials should be visible on the user's configure screen.
-             *
-             * @return true if and only if the current request is the current user's configuration screen.
-             */
-            @SuppressWarnings("unused") // used by stapler
-            public boolean isVisible() {
-                if (!isEnabled()) {
-                    // no point bothering the user if there are no credentials aware plugins installed.
-                    return false;
-                }
-                StaplerRequest req = Stapler.getCurrentRequest();
-                if (req == null) {
-                    // does not make sense to pretend to be enabled outside of a stapler request
-                    return false;
-                }
-                User selUser = req.findAncestorObject(User.class);
-                User curUser = User.current();
-                // only enable this property for the current user
-                return selUser != null && curUser != null && selUser.equals(curUser);
             }
 
             /**
