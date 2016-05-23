@@ -38,6 +38,7 @@ import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
 import hudson.model.Saveable;
+import hudson.model.listeners.SaveableListener;
 import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.util.CopyOnWriteMap;
@@ -348,7 +349,9 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      */
     public void save() throws IOException {
         checkPermission(Jenkins.ADMINISTER);
-        getConfigFile().write(this);
+        XmlFile configFile = getConfigFile();
+        configFile.write(this);
+        SaveableListener.fireOnChange(this, configFile);
     }
 
     /**
