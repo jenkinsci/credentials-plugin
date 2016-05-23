@@ -2,13 +2,16 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
+import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.Executor;
 import hudson.model.ParameterValue;
 import hudson.model.Run;
+import hudson.model.User;
 import hudson.model.queue.WorkUnit;
 import hudson.security.ACL;
 import hudson.util.VariableResolver;
@@ -18,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
@@ -132,6 +137,70 @@ public class CredentialsParameterValue extends ParameterValue {
             return CredentialsNameProvider.name(c);
         }
         return Messages.CredentialsParameterValue_NotAvailableToCurrentUser();
+    }
+
+    public String iconClassName() {
+        if (StringUtils.isBlank(value)) {
+            return "";
+        }
+        final Run run = Stapler.getCurrentRequest().findAncestorObject(Run.class);
+        if (run == null) {
+            throw new IllegalStateException("Should only be called from value.jelly");
+        }
+        StandardCredentials c = CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(), ACL.SYSTEM,
+                        Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(value));
+        if (c != null) {
+            return c.getDescriptor().getIconClassName();
+        }
+        c = CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(),
+                        Jenkins.getAuthentication(),
+                        Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(value));
+        if (c != null) {
+            return c.getDescriptor().getIconClassName();
+        }
+        return "icon-credentials-credential";
+    }
+
+    public String url() {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        final Run run = Stapler.getCurrentRequest().findAncestorObject(Run.class);
+        if (run == null) {
+            throw new IllegalStateException("Should only be called from value.jelly");
+        }
+            SecurityContext oldContext = ACL.impersonate(ACL.SYSTEM);
+            try {
+                for (CredentialsStore store : CredentialsProvider.lookupStores(run.getParent())) {
+                    String url = url(store);
+                    if (url != null) {
+                        return url;
+                    }
+                }
+            } finally {
+                SecurityContextHolder.setContext(oldContext);
+            }
+        for (CredentialsStore store: CredentialsProvider.lookupStores(User.current())) {
+            String url = url(store);
+            if (url != null) {
+                return url;
+            }
+        }
+        return null;
+    }
+
+    private String url(CredentialsStore store) {
+        for (Domain d: store.getDomains()) {
+            for (Credentials c: store.getCredentials(d)) {
+                if (c instanceof IdCredentials && value.equals(((IdCredentials) c).getId())) {
+                    String link = store.getRelativeLinkToAction();
+                    return link == null ? null : link + d.getUrl() + "credential/"+ Util.rawEncode(value);
+                }
+            }
+        }
+        return null;
     }
 
     public boolean isDefaultValue() {

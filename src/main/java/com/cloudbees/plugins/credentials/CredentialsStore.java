@@ -451,6 +451,10 @@ public abstract class CredentialsStore implements AccessControlled {
         if (relativeLink == null) {
             return null;
         }
+        CredentialsStoreAction a = getStoreAction();
+        if (a != null) {
+            return relativeLink + "credentials/store/" + a.getUrlName() + "/";
+        }
         List<CredentialsStoreAction> actions;
         if (context instanceof Actionable) {
             actions = ((Actionable) context).getActions(CredentialsStoreAction.class);

@@ -45,6 +45,7 @@ import hudson.security.Permission;
 import hudson.util.CopyOnWriteMap;
 import java.io.IOException;
 import java.io.ObjectStreamException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -730,6 +731,12 @@ public class UserCredentialsProvider extends CredentialsProvider {
         public boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
                                          @NonNull Credentials replacement) throws IOException {
             return getInstance().updateCredentials(domain, current, replacement);
+        }
+
+        @Override
+        public String getRelativeLinkToContext() {
+            StaplerRequest request = Stapler.getCurrentRequest();
+            return URI.create(request.getContextPath() + "/" + user.getUrl() + "/").normalize().toString() ;
         }
     }
 
