@@ -581,7 +581,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @Override
         public String getIconFileName() {
             return isVisible()
-                    ? "/plugin/credentials/images/48x48/user-store.png"
+                    ? "/plugin/credentials/images/24x24/user-store.png"
                     : null;
         }
 

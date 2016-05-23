@@ -608,7 +608,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         @Override
         public String getIconFileName() {
             return isVisible()
-                    ? "/plugin/credentials/images/48x48/system-store.png"
+                    ? "/plugin/credentials/images/24x24/system-store.png"
                     : null;
         }
 

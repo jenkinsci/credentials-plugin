@@ -58,8 +58,8 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  */
 @Extension(ordinal = Integer.MAX_VALUE - 211)
 public class GlobalCredentialsConfiguration extends ManagementLink
-        implements Describable<GlobalCredentialsConfiguration>,
-        IconSpec {
+        implements Describable<GlobalCredentialsConfiguration> // TODO once context menu is Icon spec aware //, IconSpec
+        {
     /**
      * Our logger.
      */
@@ -108,14 +108,16 @@ public class GlobalCredentialsConfiguration extends ManagementLink
         return "configureCredentials";
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getIconClassName() {
-        return ExtensionList.lookup(CredentialsDescriptor.class).isEmpty()
-                ? null
-                : "icon-credentials-credentials";
-    }
+// TODO uncomment once ContextMenu is IconSpec aware
+//    /**
+//     * {@inheritDoc}
+//     */
+//    @Override
+//    public String getIconClassName() {
+//        return ExtensionList.lookup(CredentialsDescriptor.class).isEmpty()
+//                ? null
+//                : "icon-credentials-credentials";
+//    }
 
     /**
      * Handles the form submission

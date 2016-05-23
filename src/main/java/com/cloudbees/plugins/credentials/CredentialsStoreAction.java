@@ -118,7 +118,7 @@ public abstract class CredentialsStoreAction
     @Override
     public String getIconFileName() {
         return isVisible()
-                ? "/plugin/credentials/images/48x48/credentials.png"
+                ? "/plugin/credentials/images/24x24/credentials.png"
                 : null;
     }
 
@@ -188,7 +188,7 @@ public abstract class CredentialsStoreAction
         ContextMenu menu = new ContextMenu();
         if (getStore().isDomainsModifiable() && getStore().hasPermission(MANAGE_DOMAINS)) {
             menu.add(ContextMenuIconUtils.buildUrl(prefix, "newDomain"),
-                    getMenuItemIconUrlByClassSpec("icon-credentials-new-domain icon-xlg"),
+                    getMenuItemIconUrlByClassSpec("icon-credentials-new-domain icon-md"),
                     Messages.CredentialsStoreAction_AddDomainAction()
             );
         }
@@ -210,7 +210,7 @@ public abstract class CredentialsStoreAction
         ContextMenu menu = new ContextMenu();
         for (Domain d : getStore().getDomains()) {
             MenuItem item =
-                    new MenuItem(d.getUrl(), getMenuItemIconUrlByClassSpec("icon-credentials-domain icon-xlg"),
+                    new MenuItem(d.getUrl(), getMenuItemIconUrlByClassSpec("icon-credentials-domain icon-md"),
                             d.isGlobal()
                                     ? Messages.CredentialsStoreAction_GlobalDomainDisplayName()
                                     : d.getName()
@@ -721,13 +721,13 @@ public abstract class CredentialsStoreAction
                 if (getStore().hasPermission(CREATE)) {
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "newCredentials"),
-                            getMenuItemIconUrlByClassSpec("icon-credentials-new-credential icon-xlg"),
+                            getMenuItemIconUrlByClassSpec("icon-credentials-new-credential icon-md"),
                             Messages.CredentialsStoreAction_AddCredentialsAction()
                     ));
                 }
                 if (getStore().hasPermission(MANAGE_DOMAINS) && !domain.isGlobal()) {
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "configure"),
-                            getMenuItemIconUrlByClassSpec("icon-setting icon-xlg"),
+                            getMenuItemIconUrlByClassSpec("icon-setting icon-md"),
                             Messages.CredentialsStoreAction_ConfigureDomainAction()
                     ));
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "delete"),
@@ -754,7 +754,7 @@ public abstract class CredentialsStoreAction
                 String p = ContextMenuIconUtils.buildUrl(prefix, "credential", entry.getKey());
                 MenuItem item =
                         new MenuItem(p,
-                                getMenuItemIconUrlByClassSpec(entry.getValue().getIconClassName() + " icon-xlg"),
+                                getMenuItemIconUrlByClassSpec(entry.getValue().getIconClassName() + " icon-md"),
                                 entry.getValue().getDisplayName()
                         );
                 item.subMenu = entry.getValue().getContextMenu(p);
@@ -1146,7 +1146,7 @@ public abstract class CredentialsStoreAction
                             Messages.CredentialsStoreAction_DeleteCredentialAction()
                     ));
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "move"),
-                            getMenuItemIconUrlByClassSpec("icon-credentials-move icon-xlg"),
+                            getMenuItemIconUrlByClassSpec("icon-credentials-move icon-md"),
                             Messages.CredentialsStoreAction_MoveCredentialAction()
                     ));
                 }
