@@ -404,7 +404,7 @@ public abstract class CredentialsStore implements AccessControlled {
             }
             for (Iterator<CredentialsDescriptor> iterator = result.iterator(); iterator.hasNext(); ) {
                 CredentialsDescriptor d = iterator.next();
-                if (!_isApplicable(d) || !provider._isApplicable(d)) {
+                if (!_isApplicable(d) || !provider._isApplicable(d) || !d.isApplicable(provider)) {
                     iterator.remove();
                 }
             }
