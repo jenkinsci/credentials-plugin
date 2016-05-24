@@ -94,42 +94,44 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         return Messages.CredentialsSelectHelper_DisplayName();
     }
 
-    /**
+   /**
      * Returns the {@link StoreItem} instances for the current Stapler request.
      *
      * @param includeUser {@code true} to also include any User scoped stores.
      * @return the {@link StoreItem} instances for the current Stapler request.
-     * @since 2.0
+     * @since 2.0.5
      */
     @Restricted(NoExternalUse.class)
-    public List<StoreItem> getStoreItems(boolean includeUser) {
+    public List<StoreItem> getStoreItems(ModelObject context, boolean includeUser) {
         List<StoreItem> result = new ArrayList<StoreItem>();
-        StaplerRequest request = Stapler.getCurrentRequest();
-        if (request != null) {
-            ModelObject context = request.findAncestorObject(ModelObject.class);
-            if (context != null) {
-                for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
-                    result.add(new StoreItem(store));
+        if (context == null) {
+            StaplerRequest request = Stapler.getCurrentRequest();
+            if (request != null) {
+                context = request.findAncestorObject(ModelObject.class);
+            }
+        }
+        if (context != null) {
+            for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
+                result.add(new StoreItem(store));
+            }
+        }
+        if (includeUser) {
+            boolean hasPermission = false;
+            ModelObject current = context;
+            while (current != null) {
+                if (current instanceof AccessControlled) {
+                    hasPermission = ((AccessControlled) current).hasPermission(CredentialsProvider.USE_OWN);
+                    break;
+                } else if (current instanceof ComputerSet) {
+                    current = Jenkins.getActiveInstance();
+                } else {
+                    // fall back to Jenkins as the ultimate parent of everything else
+                    current = Jenkins.getActiveInstance();
                 }
             }
-            if (includeUser) {
-                boolean hasPermission = false;
-                ModelObject current = context;
-                while (current != null) {
-                    if (current instanceof AccessControlled) {
-                        hasPermission = ((AccessControlled) current).hasPermission(CredentialsProvider.USE_OWN);
-                        break;
-                    } else if (current instanceof ComputerSet) {
-                        current = Jenkins.getActiveInstance();
-                    } else {
-                        // fall back to Jenkins as the ultimate parent of everything else
-                        current = Jenkins.getActiveInstance();
-                    }
-                }
-                if (hasPermission) {
-                    for (CredentialsStore store : CredentialsProvider.lookupStores(User.current())) {
-                        result.add(new StoreItem(store));
-                    }
+            if (hasPermission) {
+                for (CredentialsStore store : CredentialsProvider.lookupStores(User.current())) {
+                    result.add(new StoreItem(store));
                 }
             }
         }
