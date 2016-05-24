@@ -66,6 +66,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
+import org.acegisecurity.userdetails.UsernameNotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 
@@ -517,11 +518,26 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                 iterator = providers.iterator();
                             } else if (current instanceof User) {
                                 Jenkins jenkins = Jenkins.getActiveInstance();
-                                if (jenkins.getACL().hasPermission(((User) current).impersonate(), USE_ITEM)) {
+                                Authentication a;
+                                if (jenkins.hasPermission(USE_ITEM) && current == User.current()) {
+                                    // this is the fast path for the 99% of cases
+                                    a = Jenkins.getAuthentication();
+                                } else {
+                                    try {
+                                        a = ((User) current).impersonate();
+                                    } catch (UsernameNotFoundException e) {
+                                        a = null;
+                                    }
+                                }
+                                if (current == User.current() && jenkins.getACL().hasPermission(a, USE_ITEM)) {
                                     current = jenkins;
+                                    iterator = providers.iterator();
                                 } else {
                                     current = null;
                                 }
+                            } else if (current instanceof Jenkins) {
+                                // escape
+                                current = null;
                             } else if (current instanceof ComputerSet) {
                                 current = Jenkins.getActiveInstance();
                                 iterator = providers.iterator();
@@ -531,9 +547,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                             } else if (current instanceof Node) {
                                 current = Jenkins.getActiveInstance();
                                 iterator = providers.iterator();
-                            } else if (current instanceof Jenkins) {
-                                // escape
-                                current = null;
                             } else {
                                 // fall back to Jenkins as the ultimate parent of everything else
                                 current = Jenkins.getActiveInstance();
