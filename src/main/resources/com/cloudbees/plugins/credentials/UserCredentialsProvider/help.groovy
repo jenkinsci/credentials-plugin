@@ -34,7 +34,7 @@ div() {
             text(_("Immediate operations performed by the user who defined the credentials"))
         }
         def p = CredentialsProvider.USE_OWN;
-        while (false && p != null && !p.enabled) {
+        while (p != null && !p.enabled) {
             p = p.impliedBy
         };
         if (p != null) {

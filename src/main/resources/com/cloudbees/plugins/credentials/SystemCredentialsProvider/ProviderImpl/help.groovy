@@ -37,7 +37,7 @@ div() {
             }
         }
         def p = CredentialsProvider.USE_ITEM;
-        while (false && p!=null && !p.enabled) {
+        while (p!=null && !p.enabled) {
             p = p.impliedBy
         };
         if (p != null) {
