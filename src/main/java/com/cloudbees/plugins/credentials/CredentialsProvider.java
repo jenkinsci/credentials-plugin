@@ -32,6 +32,8 @@ import hudson.DescriptorExtensionList;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.model.Cause;
+import hudson.model.Computer;
+import hudson.model.ComputerSet;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.DescriptorVisibilityFilter;
@@ -39,6 +41,7 @@ import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
 import hudson.model.ModelObject;
+import hudson.model.Node;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.Queue;
@@ -507,13 +510,34 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                     return true;
                                 }
                             }
+                            // now walk up the model object tree
+                            // TODO make this an extension point perhaps ContextResolver could help
                             if (current instanceof Item) {
                                 current = ((Item) current).getParent();
                                 iterator = providers.iterator();
                             } else if (current instanceof User) {
-                                current = null;
+                                Jenkins jenkins = Jenkins.getActiveInstance();
+                                if (jenkins.getACL().hasPermission(((User) current).impersonate(), USE_ITEM)) {
+                                    current = jenkins;
+                                } else {
+                                    current = null;
+                                }
+                            } else if (current instanceof ComputerSet) {
+                                current = Jenkins.getActiveInstance();
+                                iterator = providers.iterator();
+                            } else if (current instanceof Computer) {
+                                current = Jenkins.getActiveInstance();
+                                iterator = providers.iterator();
+                            } else if (current instanceof Node) {
+                                current = Jenkins.getActiveInstance();
+                                iterator = providers.iterator();
                             } else if (current instanceof Jenkins) {
+                                // escape
                                 current = null;
+                            } else {
+                                // fall back to Jenkins as the ultimate parent of everything else
+                                current = Jenkins.getActiveInstance();
+                                iterator = providers.iterator();
                             }
                         }
                         return false;

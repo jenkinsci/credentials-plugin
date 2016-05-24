@@ -29,6 +29,8 @@ import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.Util;
+import hudson.model.Computer;
+import hudson.model.ComputerSet;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Item;
@@ -117,13 +119,11 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                     if (current instanceof AccessControlled) {
                         hasPermission = ((AccessControlled) current).hasPermission(CredentialsProvider.USE_OWN);
                         break;
-                    }
-                    if (current instanceof Item) {
-                        current = ((Item) current).getParent();
-                    } else if (current instanceof User) {
-                        current = null;
-                    } else if (current instanceof Jenkins) {
-                        current = null;
+                    } else if (current instanceof ComputerSet) {
+                        current = Jenkins.getActiveInstance();
+                    } else {
+                        // fall back to Jenkins as the ultimate parent of everything else
+                        current = Jenkins.getActiveInstance();
                     }
                 }
                 if (hasPermission) {
