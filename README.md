@@ -10,7 +10,7 @@ File bug reports here: https://issues.jenkins-ci.org/browse/JENKINS/component/16
 
 **DO NOT USE GITHUB ISSUES**
 
-![NO GITHUB ISSUES](https://imgflip.com/i/14qft3)
+![NO GITHUB ISSUES](https://i.imgflip.com/14qft3.jpg)
 
 Development
 ===========
