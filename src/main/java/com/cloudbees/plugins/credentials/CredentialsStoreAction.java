@@ -1008,9 +1008,6 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
-            if (!getStore().isDomainsModifiable()) {
-                return HttpResponses.status(400);
-            }
             getStore().checkPermission(DELETE);
             if (getStore().removeCredentials(domain.getDomain(), credentials)) {
                 return HttpResponses.redirectTo("../..");
@@ -1030,7 +1027,7 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoMove(StaplerRequest req, @QueryParameter String destination) throws IOException {
-            if (!getStore().isDomainsModifiable()) {
+            if (getStore().getDomains().size() <= 1) {
                 return HttpResponses.status(400);
             }
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
