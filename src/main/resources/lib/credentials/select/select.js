@@ -172,27 +172,28 @@ window.credentials.addSubmit = function (e) {
     window.credentials.dialog.hide();
     return false;
 };
-Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, function(e){
-    var btn=$(e);
-    var menu=btn.next('DIV.credentials-add-menu-items');
-    var menuAlign = (btn.getAttribute("menualign") || "tl-bl");
+Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, function(e) {
+    var btn = $(e);
+    var menu = btn.next('DIV.credentials-add-menu-items');
+    if (menu) {
+        var menuAlign = (btn.getAttribute("menualign") || "tl-bl");
 
-    var menuButton = new YAHOO.widget.Button(btn, {
-        type: "menu",
-        menu: menu,
-        menualignment: menuAlign.split("-"),
-        menuminscrollheight: 250
-    });
-    $(menuButton._button).addClassName(btn.className);    // copy class names
-    $(menuButton._button).setAttribute("suffix", btn.getAttribute("suffix"));
-    menuButton.getMenu().clickEvent.subscribe(function (type, args, value) {
-        var item = args[1];
-        if (item.cfg.getProperty("disabled")) {
-            return;
-        }
-        console.log(item.srcElement.getAttribute('data-url'));
-        window.credentials.add(item.srcElement.getAttribute('data-url'));
-    });
+        var menuButton = new YAHOO.widget.Button(btn, {
+            type: "menu",
+            menu: menu,
+            menualignment: menuAlign.split("-"),
+            menuminscrollheight: 250
+        });
+        $(menuButton._button).addClassName(btn.className);    // copy class names
+        $(menuButton._button).setAttribute("suffix", btn.getAttribute("suffix"));
+        menuButton.getMenu().clickEvent.subscribe(function (type, args, value) {
+            var item = args[1];
+            if (item.cfg.getProperty("disabled")) {
+                return;
+            }
+            window.credentials.add(item.srcElement.getAttribute('data-url'));
+        });
+    }
     e=null;
 });
 Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
