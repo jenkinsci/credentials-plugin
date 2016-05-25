@@ -3,14 +3,14 @@ Jenkins Credentials Plugin
 
 Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin)
 
+![NO GITHUB ISSUES](https://i.imgflip.com/14qfvv.jpg)
+
 Bug Reports
 ===========
 
 File bug reports here: https://issues.jenkins-ci.org/browse/JENKINS/component/16523
 
-**DO NOT USE GITHUB ISSUES**
-
-![NO GITHUB ISSUES](https://i.imgflip.com/14qfvv.jpg)
+**DO NOT USE GITHUB ISSUES** Any GitHub Issues will be ignored and closed as soon as they are spotted.
 
 Development
 ===========
