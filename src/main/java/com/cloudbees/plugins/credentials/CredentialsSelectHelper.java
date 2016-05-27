@@ -94,9 +94,30 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         return Messages.CredentialsSelectHelper_DisplayName();
     }
 
+    /**
+     * Fixes up the context in case we are called from a page where the context is not a ModelObject.
+     *
+     * @param context the initial guess of the context.
+     * @return the resolved context.
+     * @since 2.0.7
+     */
+    @CheckForNull
+    @Restricted(NoExternalUse.class)
+    public ModelObject resolveContext(Object context) {
+        if (context instanceof ModelObject) {
+            return (ModelObject) context;
+        }
+        StaplerRequest request = Stapler.getCurrentRequest();
+        if (request != null) {
+            return request.findAncestorObject(ModelObject.class);
+        }
+        return null;
+    }
+
    /**
      * Returns the {@link StoreItem} instances for the current Stapler request.
      *
+     * @param context  the context in which to retrieve the store items.
      * @param includeUser {@code true} to also include any User scoped stores.
      * @return the {@link StoreItem} instances for the current Stapler request.
      * @since 2.0.5
