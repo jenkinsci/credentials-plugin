@@ -33,7 +33,7 @@
   </parent>
 
   <artifactId>credentials</artifactId>
-  <version>2.0.7-SNAPSHOT</version>
+  <version>2.0.7</version>
   <packaging>hpi</packaging>
 
   <name>Credentials Plugin</name>
@@ -64,7 +64,7 @@
     <connection>scm:git:git://github.com/jenkinsci/credentials-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/credentials-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/credentials-plugin</url>
-    <tag>HEAD</tag>
+    <tag>credentials-2.0.7</tag>
   </scm>
 
   <properties>
