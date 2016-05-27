@@ -215,8 +215,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             this.url = token == null
                     ? null
                     : String.format(
-                            "%sdescriptor/%s/resolver/%s/provider/%s/context/%s",
-                            Jenkins.getActiveInstance().getRootUrlFromRequest(),
+                            "descriptor/%s/resolver/%s/provider/%s/context/%s",
                             CredentialsSelectHelper.class.getName(),
                             Util.rawEncode(resolver),
                             Util.rawEncode(provider),
