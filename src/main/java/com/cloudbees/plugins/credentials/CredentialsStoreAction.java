@@ -48,6 +48,7 @@ import hudson.security.Permission;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -79,6 +80,7 @@ import static com.cloudbees.plugins.credentials.ContextMenuIconUtils.getMenuItem
 /**
  * An action for a {@link CredentialsStore}
  */
+@ExportedBean
 public abstract class CredentialsStoreAction
         implements Action, IconSpec, AccessControlled, ModelObjectWithContextMenu, ModelObjectWithChildren {
 
@@ -109,7 +111,6 @@ public abstract class CredentialsStoreAction
      * @return the {@link CredentialsStore}.
      */
     @NonNull
-    @Exported
     public abstract CredentialsStore getStore();
 
     /**
@@ -609,7 +610,6 @@ public abstract class CredentialsStoreAction
          *
          * @return a map of the wrapped credentials.
          */
-        @Exported
         @NonNull
         public Map<String, CredentialsWrapper> getCredentials() {
             Map<String, CredentialsWrapper> result = new LinkedHashMap<String, CredentialsWrapper>();
@@ -628,6 +628,18 @@ public abstract class CredentialsStoreAction
                 result.put(id, new CredentialsWrapper(this, c, id));
             }
             return result;
+        }
+
+        /**
+         * Exposes the wrapped credentials for the XML API.
+         *
+         * @return the wrapped credentials for the XML API.
+         * @since 2.0.8
+         */
+        @NonNull
+        @Exported(name = "credentials", visibility = 1)
+        public List<CredentialsWrapper> getCredentialsList() {
+            return new ArrayList<CredentialsWrapper>(getCredentials().values());
         }
 
         /**
@@ -872,6 +884,17 @@ public abstract class CredentialsStoreAction
             this.domain = domain;
             this.credentials = credentials;
             this.id = id;
+        }
+
+        /**
+         * Return the id for the XML API.
+         *
+         * @return the id.
+         * @since 2.0.8
+         */
+        @Exported
+        public String getId() {
+            return id;
         }
 
         /**

@@ -47,7 +47,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import jenkins.model.ModelObjectWithContextMenu;
@@ -57,10 +59,13 @@ import org.acegisecurity.Authentication;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
 /**
  * An {@link Action} that lets you view the available credentials for any {@link ModelObject}.
  */
+@ExportedBean
 public class ViewCredentialsAction implements Action, IconSpec, AccessControlled, ModelObjectWithContextMenu {
 
     /**
@@ -149,6 +154,23 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
                     result.add(action);
                 }
             }
+        }
+        return result;
+    }
+
+    /**
+     * Exposes the {@link #getLocalStores()} for the XML API.
+     *
+     * @return the {@link #getLocalStores()} for the XML API.
+     * @since 2.0.8
+     */
+    @NonNull
+    @SuppressWarnings("unused") // Stapler XML/JSON API
+    @Exported(name = "stores")
+    public Map<String,CredentialsStoreAction> getStoreActionsMap() {
+        Map<String,CredentialsStoreAction> result = new TreeMap<String, CredentialsStoreAction>();
+        for (CredentialsStoreAction a: getStoreActions()) {
+            result.put(a.getUrlName(), a);
         }
         return result;
     }
