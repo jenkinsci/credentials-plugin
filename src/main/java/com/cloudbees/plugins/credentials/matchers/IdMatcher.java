@@ -27,13 +27,14 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * Matches credentials that are {@link IdCredentials} and have the specified {@link IdCredentials#getId()}.
  *
  * @since 1.5
  */
-public class IdMatcher implements CredentialsMatcher {
+public class IdMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
      * The id to match.
      */
@@ -66,5 +67,13 @@ public class IdMatcher implements CredentialsMatcher {
         sb.append("id='").append(id).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String describe() {
+        return String.format("(c.id == \"%s\")", StringEscapeUtils.escapeJava(id));
     }
 }

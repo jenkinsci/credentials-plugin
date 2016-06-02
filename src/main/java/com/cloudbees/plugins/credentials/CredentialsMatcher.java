@@ -23,11 +23,14 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.Serializable;
 
 /**
- * Something that matches credentials.
+ * Something that matches credentials. Best practice is to also implement {@link CredentialsMatcher.CQL} and return
+ * a description of the matcher logic using the CQL syntax detailed in
+ * {@link CredentialsMatchers#describe(CredentialsMatcher)}
  *
  * @since 1.5
  */
@@ -39,4 +42,18 @@ public interface CredentialsMatcher extends Serializable {
      * @return {@code true} if and only if the specified credentials match.
      */
     boolean matches(@NonNull Credentials item);
+
+    /**
+     * A mix-in interface to allow describing a credentials matcher.
+     * @since 2.0.8
+     */
+    interface CQL extends CredentialsMatcher {
+        /**
+         * Describes this matcher in terms of a java-bean style query language
+         * @return the description of the credentials matcher query or {@code null} if the matcher cannot be expressed
+         * in CQL.
+         */
+        @CheckForNull
+        String describe();
+    }
 }

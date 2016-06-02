@@ -32,7 +32,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *
  * @since 1.5
  */
-public class ConstantMatcher implements CredentialsMatcher {
+public class ConstantMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
      * Whether to match.
      */
@@ -63,5 +63,13 @@ public class ConstantMatcher implements CredentialsMatcher {
         sb.append("match=").append(match);
         sb.append('}');
         return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String describe() {
+        return Boolean.toString(match);
     }
 }

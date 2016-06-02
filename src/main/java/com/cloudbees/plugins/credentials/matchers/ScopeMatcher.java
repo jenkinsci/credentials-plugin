@@ -39,7 +39,7 @@ import java.util.Set;
  *
  * @since 1.5
  */
-public class ScopeMatcher implements CredentialsMatcher {
+public class ScopeMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
      * The scopes to match.
      */
@@ -89,6 +89,29 @@ public class ScopeMatcher implements CredentialsMatcher {
         final StringBuilder sb = new StringBuilder("ScopeMatcher{");
         sb.append("scopes=").append(scopes);
         sb.append('}');
+        return sb.toString();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String describe() {
+        if (scopes.isEmpty()) {
+            return "false";
+        }
+        StringBuilder sb = new StringBuilder("(");
+        boolean first = true;
+        for (CredentialsScope s : scopes) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(" || ");
+            }
+            sb.append("c.scope == ");
+            sb.append(CredentialsScope.class.getName());
+            sb.append('.');
+            sb.append(s.name());
+        }
+        sb.append(")");
         return sb.toString();
     }
 }

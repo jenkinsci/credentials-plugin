@@ -372,4 +372,19 @@ public class CredentialsMatchers {
                                                         @NonNull CredentialsMatcher matcher) {
         return firstOrDefault(credentials, matcher, null);
     }
+
+    /**
+     * Attempts to describe the supplied {@link CredentialsMatcher} in terms of a Credentials Query Language. The basic
+     * form of the query language should follow Java expression syntax assuming that there is one variable in scope,
+     * namely the credential <code>c</code>. Java Bean style property access will be used to refer to fields.
+     *
+     * @param matcher the {@link CredentialsMatcher} to describe.
+     * @return the CQL description or {@code null} if the {@link CredentialsMatcher} cannot be mapped to CQL.
+     */
+    @CheckForNull
+    public static String describe(CredentialsMatcher matcher) {
+        return matcher instanceof CredentialsMatcher.CQL ? ((CredentialsMatcher.CQL) matcher).describe() : null;
+    }
+
+    // TODO implement a parse method to turn a CQL string into a matcher... but this is a long term goal not required
 }

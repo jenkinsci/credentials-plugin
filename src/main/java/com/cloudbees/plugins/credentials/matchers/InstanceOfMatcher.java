@@ -32,7 +32,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *
  * @since 1.5
  */
-public class InstanceOfMatcher implements CredentialsMatcher {
+public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
      * The type that the credentials must implement
      */
@@ -65,5 +65,13 @@ public class InstanceOfMatcher implements CredentialsMatcher {
         sb.append("clazz=").append(clazz);
         sb.append('}');
         return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String describe() {
+        return String.format("(c instanceof %s)", clazz.getName());
     }
 }

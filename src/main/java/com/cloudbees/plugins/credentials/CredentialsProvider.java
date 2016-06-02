@@ -52,13 +52,17 @@ import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
+import hudson.util.ListBoxModel;
+import java.text.Collator;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -69,6 +73,8 @@ import org.acegisecurity.Authentication;
 import org.acegisecurity.userdetails.UsernameNotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * An extension point for providing {@link Credentials}.
@@ -371,6 +377,54 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
+     * Returns a {@link ListBoxModel} of all credentials which are available to the specified {@link Authentication}
+     * for use by the {@link Item}s in the specified {@link ItemGroup}.
+     *
+     * @param type               the type of credentials to get.
+     * @param authentication     the authentication.
+     * @param itemGroup          the item group.
+     * @param domainRequirements the credential domains to match.
+     * @param matcher            the additional filtering to apply to the credentials
+     * @param <C>                the credentials type.
+     * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with the corresponding display names as
+     * provided by {@link CredentialsNameProvider}.
+     * @since 2.0.8
+     */
+    public static <C extends IdCredentials> ListBoxModel listCredentials(@NonNull Class<C> type,
+                                                                         @Nullable ItemGroup itemGroup,
+                                                                         @Nullable Authentication authentication,
+                                                                         @Nullable List<DomainRequirement>
+                                                                                 domainRequirements,
+                                                                         @Nullable CredentialsMatcher matcher) {
+        type.getClass(); // throw NPE if null
+        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
+        Jenkins jenkins = Jenkins.getActiveInstance();
+        itemGroup = itemGroup == null ? jenkins : itemGroup;
+        authentication = authentication == null ? ACL.SYSTEM : authentication;
+        domainRequirements = domainRequirements == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+        matcher = matcher == null ? CredentialsMatchers.always() : matcher;
+        CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
+        if (resolver != null && IdCredentials.class.isAssignableFrom(resolver.getFromClass())) {
+            LOGGER.log(Level.FINE, "Listing legacy credentials of type {0} identified by resolver {1}",
+                    new Object[]{type, resolver});
+            return listCredentials((Class)resolver.getFromClass(), itemGroup, authentication, domainRequirements, matcher);
+        }
+        ListBoxModel result = new ListBoxModel();
+        for (CredentialsProvider provider : all()) {
+            if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
+                try {
+                    result.addAll(provider.getCredentialIds(type, itemGroup, authentication, domainRequirements, matcher));
+                } catch (NoClassDefFoundError e) {
+                    LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
+                            + " likely due to missing optional dependency", e);
+                }
+            }
+        }
+        Collections.sort(result, new ListBoxModelOptionComparator());
+        return result;
+    }
+
+    /**
      * Returns all credentials which are available to the specified {@link Authentication}
      * for use by the specified {@link Item}.
      *
@@ -412,7 +466,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                             domainRequirements) {
         type.getClass(); // throw NPE if null
         if (item == null) {
-            return lookupCredentials(type, Jenkins.getInstance(), authentication);
+            return lookupCredentials(type, Jenkins.getInstance(), authentication, domainRequirements);
         }
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
@@ -439,6 +493,56 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         }
 
         Collections.sort(result, new CredentialsNameComparator());
+        return result;
+    }
+
+    /**
+     * Returns a {@link ListBoxModel} of all credentials which are available to the specified {@link Authentication}
+     * for use by the specified {@link Item}.
+     *
+     * @param type               the type of credentials to get.
+     * @param authentication     the authentication.
+     * @param item               the item.
+     * @param domainRequirements the credential domains to match.
+     * @param matcher            the additional filtering to apply to the credentials
+     * @param <C>                the credentials type.
+     * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with the corresponding display names as
+     * provided by {@link CredentialsNameProvider}.
+     * @since 2.0.8
+     */
+    @NonNull
+    public static <C extends IdCredentials> ListBoxModel listCredentials(@NonNull Class<C> type,
+                                                                         @Nullable Item item,
+                                                                         @Nullable Authentication authentication,
+                                                                         @Nullable List<DomainRequirement>
+                                                                                        domainRequirements,
+                                                                         @Nullable CredentialsMatcher matcher) {
+        type.getClass(); // throw NPE if null
+        if (item == null) {
+            return listCredentials(type, Jenkins.getInstance(), authentication, domainRequirements, matcher);
+        }
+        authentication = authentication == null ? ACL.SYSTEM : authentication;
+        domainRequirements = domainRequirements
+                == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+        CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
+        if (resolver != null && IdCredentials.class.isAssignableFrom(resolver.getFromClass())) {
+            LOGGER.log(Level.FINE, "Listing legacy credentials of type {0} identified by resolver {1}",
+                    new Object[]{type, resolver});
+            return listCredentials((Class) resolver.getFromClass(), item, authentication,
+                    domainRequirements, matcher);
+        }
+        ListBoxModel result = new ListBoxModel();
+        for (CredentialsProvider provider : all()) {
+            if (provider.isEnabled(item) && provider.isApplicable(type)) {
+                try {
+                    result.addAll(provider.getCredentialIds(type, item, authentication, domainRequirements, matcher));
+                } catch (NoClassDefFoundError e) {
+                    LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
+                            + " likely due to missing optional dependency", e);
+                }
+            }
+        }
+        Collections.sort(result, new ListBoxModelOptionComparator());
         return result;
     }
 
@@ -923,7 +1027,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param itemGroup          the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
      * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
      * @param domainRequirements the credential domains to match (if the {@link CredentialsProvider} does not support
-     *                           {@link com.cloudbees.plugins.credentials.domains.DomainRequirement}s then it should
+     *                           {@link DomainRequirement}s then it should
      *                           assume the match is true).
      * @param <C>                the credentials type.
      * @return the list of credentials.
@@ -935,6 +1039,43 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @Nullable Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
         return getCredentials(type, itemGroup, authentication);
+    }
+
+    /**
+     * Returns a {@link ListBoxModel} of the credentials provided by this provider which are available to the
+     * specified {@link Authentication} for items in the specified {@link ItemGroup} and are appropriate for the
+     * specified {@link DomainRequirement}s.
+     * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
+     * is being stored external from Jenkins and the non-secret information can be accessed with lesser tracability
+     * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
+     * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
+     * instance to apply the matcher against if {@link CredentialsMatchers#describe(CredentialsMatcher)} returns
+     * {@code null}
+     *
+     * @param <C>                the credentials type.
+     * @param type               the type of credentials to return.
+     * @param itemGroup          the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
+     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM}.
+     * @param domainRequirements the credential domain to match.
+     * @param matcher            the additional filtering to apply to the credentials
+     * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with names provided by
+     * {@link CredentialsNameProvider}.
+     * @since 2.0.8
+     */
+    @NonNull
+    public <C extends IdCredentials> ListBoxModel getCredentialIds(@NonNull Class<C> type,
+                                                                   @Nullable ItemGroup itemGroup,
+                                                                   @Nullable Authentication authentication,
+                                                                   @NonNull
+                                                                           List<DomainRequirement> domainRequirements,
+                                                                   @NonNull CredentialsMatcher matcher) {
+        ListBoxModel result = new ListBoxModel();
+        for (IdCredentials c : getCredentials(type, itemGroup, authentication, domainRequirements)) {
+            if (matcher.matches(c)) {
+                result.add(CredentialsNameProvider.name(c), c.getId());
+            }
+        }
+        return result;
     }
 
     /**
@@ -957,8 +1098,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
     /**
      * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for items in the specified {@link Item} and are appropriate for the specified {@link com.cloudbees.plugins
-     * .credentials.domains.DomainRequirement}s.
+     * for the specified {@link Item} and are appropriate for the specified {@link DomainRequirement}s.
      *
      * @param type               the type of credentials to return.
      * @param item               the item.
@@ -974,6 +1114,41 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @Nullable Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
         return getCredentials(type, item.getParent(), authentication, domainRequirements);
+    }
+
+    /**
+     * Returns a {@link ListBoxModel} of the credentials provided by this provider which are available to the
+     * specified {@link Authentication} for the specified {@link Item} and are appropriate for the
+     * specified {@link DomainRequirement}s.
+     * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
+     * is being stored external from Jenkins and the non-secret information can be accessed with lesser tracability
+     * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
+     * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
+     * instance to apply the matcher against.
+     *
+     * @param type               the type of credentials to return.
+     * @param item               the item.
+     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param domainRequirements the credential domain to match.
+     * @param matcher            the additional filtering to apply to the credentials
+     * @param <C>                the credentials type.
+     * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with names provided by
+     * {@link CredentialsNameProvider}.
+     * @since 2.0.8
+     */
+    @NonNull
+    public <C extends IdCredentials> ListBoxModel getCredentialIds(@NonNull Class<C> type,
+                                                                   @NonNull Item item,
+                                                                   @Nullable Authentication authentication,
+                                                                   @NonNull List<DomainRequirement> domainRequirements,
+                                                                   @NonNull CredentialsMatcher matcher) {
+        ListBoxModel result = new ListBoxModel();
+        for (IdCredentials c : getCredentials(type, item, authentication, domainRequirements)) {
+            if (matcher.matches(c)) {
+                result.add(CredentialsNameProvider.name(c), c.getId());
+            }
+        }
+        return result;
     }
 
     /**
@@ -1083,5 +1258,35 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         return false;
     }
 
+    /**
+     * A {@link Comparator} for {@link ListBoxModel.Option} instances.
+     * @since 2.0.8
+     */
+    private static class ListBoxModelOptionComparator implements Comparator<ListBoxModel.Option> {
+        /**
+         * The locale to compare with.
+         */
+        private final Locale locale;
+        /**
+         * The {@link Collator}
+         */
+        private transient Collator collator;
+
+        public ListBoxModelOptionComparator() {
+            StaplerRequest req = Stapler.getCurrentRequest();
+            if (req != null) {
+                locale = req.getLocale();
+            } else {
+                locale = Locale.getDefault();
+            }
+            collator = Collator.getInstance(locale);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int compare(ListBoxModel.Option o1, ListBoxModel.Option o2) {
+            return collator.compare(o1.name.toLowerCase(locale), o2.name.toLowerCase(locale));
+        }
+    }
 }
 

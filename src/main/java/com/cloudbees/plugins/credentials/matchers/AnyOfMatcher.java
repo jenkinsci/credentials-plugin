@@ -36,7 +36,7 @@ import java.util.List;
  *
  * @since 1.5
  */
-public class AnyOfMatcher implements CredentialsMatcher {
+public class AnyOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
 
     /**
      * The matchers to match.
@@ -74,6 +74,33 @@ public class AnyOfMatcher implements CredentialsMatcher {
         final StringBuilder sb = new StringBuilder("AnyMatcher{");
         sb.append("matchers=").append(matchers);
         sb.append('}');
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @CheckForNull
+    public String describe() {
+        if (matchers.isEmpty()) {
+            return "true";
+        }
+        final StringBuilder sb = new StringBuilder("(");
+        boolean first = true;
+        for (CredentialsMatcher m : matchers) {
+            String description = m instanceof CQL ? ((CQL) m).describe() : null;
+            if (description == null) {
+                return null;
+            }
+            if (first) {
+                first = false;
+            } else {
+                sb.append(" || ");
+            }
+            sb.append(description);
+        }
+        sb.append(")");
         return sb.toString();
     }
 }
