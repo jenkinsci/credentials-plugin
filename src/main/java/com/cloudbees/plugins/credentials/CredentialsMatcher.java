@@ -32,8 +32,8 @@ import java.io.Serializable;
  * <ul>
  * <li>Also implement {@link CredentialsMatcher.CQL} and return a description of the matcher logic using the CQL
  * syntax detailed in {@link CredentialsMatchers#describe(CredentialsMatcher)}</li>
- * <li>Implement {@link #toString()}</li>
- * <li>Implement {@link #equals(Object)} and {@link #hashCode()}</li>
+ * <li>Implement {@link Object#toString()}</li>
+ * <li>Implement {@link Object#equals(Object)} and {@link Object#hashCode()}</li>
  * <li>Define a {@code serialVersionUID} field to ensure consistent serialization</li>
  * </ul>
  *
