@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.text.Collator;
 import java.util.Comparator;
 import java.util.Locale;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -85,7 +86,8 @@ public class CredentialsNameComparator implements Comparator<Credentials>, Seria
             StaplerRequest req = Stapler.getCurrentRequest();
             if (req != null) {
                 locale = req.getLocale();
-            } else {
+            }
+            if (locale == null) {
                 locale = Locale.getDefault();
             }
         }
@@ -98,8 +100,8 @@ public class CredentialsNameComparator implements Comparator<Credentials>, Seria
      */
     @Override
     public int compare(Credentials c1, Credentials c2) {
-        final String n1 = CredentialsNameProvider.name(c1);
-        final String n2 = CredentialsNameProvider.name(c2);
+        final String n1 = StringUtils.defaultString(CredentialsNameProvider.name(c1));
+        final String n2 = StringUtils.defaultString(CredentialsNameProvider.name(c2));
         if (collator == null) {
             // in the event of a race condition this will be effectively idempotent so no need for synchronization.
             collator = Collator.getInstance(locale);
