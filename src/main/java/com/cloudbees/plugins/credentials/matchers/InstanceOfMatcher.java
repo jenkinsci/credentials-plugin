@@ -67,7 +67,7 @@ public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher
      */
     @Override
     public String describe() {
-        return String.format("(c instanceof %s)", clazz.getName());
+        return String.format("(instanceof %s)", clazz.getName());
     }
 
     /**

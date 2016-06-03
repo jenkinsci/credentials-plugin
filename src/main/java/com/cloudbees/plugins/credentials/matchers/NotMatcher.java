@@ -68,7 +68,7 @@ public class NotMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     @Override
     public String describe() {
         String description = matcher instanceof CQL ? ((CQL) matcher).describe() : null;
-        return description == null ? null : String.format("!(%s)", description);
+        return description == null ? null : description.startsWith("(") && description.endsWith(")") ? "!" + description : String.format("!(%s)", description);
     }
 
     /**

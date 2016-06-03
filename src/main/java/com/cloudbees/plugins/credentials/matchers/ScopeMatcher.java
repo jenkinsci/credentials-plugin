@@ -96,17 +96,25 @@ public class ScopeMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
             return "false";
         }
         StringBuilder sb = new StringBuilder("(");
-        boolean first = true;
-        for (CredentialsScope s : scopes) {
-            if (first) {
-                first = false;
-            } else {
-                sb.append(" || ");
-            }
-            sb.append("c.scope == ");
+        if (scopes.size() == 1) {
+            sb.append("scope == ");
             sb.append(CredentialsScope.class.getName());
             sb.append('.');
-            sb.append(s.name());
+            sb.append(scopes.iterator().next().name());
+        } else {
+            boolean first = true;
+            for (CredentialsScope s : scopes) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(" || ");
+                }
+                sb.append("(scope == ");
+                sb.append(CredentialsScope.class.getName());
+                sb.append('.');
+                sb.append(s.name());
+                sb.append(')');
+            }
         }
         sb.append(")");
         return sb.toString();

@@ -1,3 +1,26 @@
+/*
+ * The MIT License
+ *
+ * Copyright (c) 2016, CloudBees, Inc., Stephen Connolly.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 package com.cloudbees.plugins.credentials.matchers;
 
 import com.cloudbees.plugins.credentials.Credentials;
@@ -51,19 +74,22 @@ public class BeanPropertyMatcher<T extends Serializable> implements CredentialsM
     @Override
     public String describe() {
         if (expected == null) {
-            return String.format("(c.%s == null)", name);
+            return String.format("(%s == null)", name);
         }
         if (expected instanceof String) {
-            return String.format("(c.%s == \"%s\")", name, StringEscapeUtils.escapeJava((String) expected));
+            return String.format("(%s == \"%s\")", name, StringEscapeUtils.escapeJava((String) expected));
+        }
+        if (expected instanceof Character) {
+            return String.format("(%s == \'%s\')", name, StringEscapeUtils.escapeJava(expected.toString()));
         }
         if (expected instanceof Number) {
-            return String.format("(c.%s == %s)", name, expected);
+            return String.format("(%s == %s)", name, expected);
         }
         if (expected instanceof Boolean) {
-            return (Boolean) expected ? String.format("c.%s") : String.format("!c.%s");
+            return (Boolean) expected ? String.format("%s") : String.format("!%s");
         }
         if (expected instanceof Enum) {
-            return String.format("(c.%s == %s.%s", name, expected.getClass().getName(), ((Enum) expected).name());
+            return String.format("(%s == %s.%s)", name, ((Enum) expected).getDeclaringClass().getName(), ((Enum) expected).name());
         }
         return null; // we cannot describe the expected value in CQL
     }

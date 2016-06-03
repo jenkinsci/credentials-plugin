@@ -70,7 +70,7 @@ public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.C
      */
     @Override
     public String describe() {
-        return String.format("(c.username == \"%s\")", StringEscapeUtils.escapeJava(username));
+        return String.format("(username == \"%s\")", StringEscapeUtils.escapeJava(username));
     }
 
     /**

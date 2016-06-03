@@ -69,7 +69,7 @@ public class IdMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
      */
     @Override
     public String describe() {
-        return String.format("(c.id == \"%s\")", StringEscapeUtils.escapeJava(id));
+        return String.format("(id == \"%s\")", StringEscapeUtils.escapeJava(id));
     }
 
     /**

@@ -70,6 +70,7 @@
   <properties>
     <jenkins.version>1.609</jenkins.version>
     <java.level>6</java.level>
+    <antlr4.version>4.5</antlr4.version>
   </properties>
 
   <repositories>
@@ -99,6 +100,11 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>${antlr4.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -110,6 +116,22 @@
           <execution>
             <goals>
               <goal>generate-taglib-interface</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
+        <version>${antlr4.version}</version>
+        <configuration>
+          <listener>true</listener>
+          <visitor>true</visitor>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>antlr4</goal>
             </goals>
           </execution>
         </executions>
