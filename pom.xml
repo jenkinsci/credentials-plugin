@@ -121,6 +121,13 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <configuration>
+          <excludeFilterFile>src/findbugs/excludesFilter.xml</excludeFilterFile>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
         <version>${antlr4.version}</version>

@@ -86,7 +86,7 @@ public class BeanPropertyMatcher<T extends Serializable> implements CredentialsM
             return String.format("(%s == %s)", name, expected);
         }
         if (expected instanceof Boolean) {
-            return (Boolean) expected ? String.format("%s") : String.format("!%s");
+            return expected.toString();
         }
         if (expected instanceof Enum) {
             return String.format("(%s == %s.%s)", name, ((Enum) expected).getDeclaringClass().getName(), ((Enum) expected).name());

@@ -469,10 +469,6 @@ public class CredentialsMatchers {
 
         CQLParser.ExpressionContext expressionContext = parser.expression();
 
-        if (expressionContext == null) {
-            return always();
-        }
-
         ParseTreeWalker walker = new ParseTreeWalker();
 
         MatcherBuildingListener listener = new MatcherBuildingListener();
