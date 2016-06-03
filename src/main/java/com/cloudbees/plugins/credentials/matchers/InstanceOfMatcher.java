@@ -34,6 +34,12 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  */
 public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = 7841840317353807524L;
+    /**
      * The type that the credentials must implement
      */
     @NonNull
@@ -60,18 +66,44 @@ public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("InstanceOfMatcher{");
-        sb.append("clazz=").append(clazz);
-        sb.append('}');
-        return sb.toString();
+    public String describe() {
+        return String.format("(c instanceof %s)", clazz.getName());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String describe() {
-        return String.format("(c instanceof %s)", clazz.getName());
+    public int hashCode() {
+        return clazz.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        InstanceOfMatcher that = (InstanceOfMatcher) o;
+
+        return clazz.equals(that.clazz);
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("InstanceOfMatcher{");
+        sb.append("clazz=").append(clazz);
+        sb.append('}');
+        return sb.toString();
     }
 }

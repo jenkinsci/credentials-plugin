@@ -25,6 +25,7 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.matchers.AllOfMatcher;
 import com.cloudbees.plugins.credentials.matchers.AnyOfMatcher;
+import com.cloudbees.plugins.credentials.matchers.BeanPropertyMatcher;
 import com.cloudbees.plugins.credentials.matchers.ConstantMatcher;
 import com.cloudbees.plugins.credentials.matchers.IdMatcher;
 import com.cloudbees.plugins.credentials.matchers.InstanceOfMatcher;
@@ -33,6 +34,7 @@ import com.cloudbees.plugins.credentials.matchers.ScopeMatcher;
 import com.cloudbees.plugins.credentials.matchers.UsernameMatcher;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -155,6 +157,20 @@ public class CredentialsMatchers {
     @NonNull
     public static CredentialsMatcher withUsername(@NonNull String username) {
         return new UsernameMatcher(username);
+    }
+
+    /**
+     * Creates a matcher that matches a named Java Bean property against the supplied expected value.
+     *
+     * @param name     the name of the property to match.
+     * @param expected the expected value of the property.
+     * @param <T>      the type of expected value.
+     * @return a matcher that matches a named Java Bean property against the supplied expected value.
+     * @since 2.0.8
+     */
+    public static <T extends Serializable> CredentialsMatcher withProperty(@NonNull String name,
+                                                                           @CheckForNull T expected) {
+        return new BeanPropertyMatcher<T>(name, expected);
     }
 
     /**

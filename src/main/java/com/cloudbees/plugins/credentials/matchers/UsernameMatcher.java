@@ -37,6 +37,12 @@ import org.apache.commons.lang.StringEscapeUtils;
  */
 public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = -2166795904091485580L;
+    /**
      * The username to match.
      */
     @NonNull
@@ -63,18 +69,44 @@ public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.C
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("UsernameMatcher{");
-        sb.append("username='").append(username).append('\'');
-        sb.append('}');
-        return sb.toString();
+    public String describe() {
+        return String.format("(c.username == \"%s\")", StringEscapeUtils.escapeJava(username));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String describe() {
-        return String.format("(c.username == \"%s\")", StringEscapeUtils.escapeJava(username));
+    public int hashCode() {
+        return username.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        UsernameMatcher that = (UsernameMatcher) o;
+
+        return username.equals(that.username);
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("UsernameMatcher{");
+        sb.append("username='").append(username).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 }

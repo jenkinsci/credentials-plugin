@@ -37,7 +37,12 @@ import java.util.List;
  * @since 1.5
  */
 public class AnyOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
-
+    /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = 8214348092732916263L;
     /**
      * The matchers to match.
      */
@@ -70,17 +75,6 @@ public class AnyOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("AnyMatcher{");
-        sb.append("matchers=").append(matchers);
-        sb.append('}');
-        return sb.toString();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     @CheckForNull
     public String describe() {
         if (matchers.isEmpty()) {
@@ -101,6 +95,43 @@ public class AnyOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
             sb.append(description);
         }
         sb.append(")");
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return matchers.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AnyOfMatcher that = (AnyOfMatcher) o;
+
+        return matchers.equals(that.matchers);
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("AnyMatcher{");
+        sb.append("matchers=").append(matchers);
+        sb.append('}');
         return sb.toString();
     }
 }

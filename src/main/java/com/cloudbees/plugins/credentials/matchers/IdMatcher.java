@@ -36,6 +36,12 @@ import org.apache.commons.lang.StringEscapeUtils;
  */
 public class IdMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = -2400504567993839126L;
+    /**
      * The id to match.
      */
     @NonNull
@@ -62,18 +68,44 @@ public class IdMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("IdMatcher{");
-        sb.append("id='").append(id).append('\'');
-        sb.append('}');
-        return sb.toString();
+    public String describe() {
+        return String.format("(c.id == \"%s\")", StringEscapeUtils.escapeJava(id));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String describe() {
-        return String.format("(c.id == \"%s\")", StringEscapeUtils.escapeJava(id));
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        IdMatcher idMatcher = (IdMatcher) o;
+
+        return id.equals(idMatcher.id);
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("IdMatcher{");
+        sb.append("id='").append(id).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 }

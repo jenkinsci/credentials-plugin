@@ -41,6 +41,12 @@ import java.util.Set;
  */
 public class ScopeMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = -7786779595366393177L;
+    /**
      * The scopes to match.
      */
     @NonNull
@@ -85,15 +91,6 @@ public class ScopeMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("ScopeMatcher{");
-        sb.append("scopes=").append(scopes);
-        sb.append('}');
-        return sb.toString();
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public String describe() {
         if (scopes.isEmpty()) {
             return "false";
@@ -112,6 +109,43 @@ public class ScopeMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
             sb.append(s.name());
         }
         sb.append(")");
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return scopes.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ScopeMatcher that = (ScopeMatcher) o;
+
+        return scopes.equals(that.scopes);
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ScopeMatcher{");
+        sb.append("scopes=").append(scopes);
+        sb.append('}');
         return sb.toString();
     }
 }

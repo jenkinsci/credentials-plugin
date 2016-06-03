@@ -33,7 +33,12 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * @since 1.5
  */
 public class NotMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
-
+    /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = 3301127941013284754L;
     /**
      * The matchers to match.
      */
@@ -61,19 +66,45 @@ public class NotMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("NotMatcher{");
-        sb.append("matcher=").append(matcher);
-        sb.append('}');
-        return sb.toString();
+    public String describe() {
+        String description = matcher instanceof CQL ? ((CQL) matcher).describe() : null;
+        return description == null ? null : String.format("!(%s)", description);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String describe() {
-        String description = matcher instanceof CQL ? ((CQL) matcher).describe() : null;
-        return description == null ? null : String.format("!(%s)", description);
+    public int hashCode() {
+        return matcher.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        NotMatcher that = (NotMatcher) o;
+
+        return matcher.equals(that.matcher);
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("NotMatcher{");
+        sb.append("matcher=").append(matcher);
+        sb.append('}');
+        return sb.toString();
     }
 }
