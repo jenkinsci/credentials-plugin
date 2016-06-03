@@ -1,8 +1,5 @@
 <FindBugsFilter>
   <Match>
-    <Class name="~.*\.CQLLexer"/>
-  </Match>
-  <Match>
-    <Class name="~.*\.CQLParser"/>
+    <Class name="~.*\.CQL(Lexer|Parser)([$.].*)?"/>
   </Match>
 </FindBugsFilter>
