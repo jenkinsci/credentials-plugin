@@ -27,13 +27,20 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * Matches credentials that are {@link IdCredentials} and have the specified {@link IdCredentials#getId()}.
  *
  * @since 1.5
  */
-public class IdMatcher implements CredentialsMatcher {
+public class IdMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
+    /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = -2400504567993839126L;
     /**
      * The id to match.
      */
@@ -55,6 +62,40 @@ public class IdMatcher implements CredentialsMatcher {
      */
     public boolean matches(@NonNull Credentials item) {
         return item instanceof IdCredentials && id.equals(((IdCredentials) item).getId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String describe() {
+        return String.format("(id == \"%s\")", StringEscapeUtils.escapeJava(id));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        IdMatcher idMatcher = (IdMatcher) o;
+
+        return id.equals(idMatcher.id);
+
     }
 
     /**

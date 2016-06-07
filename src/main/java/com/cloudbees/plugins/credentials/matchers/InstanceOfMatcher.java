@@ -32,7 +32,13 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *
  * @since 1.5
  */
-public class InstanceOfMatcher implements CredentialsMatcher {
+public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
+    /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = 7841840317353807524L;
     /**
      * The type that the credentials must implement
      */
@@ -54,6 +60,40 @@ public class InstanceOfMatcher implements CredentialsMatcher {
      */
     public boolean matches(@NonNull Credentials item) {
         return clazz.isInstance(item);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String describe() {
+        return String.format("(instanceof %s)", clazz.getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return clazz.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        InstanceOfMatcher that = (InstanceOfMatcher) o;
+
+        return clazz.equals(that.clazz);
+
     }
 
     /**

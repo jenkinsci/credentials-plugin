@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.common.UsernameCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * Matches credentials that are {@link UsernameCredentials} and have the specified {@link
@@ -34,7 +35,13 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *
  * @since 1.5
  */
-public class UsernameMatcher implements CredentialsMatcher {
+public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
+    /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = -2166795904091485580L;
     /**
      * The username to match.
      */
@@ -56,6 +63,40 @@ public class UsernameMatcher implements CredentialsMatcher {
      */
     public boolean matches(@NonNull Credentials item) {
         return item instanceof UsernameCredentials && username.equals(((UsernameCredentials) item).getUsername());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String describe() {
+        return String.format("(username == \"%s\")", StringEscapeUtils.escapeJava(username));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return username.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        UsernameMatcher that = (UsernameMatcher) o;
+
+        return username.equals(that.username);
+
     }
 
     /**

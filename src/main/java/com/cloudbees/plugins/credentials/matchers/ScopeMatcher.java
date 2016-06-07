@@ -39,7 +39,13 @@ import java.util.Set;
  *
  * @since 1.5
  */
-public class ScopeMatcher implements CredentialsMatcher {
+public class ScopeMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
+    /**
+     * Standardize serialization.
+     *
+     * @since 2.0.8
+     */
+    private static final long serialVersionUID = -7786779595366393177L;
     /**
      * The scopes to match.
      */
@@ -79,6 +85,65 @@ public class ScopeMatcher implements CredentialsMatcher {
      */
     public boolean matches(@NonNull Credentials item) {
         return scopes.contains(item.getScope());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String describe() {
+        if (scopes.isEmpty()) {
+            return "false";
+        }
+        StringBuilder sb = new StringBuilder("(");
+        if (scopes.size() == 1) {
+            sb.append("scope == ");
+            sb.append(CredentialsScope.class.getName());
+            sb.append('.');
+            sb.append(scopes.iterator().next().name());
+        } else {
+            boolean first = true;
+            for (CredentialsScope s : scopes) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(" || ");
+                }
+                sb.append("(scope == ");
+                sb.append(CredentialsScope.class.getName());
+                sb.append('.');
+                sb.append(s.name());
+                sb.append(')');
+            }
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return scopes.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ScopeMatcher that = (ScopeMatcher) o;
+
+        return scopes.equals(that.scopes);
+
     }
 
     /**
