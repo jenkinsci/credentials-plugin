@@ -45,8 +45,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -124,6 +126,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      */
     @Restricted(NoExternalUse.class)
     public List<StoreItem> getStoreItems(ModelObject context, boolean includeUser) {
+        Set<String> urls = new HashSet<String>();
         List<StoreItem> result = new ArrayList<StoreItem>();
         if (context == null) {
             StaplerRequest request = Stapler.getCurrentRequest();
@@ -133,7 +136,12 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         }
         if (context != null) {
             for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
-                result.add(new StoreItem(store));
+                StoreItem item = new StoreItem(store);
+                String url = item.getUrl();
+                if (item.getUrl() != null && !urls.contains(url)) {
+                    result.add(item);
+                    urls.add(url);
+                }
             }
         }
         if (includeUser) {
@@ -152,7 +160,12 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             }
             if (hasPermission) {
                 for (CredentialsStore store : CredentialsProvider.lookupStores(User.current())) {
-                    result.add(new StoreItem(store));
+                    StoreItem item = new StoreItem(store);
+                    String url = item.getUrl();
+                    if (item.getUrl() != null && !urls.contains(url)) {
+                        result.add(item);
+                        urls.add(url);
+                    }
                 }
             }
         }
