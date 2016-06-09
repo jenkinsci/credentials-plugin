@@ -166,26 +166,19 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
             Jenkins jenkins = Jenkins.getActiveInstance();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
-            final Set<String> ids = new HashSet<String>();
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
             final List<DomainRequirement> domainRequirements = Collections.<DomainRequirement>emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
-            result.withEmptySelection();
+            result.includeEmptyValue();
             if (acl.hasPermission(CredentialsProvider.USE_ITEM)) {
-                for (StandardCredentials s : CredentialsProvider
-                        .lookupCredentials(typeClass, context, CredentialsProvider.getDefaultAuthenticationOf(context),
-                                domainRequirements)) {
-                    if (!ids.contains(s.getId())) {
-                        result.with(s);
-                        ids.add(s.getId());
-                    }
-                }
+                result.includeAs(CredentialsProvider.getDefaultAuthenticationOf(context), context, typeClass, domainRequirements);
             }
             return result;
         }
 
         public StandardListBoxModel doFillValueItems(@AncestorInPath Item context,
                                                      @QueryParameter(required = true) String credentialType,
+                                                     @QueryParameter String value,
                                                      @QueryParameter boolean required) {
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
             Jenkins jenkins = Jenkins.getActiveInstance();
@@ -193,32 +186,20 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             final Authentication authentication = Jenkins.getAuthentication();
             final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf(context);
             final boolean isSystem = ACL.SYSTEM.equals(authentication);
-            final Set<String> ids = new HashSet<String>();
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
             final List<DomainRequirement> domainRequirements = Collections.<DomainRequirement>emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
             if (!required) {
-                result.withEmptySelection();
+                result.includeEmptyValue();
             }
             if (!isSystem && acl.hasPermission(CredentialsProvider.USE_OWN)) {
-                for (StandardCredentials s : CredentialsProvider
-                        .lookupCredentials(typeClass, context, authentication, domainRequirements)) {
-                    if (!ids.contains(s.getId())) {
-                        result.with(s);
-                        ids.add(s.getId());
-                    }
-                }
+                result.includeAs(authentication, context, typeClass, domainRequirements);
             }
             if (acl.hasPermission(CredentialsProvider.USE_ITEM) || isSystem || itemAuthentication
                     .equals(authentication)) {
-                for (StandardCredentials s : CredentialsProvider
-                        .lookupCredentials(typeClass, context, itemAuthentication, domainRequirements)) {
-                    if (!ids.contains(s.getId())) {
-                        result.with(s);
-                        ids.add(s.getId());
-                    }
-                }
+                result.includeAs(itemAuthentication, context, typeClass, domainRequirements);
             }
+            result.includeCurrentValue(value);
             return result;
         }
     }
