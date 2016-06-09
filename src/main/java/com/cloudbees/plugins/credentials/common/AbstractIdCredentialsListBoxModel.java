@@ -26,15 +26,24 @@ package com.cloudbees.plugins.credentials.common;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.Descriptor;
 import hudson.model.Item;
+import hudson.model.ItemGroup;
 import hudson.model.Job;
 import hudson.util.ListBoxModel;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import jenkins.model.Jenkins;
+import org.acegisecurity.Authentication;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * {@link ListBoxModel} with support for credentials.
@@ -69,18 +78,20 @@ import jenkins.model.Jenkins;
  * lists up the credentials available in this context:
  * </p>
  * <pre>
- * public ListBoxModel doFillCredentialsIdItems() {
+ * public ListBoxModel doFillCredentialsIdItems(&#64;QueryParam String value) {
  *     if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) { // or whatever permission is appropriate for
  *     this page
  *         // Important! Otherwise you expose credentials metadata to random web requests.
- *         return new ListBoxModel();
+ *         return new StandardUsernameListBoxModel().includeCurrentValue(value);
  *     }
- *     return new StandardUsernameListBoxModel().withEmptySelection().withAll(
- *         CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class,...));
+ *     return new StandardUsernameListBoxModel()
+ *             .includeEmptySelection()
+ *             .include(StandardUsernameCredentials.class,...))
+ *             .includeCurrentValue(value);
  * }
  * </pre>
  * <p>
- * Exactly which overloaded version of the {@link CredentialsProvider#lookupCredentials(Class)} depends on
+ * Exactly which overloaded version of the {@link #include(Item, Class)} depends on
  * the context in which your model operates. Here are a few common examples:
  * </p>
  * <dl>
@@ -97,11 +108,13 @@ import jenkins.model.Jenkins;
  * <pre>
  * public ListBoxModel doFillCredentialsIdItems(&#64;AncestorInPath Item context, &#64;QueryParameter String source) {
  *     if (context == null || !context.hasPermission(Item.CONFIGURE)) {
- *         return new ListBoxModel();
+ *         return new StandardUsernameListBoxModel().includeCurrentValue(value);
  *     }
- *     return new StandardUsernameListBoxModel().withEmptySelection().withAll(
- *         CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context, ACL.SYSTEM,
- *         URIRequirementBuilder.fromUri(source).build()));
+ *     return new StandardUsernameListBoxModel()
+ *             .includeEmptySelection()
+ *             .includeAs(Tasks.getAuthenticationOf(context), context, StandardUsernameCredentials.class,
+ *                 URIRequirementBuilder.fromUri(source).build())
+ *             .includeCurrentValue(value);
  * }
  * </pre>
  * </dl>
@@ -139,10 +152,28 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * Adds an "empty" credential to signify selection of no credential.
      *
      * @return {@code this} for method chaining.
+     * @deprecated use {@link #includeEmptyValue()}
      */
+    @Deprecated
     @NonNull
     public AbstractIdCredentialsListBoxModel<T, C> withEmptySelection() {
-        add(Messages.AbstractIdCredentialsListBoxModel_EmptySelection(), "");
+        return includeEmptyValue();
+    }
+
+    /**
+     * Adds an "empty" credential to signify selection of no credential.
+     *
+     * @return {@code this} for method chaining.
+     * @since 2.1.0
+     */
+    @NonNull
+    public AbstractIdCredentialsListBoxModel<T, C> includeEmptyValue() {
+        for (Option a : this) {
+            if (StringUtils.equals("", a.value)) {
+                return this;
+            }
+        }
+        add(0, new Option(Messages.AbstractIdCredentialsListBoxModel_EmptySelection(), ""));
         return this;
     }
 
@@ -151,7 +182,11 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      *
      * @param credentials the credentials.
      * @return {@code this} for method chaining.
+     * @deprecated prefer using the {@link #include(Item, Class)} or {@link #includeAs(Authentication, Item, Class)}
+     * methods to build the list box contents in order to allow credentials providers to not have to instantiate
+     * a full credential instance where those credential providers store the secrets external from Jenkins.
      */
+    @Deprecated
     @NonNull
     public AbstractIdCredentialsListBoxModel<T, C> withAll(@NonNull C... credentials) {
         return withMatching(CredentialsMatchers.always(), Arrays.asList(credentials));
@@ -162,7 +197,11 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      *
      * @param credentials the credentials.
      * @return {@code this} for method chaining.
+     * @deprecated prefer using the {@link #include(Item, Class)} or {@link #includeAs(Authentication, Item, Class)}
+     * methods to build the list box contents in order to allow credentials providers to not have to instantiate
+     * a full credential instance where those credential providers store the secrets external from Jenkins.
      */
+    @Deprecated
     @NonNull
     public AbstractIdCredentialsListBoxModel<T, C> withAll(@NonNull Iterable<? extends C> credentials) {
         return withMatching(CredentialsMatchers.always(), credentials.iterator());
@@ -173,7 +212,11 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      *
      * @param credentials the credentials.
      * @return {@code this} for method chaining.
+     * @deprecated prefer using the {@link #include(Item, Class)} or {@link #includeAs(Authentication, Item, Class)}
+     * methods to build the list box contents in order to allow credentials providers to not have to instantiate
+     * a full credential instance where those credential providers store the secrets external from Jenkins.
      */
+    @Deprecated
     @NonNull
     public AbstractIdCredentialsListBoxModel<T, C> withAll(@NonNull Iterator<? extends C> credentials) {
         return withMatching(CredentialsMatchers.always(), credentials);
@@ -185,7 +228,12 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param matcher     the matcher.
      * @param credentials the superset of credentials.
      * @return {@code this} for method chaining.
+     * @deprecated prefer using the {@link #includeMatching(Item, Class, List, CredentialsMatcher)}
+     * or {@link #includeMatchingAs(Authentication, Item, Class, List, CredentialsMatcher)}
+     * methods to build the list box contents in order to allow credentials providers to not have to instantiate
+     * a full credential instance where those credential providers store the secrets external from Jenkins.
      */
+    @Deprecated
     @NonNull
     public AbstractIdCredentialsListBoxModel<T, C> withMatching(@NonNull CredentialsMatcher matcher,
                                                                 @NonNull C... credentials) {
@@ -198,7 +246,12 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param matcher     the matcher.
      * @param credentials the superset of credentials.
      * @return {@code this} for method chaining.
+     * @deprecated prefer using the {@link #includeMatching(Item, Class, List, CredentialsMatcher)}
+     * or {@link #includeMatchingAs(Authentication, Item, Class, List, CredentialsMatcher)}
+     * methods to build the list box contents in order to allow credentials providers to not have to instantiate
+     * a full credential instance where those credential providers store the secrets external from Jenkins.
      */
+    @Deprecated
     @NonNull
     public AbstractIdCredentialsListBoxModel<T, C> withMatching(@NonNull CredentialsMatcher matcher,
                                                                 @NonNull Iterable<? extends C> credentials) {
@@ -211,7 +264,12 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param matcher     the matcher.
      * @param credentials the superset of credentials.
      * @return {@code this} for method chaining.
+     * @deprecated prefer using the {@link #includeMatching(Item, Class, List, CredentialsMatcher)}
+     * or {@link #includeMatchingAs(Authentication, Item, Class, List, CredentialsMatcher)}
+     * methods to build the list box contents in order to allow credentials providers to not have to instantiate
+     * a full credential instance where those credential providers store the secrets external from Jenkins.
      */
+    @Deprecated
     @NonNull
     public AbstractIdCredentialsListBoxModel<T, C> withMatching(@NonNull CredentialsMatcher matcher,
                                                                 @NonNull Iterator<? extends C> credentials) {
@@ -224,4 +282,272 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
         return this;
     }
 
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the current
+     * authentication.
+     *
+     * @param context the context to add credentials from.
+     * @param type    the base class of the credentials to add.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull Item context, @NonNull Class<? extends C> type) {
+        return include(context, type, Collections.<DomainRequirement>emptyList());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the current
+     * authentication.
+     *
+     * @param context the context to add credentials from.
+     * @param type    the base class of the credentials to add.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull ItemGroup context,
+                                                           @NonNull Class<? extends C> type) {
+        return include(context, type, Collections.<DomainRequirement>emptyList());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the specified
+     * authentication.
+     *
+     * @param authentication the authentication to search with
+     * @param context        the context to add credentials from.
+     * @param type           the base class of the credentials to add.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
+                                                             @NonNull Item context,
+                                                             @NonNull Class<? extends C> type) {
+        return includeAs(authentication, context, type, Collections.<DomainRequirement>emptyList());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the specified
+     * authentication.
+     *
+     * @param authentication the authentication to search with
+     * @param context        the context to add credentials from.
+     * @param type           the base class of the credentials to add.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
+                                                             @NonNull ItemGroup context,
+                                                             @NonNull Class<? extends C> type) {
+        return includeAs(authentication, context, type, Collections.<DomainRequirement>emptyList());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the current
+     * authentication with the specified domain requirements.
+     *
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull Item context, @NonNull Class<? extends C> type,
+                                                           @NonNull List<DomainRequirement> domainRequirements) {
+        return includeMatching(context, type, domainRequirements, CredentialsMatchers.always());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the current
+     * authentication with the specified domain requirements.
+     *
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull ItemGroup context, @NonNull Class<? extends C> type,
+                                                           @NonNull List<DomainRequirement> domainRequirements) {
+        return includeMatching(context, type, domainRequirements, CredentialsMatchers.always());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the specified
+     * authentication with the specified domain requirements.
+     *
+     * @param authentication     the authentication to search with
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
+                                                             @NonNull Item context,
+                                                             @NonNull Class<? extends C> type,
+                                                             @NonNull List<DomainRequirement> domainRequirements) {
+        return includeMatchingAs(authentication, context, type, domainRequirements, CredentialsMatchers.always());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the specified
+     * authentication with the specified domain requirements.
+     *
+     * @param authentication     the authentication to search with
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
+                                                             @NonNull ItemGroup context,
+                                                             @NonNull Class<? extends C> type,
+                                                             @NonNull List<DomainRequirement> domainRequirements) {
+        return includeMatchingAs(authentication, context, type, domainRequirements, CredentialsMatchers.always());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the current
+     * authentication with the specified domain requirements and match the specified filter.
+     *
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @param matcher            the filter to apply to the credentials.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeMatching(@NonNull Item context,
+                                                                   @NonNull Class<? extends C> type,
+                                                                   @NonNull List<DomainRequirement> domainRequirements,
+                                                                   @NonNull CredentialsMatcher matcher) {
+        return includeMatchingAs(Jenkins.getAuthentication(), context, type, domainRequirements, matcher);
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the current
+     * authentication with the specified domain requirements and match the specified filter.
+     *
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @param matcher            the filter to apply to the credentials.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeMatching(@NonNull ItemGroup context,
+                                                                   @NonNull Class<? extends C> type,
+                                                                   @NonNull List<DomainRequirement> domainRequirements,
+                                                                   @NonNull CredentialsMatcher matcher) {
+        return includeMatchingAs(Jenkins.getAuthentication(), context, type, domainRequirements, matcher);
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the specified
+     * authentication with the specified domain requirements and match the specified filter.
+     *
+     * @param authentication     the authentication to search with
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @param matcher            the filter to apply to the credentials.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull Authentication authentication,
+                                                                     @NonNull Item context,
+                                                                     @NonNull Class<? extends C> type,
+                                                                     @NonNull
+                                                                             List<DomainRequirement> domainRequirements,
+                                                                     @NonNull CredentialsMatcher matcher) {
+        addMissing(CredentialsProvider.listCredentials(type, context, authentication, domainRequirements, matcher));
+        return this;
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the specified
+     * authentication with the specified domain requirements and match the specified filter.
+     *
+     * @param authentication     the authentication to search with
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @param matcher            the filter to apply to the credentials.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull Authentication authentication,
+                                                                     @NonNull ItemGroup context,
+                                                                     @NonNull Class<? extends C> type,
+                                                                     @NonNull
+                                                                             List<DomainRequirement> domainRequirements,
+                                                                     @NonNull CredentialsMatcher matcher) {
+        addMissing(CredentialsProvider.listCredentials(type, context, authentication, domainRequirements, matcher));
+        return this;
+    }
+
+    /**
+     * Ensures that the current value is present so that the form can be idempotently saved in those cases where the
+     * user saving the form cannot view the current credential
+     *
+     * @param value the current value.
+     * @return {@code this} for method chaining.
+     * @since 2.1.0
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeCurrentValue(@NonNull String value) {
+        if (StringUtils.isEmpty(value)) {
+            return includeEmptyValue();
+        }
+        for (Option a : this) {
+            if (StringUtils.equals(value, a.value)) {
+                return this;
+            }
+        }
+        // the current should be the first (unless the first is the empty selection
+        int index = isEmpty() ? 0 : "".equals(get(0).value) ? 1 : 0;
+        add(index, new Option(Messages.AbstractIdCredentialsListBoxModel_CurrentSelection(), value));
+        return this;
+    }
+
+    /**
+     * Appends all of the missing elements from the specified collection to the end of
+     * this list, in the order that they are returned by the
+     * specified collection's Iterator.  The behavior of this operation is
+     * undefined if the specified collection is modified while the operation
+     * is in progress.  (This implies that the behavior of this call is
+     * undefined if the specified collection is this list, and this
+     * list is nonempty.)
+     *
+     * @param c collection containing elements to be added to this list
+     * @return <tt>true</tt> if this list changed as a result of the call
+     * @throws NullPointerException if the specified collection is null
+     * @since 2.1.0
+     */
+    public boolean addMissing(Collection<? extends Option> c) {
+        Set<String> existing = new HashSet<String>();
+        for (Option o: this) {
+            existing.add(o.value);
+        }
+        boolean changed = false;
+        for (Option o : c) {
+            if (!existing.contains(o.value)) {
+                add(o);
+                changed = existing.add(o.value) || changed;
+            }
+        }
+        return changed;
+    }
 }
