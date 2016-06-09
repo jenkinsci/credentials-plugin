@@ -533,10 +533,9 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      *
      * @param c collection containing elements to be added to this list
      * @return <tt>true</tt> if this list changed as a result of the call
-     * @throws NullPointerException if the specified collection is null
      * @since 2.1.0
      */
-    public boolean addMissing(Collection<? extends Option> c) {
+    public boolean addMissing(@NonNull Collection<? extends Option> c) {
         Set<String> existing = new HashSet<String>();
         for (Option o: this) {
             existing.add(o.value);
