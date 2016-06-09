@@ -26,7 +26,7 @@ package com.cloudbees.plugins.credentials.matchers;
 /**
  * Represents a syntax error in a CQL expression.
  *
- * @since 2.0.8
+ * @since 2.1.0
  */
 public class CQLSyntaxException extends RuntimeException {
 

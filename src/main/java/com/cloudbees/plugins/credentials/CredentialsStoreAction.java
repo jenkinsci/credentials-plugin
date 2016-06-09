@@ -634,7 +634,7 @@ public abstract class CredentialsStoreAction
          * Exposes the wrapped credentials for the XML API.
          *
          * @return the wrapped credentials for the XML API.
-         * @since 2.0.8
+         * @since 2.1.0
          */
         @NonNull
         @Exported(name = "credentials", visibility = 1)
@@ -890,7 +890,7 @@ public abstract class CredentialsStoreAction
          * Return the id for the XML API.
          *
          * @return the id.
-         * @since 2.0.8
+         * @since 2.1.0
          */
         @Exported
         public String getId() {

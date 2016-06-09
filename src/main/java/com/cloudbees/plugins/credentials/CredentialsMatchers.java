@@ -185,7 +185,7 @@ public class CredentialsMatchers {
      * @param expected the expected value of the property.
      * @param <T>      the type of expected value.
      * @return a matcher that matches a named Java Bean property against the supplied expected value.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     public static <T extends Serializable> CredentialsMatcher withProperty(@NonNull String name,
                                                                            @CheckForNull T expected) {
@@ -419,7 +419,7 @@ public class CredentialsMatchers {
      *
      * @param matcher the {@link CredentialsMatcher} to describe.
      * @return the CQL description or {@code null} if the {@link CredentialsMatcher} cannot be mapped to CQL.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     @CheckForNull
     public static String describe(CredentialsMatcher matcher) {
@@ -432,7 +432,7 @@ public class CredentialsMatchers {
      * @param cql the Credentials Query Language expression to parse.
      * @return a {@link CredentialsMatcher} for this expression.
      * @throws CQLSyntaxException if the expression could not be parsed.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     @NonNull
     public static CredentialsMatcher parse(final String cql) {
@@ -625,7 +625,7 @@ public class CredentialsMatchers {
     /**
      * Internal exception to track an error not caught during the parse.
      *
-     * @since 2.0.8
+     * @since 2.1.0
      */
     private static class CQLSyntaxError extends RuntimeException {
         /**

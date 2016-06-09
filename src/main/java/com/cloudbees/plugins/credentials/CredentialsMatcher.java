@@ -51,7 +51,7 @@ public interface CredentialsMatcher extends Serializable {
     /**
      * A mix-in interface to allow describing a credentials matcher.
      *
-     * @since 2.0.8
+     * @since 2.1.0
      */
     interface CQL extends CredentialsMatcher {
         /**

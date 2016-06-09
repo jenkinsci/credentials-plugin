@@ -162,7 +162,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      * Exposes the {@link #getLocalStores()} for the XML API.
      *
      * @return the {@link #getLocalStores()} for the XML API.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     @NonNull
     @SuppressWarnings("unused") // Stapler XML/JSON API

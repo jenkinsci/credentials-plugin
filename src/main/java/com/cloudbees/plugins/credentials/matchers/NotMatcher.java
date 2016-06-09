@@ -36,7 +36,7 @@ public class NotMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**
      * Standardize serialization.
      *
-     * @since 2.0.8
+     * @since 2.1.0
      */
     private static final long serialVersionUID = 3301127941013284754L;
     /**

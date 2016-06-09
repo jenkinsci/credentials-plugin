@@ -39,7 +39,7 @@ public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.C
     /**
      * Standardize serialization.
      *
-     * @since 2.0.8
+     * @since 2.1.0
      */
     private static final long serialVersionUID = -2166795904091485580L;
     /**

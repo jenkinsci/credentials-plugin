@@ -39,7 +39,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 /**
  * Matches credentials that have a Java Bean property with an expected value.
  *
- * @since 2.0.8
+ * @since 2.1.0
  */
 public class BeanPropertyMatcher<T extends Serializable> implements CredentialsMatcher, CredentialsMatcher.CQL {
     /**

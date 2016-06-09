@@ -388,7 +388,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param <C>                the credentials type.
      * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with the corresponding display names as
      * provided by {@link CredentialsNameProvider}.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     public static <C extends IdCredentials> ListBoxModel listCredentials(@NonNull Class<C> type,
                                                                          @Nullable ItemGroup itemGroup,
@@ -508,7 +508,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param <C>                the credentials type.
      * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with the corresponding display names as
      * provided by {@link CredentialsNameProvider}.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     @NonNull
     public static <C extends IdCredentials> ListBoxModel listCredentials(@NonNull Class<C> type,
@@ -1060,7 +1060,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param matcher            the additional filtering to apply to the credentials
      * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with names provided by
      * {@link CredentialsNameProvider}.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     @NonNull
     public <C extends IdCredentials> ListBoxModel getCredentialIds(@NonNull Class<C> type,
@@ -1134,7 +1134,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param <C>                the credentials type.
      * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with names provided by
      * {@link CredentialsNameProvider}.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     @NonNull
     public <C extends IdCredentials> ListBoxModel getCredentialIds(@NonNull Class<C> type,
@@ -1260,7 +1260,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
     /**
      * A {@link Comparator} for {@link ListBoxModel.Option} instances.
-     * @since 2.0.8
+     * @since 2.1.0
      */
     private static class ListBoxModelOptionComparator implements Comparator<ListBoxModel.Option> {
         /**
