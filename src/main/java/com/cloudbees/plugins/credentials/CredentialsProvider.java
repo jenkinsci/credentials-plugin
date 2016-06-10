@@ -83,6 +83,23 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         implements ExtensionPoint, Describable<CredentialsProvider>, IconSpec {
 
     /**
+     * A {@link CredentialsProvider} that does nothing for use as a marker
+     *
+     * @since 2.1.1
+     */
+    public static CredentialsProvider NONE = new CredentialsProvider() {
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+                                                              @Nullable Authentication authentication) {
+            return Collections.emptyList();
+        }
+    };
+
+    /**
      * The permission group for credentials.
      *
      * @since 1.8

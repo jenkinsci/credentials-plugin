@@ -29,7 +29,7 @@ import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.Util;
-import hudson.model.Computer;
+import hudson.cli.declarative.CLIResolver;
 import hudson.model.ComputerSet;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -46,15 +46,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.Localizable;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
@@ -187,6 +194,154 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             }
         }
         return null;
+    }
+
+    /**
+     * Resolves a {@link CredentialsStore} instance for CLI commands.
+     *
+     * @param storeId the store identifier.
+     * @return the {@link CredentialsStore} instance.
+     * @throws CmdLineException if the store cannot be resolved.
+     * @since 2.1.1
+     */
+    @CLIResolver
+    public static CredentialsStore resolveForCLI(
+            @Argument(required = true, metaVar = "STORE", usage = "Store ID") String storeId) throws
+            CmdLineException {
+        int index1 = storeId.indexOf("::");
+        int index2 = index1 == -1 ? -1 : storeId.indexOf("::", index1 + 2);
+        if (index1 == -1 || index1 == 0 || index2 == -1 || index2 < (index1 + 2) || index2 == storeId.length() - 2) {
+            throw new CmdLineException(null, new Localizable() {
+                @Override
+                public String formatWithLocale(Locale locale, Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLIMalformedStoreId(objects[0]).toString(locale);
+                }
+
+                @Override
+                public String format(Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLIMalformedStoreId(objects[0]).toString();
+                }
+            }, storeId);
+        }
+        String providerName = storeId.substring(0, index1);
+        String resolverName = storeId.substring(index1 + 2, index2);
+        String token = storeId.substring(index2 + 2);
+
+        CredentialsProvider provider = getProvidersByName().get(providerName);
+        if (provider == null || provider == CredentialsProvider.NONE) {
+            throw new CmdLineException(null, new Localizable() {
+                @Override
+                public String formatWithLocale(Locale locale, Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLINoSuchProvider(objects[0]).toString(locale);
+                }
+
+                @Override
+                public String format(Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLINoSuchProvider(objects[0]).toString();
+                }
+            }, storeId);
+        }
+        ContextResolver resolver = getResolversByName().get(resolverName);
+        if (resolver == null || resolver == ContextResolver.NONE) {
+            throw new CmdLineException(null, new Localizable() {
+                @Override
+                public String formatWithLocale(Locale locale, Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLINoSuchResolver(objects[0]).toString(locale);
+                }
+
+                @Override
+                public String format(Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLINoSuchResolver(objects[0]).toString();
+                }
+            }, storeId);
+        }
+        ModelObject context = resolver.getContext(token);
+        if (context == null) {
+            throw new CmdLineException(null, new Localizable() {
+                @Override
+                public String formatWithLocale(Locale locale, Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLINoSuchContext(objects[0]).toString(locale);
+                }
+
+                @Override
+                public String format(Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLINoSuchContext(objects[0]).toString();
+                }
+            }, storeId);
+        }
+        CredentialsStore store = provider.getStore(context);
+        if (store == null) {
+            throw new CmdLineException(null, new Localizable() {
+                @Override
+                public String formatWithLocale(Locale locale, Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLINoStore().toString(locale);
+                }
+
+                @Override
+                public String format(Object... objects) {
+                    return Messages._CredentialsSelectHelper_CLINoStore().toString();
+                }
+            }, storeId);
+        }
+        return store;
+    }
+
+    /**
+     * Returns a map of the {@link ContextResolver} instances keyed by their name. A resolver may have more than one
+     * entry if there are inferred unique short nicknames.
+     *
+     * @return a map of the {@link ContextResolver} instances keyed by their name
+     * @since 2.1.1
+     */
+    public static Map<String, ContextResolver> getResolversByName() {
+        Map<String, ContextResolver> resolverByName = new TreeMap<String, ContextResolver>();
+        for (ContextResolver r : ExtensionList.lookup(ContextResolver.class)) {
+            resolverByName.put(r.getClass().getName(), r);
+            String shortName = r.getClass().getSimpleName();
+            resolverByName.put(shortName, resolverByName.containsKey(shortName) ? ContextResolver.NONE : r);
+            shortName = shortName.toLowerCase(Locale.ENGLISH).replaceAll("(context|resolver|impl)*", "");
+            if (StringUtils.isNotBlank(shortName)) {
+                resolverByName.put(shortName, resolverByName.containsKey(shortName) ? ContextResolver.NONE : r);
+            }
+        }
+        for (Iterator<ContextResolver> iterator = resolverByName.values().iterator(); iterator.hasNext(); ) {
+            ContextResolver r = iterator.next();
+            if (r == ContextResolver.NONE) {
+                iterator.remove();
+            }
+        }
+        return resolverByName;
+    }
+
+    /**
+     * Returns a map of the {@link CredentialsProvider} instances keyed by their name. A provider may have more than one
+     * entry if there are inferred unique short nicknames.
+     *
+     * @return a map of the {@link CredentialsProvider} instances keyed by their name
+     * @since 2.1.1
+     */
+    public static Map<String, CredentialsProvider> getProvidersByName() {
+        Map<String, CredentialsProvider> providerByName = new TreeMap<String, CredentialsProvider>();
+        for (CredentialsProvider r : ExtensionList.lookup(CredentialsProvider.class)) {
+            providerByName.put(r.getClass().getName(), r);
+            Class<?> clazz = r.getClass();
+            while (clazz != null) {
+                String shortName = clazz.getSimpleName();
+                clazz = clazz.getEnclosingClass();
+                String simpleName =
+                        shortName.toLowerCase(Locale.ENGLISH).replaceAll("(credentials|provider|impl)*", "");
+                if (StringUtils.isBlank(simpleName)) continue;
+                providerByName.put(shortName, providerByName.containsKey(shortName) ? CredentialsProvider.NONE : r);
+                providerByName.put(simpleName, providerByName.containsKey(simpleName) ? CredentialsProvider.NONE : r);
+            }
+        }
+        for (Iterator<CredentialsProvider> iterator = providerByName.values().iterator(); iterator.hasNext(); ) {
+            CredentialsProvider p = iterator.next();
+            if (p == CredentialsProvider.NONE) {
+                iterator.remove();
+            }
+        }
+        return providerByName;
     }
 
     /**
@@ -531,6 +686,37 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
     public static abstract class ContextResolver implements ExtensionPoint {
 
         /**
+         * A {@link ContextResolver} that can be used as a marker.
+         *
+         * @since 2.1.1
+         */
+        public static final ContextResolver NONE = new ContextResolver() {
+            /**
+             * {@inheritDoc}
+             */
+            @Override
+            public String getToken(ModelObject context) {
+                return null;
+            }
+
+            /**
+             * {@inheritDoc}
+             */
+            @Override
+            public ModelObject getContext(String token) {
+                return null;
+            }
+
+            /**
+             * {@inheritDoc}
+             */
+            @Override
+            public String getDisplayName() {
+                return "Nothing";
+            }
+        };
+
+        /**
          * Maps a context object (a {@link ModelObject}) into a token that can be used to recover the context.
          *
          * @param context the {@link ModelObject}.
@@ -549,6 +735,31 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          */
         @CheckForNull
         public abstract ModelObject getContext(String token);
+
+        /**
+         * Returns a human readable descripton of the type of context objects that this resolver resolves.
+         * @return a human readable descripton of the type of context objects that this resolver resolves.
+         * @throws AbstractMethodError if somebody compiled against pre-2.1.1 implementations. Use
+         * {@link #displayName(ContextResolver)} if you would prefer not to have to catch them.
+         * @since 2.1.1
+         */
+        @NonNull
+        public abstract String getDisplayName();
+
+        /**
+         * Returns a human readable descripton of the type of context objects that the specified resolver resolves.
+         *
+         * @return a human readable descripton of the type of context objects that the specified resolver resolves.
+         * @since 2.1.1
+         */
+        public static String displayName(ContextResolver resolver) {
+            try {
+                return resolver.getDisplayName();
+            } catch (AbstractMethodError e) {
+                // should not get here as do not anticipate new implementations that cannot target 2.1.1 as a baseline
+                return resolver.getClass().getName();
+            }
+        }
     }
 
     /**
@@ -574,6 +785,15 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         public ModelObject getContext(String token) {
             return "jenkins".equals(token) ? Jenkins.getActiveInstance() : null;
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public String getDisplayName() {
+            return "Jenkins";
+        }
     }
 
     /**
@@ -598,6 +818,15 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         @Override
         public ModelObject getContext(String token) {
             return Jenkins.getActiveInstance().getItemByFullName(token);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public String getDisplayName() {
+            return "Items";
         }
     }
 
@@ -634,6 +863,15 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             } catch (IllegalAccessException e) {
                 return null;
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @NonNull
+        @Override
+        public String getDisplayName() {
+            return "Users";
         }
     }
 }
