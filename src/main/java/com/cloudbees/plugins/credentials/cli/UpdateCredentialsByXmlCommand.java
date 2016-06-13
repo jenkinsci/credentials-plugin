@@ -23,26 +23,37 @@
  */
 package com.cloudbees.plugins.credentials.cli;
 
+import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
+import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.thoughtworks.xstream.io.xml.XppDriver;
 import hudson.Extension;
-import hudson.cli.CLICommand;
-import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+import hudson.model.Items;
+import org.kohsuke.args4j.Argument;
 
 /**
- * Lists the {@link CredentialsProvider} instances and their names.
+ * Update an existing credentials instance by XML.
  *
  * @since 2.1.1
  */
 @Extension
-public class ListCredentialsProvidersCommand extends BaseCredentialsCLICommand {
+public class UpdateCredentialsByXmlCommand extends BaseCredentialsCLICommand {
+    @Argument(metaVar = "STORE", usage = "Store Id", required = true)
+    public CredentialsStore store;
+
+    @Argument(metaVar = "DOMAIN", usage = "Domain Name", required = true, index = 1)
+    public String domain;
+
+    @Argument(metaVar = "CREDENTIAL", usage = "Credential Id", required = true, index = 2)
+    public String id;
+
     /**
      * {@inheritDoc}
      */
     @Override
     public String getShortDescription() {
-        return "List Credentials Providers";
+        return "Update credentials by XML";
     }
 
     /**
@@ -50,17 +61,23 @@ public class ListCredentialsProvidersCommand extends BaseCredentialsCLICommand {
      */
     @Override
     protected int run() throws Exception {
-        Map<String, CredentialsProvider> providersByName = CredentialsSelectHelper.getProvidersByName();
-        int maxNameLen = 0, maxDisplayLen = 0;
-        for (Map.Entry<String, CredentialsProvider> entry : providersByName.entrySet()) {
-            maxNameLen = Math.max(maxNameLen, entry.getKey().length());
-            maxDisplayLen = Math.max(maxDisplayLen, entry.getValue().getDisplayName().length());
+        store.checkPermission(CredentialsProvider.UPDATE);
+        Domain domain = getDomainByName(store, this.domain);
+        if (domain == null) {
+            stderr.println("No such domain");
+            return 2;
         }
-        stdout.println(StringUtils.rightPad("Name", maxNameLen) + " Provider");
-        stdout.println(StringUtils.repeat("=", maxNameLen) + " " + StringUtils.repeat("=", maxDisplayLen));
-        for (Map.Entry<String, CredentialsProvider> entry : providersByName.entrySet()) {
-            stdout.println(StringUtils.rightPad(entry.getKey(), maxNameLen) + " " + entry.getValue().getDisplayName());
+        Credentials existing = getCredentialsById(store, domain, id);
+        if (existing == null) {
+            stderr.println("No such credential");
+            return 3;
         }
-        return 0;
+
+        Credentials replacement = (Credentials) Items.XSTREAM.unmarshal(safeXmlStreamReader(stdin));
+        if (store.updateCredentials(domain, existing, replacement)) {
+            return 0;
+        }
+        stderr.println("No change");
+        return 1;
     }
 }

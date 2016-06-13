@@ -23,25 +23,34 @@
  */
 package com.cloudbees.plugins.credentials.cli;
 
-import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.thoughtworks.xstream.io.xml.XppDriver;
 import hudson.Extension;
-import hudson.cli.CLICommand;
-import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+import hudson.model.Items;
+import org.kohsuke.args4j.Argument;
 
 /**
- * Lists the {@link CredentialsSelectHelper.ContextResolver} instances and the context objects they resolve.
+ * Update an existing credentials instance by XML.
  *
  * @since 2.1.1
  */
 @Extension
-public class ListCredentialsContextResolversCommand extends BaseCredentialsCLICommand {
+public class UpdateCredentialsDomainByXmlCommand extends BaseCredentialsCLICommand {
+    @Argument(metaVar = "STORE", usage = "Store Id", required = true)
+    public CredentialsStore store;
+
+    @Argument(metaVar = "DOMAIN", usage = "Domain Name", required = true, index = 1)
+    public String domain;
+
     /**
      * {@inheritDoc}
      */
     @Override
     public String getShortDescription() {
-        return "List Credentials Context Resolvers";
+        return "Update credentials domain by XML";
     }
 
     /**
@@ -49,21 +58,18 @@ public class ListCredentialsContextResolversCommand extends BaseCredentialsCLICo
      */
     @Override
     protected int run() throws Exception {
-        Map<String, CredentialsSelectHelper.ContextResolver> resolversByName =
-                CredentialsSelectHelper.getResolversByName();
-        int maxNameLen = 0, maxDisplayLen = 0;
-        for (Map.Entry<String, CredentialsSelectHelper.ContextResolver> entry : resolversByName.entrySet()) {
-            maxNameLen = Math.max(maxNameLen, entry.getKey().length());
-            maxDisplayLen = Math.max(maxDisplayLen,
-                    CredentialsSelectHelper.ContextResolver.displayName(entry.getValue()).length());
+        store.checkPermission(CredentialsProvider.MANAGE_DOMAINS);
+        Domain domain = getDomainByName(store, this.domain);
+        if (domain == null) {
+            stderr.println("No such domain");
+            return 2;
         }
-        stdout.println(StringUtils.rightPad("Name", maxNameLen) + " Resolves");
-        stdout.println(StringUtils.repeat("=", maxNameLen) + " " + StringUtils.repeat("=", maxDisplayLen));
-        for (Map.Entry<String, CredentialsSelectHelper.ContextResolver> entry : resolversByName.entrySet()) {
-            stdout.println(StringUtils.rightPad(entry.getKey(), maxNameLen)
-                    + " "
-                    + CredentialsSelectHelper.ContextResolver.displayName(entry.getValue()));
+
+        Domain replacement = (Domain) Items.XSTREAM.unmarshal(safeXmlStreamReader(stdin));
+        if (store.updateDomain(domain, replacement)) {
+            return 0;
         }
-        return 0;
+        stderr.println("No change");
+        return 1;
     }
 }

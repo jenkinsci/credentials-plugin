@@ -23,25 +23,37 @@
  */
 package com.cloudbees.plugins.credentials.cli;
 
-import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.CredentialsStoreAction;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.Extension;
-import hudson.cli.CLICommand;
-import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+import java.io.OutputStreamWriter;
+import org.kohsuke.args4j.Argument;
 
 /**
- * Lists the {@link CredentialsSelectHelper.ContextResolver} instances and the context objects they resolve.
+ * Retrieves a credentials configuration as XML.
  *
  * @since 2.1.1
  */
 @Extension
-public class ListCredentialsContextResolversCommand extends BaseCredentialsCLICommand {
+public class GetCredentialsAsXmlCommand extends BaseCredentialsCLICommand {
+    @Argument(metaVar = "STORE", usage = "Store Id", required = true)
+    public CredentialsStore store;
+
+    @Argument(metaVar = "DOMAIN", usage = "Domain Name", required = true, index = 1)
+    public String domain;
+
+    @Argument(metaVar = "CREDENTIAL", usage = "Credential Id", required = true, index = 2)
+    public String id;
+
     /**
      * {@inheritDoc}
      */
     @Override
     public String getShortDescription() {
-        return "List Credentials Context Resolvers";
+        return "Gets credentials as XML (secrets redacted)";
     }
 
     /**
@@ -49,21 +61,20 @@ public class ListCredentialsContextResolversCommand extends BaseCredentialsCLICo
      */
     @Override
     protected int run() throws Exception {
-        Map<String, CredentialsSelectHelper.ContextResolver> resolversByName =
-                CredentialsSelectHelper.getResolversByName();
-        int maxNameLen = 0, maxDisplayLen = 0;
-        for (Map.Entry<String, CredentialsSelectHelper.ContextResolver> entry : resolversByName.entrySet()) {
-            maxNameLen = Math.max(maxNameLen, entry.getKey().length());
-            maxDisplayLen = Math.max(maxDisplayLen,
-                    CredentialsSelectHelper.ContextResolver.displayName(entry.getValue()).length());
+        store.checkPermission(CredentialsProvider.UPDATE);
+        Domain domain = getDomainByName(store, this.domain);
+        if (domain == null) {
+            stderr.println("No such domain");
+            return 2;
         }
-        stdout.println(StringUtils.rightPad("Name", maxNameLen) + " Resolves");
-        stdout.println(StringUtils.repeat("=", maxNameLen) + " " + StringUtils.repeat("=", maxDisplayLen));
-        for (Map.Entry<String, CredentialsSelectHelper.ContextResolver> entry : resolversByName.entrySet()) {
-            stdout.println(StringUtils.rightPad(entry.getKey(), maxNameLen)
-                    + " "
-                    + CredentialsSelectHelper.ContextResolver.displayName(entry.getValue()));
+        Credentials existing = getCredentialsById(store, domain, id);
+        if (existing == null) {
+            stderr.println("No such credential");
+            return 3;
         }
+
+        CredentialsStoreAction.SECRETS_REDACTED.toXML(existing, new OutputStreamWriter(stdout, "UTF-8"));
         return 0;
     }
+
 }

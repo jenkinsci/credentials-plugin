@@ -43,7 +43,7 @@ import org.kohsuke.args4j.Argument;
  * @since 2.1.1
  */
 @Extension
-public class ListCredentialsCommand extends CLICommand {
+public class ListCredentialsCommand extends BaseCredentialsCLICommand {
     /**
      * The store to list credentials in.
      */
@@ -68,7 +68,7 @@ public class ListCredentialsCommand extends CLICommand {
         for (Domain domain : domains) {
             List<Credentials> credentials = store.getCredentials(domain);
             Map<String, String> nameById = new LinkedHashMap<String, String>(credentials.size());
-            int maxIdLen ="# of Credentials".length(), maxNameLen = 0;
+            int maxIdLen = "# of Credentials".length(), maxNameLen = 0;
             int index = 0;
             for (Credentials c : credentials) {
                 String id;
@@ -87,8 +87,11 @@ public class ListCredentialsCommand extends CLICommand {
                 maxNameLen = Math.max(maxNameLen, name.length());
             }
             stdout.println(StringUtils.repeat("=", maxIdLen + maxNameLen + 1));
-            stdout.println(StringUtils.rightPad("Domain", maxIdLen) + " " + (domain.isGlobal() ? "(global)" : domain.getName()));
-            stdout.println(StringUtils.rightPad("Description", maxIdLen) + " " + StringUtils.defaultString(domain.getDescription()));
+            stdout.println(StringUtils.rightPad("Domain", maxIdLen) + " " + (domain.isGlobal()
+                    ? "(global)"
+                    : domain.getName()));
+            stdout.println(StringUtils.rightPad("Description", maxIdLen) + " " + StringUtils
+                    .defaultString(domain.getDescription()));
             stdout.println(StringUtils.rightPad("# of Credentials", maxIdLen) + " " + credentials.size());
             stdout.println(StringUtils.repeat("=", maxIdLen + maxNameLen + 1));
             stdout.println(StringUtils.rightPad("Id", maxIdLen) + " Name");
