@@ -87,7 +87,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @since 2.1.1
      */
-    public static CredentialsProvider NONE = new CredentialsProvider() {
+    public static final CredentialsProvider NONE = new CredentialsProvider() {
         /**
          * {@inheritDoc}
          */
