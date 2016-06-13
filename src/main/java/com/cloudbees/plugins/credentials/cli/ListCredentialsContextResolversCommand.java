@@ -25,7 +25,6 @@ package com.cloudbees.plugins.credentials.cli;
 
 import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
 import hudson.Extension;
-import hudson.cli.CLICommand;
 import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 

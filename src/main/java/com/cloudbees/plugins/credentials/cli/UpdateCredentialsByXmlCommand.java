@@ -27,7 +27,6 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.thoughtworks.xstream.io.xml.XppDriver;
 import hudson.Extension;
 import hudson.model.Items;
 import org.kohsuke.args4j.Argument;

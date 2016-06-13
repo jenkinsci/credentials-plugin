@@ -30,7 +30,6 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.Extension;
-import hudson.cli.CLICommand;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

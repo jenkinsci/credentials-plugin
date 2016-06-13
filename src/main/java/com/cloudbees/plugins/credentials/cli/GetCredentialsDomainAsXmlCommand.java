@@ -23,10 +23,8 @@
  */
 package com.cloudbees.plugins.credentials.cli;
 
-import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
-import com.cloudbees.plugins.credentials.CredentialsStoreAction;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.Extension;
 import hudson.model.Items;
