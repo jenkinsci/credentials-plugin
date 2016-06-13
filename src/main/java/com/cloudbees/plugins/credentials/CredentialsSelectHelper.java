@@ -740,7 +740,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          * Returns a human readable descripton of the type of context objects that this resolver resolves.
          * @return a human readable descripton of the type of context objects that this resolver resolves.
          * @throws AbstractMethodError if somebody compiled against pre-2.1.1 implementations. Use
-         * {@link #displayName(ContextResolver)} if you would prefer not to have to catch them.
+         * {@link CredentialsSelectHelper.ContextResolver#displayName(CredentialsSelectHelper.ContextResolver)}
+         * if you would prefer not to have to catch them.
          * @since 2.1.1
          */
         @NonNull
@@ -749,6 +750,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         /**
          * Returns a human readable descripton of the type of context objects that the specified resolver resolves.
          *
+         * @param resolver the context resolver to get the display name of.
          * @return a human readable descripton of the type of context objects that the specified resolver resolves.
          * @since 2.1.1
          */
