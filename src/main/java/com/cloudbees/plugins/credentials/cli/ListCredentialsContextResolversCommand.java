@@ -41,7 +41,7 @@ public class ListCredentialsContextResolversCommand extends BaseCredentialsCLICo
      */
     @Override
     public String getShortDescription() {
-        return "List Credentials Context Resolvers";
+        return Messages.ListCredentialsContextResolversCommand_ShortDescription();
     }
 
     /**

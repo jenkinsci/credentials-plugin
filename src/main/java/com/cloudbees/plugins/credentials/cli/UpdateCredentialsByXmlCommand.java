@@ -53,7 +53,7 @@ public class UpdateCredentialsByXmlCommand extends BaseCredentialsCLICommand {
      */
     @Override
     public String getShortDescription() {
-        return "Update credentials by XML";
+        return Messages.UpdateCredentialsByXmlCommand_ShortDescription();
     }
 
     /**

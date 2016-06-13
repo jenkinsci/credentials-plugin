@@ -55,7 +55,7 @@ public class ListCredentialsCommand extends BaseCredentialsCLICommand {
      */
     @Override
     public String getShortDescription() {
-        return "Lists the credentials in a specific store";
+        return Messages.ListCredentialsCommand_ShortDescription();
     }
 
     /**

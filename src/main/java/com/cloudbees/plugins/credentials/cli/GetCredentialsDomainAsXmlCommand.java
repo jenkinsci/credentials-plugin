@@ -51,7 +51,7 @@ public class GetCredentialsDomainAsXmlCommand extends BaseCredentialsCLICommand 
      */
     @Override
     public String getShortDescription() {
-        return "Gets credentials domain as XML";
+        return Messages.GetCredentialsDomainAsXmlCommand_ShortDescription();
     }
 
     /**

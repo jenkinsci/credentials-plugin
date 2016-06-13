@@ -47,7 +47,7 @@ public class CreateCredentialsDomainByXmlCommand extends BaseCredentialsCLIComma
      */
     @Override
     public String getShortDescription() {
-        return "Create credentials domain by XML";
+        return Messages.CreateCredentialsDomainByXmlCommand_ShortDescription();
     }
 
     /**

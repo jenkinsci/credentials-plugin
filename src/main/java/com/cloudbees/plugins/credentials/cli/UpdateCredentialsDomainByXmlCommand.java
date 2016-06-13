@@ -50,7 +50,7 @@ public class UpdateCredentialsDomainByXmlCommand extends BaseCredentialsCLIComma
      */
     @Override
     public String getShortDescription() {
-        return "Update credentials domain by XML";
+        return Messages.UpdateCredentialsDomainByXmlCommand_ShortDescription();
     }
 
     /**

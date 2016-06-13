@@ -51,7 +51,7 @@ public class DeleteCredentialsCommand extends BaseCredentialsCLICommand {
      */
     @Override
     public String getShortDescription() {
-        return "Deletes credentials";
+        return Messages.DeleteCredentialsCommand_ShortDescription();
     }
 
     /**

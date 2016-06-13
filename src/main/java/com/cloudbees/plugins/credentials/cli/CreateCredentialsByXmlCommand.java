@@ -50,7 +50,7 @@ public class CreateCredentialsByXmlCommand extends BaseCredentialsCLICommand {
      */
     @Override
     public String getShortDescription() {
-        return "Create credentials by XML";
+        return Messages.CreateCredentialsByXmlCommand_ShortDescription();
     }
 
     /**

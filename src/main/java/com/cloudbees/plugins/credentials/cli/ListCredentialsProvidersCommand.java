@@ -42,7 +42,7 @@ public class ListCredentialsProvidersCommand extends BaseCredentialsCLICommand {
      */
     @Override
     public String getShortDescription() {
-        return "List Credentials Providers";
+        return Messages.ListCredentialsProvidersCommand_ShortDescription();
     }
 
     /**

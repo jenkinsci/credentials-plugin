@@ -53,7 +53,7 @@ public class GetCredentialsAsXmlCommand extends BaseCredentialsCLICommand {
      */
     @Override
     public String getShortDescription() {
-        return "Gets credentials as XML (secrets redacted)";
+        return Messages.GetCredentialsAsXmlCommand_ShortDescription();
     }
 
     /**
