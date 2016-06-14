@@ -901,6 +901,8 @@ public abstract class CredentialsStoreAction
          * @since 2.1.1
          */
         @WebMethod(name = "config.xml")
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
         public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp)
                 throws IOException {
             getStore().checkPermission(CredentialsProvider.MANAGE_DOMAINS);
@@ -916,6 +918,14 @@ public abstract class CredentialsStoreAction
                 updateByXml(new StreamSource(req.getReader()));
                 return;
             }
+            if (req.getMethod().equals("DELETE") && getStore().isDomainsModifiable()) {
+                if (getStore().removeDomain(domain)) {
+                    return;
+                } else {
+                    rsp.sendError(HttpServletResponse.SC_CONFLICT);
+                    return;
+                }
+            }
 
             // huh?
             rsp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -930,6 +940,7 @@ public abstract class CredentialsStoreAction
          * @throws IOException if things go wrong.
          * @since 2.1.1
          */
+        @Restricted(NoExternalUse.class)
         public void updateByXml(Source source) throws IOException {
             getStore().checkPermission(CredentialsProvider.MANAGE_DOMAINS);
             final StringWriter out = new StringWriter();
@@ -1304,6 +1315,7 @@ public abstract class CredentialsStoreAction
          * @since 2.0
          */
         @CheckForNull
+        @Restricted(NoExternalUse.class)
         public ContextMenu getContextMenu(String prefix) {
             if (getStore().hasPermission(UPDATE) || getStore().hasPermission(DELETE)) {
                 ContextMenu result = new ContextMenu();
@@ -1347,6 +1359,8 @@ public abstract class CredentialsStoreAction
          * @since 2.1.1
          */
         @WebMethod(name = "config.xml")
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
         public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp)
                 throws IOException {
             if (req.getMethod().equals("GET")) {
@@ -1362,6 +1376,15 @@ public abstract class CredentialsStoreAction
                 updateByXml(new StreamSource(req.getReader()));
                 return;
             }
+            if (req.getMethod().equals("DELETE")) {
+                getStore().checkPermission(DELETE);
+                if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+                    return;
+                } else {
+                    rsp.sendError(HttpServletResponse.SC_CONFLICT);
+                    return;
+                }
+            }
 
             // huh?
             rsp.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -1376,6 +1399,7 @@ public abstract class CredentialsStoreAction
          * @throws IOException if things go wrong
          * @since 2.1.1
          */
+        @Restricted(NoExternalUse.class)
         public void updateByXml(Source source) throws IOException {
             getStore().checkPermission(UPDATE);
             final StringWriter out = new StringWriter();
