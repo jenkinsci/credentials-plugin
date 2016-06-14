@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import javax.servlet.http.HttpServletResponse;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
@@ -27,6 +28,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeThat;
 
 public class CredentialsStoreActionTest {
     @Rule
@@ -222,6 +224,55 @@ public class CredentialsStoreActionTest {
         con = deleteConfigDotXml(systemStore, "smokes");
         assertThat(con.getResponseCode(), is(200));
         assertThat(systemStore.getDomainByName("smokes"), nullValue());
+    }
+
+    @Test
+    public void restCRUDNonHappy() throws Exception {
+        JenkinsRule.WebClient wc = j.createWebClient();
+        j.getInstance().setCrumbIssuer(null);
+        assertThat(systemStore.getDomainByName("smokes"), nullValue());
+        // create domain
+        HttpURLConnection con =
+                postCreateByXml(systemStore, "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+        assumeThat(con.getResponseCode(), is(200));
+        con = postCreateByXml(systemStore, "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+        assertThat(con.getResponseCode(), is(HttpServletResponse.SC_CONFLICT));
+
+        // update domain
+        con = postConfigDotXml(systemStore, "no-smokes", "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>no-smokes</name>\n"
+                + "<specifications>\n"
+                + "<com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
+                + "<includes>smokes.example.com</includes>\n"
+                + "<excludes/>\n"
+                + "</com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
+                + "</specifications>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+        assertThat(con.getResponseCode(), is(404));
+
+        // create credential
+        con = postCreateByXml(systemStore, "smokes",
+                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
+                        + "  <scope>GLOBAL</scope>\n"
+                        + "  <id>smokey-id</id>\n"
+                        + "  <description>created from xml</description>\n"
+                        + "  <username>example-com-deployer</username>\n"
+                        + "  <password>super-secret</password>\n"
+                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
+        assumeThat(con.getResponseCode(), is(200));
+        con = postCreateByXml(systemStore, "smokes",
+                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
+                        + "  <scope>GLOBAL</scope>\n"
+                        + "  <id>smokey-id</id>\n"
+                        + "  <description>created from xml</description>\n"
+                        + "  <username>example-com-deployer</username>\n"
+                        + "  <password>super-secret</password>\n"
+                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
+        assertThat(con.getResponseCode(), is(HttpServletResponse.SC_CONFLICT));
     }
 
     private HttpURLConnection postCreateByXml(CredentialsStore store, String xml)

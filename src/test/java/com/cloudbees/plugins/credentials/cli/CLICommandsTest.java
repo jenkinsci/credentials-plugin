@@ -48,6 +48,7 @@ import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.xmlunit.matchers.CompareMatcher;
 
+import static hudson.cli.CLICommandInvoker.Matcher.failedWith;
 import static hudson.cli.CLICommandInvoker.Matcher.succeeded;
 import static hudson.cli.CLICommandInvoker.Matcher.succeededSilently;
 import static org.hamcrest.Matchers.allOf;
@@ -60,6 +61,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeThat;
 
 public class CLICommandsTest {
     @Rule
@@ -121,6 +123,47 @@ public class CLICommandsTest {
         assertThat(c.getDescription(), is("created from xml"));
         assertThat(c.getUsername(), is("example-com-deployer"));
         assertThat(c.getPassword().getPlainText(), is("super-secret"));
+    }
+
+    @Test
+    public void createNonHappy() {
+        CLICommand cmd = new CreateCredentialsDomainByXmlCommand();
+        CLICommandInvoker invoker = new CLICommandInvoker(r, cmd);
+        assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
+                (Matcher) not(hasItem(hasProperty("name", is("smokes")))));
+        assumeThat(invoker.withStdin(asStream(
+                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>"))
+                .invokeWithArgs("system::system::jenkins"), succeededSilently());
+        assertThat(invoker.withStdin(asStream(
+                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>"))
+                .invokeWithArgs("system::system::jenkins"), failedWith(1));
+
+        cmd = new CreateCredentialsByXmlCommand();
+        invoker = new CLICommandInvoker(r, cmd);
+        assumeThat(invoker.withStdin(asStream(
+                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
+                        + "  <scope>GLOBAL</scope>\n"
+                        + "  <id>smokey-id</id>\n"
+                        + "  <description>created from xml</description>\n"
+                        + "  <username>example-com-deployer</username>\n"
+                        + "  <password>super-secret</password>\n"
+                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"))
+                        .invokeWithArgs("system::system::jenkins", "smokes"),
+                succeededSilently());
+        assertThat(invoker.withStdin(asStream(
+                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
+                        + "  <scope>GLOBAL</scope>\n"
+                        + "  <id>smokey-id</id>\n"
+                        + "  <description>created from xml</description>\n"
+                        + "  <username>example-com-deployer</username>\n"
+                        + "  <password>super-secret</password>\n"
+                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"))
+                        .invokeWithArgs("system::system::jenkins", "smokes"),
+                failedWith(1));
     }
 
     @Test
