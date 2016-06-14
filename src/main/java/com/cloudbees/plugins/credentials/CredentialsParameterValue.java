@@ -9,12 +9,14 @@ import hudson.EnvVars;
 import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.Executor;
+import hudson.model.Fingerprint;
 import hudson.model.ParameterValue;
 import hudson.model.Run;
 import hudson.model.User;
 import hudson.model.queue.WorkUnit;
 import hudson.security.ACL;
 import hudson.util.VariableResolver;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,6 +64,7 @@ public class CredentialsParameterValue extends ParameterValue {
      */
     @Override
     public void buildEnvironment(Run<?, ?> build, EnvVars env) {
+        CredentialsProvider.trackUsage(build, lookupCredentials(StandardCredentials.class, build));
         env.put(name, value);
     }
 
@@ -70,6 +73,7 @@ public class CredentialsParameterValue extends ParameterValue {
      */
     @Override
     public VariableResolver<String> createVariableResolver(AbstractBuild<?, ?> build) {
+        CredentialsProvider.trackUsage(build, lookupCredentials(StandardCredentials.class, build));
         return new VariableResolver<String>() {
             public String resolve(String name) {
                 return CredentialsParameterValue.this.name.equals(name) ? value : null;

@@ -44,6 +44,7 @@ import hudson.model.Action;
 import hudson.model.Api;
 import hudson.model.Descriptor;
 import hudson.model.Failure;
+import hudson.model.Fingerprint;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Items;
@@ -1037,6 +1038,7 @@ public abstract class CredentialsStoreAction
          * The {@link IdCredentials#getId()} of the {@link Credentials}.
          */
         private final String id;
+        private Fingerprint fingerprint;
 
         /**
          * Constructor.
@@ -1183,6 +1185,22 @@ public abstract class CredentialsStoreAction
          */
         public CredentialsStore getStore() {
             return domain.getStore();
+        }
+
+        /**
+         * Exposes the fingerprint for Jelly pages.
+         *
+         * @return the {@link Fingerprint}.
+         * @throws IOException if the {@link Fingerprint} could not be retrieved.
+         * @since 2.1.1
+         */
+        @Restricted(NoExternalUse.class)
+        public Fingerprint getFingerprint() throws IOException {
+            if (fingerprint == null) {
+                // idempotent write
+                fingerprint = CredentialsProvider.fingerprintOf(credentials);
+            }
+            return fingerprint;
         }
 
         /**
