@@ -5,28 +5,43 @@ import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.WebResponse;
 import hudson.ExtensionList;
+import hudson.Util;
+import hudson.model.Items;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.xmlunit.matchers.CompareMatcher;
 
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 public class CredentialsStoreActionTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
+    private SystemCredentialsProvider.ProviderImpl system;
+    private CredentialsStore systemStore;
+
+    @Before
+    public void setUp() throws Exception {
+        system = ExtensionList.lookup(CredentialsProvider.class).get(SystemCredentialsProvider.ProviderImpl.class);
+        systemStore = system.getStore(j.getInstance());
+    }
 
     @Test
     public void smokes() throws Exception {
-        SystemCredentialsProvider.ProviderImpl system = ExtensionList.lookup(CredentialsProvider.class).get(
-                SystemCredentialsProvider.ProviderImpl.class);
-
-        CredentialsStore systemStore = system.getStore(j.getInstance());
-
         List<Domain> domainList = new ArrayList<Domain>(systemStore.getDomains());
         domainList.remove(Domain.global());
         for (Domain d : domainList) {
@@ -40,7 +55,7 @@ public class CredentialsStoreActionTest {
 
         JenkinsRule.WebClient wc = j.createWebClient();
         WebResponse response = wc.goTo("credentials/store/system/api/xml?depth=5", "application/xml").getWebResponse();
-        assertThat(response.getContentAsString(), is("<userFacingAction>"
+        assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo("<userFacingAction>"
                 + "<domains>"
                 + "<_>"
                 + "<description>"
@@ -54,7 +69,7 @@ public class CredentialsStoreActionTest {
                 + "<urlName>_</urlName>"
                 + "</_>"
                 + "</domains>"
-                + "</userFacingAction>"));
+                + "</userFacingAction>").ignoreWhitespace().ignoreComments());
 
         Random entropy = new Random();
         String domainName = "test" + entropy.nextInt();
@@ -66,7 +81,7 @@ public class CredentialsStoreActionTest {
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId,
                         credentialDescription, credentialUsername, "test-secret"));
         response = wc.goTo("credentials/store/system/api/xml?depth=5", "application/xml").getWebResponse();
-        assertThat(response.getContentAsString(), is("<userFacingAction>"
+        assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo("<userFacingAction>"
                 + "<domains>"
                 + "<_>"
                 + "<description>"
@@ -97,7 +112,185 @@ public class CredentialsStoreActionTest {
                 + "<urlName>" + domainName + "</urlName>"
                 + "</" + domainName + ">"
                 + "</domains>"
-                + "</userFacingAction>"));
-
+                + "</userFacingAction>").ignoreComments().ignoreWhitespace());
     }
+
+    @Test
+    public void restCRUDSmokes() throws Exception {
+        JenkinsRule.WebClient wc = j.createWebClient();
+        j.getInstance().setCrumbIssuer(null);
+        assertThat(systemStore.getDomainByName("smokes"), nullValue());
+        // create domain
+        HttpURLConnection con =
+                postCreateByXml(systemStore, "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+        assertThat(con.getResponseCode(), is(200));
+        assertThat(Items.XSTREAM2.toXML(systemStore.getDomainByName("smokes")), CompareMatcher.isIdenticalTo(
+                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>").ignoreWhitespace().ignoreComments());
+
+        // read domain
+        WebResponse response = wc.goTo("credentials/store/system/domain/smokes/config.xml", "application/xml").getWebResponse();
+        assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo(
+                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>").ignoreWhitespace().ignoreComments());
+
+        // update domain
+        con = postConfigDotXml(systemStore, "smokes", "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                + "<specifications>\n"
+                + "<com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
+                + "<includes>smokes.example.com</includes>\n"
+                + "<excludes/>\n"
+                + "</com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
+                + "</specifications>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+        assertThat(con.getResponseCode(), is(200));
+        assertThat(Items.XSTREAM2.toXML(systemStore.getDomainByName("smokes")), CompareMatcher.isIdenticalTo(
+                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
+                        + "  <name>smokes</name>\n"
+                        + "<specifications>\n"
+                        + "<com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
+                        + "<includes>smokes.example.com</includes>\n"
+                        + "<excludes/>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
+                        + "</specifications>\n"
+                        + "</com.cloudbees.plugins.credentials.domains.Domain>").ignoreWhitespace().ignoreComments());
+
+        // create credential
+        con = postCreateByXml(systemStore, "smokes",
+                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
+                        + "  <scope>GLOBAL</scope>\n"
+                        + "  <id>smokey-id</id>\n"
+                        + "  <description>created from xml</description>\n"
+                        + "  <username>example-com-deployer</username>\n"
+                        + "  <password>super-secret</password>\n"
+                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
+        assertThat(con.getResponseCode(), is(200));
+        List<Credentials> credentials = systemStore.getCredentials(systemStore.getDomainByName("smokes"));
+        assertThat(credentials, notNullValue());
+        Credentials cred = credentials.isEmpty() ? null : credentials.get(0);
+        assertThat(cred, instanceOf(UsernamePasswordCredentialsImpl.class));
+        UsernamePasswordCredentialsImpl c = (UsernamePasswordCredentialsImpl) cred;
+        assertThat(c.getScope(), is(CredentialsScope.GLOBAL));
+        assertThat(c.getId(), is("smokey-id"));
+        assertThat(c.getDescription(), is("created from xml"));
+        assertThat(c.getUsername(), is("example-com-deployer"));
+        assertThat(c.getPassword().getPlainText(), is("super-secret"));
+
+        // read credential
+        response = wc.goTo("credentials/store/system/domain/smokes/credential/smokey-id/config.xml", "application/xml").getWebResponse();
+        assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo(
+                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
+                        + "  <scope>GLOBAL</scope>\n"
+                        + "  <id>smokey-id</id>\n"
+                        + "  <description>created from xml</description>\n"
+                        + "  <username>example-com-deployer</username>\n"
+                        + "  <password><secret-redacted/></password>\n"
+                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>").ignoreWhitespace().ignoreComments());
+
+        // update credentials
+        con = postConfigDotXml(systemStore, "smokes", "smokey-id",
+                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
+                        + "  <scope>SYSTEM</scope>\n"
+                        + "  <id>smokey-id</id>\n"
+                        + "  <description>updated by xml</description>\n"
+                        + "  <username>example-org-deployer</username>\n"
+                        + "  <password>super-duper-secret</password>\n"
+                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
+        assertThat(con.getResponseCode(), is(200));
+        credentials = systemStore.getCredentials(systemStore.getDomainByName("smokes"));
+        assertThat(credentials, notNullValue());
+        cred = credentials.isEmpty() ? null : credentials.get(0);
+        assertThat(cred, instanceOf(UsernamePasswordCredentialsImpl.class));
+        c = (UsernamePasswordCredentialsImpl) cred;
+        assertThat(c.getScope(), is(CredentialsScope.SYSTEM));
+        assertThat(c.getId(), is("smokey-id"));
+        assertThat(c.getDescription(), is("updated by xml"));
+        assertThat(c.getUsername(), is("example-org-deployer"));
+        assertThat(c.getPassword().getPlainText(), is("super-duper-secret"));
+
+        // delete credentials
+        con = deleteConfigDotXml(systemStore, "smokes", "smokey-id");
+        assertThat(con.getResponseCode(), is(200));
+        assertThat(systemStore.getCredentials(systemStore.getDomainByName("smokes")), is(Collections.<Credentials>emptyList()));
+
+        // delete domain
+        con = deleteConfigDotXml(systemStore, "smokes");
+        assertThat(con.getResponseCode(), is(200));
+        assertThat(systemStore.getDomainByName("smokes"), nullValue());
+    }
+
+    private HttpURLConnection postCreateByXml(CredentialsStore store, String xml)
+            throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/" + store.getStoreAction().getUrlName() + "/createDomain").openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/xml;charset=utf-8");
+        con.setDoOutput(true);
+        con.getOutputStream().write(xml.getBytes("UTF-8"));
+        return con;
+    }
+
+    private HttpURLConnection postCreateByXml(CredentialsStore store, String domainName, String xml)
+            throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
+                        .rawEncode(StringUtils.defaultIfBlank(domainName, "_")) + "/createCredentials")
+                .openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/xml;charset=utf-8");
+        con.setDoOutput(true);
+        con.getOutputStream().write(xml.getBytes("UTF-8"));
+        return con;
+    }
+
+    private HttpURLConnection postConfigDotXml(CredentialsStore store, String domainName, String xml)
+            throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
+                        .rawEncode(StringUtils.defaultIfBlank(domainName, "_")) + "/config.xml").openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/xml;charset=utf-8");
+        con.setDoOutput(true);
+        con.getOutputStream().write(xml.getBytes("UTF-8"));
+        return con;
+    }
+
+    private HttpURLConnection postConfigDotXml(CredentialsStore store, String domainName, String credentialsId,
+                                               String xml) throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
+                        .rawEncode(StringUtils.defaultIfBlank(domainName, "_")) + "/credential/" + Util
+                        .rawEncode(credentialsId) + "/config.xml").openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/xml;charset=utf-8");
+        con.setDoOutput(true);
+        con.getOutputStream().write(xml.getBytes("UTF-8"));
+        return con;
+    }
+
+    private HttpURLConnection deleteConfigDotXml(CredentialsStore store, String domainName)
+            throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
+                        .rawEncode(StringUtils.defaultIfBlank(domainName, "_")) + "/config.xml").openConnection();
+        con.setRequestMethod("DELETE");
+        return con;
+    }
+
+    private HttpURLConnection deleteConfigDotXml(CredentialsStore store, String domainName, String credentialsId)
+            throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
+                        .rawEncode(StringUtils.defaultIfBlank(domainName, "_")) + "/credential/" + Util
+                        .rawEncode(credentialsId) + "/config.xml").openConnection();
+        con.setRequestMethod("DELETE");
+        return con;
+    }
+
 }
