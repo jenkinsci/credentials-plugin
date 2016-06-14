@@ -42,9 +42,6 @@ public class DeleteCredentialsDomainCommand extends BaseCredentialsCLICommand {
     @Argument(metaVar = "DOMAIN", usage = "Domain Name", required = true, index = 1)
     public String domain;
 
-    @Argument(metaVar = "CREDENTIAL", usage = "Credential Id", required = true, index = 2)
-    public String id;
-
     /**
      * {@inheritDoc}
      */

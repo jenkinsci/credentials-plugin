@@ -46,7 +46,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.hamcrest.Matchers;
 import org.xmlunit.matchers.CompareMatcher;
 
 import static hudson.cli.CLICommandInvoker.Matcher.succeeded;
@@ -59,16 +58,25 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 public class CLICommandsTest {
     @Rule
     public JenkinsRule r = new JenkinsRule();
+    private CredentialsStore store = null;
 
     @Before
     public void clearCredentials() {
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(
                 Collections.singletonMap(Domain.global(), Collections.<Credentials>emptyList()));
+        for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.getInstance())) {
+            if (s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
+                store = s;
+                break;
+            }
+        }
+        assertThat("The system credentials provider is enabled", store, notNullValue());
     }
 
     @Test
@@ -122,14 +130,6 @@ public class CLICommandsTest {
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
-        CredentialsStore store = null;
-        for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.getInstance())) {
-            if (s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
-                store = s;
-                break;
-            }
-        }
-        assertThat("The system credentials provider is enabled", store, notNullValue());
         store.addDomain(smokes, smokey);
         CLICommandInvoker invoker = new CLICommandInvoker(r, new GetCredentialsDomainAsXmlCommand());
         CLICommandInvoker.Result result = invoker.invokeWithArgs("system::system::jenkins", "smokes");
@@ -164,14 +164,6 @@ public class CLICommandsTest {
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
-        CredentialsStore store = null;
-        for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.getInstance())) {
-            if (s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
-                store = s;
-                break;
-            }
-        }
-        assertThat("The system credentials provider is enabled", store, notNullValue());
 
         // check getting the providers
         CLICommandInvoker invoker = new CLICommandInvoker(r, new ListCredentialsProvidersCommand());
@@ -207,6 +199,68 @@ public class CLICommandsTest {
                 containsString(" Domain smokes Description smoke test domain # of Credentials 1 "),
                 containsString(" smokes-id smoke/****** (smoke testing) ")
         ));
+    }
+
+    @Test
+    public void updateSmokes() throws Exception {
+        Domain smokes = new Domain("smokes", "smoke test domain",
+                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", null)));
+        UsernamePasswordCredentialsImpl smokey =
+                new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
+                        "smoke text");
+        store.addDomain(smokes, smokey);
+        CLICommandInvoker invoker = new CLICommandInvoker(r, new UpdateCredentialsDomainByXmlCommand());
+        Domain replacement = new Domain("smokes", "smoke test domain updated",
+                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", "update.example.com")));
+        assertThat(invoker.withStdin(asStream(Items.XSTREAM2.toXML(replacement)))
+                .invokeWithArgs("system::system::jenkins", "smokes"), succeededSilently());
+        Domain updated = store.getDomainByName("smokes");
+        assertThat(Items.XSTREAM2.toXML(updated), CompareMatcher.isIdenticalTo(Items.XSTREAM2.toXML(replacement))
+                .ignoreComments()
+                .ignoreWhitespace()
+        );
+        assertThat(Items.XSTREAM2.toXML(updated), not(CompareMatcher.isIdenticalTo(Items.XSTREAM2.toXML(smokes))
+                .ignoreComments()
+                .ignoreWhitespace()
+        ));
+        invoker = new CLICommandInvoker(r, new UpdateCredentialsByXmlCommand());
+        assertThat(invoker.withStdin(asStream(
+                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
+                        + "  <scope>SYSTEM</scope>\n"
+                        + "  <id>smokes-id</id>\n"
+                        + "  <description>updated by xml</description>\n"
+                        + "  <username>soot</username>\n"
+                        + "  <password>vapour text</password>\n"
+                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"))
+                        .invokeWithArgs("system::system::jenkins", "smokes", "smokes-id"),
+                succeededSilently());
+        assertThat(store.getCredentials(smokes).size(), is(1));
+        Credentials cred = store.getCredentials(smokes).get(0);
+        assertThat(cred, instanceOf(UsernamePasswordCredentialsImpl.class));
+        UsernamePasswordCredentialsImpl c = (UsernamePasswordCredentialsImpl) cred;
+        assertThat(c.getScope(), is(CredentialsScope.SYSTEM));
+        assertThat(c.getId(), is("smokes-id"));
+        assertThat(c.getDescription(), is("updated by xml"));
+        assertThat(c.getUsername(), is("soot"));
+        assertThat(c.getPassword().getPlainText(), is("vapour text"));
+    }
+
+    @Test
+    public void deleteSmokes() throws Exception {
+        Domain smokes = new Domain("smokes", "smoke test domain",
+                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", null)));
+        UsernamePasswordCredentialsImpl smokey =
+                new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
+                        "smoke text");
+        store.addDomain(smokes, smokey);
+        CLICommandInvoker invoker = new CLICommandInvoker(r, new DeleteCredentialsCommand());
+        assertThat(store.getCredentials(smokes), not(is(Collections.<Credentials>emptyList())));
+        assertThat(invoker.invokeWithArgs("system::system::jenkins", "smokes", "smokes-id"), succeededSilently());
+        assertThat(store.getCredentials(smokes), is(Collections.<Credentials>emptyList()));
+
+        invoker = new CLICommandInvoker(r, new DeleteCredentialsDomainCommand());
+        assertThat(invoker.invokeWithArgs("system::system::jenkins", "smokes"), succeededSilently());
+        assertThat(store.getDomainByName("smokes"), nullValue());
     }
 
     private static ByteArrayInputStream asStream(String text) {
