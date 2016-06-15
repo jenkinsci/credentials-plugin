@@ -62,6 +62,7 @@ public class CredentialsParameterValue extends ParameterValue {
      */
     @Override
     public void buildEnvironment(Run<?, ?> build, EnvVars env) {
+        CredentialsProvider.track(build, lookupCredentials(StandardCredentials.class, build));
         env.put(name, value);
     }
 
@@ -70,6 +71,7 @@ public class CredentialsParameterValue extends ParameterValue {
      */
     @Override
     public VariableResolver<String> createVariableResolver(AbstractBuild<?, ?> build) {
+        CredentialsProvider.track(build, lookupCredentials(StandardCredentials.class, build));
         return new VariableResolver<String>() {
             public String resolve(String name) {
                 return CredentialsParameterValue.this.name.equals(name) ? value : null;

@@ -25,20 +25,26 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.fingerprints.ItemCredentialsFingerprintFacet;
+import com.cloudbees.plugins.credentials.fingerprints.NodeCredentialsFingerprintFacet;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.BulkChange;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
+import hudson.Util;
 import hudson.model.Cause;
 import hudson.model.Computer;
 import hudson.model.ComputerSet;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.DescriptorVisibilityFilter;
+import hudson.model.Fingerprint;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
+import hudson.model.Items;
 import hudson.model.Job;
 import hudson.model.ModelObject;
 import hudson.model.Node;
@@ -53,10 +59,17 @@ import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
 import hudson.util.ListBoxModel;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.Collator;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -68,13 +81,18 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.FingerprintFacet;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.userdetails.UsernameNotFoundException;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
+
+import static com.cloudbees.plugins.credentials.CredentialsStoreAction.SECRETS_REDACTED;
 
 /**
  * An extension point for providing {@link Credentials}.
@@ -863,7 +881,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 );
             }
         }
-        return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
+        C result = CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
+        // if the run has not completed yet then we can safely assume that the credential is being used for this run
+        // so we will track it's usage. We use isLogUpdated() as it could be used during post production
+        return run.isLogUpdated() ? track(run, result) : result;
     }
 
     /**
@@ -1273,6 +1294,257 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             }
         }
         return false;
+    }
+
+    /**
+     * Retrieves the {@link Fingerprint} for a specific credential.
+     * @param c the credential.
+     * @return the {@link Fingerprint} or {@code null} if the credential has no fingerprint associated with it.
+     * @throws IOException if the credential's fingerprint hash could not be computed.
+     * @since 2.1.1
+     */
+    @CheckForNull
+    public static Fingerprint getFingerprintOf(@NonNull Credentials c) throws IOException {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
+            try {
+                SECRETS_REDACTED.toXML(c, new OutputStreamWriter(out, Charset.forName("UTF-8")));
+            } finally {
+                IOUtils.closeQuietly(out);
+            }
+            return Jenkins.getActiveInstance().getFingerprintMap().get(Util.toHexString(md5.digest()));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("JLS mandates MD5 as a supported digest algorithm");
+        }
+    }
+
+    /**
+     * Creates a fingerprint that can be used to track the usage of a specific credential.
+     *
+     * @param c the credential to fingerprint.
+     * @return the Fingerprint.
+     * @throws IOException if the credential's fingerprint hash could not be computed.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static Fingerprint getOrCreateFingerprintOf(@NonNull Credentials c) throws IOException {
+        String pseudoFilename = String.format("Credential id=%s name=%s",
+                c instanceof IdCredentials ? ((IdCredentials) c).getId() : "unknown", CredentialsNameProvider.name(c));
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
+            try {
+                SECRETS_REDACTED.toXML(c, new OutputStreamWriter(out, Charset.forName("UTF-8")));
+            } finally {
+                IOUtils.closeQuietly(out);
+            }
+            return Jenkins.getActiveInstance().getFingerprintMap().getOrCreate(null, pseudoFilename, md5.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("JLS mandates MD5 as a supported digest algorithm");
+        }
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param build       the run to tag the fingerprint
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @CheckForNull
+    public static <C extends Credentials> C track(@NonNull Run build, @CheckForNull C credentials) {
+        if (credentials != null) {
+            trackAll(build, Collections.singletonList(credentials));
+        }
+        return credentials;
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param build       the run to tag the fingerprint
+     * @param credentials the credentials to fingerprint.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static <C extends Credentials> List<C> trackAll(@NonNull Run build, C... credentials) {
+        if (credentials != null) {
+            return trackAll(build, Arrays.asList(credentials));
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param build       the run to tag the fingerprint
+     * @param credentials the credentials to fingerprint.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static <C extends Credentials> List<C> trackAll(@NonNull Run build, @NonNull List<C> credentials) {
+        for (Credentials c : credentials) {
+            if (c != null) {
+                try {
+                    getOrCreateFingerprintOf(c).addFor(build);
+                } catch (IOException e) {
+                    LOGGER.log(Level.FINEST, "Could not track usage of " + c, e);
+                }
+            }
+        }
+        return credentials;
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param node       the node to tag the fingerprint
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @CheckForNull
+    public static <C extends Credentials> C track(@NonNull Node node, @CheckForNull C credentials) {
+        if (credentials != null) {
+            trackAll(node, Collections.singletonList(credentials));
+        }
+        return credentials;
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param node       the node to tag the fingerprint
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static <C extends Credentials> List<C> trackAll(@NonNull Node node, C... credentials) {
+        if (credentials != null) {
+            return trackAll(node, Arrays.asList(credentials));
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param node       the node to tag the fingerprint
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static <C extends Credentials> List<C> trackAll(@NonNull Node node, @NonNull List<C> credentials) {
+        long timestamp = System.currentTimeMillis();
+        String nodeName = node.getNodeName();
+        for (Credentials c : credentials) {
+            if (c != null) {
+                try {
+                    Fingerprint fingerprint = getOrCreateFingerprintOf(c);
+                    BulkChange change = new BulkChange(fingerprint);
+                    try {
+                        Collection<FingerprintFacet> facets = fingerprint.getFacets();
+                        // purge any old facets
+                        long start = timestamp;
+                        for (Iterator<FingerprintFacet> iterator = facets.iterator(); iterator.hasNext(); ) {
+                            FingerprintFacet f = iterator.next();
+                            if (f instanceof NodeCredentialsFingerprintFacet && StringUtils
+                                    .equals(nodeName, ((NodeCredentialsFingerprintFacet) f).getNodeName())) {
+                                start = Math.min(start, f.getTimestamp());
+                                iterator.remove();
+                            }
+                        }
+                        // add in the new one
+                        facets.add(new NodeCredentialsFingerprintFacet(node, fingerprint, start, timestamp));
+                    } finally {
+                        change.commit();
+                    }
+                } catch (IOException e) {
+                    LOGGER.log(Level.FINEST, "Could not track usage of " + c, e);
+                }
+            }
+        }
+        return credentials;
+    }
+
+    /**
+     * Track the usage of credentials in a specific item but not associated with a specific build, for example SCM
+     * polling.
+     *
+     * @param item the item to tag the fingerprint against
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @CheckForNull
+    public static <C extends Credentials> C track(@NonNull Item item, @CheckForNull C credentials) {
+        if (credentials != null) {
+            trackAll(item, Collections.singletonList(credentials));
+        }
+        return credentials;
+    }
+
+    /**
+     * Track the usage of credentials in a specific item but not associated with a specific build, for example SCM
+     * polling.
+     *
+     * @param item the item to tag the fingerprint against
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static <C extends Credentials> List<C> trackAll(@NonNull Item item, C... credentials) {
+        if (credentials != null) {
+            return trackAll(item, Arrays.asList(credentials));
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param item the item to tag the fingerprint against
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static <C extends Credentials> List<C> trackAll(@NonNull Item item, @NonNull List<C> credentials) {
+        long timestamp = System.currentTimeMillis();
+        String fullName = item.getFullName();
+        for (Credentials c : credentials) {
+            if (c != null) {
+                try {
+                    Fingerprint fingerprint = getOrCreateFingerprintOf(c);
+                    BulkChange change = new BulkChange(fingerprint);
+                    try {
+                        Collection<FingerprintFacet> facets = fingerprint.getFacets();
+                        // purge any old facets
+                        long start = timestamp;
+                        for (Iterator<FingerprintFacet> iterator = facets.iterator(); iterator.hasNext(); ) {
+                            FingerprintFacet f = iterator.next();
+                            if (f instanceof ItemCredentialsFingerprintFacet && StringUtils
+                                    .equals(fullName, ((ItemCredentialsFingerprintFacet) f).getItemFullName())) {
+                                start = Math.min(start, f.getTimestamp());
+                                iterator.remove();
+                            }
+                        }
+                        // add in the new one
+                        facets.add(new ItemCredentialsFingerprintFacet(item, fingerprint, start, timestamp));
+                    } finally {
+                        change.commit();
+                    }
+                } catch (IOException e) {
+                    LOGGER.log(Level.FINEST, "Could not track usage of " + c, e);
+                }
+            }
+        }
+        return credentials;
     }
 
     /**
