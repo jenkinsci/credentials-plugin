@@ -1195,6 +1195,7 @@ public abstract class CredentialsStoreAction
          * @since 2.1.1
          */
         @Restricted(NoExternalUse.class)
+        @Exported(visibility = 1)
         public Fingerprint getFingerprint() throws IOException {
             if (fingerprint == null) {
                 // idempotent write

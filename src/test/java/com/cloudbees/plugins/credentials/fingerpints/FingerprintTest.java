@@ -32,7 +32,9 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import hudson.Util;
 import hudson.model.Fingerprint;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
@@ -45,6 +47,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.xmlunit.matchers.CompareMatcher;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -127,5 +130,19 @@ public class FingerprintTest {
         assertThat(page.getElementById("usage-missing"), nullValue());
         assertThat(page.getElementById("usage-present"), notNullValue());
         assertThat(page.getAnchorByText(job.getFullDisplayName()), notNullValue());
+
+        // check the API
+        WebResponse response = wc.goTo(
+                "credentials/store/system/domain/_/credentials/secret-id/api/xml?depth=1&xpath=*/fingerprint/usage",
+                "application/xml").getWebResponse();
+        assertThat(response.getContentAsString(), CompareMatcher.isSimilarTo("<usage>"
+                + "<name>"+ Util.xmlEscape(job.getFullName())+"</name>"
+                + "<ranges>"
+                + "<range>"
+                + "<end>"+(job.getLastBuild().getNumber()+1)+"</end>"
+                + "<start>" + job.getLastBuild().getNumber()+"</start>"
+                + "</range>"
+                + "</ranges>"
+                + "</usage>").ignoreWhitespace().ignoreComments());
     }
 }
