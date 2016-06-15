@@ -1446,6 +1446,7 @@ public abstract class CredentialsStoreAction
              *
              * @return {@link CredentialsProvider#allCredentialsDescriptors()}
              */
+            @Restricted(NoExternalUse.class)
             public DescriptorExtensionList<Credentials, CredentialsDescriptor> getCredentialDescriptors() {
                 // TODO delete me
                 return CredentialsProvider.allCredentialsDescriptors();
