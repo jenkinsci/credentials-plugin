@@ -27,6 +27,12 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.thoughtworks.xstream.io.xml.XppDriver;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -40,6 +46,7 @@ import hudson.model.Descriptor;
 import hudson.model.Failure;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
+import hudson.model.Items;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.ACL;
@@ -47,7 +54,12 @@ import hudson.security.AccessControlled;
 import hudson.security.Permission;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
+import hudson.util.Secret;
+import hudson.util.XStream2;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -57,9 +69,15 @@ import java.util.Map;
 import java.util.TreeMap;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import jenkins.model.Jenkins;
 import jenkins.model.ModelObjectWithChildren;
 import jenkins.model.ModelObjectWithContextMenu;
+import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
 import org.acegisecurity.AccessDeniedException;
 import org.apache.commons.lang.StringUtils;
@@ -71,9 +89,11 @@ import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.xml.sax.SAXException;
 
 import static com.cloudbees.plugins.credentials.ContextMenuIconUtils.getMenuItemIconUrlByClassSpec;
 
@@ -104,6 +124,32 @@ public abstract class CredentialsStoreAction
      * Expose {@link CredentialsProvider#MANAGE_DOMAINS} for Jelly.
      */
     public static final Permission MANAGE_DOMAINS = CredentialsProvider.MANAGE_DOMAINS;
+
+    /**
+     * An {@link XStream2} that replaces {@link Secret} instances with {@literal REDACTED}
+     *
+     * @since 2.1.1
+     */
+    public static final XStream2 SECRETS_REDACTED;
+
+    static {
+        SECRETS_REDACTED = new XStream2();
+        SECRETS_REDACTED.registerConverter(new Converter() {
+
+            public boolean canConvert(Class type) {
+                return type == Secret.class;
+            }
+
+            public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
+                writer.startNode("secret-redacted");
+                writer.endNode();
+            }
+
+            public Object unmarshal(HierarchicalStreamReader reader, final UnmarshallingContext context) {
+                return null;
+            }
+        });
+    }
 
     /**
      * Returns the {@link CredentialsStore} backing this action.
@@ -425,14 +471,42 @@ public abstract class CredentialsStoreAction
     @RequirePOST
     public HttpResponse doCreateDomain(StaplerRequest req) throws ServletException, IOException {
         getStore().checkPermission(MANAGE_DOMAINS);
-        JSONObject data = req.getSubmittedForm();
-        Domain domain = req.bindJSON(Domain.class, data);
-        String domainName = domain.getName();
-        if (domainName != null && getStore().addDomain(domain)) {
-            return HttpResponses.redirectTo("./domain/" + Util.rawEncode(domainName));
-
+        if (!getStore().isDomainsModifiable()) {
+            return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
         }
-        return HttpResponses.redirectToDot();
+        String requestContentType = req.getContentType();
+        if (requestContentType == null) {
+            throw new Failure("No Content-Type header set");
+        }
+
+        if (requestContentType.startsWith("application/xml") || requestContentType.startsWith("text/xml")) {
+            final StringWriter out = new StringWriter();
+            try {
+                XMLUtils.safeTransform(new StreamSource(req.getReader()), new StreamResult(out));
+                out.close();
+            } catch (TransformerException e) {
+                throw new IOException("Failed to parse credential", e);
+            } catch (SAXException e) {
+                throw new IOException("Failed to parse credential", e);
+            }
+
+            Domain domain = (Domain)
+                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+            if (getStore().addDomain(domain)) {
+                return HttpResponses.ok();
+            } else {
+                return HttpResponses.status(HttpServletResponse.SC_CONFLICT);
+            }
+        } else {
+            JSONObject data = req.getSubmittedForm();
+            Domain domain = req.bindJSON(Domain.class, data);
+            String domainName = domain.getName();
+            if (domainName != null && getStore().addDomain(domain)) {
+                return HttpResponses.redirectTo("./domain/" + Util.rawEncode(domainName));
+
+            }
+            return HttpResponses.redirectToDot();
+        }
     }
 
     /**
@@ -666,10 +740,35 @@ public abstract class CredentialsStoreAction
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doCreateCredentials(StaplerRequest req) throws ServletException, IOException {
             getStore().checkPermission(CREATE);
-            JSONObject data = req.getSubmittedForm();
-            Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
-            getStore().addCredentials(domain, credentials);
-            return HttpResponses.redirectTo("../../domain/" + getUrlName());
+            String requestContentType = req.getContentType();
+            if (requestContentType == null) {
+                throw new Failure("No Content-Type header set");
+            }
+
+            if (requestContentType.startsWith("application/xml") || requestContentType.startsWith("text/xml")) {
+                final StringWriter out = new StringWriter();
+                try {
+                    XMLUtils.safeTransform(new StreamSource(req.getReader()), new StreamResult(out));
+                    out.close();
+                } catch (TransformerException e) {
+                    throw new IOException("Failed to parse credential", e);
+                } catch (SAXException e) {
+                    throw new IOException("Failed to parse credential", e);
+                }
+
+                Credentials credentials = (Credentials)
+                        Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                if (getStore().addCredentials(domain, credentials)) {
+                    return HttpResponses.ok();
+                } else {
+                    return HttpResponses.status(HttpServletResponse.SC_CONFLICT);
+                }
+            } else {
+                JSONObject data = req.getSubmittedForm();
+                Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
+                getStore().addCredentials(domain, credentials);
+                return HttpResponses.redirectTo("../../domain/" + getUrlName());
+            }
         }
 
         /**
@@ -791,6 +890,72 @@ public abstract class CredentialsStoreAction
         public ContextMenu doChildrenContextMenu(StaplerRequest request,
                                                  StaplerResponse response) throws Exception {
             return getChildrenContextMenu("");
+        }
+
+        /**
+         * Accepts {@literal config.xml} submission, as well as serve it.
+         *
+         * @param req the request
+         * @param rsp the response
+         * @throws IOException if things go wrong
+         * @since 2.1.1
+         */
+        @WebMethod(name = "config.xml")
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
+        public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp)
+                throws IOException {
+            getStore().checkPermission(CredentialsProvider.MANAGE_DOMAINS);
+            if (req.getMethod().equals("GET")) {
+                // read
+                rsp.setContentType("application/xml");
+                Items.XSTREAM2.toXML(domain,
+                        new OutputStreamWriter(rsp.getOutputStream(), rsp.getCharacterEncoding()));
+                return;
+            }
+            if (req.getMethod().equals("POST") && getStore().isDomainsModifiable()) {
+                // submission
+                updateByXml(new StreamSource(req.getReader()));
+                return;
+            }
+            if (req.getMethod().equals("DELETE") && getStore().isDomainsModifiable()) {
+                if (getStore().removeDomain(domain)) {
+                    return;
+                } else {
+                    rsp.sendError(HttpServletResponse.SC_CONFLICT);
+                    return;
+                }
+            }
+
+            // huh?
+            rsp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
+
+        /**
+         * Updates a {@link Credentials} by its XML definition.
+         *
+         * @param source source of the Item's new definition.
+         *               The source should be either a <code>StreamSource</code> or a <code>SAXSource</code>, other
+         *               sources may not be handled.
+         * @throws IOException if things go wrong.
+         * @since 2.1.1
+         */
+        @Restricted(NoExternalUse.class)
+        public void updateByXml(Source source) throws IOException {
+            getStore().checkPermission(CredentialsProvider.MANAGE_DOMAINS);
+            final StringWriter out = new StringWriter();
+            try {
+                XMLUtils.safeTransform(source, new StreamResult(out));
+                out.close();
+            } catch (TransformerException e) {
+                throw new IOException("Failed to parse credential", e);
+            } catch (SAXException e) {
+                throw new IOException("Failed to parse credential", e);
+            }
+
+            Domain replacement = (Domain)
+                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+            getStore().updateDomain(domain, replacement);
         }
 
         /**
@@ -1150,6 +1315,7 @@ public abstract class CredentialsStoreAction
          * @since 2.0
          */
         @CheckForNull
+        @Restricted(NoExternalUse.class)
         public ContextMenu getContextMenu(String prefix) {
             if (getStore().hasPermission(UPDATE) || getStore().hasPermission(DELETE)) {
                 ContextMenu result = new ContextMenu();
@@ -1182,6 +1348,73 @@ public abstract class CredentialsStoreAction
         public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response)
                 throws Exception {
             return getContextMenu("");
+        }
+
+        /**
+         * Accepts {@literal config.xml} submission, as well as serve it.
+         *
+         * @param req the request
+         * @param rsp the response
+         * @throws IOException if things go wrong
+         * @since 2.1.1
+         */
+        @WebMethod(name = "config.xml")
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // stapler web method
+        public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp)
+                throws IOException {
+            if (req.getMethod().equals("GET")) {
+                // read
+                getStore().checkPermission(VIEW);
+                rsp.setContentType("application/xml");
+                SECRETS_REDACTED.toXML(credentials,
+                        new OutputStreamWriter(rsp.getOutputStream(), rsp.getCharacterEncoding()));
+                return;
+            }
+            if (req.getMethod().equals("POST")) {
+                // submission
+                updateByXml(new StreamSource(req.getReader()));
+                return;
+            }
+            if (req.getMethod().equals("DELETE")) {
+                getStore().checkPermission(DELETE);
+                if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+                    return;
+                } else {
+                    rsp.sendError(HttpServletResponse.SC_CONFLICT);
+                    return;
+                }
+            }
+
+            // huh?
+            rsp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
+
+        /**
+         * Updates a {@link Credentials} by its XML definition.
+         *
+         * @param source source of the Item's new definition.
+         *               The source should be either a <code>StreamSource</code> or a <code>SAXSource</code>, other
+         *               sources may not be handled.
+         * @throws IOException if things go wrong
+         * @since 2.1.1
+         */
+        @Restricted(NoExternalUse.class)
+        public void updateByXml(Source source) throws IOException {
+            getStore().checkPermission(UPDATE);
+            final StringWriter out = new StringWriter();
+            try {
+                XMLUtils.safeTransform(source, new StreamResult(out));
+                out.close();
+            } catch (TransformerException e) {
+                throw new IOException("Failed to parse credential", e);
+            } catch (SAXException e) {
+                throw new IOException("Failed to parse credential", e);
+            }
+
+            Credentials credentials = (Credentials)
+                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+            getStore().updateCredentials(domain.getDomain(), this.credentials, credentials);
         }
 
         /**

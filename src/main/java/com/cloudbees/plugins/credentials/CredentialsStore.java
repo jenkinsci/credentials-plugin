@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -207,6 +208,23 @@ public abstract class CredentialsStore implements AccessControlled {
     @NonNull
     public List<Domain> getDomains() {
         return Collections.singletonList(Domain.global());
+    }
+
+    /**
+     * Retrieves the domain with the matching name.
+     *
+     * @param name the name (or {@code null} to match {@link Domain#global()} as that is the domain with a null name)
+     * @return the domain or {@code null} if there is no domain with the supplied name.
+     * @since 2.1.1
+     */
+    @CheckForNull
+    public Domain getDomainByName(@CheckForNull String name) {
+        for (Domain d : getDomains()) {
+            if (StringUtils.equals(name, d.getName())) {
+                return d;
+            }
+        }
+        return null;
     }
 
     /**
