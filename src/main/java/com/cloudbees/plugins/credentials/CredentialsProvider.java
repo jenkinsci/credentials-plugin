@@ -92,6 +92,8 @@ import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
+import static com.cloudbees.plugins.credentials.CredentialsStoreAction.SECRETS_REDACTED;
+
 /**
  * An extension point for providing {@link Credentials}.
  */
@@ -1307,8 +1309,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             MessageDigest md5 = MessageDigest.getInstance("MD5");
             DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
             try {
-                // TODO use SECRETS_REDACTED once JENKINS-28407 is merged
-                Items.XSTREAM2.toXML(c, new OutputStreamWriter(out, Charset.forName("UTF-8")));
+                SECRETS_REDACTED.toXML(c, new OutputStreamWriter(out, Charset.forName("UTF-8")));
             } finally {
                 IOUtils.closeQuietly(out);
             }
@@ -1334,8 +1335,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             MessageDigest md5 = MessageDigest.getInstance("MD5");
             DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
             try {
-                // TODO use SECRETS_REDACTED once JENKINS-28407 is merged
-                Items.XSTREAM2.toXML(c, new OutputStreamWriter(out, Charset.forName("UTF-8")));
+                SECRETS_REDACTED.toXML(c, new OutputStreamWriter(out, Charset.forName("UTF-8")));
             } finally {
                 IOUtils.closeQuietly(out);
             }
