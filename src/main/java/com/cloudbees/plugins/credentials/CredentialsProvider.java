@@ -44,7 +44,6 @@ import hudson.model.DescriptorVisibilityFilter;
 import hudson.model.Fingerprint;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
-import hudson.model.Items;
 import hudson.model.Job;
 import hudson.model.ModelObject;
 import hudson.model.Node;
@@ -436,19 +435,22 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         Jenkins jenkins = Jenkins.getActiveInstance();
         itemGroup = itemGroup == null ? jenkins : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
-        domainRequirements = domainRequirements == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+        domainRequirements =
+                domainRequirements == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
         matcher = matcher == null ? CredentialsMatchers.always() : matcher;
         CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
         if (resolver != null && IdCredentials.class.isAssignableFrom(resolver.getFromClass())) {
             LOGGER.log(Level.FINE, "Listing legacy credentials of type {0} identified by resolver {1}",
                     new Object[]{type, resolver});
-            return listCredentials((Class)resolver.getFromClass(), itemGroup, authentication, domainRequirements, matcher);
+            return listCredentials((Class) resolver.getFromClass(), itemGroup, authentication, domainRequirements,
+                    matcher);
         }
         ListBoxModel result = new ListBoxModel();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
-                    result.addAll(provider.getCredentialIds(type, itemGroup, authentication, domainRequirements, matcher));
+                    result.addAll(
+                            provider.getCredentialIds(type, itemGroup, authentication, domainRequirements, matcher));
                 } catch (NoClassDefFoundError e) {
                     LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
                             + " likely due to missing optional dependency", e);
@@ -550,7 +552,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                          @Nullable Item item,
                                                                          @Nullable Authentication authentication,
                                                                          @Nullable List<DomainRequirement>
-                                                                                        domainRequirements,
+                                                                                 domainRequirements,
                                                                          @Nullable CredentialsMatcher matcher) {
         type.getClass(); // throw NPE if null
         if (item == null) {
@@ -1298,6 +1300,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
     /**
      * Retrieves the {@link Fingerprint} for a specific credential.
+     *
      * @param c the credential.
      * @return the {@link Fingerprint} or {@code null} if the credential has no fingerprint associated with it.
      * @throws IOException if the credential's fingerprint hash could not be computed.
@@ -1350,6 +1353,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param build       the run to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
@@ -1366,6 +1370,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param build       the run to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
+     * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
     @NonNull
@@ -1381,6 +1387,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param build       the run to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
+     * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
     @NonNull
@@ -1400,8 +1408,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     /**
      * Track the usage of credentials in a specific build
      *
-     * @param node       the node to tag the fingerprint
+     * @param node        the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
@@ -1416,8 +1425,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     /**
      * Track the usage of credentials in a specific build
      *
-     * @param node       the node to tag the fingerprint
+     * @param node        the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
@@ -1432,8 +1442,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     /**
      * Track the usage of credentials in a specific build
      *
-     * @param node       the node to tag the fingerprint
+     * @param node        the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
@@ -1475,8 +1486,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * Track the usage of credentials in a specific item but not associated with a specific build, for example SCM
      * polling.
      *
-     * @param item the item to tag the fingerprint against
+     * @param item        the item to tag the fingerprint against
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
@@ -1492,8 +1504,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * Track the usage of credentials in a specific item but not associated with a specific build, for example SCM
      * polling.
      *
-     * @param item the item to tag the fingerprint against
+     * @param item        the item to tag the fingerprint against
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
@@ -1508,8 +1521,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     /**
      * Track the usage of credentials in a specific build
      *
-     * @param item the item to tag the fingerprint against
+     * @param item        the item to tag the fingerprint against
      * @param credentials the credentials to fingerprint.
+     * @param <C>         the credentials type.
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
@@ -1549,6 +1563,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
     /**
      * A {@link Comparator} for {@link ListBoxModel.Option} instances.
+     *
      * @since 2.1.0
      */
     private static class ListBoxModelOptionComparator implements Comparator<ListBoxModel.Option> {
@@ -1571,7 +1586,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             collator = Collator.getInstance(locale);
         }
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public int compare(ListBoxModel.Option o1, ListBoxModel.Option o2) {
             return collator.compare(o1.name.toLowerCase(locale), o2.name.toLowerCase(locale));
