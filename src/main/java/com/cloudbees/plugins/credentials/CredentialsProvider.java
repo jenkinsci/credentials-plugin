@@ -879,7 +879,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 );
             }
         }
-        return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
+        C result = CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
+        // if the run has not completed yet then we can safely assume that the credential is being used for this run
+        // so we will track it's usage. We use isLogUpdated() as it could be used during post production
+        return run.isLogUpdated() ? track(run, result) : result;
     }
 
     /**
@@ -1299,7 +1302,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 2.1.1
      */
     @CheckForNull
-    public static final Fingerprint fingerprintOf(@NonNull Credentials c) throws IOException {
+    public static Fingerprint getFingerprintOf(@NonNull Credentials c) throws IOException {
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
             DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
@@ -1324,7 +1327,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 2.1.1
      */
     @NonNull
-    public static final Fingerprint createFingerprint(@NonNull Credentials c) throws IOException {
+    public static Fingerprint getOrCreateFingerprintOf(@NonNull Credentials c) throws IOException {
         String pseudoFilename = String.format("Credential id=%s name=%s",
                 c instanceof IdCredentials ? ((IdCredentials) c).getId() : "unknown", CredentialsNameProvider.name(c));
         try {
@@ -1347,13 +1350,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param build       the run to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
-    @NonNull
-    public static final void trackUsage(@NonNull Run build, Credentials... credentials) {
+    @CheckForNull
+    public static <C extends Credentials> C track(@NonNull Run build, @CheckForNull C credentials) {
         if (credentials != null) {
-            trackUsage(build, Arrays.asList(credentials));
+            trackAll(build, Collections.singletonList(credentials));
         }
+        return credentials;
     }
 
     /**
@@ -1364,16 +1369,32 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 2.1.1
      */
     @NonNull
-    public static final void trackUsage(@NonNull Run build, @NonNull List<Credentials> credentials) {
+    public static <C extends Credentials> List<C> trackAll(@NonNull Run build, C... credentials) {
+        if (credentials != null) {
+            return trackAll(build, Arrays.asList(credentials));
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param build       the run to tag the fingerprint
+     * @param credentials the credentials to fingerprint.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static <C extends Credentials> List<C> trackAll(@NonNull Run build, @NonNull List<C> credentials) {
         for (Credentials c : credentials) {
             if (c != null) {
                 try {
-                    createFingerprint(c).addFor(build);
+                    getOrCreateFingerprintOf(c).addFor(build);
                 } catch (IOException e) {
                     LOGGER.log(Level.FINEST, "Could not track usage of " + c, e);
                 }
             }
         }
+        return credentials;
     }
 
     /**
@@ -1381,13 +1402,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param node       the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
-    @NonNull
-    public static final void trackUsage(@NonNull Node node, Credentials... credentials) {
+    @CheckForNull
+    public static <C extends Credentials> C track(@NonNull Node node, @CheckForNull C credentials) {
         if (credentials != null) {
-            trackUsage(node, Arrays.asList(credentials));
+            trackAll(node, Collections.singletonList(credentials));
         }
+        return credentials;
     }
 
     /**
@@ -1395,16 +1418,33 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param node       the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
     @NonNull
-    public static final void trackUsage(@NonNull Node node, @NonNull List<Credentials> credentials) {
+    public static <C extends Credentials> List<C> trackAll(@NonNull Node node, C... credentials) {
+        if (credentials != null) {
+            return trackAll(node, Arrays.asList(credentials));
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Track the usage of credentials in a specific build
+     *
+     * @param node       the node to tag the fingerprint
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @NonNull
+    public static <C extends Credentials> List<C> trackAll(@NonNull Node node, @NonNull List<C> credentials) {
         long timestamp = System.currentTimeMillis();
         String nodeName = node.getNodeName();
         for (Credentials c : credentials) {
             if (c != null) {
                 try {
-                    Fingerprint fingerprint = createFingerprint(c);
+                    Fingerprint fingerprint = getOrCreateFingerprintOf(c);
                     BulkChange change = new BulkChange(fingerprint);
                     try {
                         Collection<FingerprintFacet> facets = fingerprint.getFacets();
@@ -1428,6 +1468,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         }
+        return credentials;
     }
 
     /**
@@ -1436,13 +1477,32 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param item the item to tag the fingerprint against
      * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
+     * @since 2.1.1
+     */
+    @CheckForNull
+    public static <C extends Credentials> C track(@NonNull Item item, @CheckForNull C credentials) {
+        if (credentials != null) {
+            trackAll(item, Collections.singletonList(credentials));
+        }
+        return credentials;
+    }
+
+    /**
+     * Track the usage of credentials in a specific item but not associated with a specific build, for example SCM
+     * polling.
+     *
+     * @param item the item to tag the fingerprint against
+     * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
     @NonNull
-    public static final void trackUsage(@NonNull Item item, Credentials... credentials) {
+    public static <C extends Credentials> List<C> trackAll(@NonNull Item item, C... credentials) {
         if (credentials != null) {
-            trackUsage(item, Arrays.asList(credentials));
+            return trackAll(item, Arrays.asList(credentials));
         }
+        return Collections.emptyList();
     }
 
     /**
@@ -1450,16 +1510,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param item the item to tag the fingerprint against
      * @param credentials the credentials to fingerprint.
+     * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
     @NonNull
-    public static final void trackUsage(@NonNull Item item, @NonNull List<Credentials> credentials) {
+    public static <C extends Credentials> List<C> trackAll(@NonNull Item item, @NonNull List<C> credentials) {
         long timestamp = System.currentTimeMillis();
         String fullName = item.getFullName();
         for (Credentials c : credentials) {
             if (c != null) {
                 try {
-                    Fingerprint fingerprint = createFingerprint(c);
+                    Fingerprint fingerprint = getOrCreateFingerprintOf(c);
                     BulkChange change = new BulkChange(fingerprint);
                     try {
                         Collection<FingerprintFacet> facets = fingerprint.getFacets();
@@ -1483,6 +1544,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         }
+        return credentials;
     }
 
     /**

@@ -1198,7 +1198,7 @@ public abstract class CredentialsStoreAction
         public Fingerprint getFingerprint() throws IOException {
             if (fingerprint == null) {
                 // idempotent write
-                fingerprint = CredentialsProvider.fingerprintOf(credentials);
+                fingerprint = CredentialsProvider.getFingerprintOf(credentials);
             }
             return fingerprint;
         }
