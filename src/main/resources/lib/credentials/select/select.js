@@ -242,7 +242,7 @@ Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, functi
   }).bind($(x));
   x.onchange();
 });
-(function() {
+window.setTimeout(function() {
     // HACK: can be removed once base version of Jenkins has fix of https://issues.jenkins-ci.org/browse/JENKINS-26578
     // need to apply the new behaviours to existing objects
     var controls = document.getElementsByClassName('credentials-select-control');
@@ -250,4 +250,4 @@ Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, functi
     for (var i = 0; i < count; i++) {
         Behaviour.applySubtree(controls[i]);
     }
-})();
+},1);
