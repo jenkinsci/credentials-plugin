@@ -47,6 +47,7 @@ import java.util.logging.Logger;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.model.Jenkins;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -437,6 +438,11 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
         @Override
         public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
             if (Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+                if (!json.has("restrictions")) {
+                    // JENKINS-36090 stapler "helpfully" does not submit the restrictions if there are none
+                    // and hence you can never delete the laste one
+                    json.put("restrictions", new JSONArray());
+                }
                 req.bindJSON(this, json);
                 return super.configure(req, json);
             }
