@@ -152,10 +152,10 @@ public class ContextMenuIconUtils {
         if (url == null) {
             return null;
         }
-        return Stapler.getCurrentRequest().getContextPath() + (url.startsWith("images/")
+        String contextPath = Stapler.getCurrentRequest().getContextPath();
+        return (StringUtils.isBlank(contextPath)? "" : contextPath) + (url.startsWith("images/")
                 ? Functions.getResourcePath()
-                : "") + '/' + url;
-
+                : "") + (url.startsWith("/") ? url : '/' + url);
     }
 
     /**
