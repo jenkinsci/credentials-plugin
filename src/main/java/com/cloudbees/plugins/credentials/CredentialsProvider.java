@@ -505,6 +505,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (item == null) {
             return lookupCredentials(type, Jenkins.getInstance(), authentication, domainRequirements);
         }
+        if (item instanceof ItemGroup) {
+            return lookupCredentials(type, (ItemGroup)item, authentication, domainRequirements);
+        }
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
                 == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
@@ -557,6 +560,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         type.getClass(); // throw NPE if null
         if (item == null) {
             return listCredentials(type, Jenkins.getInstance(), authentication, domainRequirements, matcher);
+        }
+        if (item instanceof ItemGroup) {
+            return listCredentials(type, (ItemGroup) item, authentication, domainRequirements, matcher);
         }
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
@@ -1153,7 +1159,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @NonNull Item item,
                                                           @Nullable Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials(type, item.getParent(), authentication, domainRequirements);
+        return getCredentials(type, item instanceof ItemGroup ? (ItemGroup) item : item.getParent(),
+                authentication, domainRequirements);
     }
 
     /**
@@ -1182,6 +1189,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                    @Nullable Authentication authentication,
                                                                    @NonNull List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
+        if (item instanceof ItemGroup) {
+            return getCredentialIds(type, (ItemGroup) item, authentication, domainRequirements, matcher);
+        }
         ListBoxModel result = new ListBoxModel();
         for (IdCredentials c : getCredentials(type, item, authentication, domainRequirements)) {
             if (matcher.matches(c)) {
