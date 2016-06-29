@@ -676,6 +676,14 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             }.getDomains();
         }
 
+        /**
+         * The backing {@link CredentialsStore}.
+         * @return backing {@link CredentialsStore}.
+         * @since 2.1.5
+         */
+        public CredentialsStore getStore() {
+            return store;
+        }
     }
 
     /**
