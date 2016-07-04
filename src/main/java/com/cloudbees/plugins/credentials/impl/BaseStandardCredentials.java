@@ -190,12 +190,12 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             for (ContextResolver r : ExtensionList.lookup(ContextResolver.class)) {
                 String token = r.getToken(context);
                 if (token != null) {
-                    return Jenkins.getActiveInstance().getRootUrlFromRequest() + "/descriptorByName/" + clazz.getName()
+                    return Jenkins.getActiveInstance().getRootUrlFromRequest() + "/" + getDescriptorUrl()
                             + "/checkId?provider=" + r.getClass().getName() + "&token="
                             + URLEncoder.encode(token, "UTF-8");
                 }
             }
-            return Jenkins.getActiveInstance().getRootUrlFromRequest() + "/descriptorByName/" + clazz.getName()
+            return Jenkins.getActiveInstance().getRootUrlFromRequest() + "/" + getDescriptorUrl()
                     + "/checkId?provider=null&token=null";
         }
 
