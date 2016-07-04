@@ -92,12 +92,12 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
     @RestrictedSince("2.1.5")
     public ListBoxModel doFillScopeItems(@ContextInPath ModelObject context) {
         ListBoxModel m = new ListBoxModel();
-                Set<CredentialsScope> scopes = CredentialsProvider.lookupScopes(context);
-                if (scopes != null) {
-                    for (CredentialsScope scope : scopes) {
-                        m.add(scope.getDisplayName(), scope.toString());
-                    }
-                }
+        Set<CredentialsScope> scopes = CredentialsProvider.lookupScopes(context);
+        if (scopes != null) {
+            for (CredentialsScope scope : scopes) {
+                m.add(scope.getDisplayName(), scope.toString());
+            }
+        }
         return m;
     }
 
