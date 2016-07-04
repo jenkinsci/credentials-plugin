@@ -289,6 +289,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      *
      * @since 2.1.5
      */
+    @CheckForNull
     public static ModelObject lookupContext(String provider, String token) {
         for (CredentialsSelectHelper.ContextResolver r : ExtensionList
                 .lookup(CredentialsSelectHelper.ContextResolver.class)) {
