@@ -50,16 +50,19 @@ import static org.junit.Assert.assertTrue;
 
 public class BaseStandardCredentialsTest {
 
-    @Rule public JenkinsRule r = new JenkinsRule();
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
 
-    @Test public void doCheckIdSyntax() throws Exception {
+    @Test
+    public void doCheckIdSyntax() throws Exception {
         assertDoCheckId("", r.jenkins, OK);
         assertDoCheckId(/* random UUID */IdCredentials.Helpers.fixEmptyId(null), r.jenkins, OK);
         assertDoCheckId("blah-blah", r.jenkins, OK);
         assertDoCheckId("definitely\nscary", r.jenkins, ERROR);
     }
 
-    @Test public void doCheckIdDuplication() throws Exception {
+    @Test
+    public void doCheckIdDuplication() throws Exception {
         // First set up two users, each of which has an existing credentials named ‘per-user’.
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         final User alice = User.get("alice");
@@ -85,7 +88,7 @@ public class BaseStandardCredentialsTest {
         CredentialsStore store = lookupStore(r.jenkins);
         addCreds(store, CredentialsScope.GLOBAL, "masked");
         addCreds(store, CredentialsScope.GLOBAL, "root");
-        // TODO not currently testing SYSTEM; should this make any difference to behavior here?
+        addCreds(store, CredentialsScope.SYSTEM, "rootSystem");
         final MockFolder top = r.jenkins.createProject(MockFolder.class, "top");
         store = lookupStore(top);
         addCreds(store, CredentialsScope.GLOBAL, "masked");
@@ -99,6 +102,7 @@ public class BaseStandardCredentialsTest {
         ACL.impersonate(alice.impersonate(), new Runnable() {
             public void run() {
                 assertDoCheckId("root", r.jenkins, ERROR);
+                assertDoCheckId("rootSystem", r.jenkins, ERROR);
                 assertDoCheckId("masked", r.jenkins, ERROR);
                 assertDoCheckId("top", r.jenkins, OK);
                 assertDoCheckId("bottom", r.jenkins, OK);
@@ -106,6 +110,7 @@ public class BaseStandardCredentialsTest {
                 assertDoCheckId("bob", r.jenkins, OK);
                 assertDoCheckId("per-user", r.jenkins, WARNING);
                 assertDoCheckId("root", top, WARNING);
+                assertDoCheckId("rootSystem", top, OK); // not exported to child contexts, so not a duplicate
                 assertDoCheckId("masked", top, ERROR);
                 assertDoCheckId("top", top, ERROR);
                 assertDoCheckId("bottom", top, OK);
@@ -113,6 +118,7 @@ public class BaseStandardCredentialsTest {
                 assertDoCheckId("bob", top, OK);
                 assertDoCheckId("per-user", top, WARNING);
                 assertDoCheckId("root", bottom, WARNING);
+                assertDoCheckId("rootSystem", bottom, OK); // not exported to child contexts, so not a duplicate
                 assertDoCheckId("masked", bottom, ERROR);
                 assertDoCheckId("top", bottom, WARNING);
                 assertDoCheckId("bottom", bottom, ERROR);
@@ -120,6 +126,7 @@ public class BaseStandardCredentialsTest {
                 assertDoCheckId("bob", bottom, OK);
                 assertDoCheckId("per-user", bottom, WARNING);
                 assertDoCheckId("root", alice, WARNING);
+                assertDoCheckId("rootSystem", alice, OK); // not exported to child contexts, so not a duplicate
                 assertDoCheckId("masked", alice, WARNING);
                 assertDoCheckId("top", alice, OK);
                 assertDoCheckId("bottom", alice, OK);
@@ -146,7 +153,10 @@ public class BaseStandardCredentialsTest {
     }
 
     private void assertDoCheckId(String id, ModelObject context, FormValidation.Kind expectedResult) {
-        assertEquals(expectedResult, r.jenkins.getDescriptorByType(UsernamePasswordCredentialsImpl.DescriptorImpl.class).doCheckId(id, context).kind);
+        assertEquals(expectedResult, r.jenkins.getDescriptorByType(UsernamePasswordCredentialsImpl.DescriptorImpl.class).doCheckId(
+
+                context, id
+        ).kind);
     }
 
 }

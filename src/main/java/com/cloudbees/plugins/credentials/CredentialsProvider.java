@@ -599,12 +599,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @CheckForNull
     public static Set<CredentialsScope> lookupScopes(ModelObject object) {
-        if (object instanceof CredentialsStoreAction.CredentialsWrapper) {
-            object = ((CredentialsStoreAction.CredentialsWrapper) object).getStore().getContext();
-        }
-        if (object instanceof CredentialsStoreAction.DomainWrapper) {
-            object = ((CredentialsStoreAction.DomainWrapper) object).getStore().getContext();
-        }
+        object = CredentialsDescriptor.unwrapContext(object);
         Set<CredentialsScope> result = null;
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(object)) {
@@ -626,20 +621,36 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Returns a lazy {@link Iterable} of all the {@link CredentialsStore} instances contributing credentials to the
-     * supplied
-     * object.
+     * Tests if the supplied context has any credentials stores associated with it.
      *
-     * @param object the {@link Item} or {@link ItemGroup} or {@link User} to get the {@link CredentialsStore}s of.
+     * @param context the context object.
+     * @return {@code true} if and only if the supplied context has at least one {@link CredentialsStore} associated
+     * with it.
+     * @since 2.1.5
+     */
+    public static boolean hasStores(final ModelObject context) {
+        for (CredentialsProvider p : all()) {
+            if (p.isEnabled(context) && p.getStore(context) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns a lazy {@link Iterable} of all the {@link CredentialsStore} instances contributing credentials to the
+     * supplied object.
+     *
+     * @param context the {@link Item} or {@link ItemGroup} or {@link User} to get the {@link CredentialsStore}s of.
      * @return a lazy {@link Iterable} of all {@link CredentialsStore} instances.
      * @since 1.8
      */
-    public static Iterable<CredentialsStore> lookupStores(final ModelObject object) {
+    public static Iterable<CredentialsStore> lookupStores(final ModelObject context) {
         final ExtensionList<CredentialsProvider> providers = all();
         return new Iterable<CredentialsStore>() {
             public Iterator<CredentialsStore> iterator() {
                 return new Iterator<CredentialsStore>() {
-                    private ModelObject current = object;
+                    private ModelObject current = context;
                     private Iterator<CredentialsProvider> iterator = providers.iterator();
                     private CredentialsStore next;
 
@@ -650,7 +661,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                         while (current != null) {
                             while (iterator.hasNext()) {
                                 CredentialsProvider p = iterator.next();
-                                if (!p.isEnabled(object)) {
+                                if (!p.isEnabled(context)) {
                                     continue;
                                 }
                                 next = p.getStore(current);

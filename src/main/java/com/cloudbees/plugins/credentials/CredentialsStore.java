@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
@@ -140,6 +141,19 @@ public abstract class CredentialsStore implements AccessControlled {
     @Nullable
     public final CredentialsProvider getProvider() {
         return ExtensionList.lookup(CredentialsProvider.class).get(providerClass);
+    }
+
+    /**
+     * Returns the {@link CredentialsScope} instances that are applicable to this store.
+     * @return the {@link CredentialsScope} instances that are applicable to this store or {@code null} if the store
+     * instance is no longer enabled.
+     *
+     * @since 2.1.5
+     */
+    @Nullable
+    public final Set<CredentialsScope> getScopes() {
+        CredentialsProvider provider = getProvider();
+        return provider == null ? null : provider.getScopes(getContext());
     }
 
     /**

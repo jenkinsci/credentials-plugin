@@ -23,19 +23,44 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.ExtensionList;
+import hudson.Functions;
+import hudson.RestrictedSince;
 import hudson.model.Descriptor;
-import hudson.model.DescriptorVisibilityFilter;
+import hudson.model.Item;
 import hudson.model.ModelObject;
+import hudson.model.User;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import jenkins.model.Jenkins;
+import org.apache.commons.jelly.JellyContext;
+import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Ancestor;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * Descriptor for credentials.
  */
 public abstract class CredentialsDescriptor extends Descriptor<Credentials> implements IconSpec {
+
+    private transient final Map<String, FormValidation.CheckMethod>
+            enhancedCheckMethods = new ConcurrentHashMap<String, FormValidation.CheckMethod>();
 
     /**
      * Constructor.
@@ -63,22 +88,16 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      * @return the scopes for the nearest request object that acts as a container for credentials.
      */
     @SuppressWarnings("unused") // used by stapler
-    public ListBoxModel doFillScopeItems() {
+    @Restricted(NoExternalUse.class)
+    @RestrictedSince("2.1.5")
+    public ListBoxModel doFillScopeItems(@ContextInPath ModelObject context) {
         ListBoxModel m = new ListBoxModel();
-        Ancestor ancestor = Stapler.getCurrentRequest().findAncestor(Object.class);
-        while (ancestor != null) {
-            if (ancestor.getObject() instanceof ModelObject) {
-                Set<CredentialsScope> scopes =
-                        CredentialsProvider.lookupScopes((ModelObject) ancestor.getObject());
+                Set<CredentialsScope> scopes = CredentialsProvider.lookupScopes(context);
                 if (scopes != null) {
                     for (CredentialsScope scope : scopes) {
                         m.add(scope.getDisplayName(), scope.toString());
                     }
-                    break;
                 }
-            }
-            ancestor = ancestor.getPrev();
-        }
         return m;
     }
 
@@ -93,12 +112,14 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      * to be specified.
      */
     @SuppressWarnings("unused") // used by stapler
+    @Restricted(NoExternalUse.class)
+    @RestrictedSince("2.1.5")
     public boolean isScopeRelevant() {
         Ancestor ancestor = Stapler.getCurrentRequest().findAncestor(Object.class);
         while (ancestor != null) {
             if (ancestor.getObject() instanceof ModelObject) {
-                Set<CredentialsScope> scopes =
-                        CredentialsProvider.lookupScopes((ModelObject) ancestor.getObject());
+                ModelObject context = unwrapContext((ModelObject) ancestor.getObject());
+                Set<CredentialsScope> scopes = CredentialsProvider.lookupScopes(context);
                 if (scopes != null) {
                     return scopes.size() > 1;
                 }
@@ -117,8 +138,26 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      * object.
      */
     @SuppressWarnings("unused") // used by stapler
+    @Restricted(NoExternalUse.class)
+    @RestrictedSince("2.1.5")
     public boolean isScopeRelevant(ModelObject object) {
         Set<CredentialsScope> scopes = CredentialsProvider.lookupScopes(object);
+        return scopes != null && scopes.size() > 1;
+    }
+
+    /**
+     * Similar to {@link #isScopeRelevant()} but operating on a specific {@link CredentialsStore} rather than trying to
+     * infer from the stapler request.
+     *
+     * @param store the object that is going to contain the credential.
+     * @return {@code true} if there is more than one {@link CredentialsScope} that can be used for the specified
+     * object.
+     * @since 2.1.5
+     */
+    @SuppressWarnings("unused") // used by stapler
+    @Restricted(NoExternalUse.class)
+    public boolean isScopeRelevant(@CheckForNull CredentialsStore store) {
+        Set<CredentialsScope> scopes = store == null ? null : store.getScopes();
         return scopes != null && scopes.size() > 1;
     }
 
@@ -130,6 +169,8 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      * object.
      */
     @SuppressWarnings("unused") // used by stapler
+    @Restricted(NoExternalUse.class)
+    @RestrictedSince("2.1.5")
     public boolean isScopeRelevant(CredentialsStoreAction.DomainWrapper wrapper) {
         if (wrapper != null) {
             return isScopeRelevant(wrapper.getStore().getContext());
@@ -150,7 +191,31 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      * object.
      */
     @SuppressWarnings("unused") // used by stapler
+    @Restricted(NoExternalUse.class)
+    @RestrictedSince("2.1.5")
     public boolean isScopeRelevant(CredentialsStoreAction.CredentialsWrapper wrapper) {
+        if (wrapper != null) {
+            return isScopeRelevant(wrapper.getStore().getContext());
+        }
+        CredentialsStoreAction action =
+                Stapler.getCurrentRequest().findAncestorObject(CredentialsStoreAction.class);
+        if (action != null) {
+            return isScopeRelevant(action.getStore().getContext());
+        }
+        return isScopeRelevant();
+    }
+
+    /**
+     * Similar to {@link #isScopeRelevant()} but used by {@link CredentialsSelectHelper}.
+     *
+     * @param wrapper the wrapper for the domain that is going to contain the credential.
+     * @return {@code true} if there is more than one {@link CredentialsScope} that can be used for the specified
+     * object.
+     * @since 2.1.5
+     */
+    @SuppressWarnings("unused") // used by stapler
+    @Restricted(NoExternalUse.class)
+    public boolean isScopeRelevant(CredentialsSelectHelper.WrappedCredentialsStore wrapper) {
         if (wrapper != null) {
             return isScopeRelevant(wrapper.getStore().getContext());
         }
@@ -192,4 +257,339 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
     public boolean isApplicable(CredentialsProvider provider) {
         return true;
     }
+
+    /**
+     * In some cases the nearest {@link AncestorInPath} {@link ModelObject} is one of the Credentials plugins wrapper
+     * classes.
+     * This helper method unwraps those to return the correct context.
+     *
+     * @param context the context (wrapped or unwrapped).
+     * @return the unwrapped context.
+     * @since 2.1.5
+     */
+    @NonNull
+    public static ModelObject unwrapContext(@NonNull ModelObject context) {
+        if (context instanceof CredentialsSelectHelper.WrappedCredentialsStore) {
+            return ((CredentialsSelectHelper.WrappedCredentialsStore) context).getStore().getContext();
+        }
+        if (context instanceof CredentialsStoreAction.CredentialsWrapper) {
+            return ((CredentialsStoreAction.CredentialsWrapper) context).getStore().getContext();
+        }
+        if (context instanceof CredentialsStoreAction.DomainWrapper) {
+            return ((CredentialsStoreAction.DomainWrapper) context).getStore().getContext();
+        }
+        return context;
+    }
+
+    /**
+     * Looks up the context given the provider and token.
+     * @param provider the provider.
+     * @param token the token.
+     * @return the context.
+     *
+     * @since 2.1.5
+     */
+    public static ModelObject lookupContext(String provider, String token) {
+        for (CredentialsSelectHelper.ContextResolver r : ExtensionList
+                .lookup(CredentialsSelectHelper.ContextResolver.class)) {
+            if (r.getClass().getName().equals(provider)) {
+                return r.getContext(token);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Attempts to resolve the credentials context from the {@link Stapler#getCurrentRequest()} (includes special
+     * handling of the HTTP Referer to enable resolution from AJAX requests).
+     *
+     * @param type the type of context.
+     * @param <T> the type of context.
+     * @return the context from the request
+     * @since 2.1.5
+     */
+    @CheckForNull
+    public static <T extends ModelObject> T findContextInPath(@NonNull Class<T> type) {
+        return findContextInPath(Stapler.getCurrentRequest(), type);
+    }
+
+    /**
+     * Attempts to resolve the credentials context from the {@link StaplerRequest} (includes special
+     * handling of the HTTP Referer to enable resolution from AJAX requests).
+     *
+     * @param request the {@link StaplerRequest}.
+     * @param type the type of context.
+     * @param <T>  the type of context.
+     * @return the context from the request
+     * @since 2.1.5
+     */
+    @CheckForNull
+    public static <T extends ModelObject> T findContextInPath(@NonNull StaplerRequest request, @NonNull Class<T> type) {
+        List<Ancestor> ancestors = request.getAncestors();
+        for (int i = ancestors.size() - 1; i >= 0; i--) {
+            Ancestor a = ancestors.get(i);
+            Object o = a.getObject();
+            // special case of unwrapping our internal wrapper classes.
+            if (o instanceof CredentialsSelectHelper.WrappedCredentialsStore) {
+                o = ((CredentialsSelectHelper.WrappedCredentialsStore) o).getStore().getContext();
+            } else if (o instanceof CredentialsStoreAction.CredentialsWrapper) {
+                o = ((CredentialsStoreAction.CredentialsWrapper) o).getStore().getContext();
+            } else if (o instanceof CredentialsStoreAction.DomainWrapper) {
+                o = ((CredentialsStoreAction.DomainWrapper) o).getStore().getContext();
+            } else if (o instanceof Descriptor && i == 1) { // URL is /descriptorByName/...
+                // we need to try an infer from the Referer as this is likely a doCheck or a doFill method
+                String referer = request.getReferer();
+                String rootPath = request.getRootPath();
+                if (referer != null && rootPath != null && referer.startsWith(rootPath)) {
+                    // strip out any query portion of the referer URL.
+                    String path = URI.create(referer.substring(rootPath.length())).getPath().substring(1);
+                    // TODO have Stapler expose a method that can walk a path and produce the ancestors and use that
+
+                    // what now follows is an example of a realy evil hack, consequently this means...
+                    //
+                    //                         7..       ,
+                    //                      MMM.          MMM.
+                    //                     MMMMM        .MMMMMM
+                    //                    MMMM.           MMMMM.
+                    //                  OMMM                 MMZ
+                    //                  MMM                    MM
+                    //                .MMMM    $.     .       .MM,
+                    //                MMMMM    MMM   MM        MMM
+                    //               .MMMMM. MMMMD  8MMM.     MMMM
+                    //               MMMMMMM.MMMM    MMMMM.  MMMMMM
+                    //               MMMMMMMM.M .     MMM.  MMMMMMM
+                    //               MMMMMMMMM.            MMMMMMMM
+                    //               MMMMMMMMM . ..     MMMMMMMMMMM
+                    //               MMMMMMMM  IMMMM  Z.MMMMMMMMMM ,
+                    //               .MMMMMMM   .M:M   MMMMMMMMMMM M
+                    //              I MMMMMMM.         MMMMMMMMMO  M
+                    //           MMMM  MMMMMMM       .MMMMMMMMM.   .
+                    //         :MMMMMM.MMMMMMM.      MMMMMMMM   .MMMM
+                    //         MMMMMMMMMMMMMMMM      MMMMMMM   MMMMMMMM
+                    //        MMMMMMMMM.MMMMMMM      MMMMMMM MMMMMMMMMM.
+                    //        MMMMMMMMMMMMMMMM?      MMMMMM MMMMMMMMMMM
+                    //        MMMMMMMMMM  .  .       MMMMMIMMMMMMMMMMMM.
+                    //        MMMMMMMMMM               .. :MMMMMMMMMMMM.
+                    //        DMMMMMMMMMM                 MMMMMMMMMMMMM.
+                    //         MMMMMMMMMM.M.              MMMMMMMMMMMM.
+                    //           MMMMMM,                    ....
+                    //
+                    //                   I AM A SAD PANDA
+
+                    List<String> pathSegments = new ArrayList<String>(Arrays.asList(StringUtils.split(path, "/")));
+                    // strip out any leading junk
+                    while (!pathSegments.isEmpty() && StringUtils.isBlank(pathSegments.get(0))) {
+                        pathSegments.remove(0);
+                    }
+                    if (pathSegments.size() >= 2) {
+                        String firstSegment = pathSegments.get(0);
+                        if ("user".equals(firstSegment)) {
+                            User user = User.get(pathSegments.get(1));
+                            if (type.isInstance(user) && CredentialsProvider.hasStores(user)) {
+                                // we have a winner
+                                return type.cast(user);
+                            }
+                        } else if ("job".equals(firstSegment) || "item".equals(firstSegment) || "view"
+                                .equals(firstSegment)) {
+                            int index = 0;
+                            while (index < pathSegments.size()) {
+                                String segment = pathSegments.get(index);
+                                if ("view".equals(segment)) {
+                                    // remove the /view/
+                                    pathSegments.remove(index);
+                                    if (index < pathSegments.size()) {
+                                        // remove the /view/{name}
+                                        pathSegments.remove(index);
+                                    }
+                                } else if ("job".equals(segment) || "item".equals(segment)) {
+                                    // remove the /job/
+                                    pathSegments.remove(index);
+                                    // skip the name
+                                    index++;
+                                } else {
+                                    // we have gone as far as we can parse the item path structure
+                                    while (index < pathSegments.size()) {
+                                        // remove the remainder
+                                        pathSegments.remove(index);
+                                    }
+                                }
+                            }
+                            Jenkins jenkins = Jenkins.getActiveInstance();
+                            while (!pathSegments.isEmpty()) {
+                                String fullName = StringUtils.join(pathSegments, "/");
+                                Item item = jenkins.getItemByFullName(fullName);
+                                if (item != null) {
+                                    if (type.isInstance(item) && CredentialsProvider.hasStores(item)) {
+                                        // we have a winner
+                                        return type.cast(item);
+                                    }
+                                }
+                                // walk back up and try one level less deep
+                                pathSegments.remove(pathSegments.size() - 1);
+                            }
+                        }
+                    }
+                    // ok we give up, we are not thirsty for more, we'll let "normal" ancestor in path logic continue
+                }
+            }
+            if (type.isInstance(o) && o instanceof ModelObject && CredentialsProvider.hasStores((ModelObject) o)) {
+                return type.cast(o);
+            }
+        }
+        return null;
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public FormValidation.CheckMethod getCheckMethod(String fieldName) {
+        // this is an ugly hack to make the @ContextInPath annotation more failsafe
+        // requires that you explicitly call out the checkUrl: checkUrl="${descriptor.getCheckUrl('fieldName')}"
+        FormValidation.CheckMethod method = enhancedCheckMethods.get(fieldName);
+        if (method == null) {
+            method = new EnhancedCheckMethod(this, fieldName);
+            enhancedCheckMethods.put(fieldName, method);
+        }
+        return method;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void calcFillSettings(String field, Map<String, Object> attributes) {
+        if (attributes.containsKey("fillUrl")) {
+            // the user already provided a custom one, get out of the way
+            super.calcFillSettings(field, attributes);
+            return;
+        }
+        // this is an ugly hack to make the @ContextInPath annotation more failsafe
+        super.calcFillSettings(field, attributes);
+        if (attributes.containsKey("fillUrl")) {
+            try {
+                JellyContext jelly = Functions.getCurrentJellyContext();
+                Object it = jelly.findVariable("it");
+                if (it instanceof CredentialsStore) {
+                    ModelObject context = ((CredentialsStore) it).getContext();
+                    for (CredentialsSelectHelper.ContextResolver r : ExtensionList
+                            .lookup(CredentialsSelectHelper.ContextResolver.class)) {
+                        String token = r.getToken(context);
+                        if (token != null) {
+                            String fillUrl = (String) attributes.get("fillUrl");
+                            if (fillUrl.indexOf('?') != -1) {
+                                fillUrl = fillUrl + '&';
+                            } else {
+                                fillUrl = fillUrl + '?';
+                            }
+                            attributes.put("fillUrl", fillUrl + "$provider=" + r.getClass().getName() + "&"
+                                    + "$token=" + URLEncoder.encode(token, "UTF-8"));
+                        }
+                    }
+
+                }
+            } catch (AssertionError e) {
+                // ignore, we did the best we could
+            } catch (UnsupportedEncodingException e) {
+                // ignore, we did the best we could
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void calcAutoCompleteSettings(String field, Map<String, Object> attributes) {
+        if (attributes.containsKey("autoCompleteUrl")) {
+            // the user already provided a custom one, get out of the way
+            super.calcAutoCompleteSettings(field, attributes);
+            return;
+        }
+        // this is an ugly hack to make the @ContextInPath annotation more failsafe
+        super.calcAutoCompleteSettings(field, attributes);
+        if (attributes.containsKey("autoCompleteUrl")) {
+            try {
+                JellyContext jelly = Functions.getCurrentJellyContext();
+                Object it = jelly.findVariable("it");
+                if (it instanceof CredentialsStore) {
+                    ModelObject context = ((CredentialsStore) it).getContext();
+                    for (CredentialsSelectHelper.ContextResolver r : ExtensionList
+                            .lookup(CredentialsSelectHelper.ContextResolver.class)) {
+                        String token = r.getToken(context);
+                        if (token != null) {
+                            String fillUrl = (String) attributes.get("autoCompleteUrl");
+                            if (fillUrl.indexOf('?') != -1) {
+                                fillUrl = fillUrl + '&';
+                            } else {
+                                fillUrl = fillUrl + '?';
+                            }
+                            attributes.put("autoCompleteUrl", fillUrl + "$provider=" + r.getClass().getName() + "&"
+                                    + "$token=" + URLEncoder.encode(token, "UTF-8"));
+                        }
+                    }
+
+                }
+            } catch (AssertionError e) {
+                // ignore, we did the best we could
+            } catch (UnsupportedEncodingException e) {
+                // ignore, we did the best we could
+            }
+        }
+    }
+
+    /**
+     * An enhanced {@link FormValidation.CheckMethod} that can add assistance for resolving the context from the
+     * request path.
+     *
+     * @since 2.1.5
+     */
+    @Restricted(NoExternalUse.class)
+    public static class EnhancedCheckMethod extends FormValidation.CheckMethod {
+
+        /**
+         * {@inheritDoc}
+         */
+        public EnhancedCheckMethod(Descriptor descriptor, String fieldName) {
+            super(descriptor, fieldName);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toCheckUrl() {
+            String checkUrl = super.toCheckUrl();
+            try {
+                JellyContext jelly = Functions.getCurrentJellyContext();
+                Object it = jelly.findVariable("it");
+                if (it instanceof CredentialsStore) {
+                    ModelObject context = ((CredentialsStore) it).getContext();
+                    for (CredentialsSelectHelper.ContextResolver r : ExtensionList
+                            .lookup(CredentialsSelectHelper.ContextResolver.class)) {
+                        String token = r.getToken(context);
+                        if (token != null) {
+                            if (checkUrl.endsWith(".toString()")) {
+                                checkUrl = StringUtils.removeEnd(checkUrl, ".toString()");
+                            } else {
+                                checkUrl = checkUrl + "+qs(this).addThis()";
+                            }
+                            return checkUrl
+                                    + ".append('$provider=" + r.getClass().getName() + "')"
+                                    + ".append('$token=" + Functions.jsStringEscape(
+                                    URLEncoder.encode(token, "UTF-8")) + "')"
+                                    + ".toString()";
+                        }
+                    }
+
+                }
+            } catch (AssertionError e) {
+                // ignore, we did the best we could
+            } catch (UnsupportedEncodingException e) {
+                // ignore, we did the best we could
+            }
+            return checkUrl;
+        }
+    }
+
 }

@@ -24,26 +24,35 @@
 package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.BaseCredentials;
+import com.cloudbees.plugins.credentials.ContextInPath;
+import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
 import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.CredentialsStoreAction;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.ExtensionList;
 import hudson.Util;
 import hudson.model.Item;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.util.FormValidation;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import jenkins.model.Jenkins;
-import org.kohsuke.stapler.AncestorInPath;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
+
+import static com.cloudbees.plugins.credentials.CredentialsSelectHelper.*;
 
 /**
  * Base class for {@link StandardCredentials}.
@@ -145,11 +154,16 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
                 }
                 ModelObject storeContext = store.getContext();
                 for (Domain domain : store.getDomains()) {
-                    if (CredentialsMatchers.firstOrNull(store.getCredentials(domain), CredentialsMatchers.withId(value))
-                            != null) {
+                    Credentials match = CredentialsMatchers
+                            .firstOrNull(store.getCredentials(domain), CredentialsMatchers.withId(value));
+                    if (match != null) {
                         if (storeContext == context) {
                             return FormValidation.error("This ID is already in use");
                         } else {
+                            if (match.getScope() == CredentialsScope.SYSTEM) {
+                                // system scope is not exported to child contexts
+                                continue;
+                            }
                             return FormValidation.warning("The ID ‘%s’ is already in use in %s", value,
                                     storeContext instanceof Item
                                             ? ((Item) storeContext).getFullDisplayName()
@@ -161,7 +175,28 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             return null;
         }
 
-        public final FormValidation doCheckId(@QueryParameter String value, @AncestorInPath ModelObject context) {
+        /**
+         * Gets the check id url for the specified store.
+         *
+         * @param store the store.
+         * @return the url of the id check endpoint.
+         * @throws UnsupportedEncodingException if the JVM does not implement the JLS.
+         */
+        public String getCheckIdUrl(CredentialsStore store) throws UnsupportedEncodingException {
+            ModelObject context = store.getContext();
+            for (ContextResolver r : ExtensionList.lookup(ContextResolver.class)) {
+                String token = r.getToken(context);
+                if (token != null) {
+                    return Jenkins.getActiveInstance().getRootUrlFromRequest() + "/descriptorByName/" + clazz.getName()
+                            + "/checkId?provider=" + r.getClass().getName() + "&token="
+                            + URLEncoder.encode(token, "UTF-8");
+                }
+            }
+            return Jenkins.getActiveInstance().getRootUrlFromRequest() + "/descriptorByName/" + clazz.getName()
+                    + "/checkId?provider=null&token=null";
+        }
+
+        public final FormValidation doCheckId(@ContextInPath ModelObject context, @QueryParameter String value) {
             if (value.isEmpty()) {
                 return FormValidation.ok();
             }
@@ -172,6 +207,7 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             if (problem != null) {
                 return problem;
             }
+            CredentialsStoreAction a;
             if (!(context instanceof User)) {
                 User me = User.current();
                 if (me != null) {
