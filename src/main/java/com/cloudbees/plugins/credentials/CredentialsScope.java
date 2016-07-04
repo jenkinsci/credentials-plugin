@@ -23,7 +23,11 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import hudson.model.Computer;
+import hudson.model.ModelObject;
+import hudson.model.Node;
 import java.io.Serializable;
+import jenkins.model.Jenkins;
 
 /**
  * The scope of credentials.
@@ -41,6 +45,17 @@ public enum CredentialsScope implements Serializable {
         public String getDisplayName() {
             return Messages.CredentialsScope_SystemDisplayName();
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isVisible(ModelObject context) {
+            // we future-proof for the event that somebody defines a per-node credentials store
+            // in which case a ViewCredentialsAction for the Node/Computer should also show the
+            // SYSTEM scoped credentials
+            return context instanceof Jenkins || context instanceof Node || context instanceof Computer;
+        }
     },
     /**
      * This credential is available to the object on which the credential is associated and all objects that are
@@ -52,6 +67,14 @@ public enum CredentialsScope implements Serializable {
         @Override
         public String getDisplayName() {
             return Messages.CredentialsScope_GlobalDisplayName();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isVisible(ModelObject context) {
+            return true;
         }
     },
     /**
@@ -72,10 +95,24 @@ public enum CredentialsScope implements Serializable {
      * (because they will only be able to see their own credentials)
      */
     USER {
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public String getDisplayName() {
             return Messages.CredentialsScope_UserDisplayName();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isVisible(ModelObject context) {
+            // technically the context doesn't matter here as there are currently no child context objects of User
+            // but in the event that some plugin were to - say - permit defining user specific jobs
+            // that were attached to the user object then those jobs should have the user's credentials
+            // available.
+            return true;
         }
     };
 
@@ -85,4 +122,13 @@ public enum CredentialsScope implements Serializable {
      * @return The display name for the credentials.
      */
     public abstract String getDisplayName();
+
+    /**
+     * Tests if credentials with this scope are visible in the supplied context.
+     *
+     * @param context the context.
+     * @return {@code true} if credentials with this scope are visible in the supplied context.
+     * @since 2.1.5
+     */
+    public abstract boolean isVisible(ModelObject context);
 }

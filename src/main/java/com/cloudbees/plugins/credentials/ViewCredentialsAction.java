@@ -261,6 +261,9 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             if (p.hasPermission(CredentialsProvider.VIEW)) {
                 for (Domain domain : p.getDomains()) {
                     for (Credentials c : p.getCredentials(domain)) {
+                        if (!c.getScope().isVisible(context)) {
+                            continue;
+                        }
                         boolean masked;
                         if (c instanceof IdCredentials) {
                             String id = ((IdCredentials) c).getId();
