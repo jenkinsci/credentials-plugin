@@ -571,6 +571,9 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
         @Override
         public String toCheckUrl() {
             String checkUrl = super.toCheckUrl();
+            if (checkUrl == null) {
+                return null;
+            }
             try {
                 JellyContext jelly = Functions.getCurrentJellyContext();
                 Object it = jelly.findVariable("it");
