@@ -338,15 +338,18 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
             } else if (o instanceof CredentialsStoreAction.DomainWrapper) {
                 o = ((CredentialsStoreAction.DomainWrapper) o).getStore().getContext();
             } else if (o instanceof Descriptor && i == 1) { // URL is /descriptorByName/...
+                // TODO this is a https://issues.jenkins-ci.org/browse/JENKINS-19413 workaround
+
                 // we need to try an infer from the Referer as this is likely a doCheck or a doFill method
                 String referer = request.getReferer();
                 String rootPath = request.getRootPath();
                 if (referer != null && rootPath != null && referer.startsWith(rootPath)) {
                     // strip out any query portion of the referer URL.
                     String path = URI.create(referer.substring(rootPath.length())).getPath().substring(1);
+
                     // TODO have Stapler expose a method that can walk a path and produce the ancestors and use that
 
-                    // what now follows is an example of a realy evil hack, consequently this means...
+                    // what now follows is an example of a really evil hack, consequently this means...
                     //
                     //                         7..       ,
                     //                      MMM.          MMM.
