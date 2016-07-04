@@ -481,13 +481,16 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                         String token = r.getToken(context);
                         if (token != null) {
                             String fillUrl = (String) attributes.get("fillUrl");
-                            if (fillUrl.indexOf('?') != -1) {
-                                fillUrl = fillUrl + '&';
-                            } else {
-                                fillUrl = fillUrl + '?';
+                            if (fillUrl != null) {
+                                if (fillUrl.indexOf('?') != -1) {
+                                    fillUrl = fillUrl + '&';
+                                } else {
+                                    fillUrl = fillUrl + '?';
+                                }
+                                attributes.put("fillUrl", fillUrl + "$provider=" +
+                                        URLEncoder.encode(r.getClass().getName(), "UTF-8")
+                                        + "&$token=" + URLEncoder.encode(token, "UTF-8"));
                             }
-                            attributes.put("fillUrl", fillUrl + "$provider=" + r.getClass().getName() + "&"
-                                    + "$token=" + URLEncoder.encode(token, "UTF-8"));
                         }
                     }
 
@@ -522,14 +525,18 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                             .lookup(CredentialsSelectHelper.ContextResolver.class)) {
                         String token = r.getToken(context);
                         if (token != null) {
-                            String fillUrl = (String) attributes.get("autoCompleteUrl");
-                            if (fillUrl.indexOf('?') != -1) {
-                                fillUrl = fillUrl + '&';
-                            } else {
-                                fillUrl = fillUrl + '?';
+                            String autoCompleteUrl = (String) attributes.get("autoCompleteUrl");
+                            if (autoCompleteUrl != null) {
+                                if (autoCompleteUrl.indexOf('?') != -1) {
+                                    autoCompleteUrl = autoCompleteUrl + '&';
+                                } else {
+                                    autoCompleteUrl = autoCompleteUrl + '?';
+                                }
+                                attributes.put("autoCompleteUrl",
+                                        autoCompleteUrl + "$provider=" +
+                                                URLEncoder.encode(r.getClass().getName(), "UTF-8")
+                                                + "&$token=" + URLEncoder.encode(token, "UTF-8"));
                             }
-                            attributes.put("autoCompleteUrl", fillUrl + "$provider=" + r.getClass().getName() + "&"
-                                    + "$token=" + URLEncoder.encode(token, "UTF-8"));
                         }
                     }
 
@@ -579,9 +586,12 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                                 checkUrl = checkUrl + "+qs(this).addThis()";
                             }
                             return checkUrl
-                                    + ".append('$provider=" + r.getClass().getName() + "')"
-                                    + ".append('$token=" + Functions.jsStringEscape(
-                                    URLEncoder.encode(token, "UTF-8")) + "')"
+                                    + ".append('$provider=" +
+                                    Functions.jsStringEscape(URLEncoder.encode(r.getClass().getName(), "UTF-8"))
+                                    + "')"
+                                    + ".append('$token="
+                                    + Functions.jsStringEscape(URLEncoder.encode(token, "UTF-8"))
+                                    + "')"
                                     + ".toString()";
                         }
                     }
