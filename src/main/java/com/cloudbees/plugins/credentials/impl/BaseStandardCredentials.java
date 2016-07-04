@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.BaseCredentials;
 import com.cloudbees.plugins.credentials.ContextInPath;
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
+import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -46,6 +47,8 @@ import hudson.model.User;
 import hudson.util.FormValidation;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.EnumSet;
+import java.util.Set;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
@@ -148,20 +151,20 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
 
         @CheckForNull
         private static FormValidation checkForDuplicates(String value, ModelObject context, ModelObject object) {
+            CredentialsMatcher withId = CredentialsMatchers.withId(value);
             for (CredentialsStore store : CredentialsProvider.lookupStores(object)) {
                 if (!store.hasPermission(CredentialsProvider.VIEW)) {
                     continue;
                 }
                 ModelObject storeContext = store.getContext();
                 for (Domain domain : store.getDomains()) {
-                    Credentials match = CredentialsMatchers
-                            .firstOrNull(store.getCredentials(domain), CredentialsMatchers.withId(value));
-                    if (match != null) {
+                    for (Credentials match : CredentialsMatchers.filter(store.getCredentials(domain), withId)) {
                         if (storeContext == context) {
                             return FormValidation.error("This ID is already in use");
                         } else {
-                            if (match.getScope() == CredentialsScope.SYSTEM) {
-                                // system scope is not exported to child contexts
+                            CredentialsScope scope = match.getScope();
+                            if (scope != null && !scope.isVisible(context)) {
+                                // scope is not exported to child contexts
                                 continue;
                             }
                             return FormValidation.warning("The ID ‘%s’ is already in use in %s", value,
