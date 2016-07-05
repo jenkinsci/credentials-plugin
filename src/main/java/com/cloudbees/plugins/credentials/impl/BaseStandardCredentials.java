@@ -210,7 +210,6 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             if (problem != null) {
                 return problem;
             }
-            CredentialsStoreAction a;
             if (!(context instanceof User)) {
                 User me = User.current();
                 if (me != null) {
