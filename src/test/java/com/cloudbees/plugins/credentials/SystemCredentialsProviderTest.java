@@ -25,11 +25,22 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import org.apache.commons.io.FileUtils;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
-public class SystemCredentialsProviderTest extends HudsonTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-    public void testSaveAndLoad() throws Exception {
+public class SystemCredentialsProviderTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+
+    @Test
+    public void saveAndLoad() throws Exception {
         assertTrue(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
         SystemCredentialsProvider.getInstance().save();
         assertTrue(new SystemCredentialsProvider().getCredentials().isEmpty());
@@ -41,7 +52,8 @@ public class SystemCredentialsProviderTest extends HudsonTestCase {
         assertFalse(new SystemCredentialsProvider().getCredentials().isEmpty());
     }
 
-    public void testMalformedInput() throws Exception {
+    @Test
+    public void malformedInput() throws Exception {
         assertTrue(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
         SystemCredentialsProvider.getInstance().getCredentials().add(
                 new DummyCredentials(CredentialsScope.SYSTEM, "foo", "bar"));
@@ -53,7 +65,8 @@ public class SystemCredentialsProviderTest extends HudsonTestCase {
         assertTrue(new SystemCredentialsProvider().getCredentials().isEmpty());
     }
 
-    public void testSmokes() throws Exception {
+    @Test
+    public void smokes() throws Exception {
         assertEquals(true, !CredentialsProvider.allCredentialsDescriptors().isEmpty());
         assertNotNull(SystemCredentialsProvider.getInstance().getDescriptor());
         assertNotNull(SystemCredentialsProvider.getInstance().getCredentials());
