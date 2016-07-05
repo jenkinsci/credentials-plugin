@@ -136,16 +136,24 @@ public abstract class CredentialsStoreAction
     static {
         SECRETS_REDACTED = new XStream2();
         SECRETS_REDACTED.registerConverter(new Converter() {
-
+            /**
+             * {@inheritDoc}
+             */
             public boolean canConvert(Class type) {
-                return type == Secret.class;
+                return type == Secret.class || type == SecretBytes.class;
             }
 
+            /**
+             * {@inheritDoc}
+             */
             public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
                 writer.startNode("secret-redacted");
                 writer.endNode();
             }
 
+            /**
+             * {@inheritDoc}
+             */
             public Object unmarshal(HierarchicalStreamReader reader, final UnmarshallingContext context) {
                 return null;
             }
