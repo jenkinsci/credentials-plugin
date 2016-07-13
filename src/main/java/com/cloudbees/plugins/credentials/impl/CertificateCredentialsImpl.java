@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials.impl;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
+import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import com.trilead.ssh2.crypto.Base64;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -45,6 +46,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -104,10 +106,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     /**
      * Our constructor.
-     * @param scope the scope.
-     * @param id the id.
-     * @param description the description.
-     * @param password the password.
+     *
+     * @param scope          the scope.
+     * @param id             the id.
+     * @param description    the description.
+     * @param password       the password.
      * @param keyStoreSource the source of the keystore that holds the certificate.
      */
     @DataBoundConstructor
@@ -135,6 +138,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     /**
      * When serializing over a {@link Channel} ensure that we send a self-contained version.
+     *
      * @return the object instance to write to the stream.
      */
     private Object writeReplace() {
@@ -147,6 +151,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     /**
      * Returns the {@link KeyStore} containing the certificate.
+     *
      * @return the {@link KeyStore} containing the certificate.
      */
     @NonNull
@@ -176,6 +181,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     /**
      * Returns the password used to protect the certificate's private key in {@link #getKeyStore()}.
+     *
      * @return the password used to protect the certificate's private key in {@link #getKeyStore()}.
      */
     @NonNull
@@ -185,6 +191,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     /**
      * Whether there is actually a password protecting the certificate's private key in {@link #getKeyStore()}.
+     *
      * @return {@code true} if there is a password protecting the certificate's private key in {@link #getKeyStore()}.
      */
     public boolean isPasswordEmpty() {
@@ -193,6 +200,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     /**
      * Returns the source of the {@link #getKeyStore()}.
+     *
      * @return the source of the {@link #getKeyStore()}.
      */
     public KeyStoreSource getKeyStoreSource() {
@@ -229,6 +237,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
         /**
          * Returns the {@link byte[]} content of the {@link KeyStore}.
+         *
          * @return the {@link byte[]} content of the {@link KeyStore}.
          */
         @NonNull
@@ -238,6 +247,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          * Returns a {@link System#currentTimeMillis()} comparable timestamp of when the content was last modified.
          * Used to track refreshing the {@link CertificateCredentialsImpl#keyStore} cache for sources that pull
          * from an external source.
+         *
          * @return a {@link System#currentTimeMillis()} comparable timestamp of when the content was last modified.
          */
         public abstract long getKeyStoreLastModified();
@@ -278,7 +288,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          * @param type          the type of keystore to instantiate, see {@link KeyStore#getInstance(String)}.
          * @param keystoreBytes the {@link byte[]} content of the {@link KeyStore}.
          * @param password      the password to use when loading the {@link KeyStore} and recovering the key from the
-         * {@link KeyStore}.
+         *                      {@link KeyStore}.
          * @return the validation results.
          */
         @NonNull
@@ -354,6 +364,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
         /**
          * Our constructor.
+         *
          * @param keyStoreFile the path of the file on the master.
          */
         @SuppressWarnings("unused") // by stapler
@@ -388,7 +399,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         public String getKeyStoreFile() {
             return keyStoreFile;
-        }        /**
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Override
@@ -412,7 +425,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
             /**
              * Checks the keystore file path.
-             * @param value the file path.
+             *
+             * @param value    the file path.
              * @param password the password.
              * @return the {@link FormValidation} results.
              */
@@ -453,10 +467,32 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         private static final Logger LOGGER = Logger.getLogger(FileOnMasterKeyStoreSource.class.getName());
 
         /**
-         * The uploaded keystore.
+         * The old uploaded keystore.
          */
         @CheckForNull
-        private final Secret uploadedKeystore;
+        @Deprecated
+        private transient Secret uploadedKeystore;
+        /**
+         * The uploaded keystore.
+         *
+         * @since 2.1.5
+         */
+        @CheckForNull
+        private final SecretBytes uploadedKeystoreBytes;
+
+        /**
+         * Our constructor.
+         *
+         * @param uploadedKeystore the keystore content.
+         * @deprecated
+         */
+        @SuppressWarnings("unused") // by stapler
+        @Deprecated
+        public UploadedKeyStoreSource(String uploadedKeystore) {
+            this.uploadedKeystoreBytes = StringUtils.isBlank(uploadedKeystore)
+                    ? null
+                    : SecretBytes.fromBytes(DescriptorImpl.toByteArray(Secret.fromString(uploadedKeystore)));
+        }
 
         /**
          * Our constructor.
@@ -465,8 +501,22 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         @SuppressWarnings("unused") // by stapler
         @DataBoundConstructor
-        public UploadedKeyStoreSource(String uploadedKeystore) {
-            this.uploadedKeystore = StringUtils.isBlank(uploadedKeystore) ? null : Secret.fromString(uploadedKeystore);
+        public UploadedKeyStoreSource(SecretBytes uploadedKeystore) {
+            this.uploadedKeystoreBytes = uploadedKeystore;
+        }
+
+        /**
+         * Migrate to the new field.
+         *
+         * @return the deserialized object.
+         * @throws ObjectStreamException if something didn't work.
+         * @since 2.1.5
+         */
+        private Object readResolve() throws ObjectStreamException {
+            if (uploadedKeystore != null && uploadedKeystoreBytes == null) {
+                return new UploadedKeyStoreSource(SecretBytes.fromBytes(DescriptorImpl.toByteArray(uploadedKeystore)));
+            }
+            return this;
         }
 
         /**
@@ -474,8 +524,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          *
          * @return the private key file name.
          */
-        public String getUploadedKeystore() {
-            return uploadedKeystore == null ? "" : uploadedKeystore.getEncryptedValue();
+        public SecretBytes getUploadedKeystore() {
+            return uploadedKeystoreBytes;
         }
 
         /**
@@ -484,7 +534,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @NonNull
         @Override
         public byte[] getKeyStoreBytes() {
-            return DescriptorImpl.toByteArray(uploadedKeystore);
+            return SecretBytes.getPlainData(uploadedKeystoreBytes);
         }
 
         /**
@@ -511,6 +561,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
             /**
              * Decode the {@link Base64} keystore wrapped in a {@link Secret}.
+             *
              * @param secret the keystore as a secret.
              * @return the keystore bytes.
              * @see #toSecret(byte[])
@@ -528,6 +579,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
             /**
              * Encodes the keystore bytes into {@link Base64} and wraps in a {@link Secret}
+             *
              * @param contents the keystore bytes.
              * @return the keystore as a secret.
              * @see #toByteArray(Secret)
@@ -565,6 +617,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
             /**
              * Creates a new {@link Upload} for the specified {@literal <input id="..."/>}
+             *
              * @param divId the id if the form input element to inject the uploaded content into.
              * @return the {@link Upload}
              */
@@ -609,6 +662,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             /**
              * Gets the id of the {@literal <input>} element on the {@code window.opener} of the pop-up to inject the
              * uploaded content into.
+             *
              * @return the id of the {@literal <input>} element on the {@code window.opener} of the pop-up to inject the
              * uploaded content into.
              */
@@ -619,6 +673,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
             /**
              * Returns the content.
+             *
              * @return the content.
              */
             @SuppressWarnings("unused") // used by Jelly EL
@@ -628,10 +683,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
             /**
              * Performs the actual upload.
+             *
              * @param req the request.
              * @return the response.
              * @throws ServletException if something goes wrong.
-             * @throws IOException if something goes wrong.
+             * @throws IOException      if something goes wrong.
              */
             @NonNull
             public HttpResponse doUpload(@NonNull StaplerRequest req) throws ServletException, IOException {
@@ -652,6 +708,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     /**
      * The {@link CredentialsSnapshotTaker} for {@link StandardCertificateCredentials}.
+     *
      * @since 1.14
      */
     @Extension
@@ -675,10 +732,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 if (keyStoreSource.isSnapshotSource()) {
                     return credentials;
                 }
-                final Secret secret = UploadedKeyStoreSource.DescriptorImpl.toSecret(keyStoreSource.getKeyStoreBytes());
                 return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
                         credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
-                        new UploadedKeyStoreSource(secret == null ? null : secret.getEncryptedValue()));
+                        new UploadedKeyStoreSource(SecretBytes.fromBytes(keyStoreSource.getKeyStoreBytes())));
             }
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             final char[] password = credentials.getPassword().getPlainText().toCharArray();
@@ -698,9 +754,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             }
             return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
                     credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
-                    new UploadedKeyStoreSource(
-                            UploadedKeyStoreSource.DescriptorImpl.toSecret(bos.toByteArray())
-                                    .getEncryptedValue()));
+                    new UploadedKeyStoreSource(SecretBytes.fromBytes(bos.toByteArray())));
         }
     }
 }
