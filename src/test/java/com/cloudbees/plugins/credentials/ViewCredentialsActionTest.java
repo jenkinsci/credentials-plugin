@@ -9,12 +9,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import jenkins.model.Jenkins;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import static org.hamcrest.Matchers.is;
+import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
 import static org.junit.Assert.assertThat;
 
 public class ViewCredentialsActionTest {
@@ -41,7 +41,7 @@ public class ViewCredentialsActionTest {
 
         JenkinsRule.WebClient wc = j.createWebClient();
         WebResponse response = wc.goTo("credentials/api/xml?depth=5", "application/xml").getWebResponse();
-        assertThat(response.getContentAsString(), is("<rootActionImpl>"
+        assertThat(response.getContentAsString(), isSimilarToIgnoringPrivateAttrs("<rootActionImpl>"
                 + "<stores>"
                 + "<system>"
                 + "<domains>"
@@ -71,7 +71,7 @@ public class ViewCredentialsActionTest {
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId,
                         credentialDescription, credentialUsername, "test-secret"));
         response = wc.goTo("credentials/api/xml?depth=5", "application/xml").getWebResponse();
-        assertThat(response.getContentAsString(), is("<rootActionImpl>"
+        assertThat(response.getContentAsString(), isSimilarToIgnoringPrivateAttrs("<rootActionImpl>"
                 + "<stores>"
                 + "<system>"
                 + "<domains>"

@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import javax.servlet.http.HttpServletResponse;
-import jenkins.model.Jenkins;
+
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.xmlunit.matchers.CompareMatcher;
 
+import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -57,7 +58,7 @@ public class CredentialsStoreActionTest {
 
         JenkinsRule.WebClient wc = j.createWebClient();
         WebResponse response = wc.goTo("credentials/store/system/api/xml?depth=5", "application/xml").getWebResponse();
-        assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo("<userFacingAction>"
+        assertThat(response.getContentAsString(), isSimilarToIgnoringPrivateAttrs("<userFacingAction>"
                 + "<domains>"
                 + "<_>"
                 + "<description>"
@@ -83,7 +84,7 @@ public class CredentialsStoreActionTest {
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId,
                         credentialDescription, credentialUsername, "test-secret"));
         response = wc.goTo("credentials/store/system/api/xml?depth=5", "application/xml").getWebResponse();
-        assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo("<userFacingAction>"
+        assertThat(response.getContentAsString(), isSimilarToIgnoringPrivateAttrs("<userFacingAction>"
                 + "<domains>"
                 + "<_>"
                 + "<description>"
