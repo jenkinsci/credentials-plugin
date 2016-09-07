@@ -248,6 +248,6 @@ window.setTimeout(function() {
     var controls = document.getElementsByClassName('credentials-select-control');
     var count = controls.length;
     for (var i = 0; i < count; i++) {
-        Behaviour.applySubtree(controls[i]);
+        Behaviour.applySubtree(controls[i], true);
     }
 },1);
