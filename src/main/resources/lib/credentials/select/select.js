@@ -34,7 +34,14 @@ window.credentials.init = function () {
             draggable: true,
             zindex: 1000,
             modal: true,
-            visible: false
+            visible: false,
+            keylisteners: [
+              new YAHOO.util.KeyListener(document, {keys:27}, {
+                fn:(function() {window.credentials.dialog.hide();}),
+                scope:document,
+                correctScope:false
+              })
+            ]
         });
         window.credentials.dialog.render();
     }
