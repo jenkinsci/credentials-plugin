@@ -56,6 +56,7 @@ import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import net.jcip.annotations.GuardedBy;
@@ -167,11 +168,20 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             try {
                 keyStore.load(new ByteArrayInputStream(keyStoreSource.getKeyStoreBytes()), toCharArray(password));
             } catch (CertificateException e) {
-                LOGGER.log(Level.WARNING, "Could not load keystore from " + keyStoreSource.toString(), e);
+                LogRecord lr = new LogRecord(Level.WARNING, "Credentials ID {0}: Could not load keystore from {1}");
+                lr.setParameters(new Object[]{getId(), keyStoreSource});
+                lr.setThrown(e);
+                LOGGER.log(lr);
             } catch (NoSuchAlgorithmException e) {
-                LOGGER.log(Level.WARNING, "Could not load keystore from " + keyStoreSource.toString(), e);
+                LogRecord lr = new LogRecord(Level.WARNING, "Credentials ID {0}: Could not load keystore from {1}");
+                lr.setParameters(new Object[]{getId(), keyStoreSource});
+                lr.setThrown(e);
+                LOGGER.log(lr);
             } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Could not load keystore from " + keyStoreSource.toString(), e);
+                LogRecord lr = new LogRecord(Level.WARNING, "Credentials ID {0}: Could not load keystore from {1}");
+                lr.setParameters(new Object[]{getId(), keyStoreSource});
+                lr.setThrown(e);
+                LOGGER.log(lr);
             }
             this.keyStore = keyStore;
             this.keyStoreLastModified = lastModified;
@@ -412,6 +422,16 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         /**
          * {@inheritDoc}
          */
+        @Override
+        public String toString() {
+            return "FileOnMasterKeyStoreSource{" +
+                    "keyStoreFile='" + keyStoreFile + '\'' +
+                    "}";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         @Extension
         public static class DescriptorImpl extends KeyStoreSourceDescriptor {
 
@@ -551,6 +571,14 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @Override
         public boolean isSnapshotSource() {
             return true;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return "UploadedKeyStoreSource{uploadedKeystoreBytes=******}";
         }
 
         /**
