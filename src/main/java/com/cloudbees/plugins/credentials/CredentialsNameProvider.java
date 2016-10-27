@@ -23,11 +23,15 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.common.IdCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 
 /**
@@ -39,6 +43,11 @@ import java.util.List;
 public abstract class CredentialsNameProvider<C extends Credentials> {
 
     /**
+     * Our logger.
+     */
+    private static final Logger LOGGER = Logger.getLogger(CredentialsNameProvider.class.getName());
+
+    /**
      * Name the credential.
      *
      * @param credentials the credential to name.
@@ -46,9 +55,25 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
      */
     @NonNull
     public static String name(@NonNull Credentials credentials) {
-        Result result = name(credentials, credentials.getClass());
-        if (result != null) {
-            return result.name;
+        try {
+            Result result = name(credentials, credentials.getClass());
+            if (result != null) {
+                return result.name;
+            }
+        } catch (Exception e) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                if (credentials instanceof IdCredentials) {
+                    LogRecord lr = new LogRecord(Level.FINE, "Credential ID {0} Type {1}: Could not infer name");
+                    lr.setParameters(new Object[]{((IdCredentials) credentials).getId(), credentials.getClass()});
+                    lr.setThrown(e);
+                    LOGGER.log(lr);
+                } else {
+                    LogRecord lr = new LogRecord(Level.FINE, "Credential Type {0}: Could not infer name");
+                    lr.setParameters(new Object[]{credentials.getClass()});
+                    lr.setThrown(e);
+                    LOGGER.log(lr);
+                }
+            }
         }
         try {
             return credentials.getDescriptor().getDisplayName();

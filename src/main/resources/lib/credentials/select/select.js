@@ -34,7 +34,14 @@ window.credentials.init = function () {
             draggable: true,
             zindex: 1000,
             modal: true,
-            visible: false
+            visible: false,
+            keylisteners: [
+              new YAHOO.util.KeyListener(document, {keys:27}, {
+                fn:(function() {window.credentials.dialog.hide();}),
+                scope:document,
+                correctScope:false
+              })
+            ]
         });
         window.credentials.dialog.render();
     }
@@ -248,6 +255,6 @@ window.setTimeout(function() {
     var controls = document.getElementsByClassName('credentials-select-control');
     var count = controls.length;
     for (var i = 0; i < count; i++) {
-        Behaviour.applySubtree(controls[i]);
+        Behaviour.applySubtree(controls[i], true);
     }
 },1);
