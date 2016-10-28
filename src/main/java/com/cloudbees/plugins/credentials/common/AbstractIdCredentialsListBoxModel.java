@@ -29,6 +29,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
@@ -292,7 +293,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
-    public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull Item context, @NonNull Class<? extends C> type) {
+    public AbstractIdCredentialsListBoxModel<T, C> include(@Nullable Item context, @NonNull Class<? extends C> type) {
         return include(context, type, Collections.<DomainRequirement>emptyList());
     }
 
@@ -323,7 +324,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
-                                                             @NonNull Item context,
+                                                             @Nullable Item context,
                                                              @NonNull Class<? extends C> type) {
         return includeAs(authentication, context, type, Collections.<DomainRequirement>emptyList());
     }
@@ -356,7 +357,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
-    public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull Item context, @NonNull Class<? extends C> type,
+    public AbstractIdCredentialsListBoxModel<T, C> include(@Nullable Item context, @NonNull Class<? extends C> type,
                                                            @NonNull List<DomainRequirement> domainRequirements) {
         return includeMatching(context, type, domainRequirements, CredentialsMatchers.always());
     }
@@ -390,7 +391,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
-                                                             @NonNull Item context,
+                                                             @Nullable Item context,
                                                              @NonNull Class<? extends C> type,
                                                              @NonNull List<DomainRequirement> domainRequirements) {
         return includeMatchingAs(authentication, context, type, domainRequirements, CredentialsMatchers.always());
@@ -427,7 +428,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
-    public AbstractIdCredentialsListBoxModel<T, C> includeMatching(@NonNull Item context,
+    public AbstractIdCredentialsListBoxModel<T, C> includeMatching(@Nullable Item context,
                                                                    @NonNull Class<? extends C> type,
                                                                    @NonNull List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
@@ -467,7 +468,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull Authentication authentication,
-                                                                     @NonNull Item context,
+                                                                     @Nullable Item context,
                                                                      @NonNull Class<? extends C> type,
                                                                      @NonNull
                                                                              List<DomainRequirement> domainRequirements,
