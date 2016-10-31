@@ -1445,7 +1445,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
     /**
      * Track the usage of credentials in a specific node.
-     *
+     * Would be used for example when launching an agent.
      * @param node        the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
      * @param <C>         the credentials type.
@@ -1462,7 +1462,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
     /**
      * Track the usage of credentials in a specific node.
-     *
+     * Would be used for example when launching an agent.
      * @param node        the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
      * @param <C>         the credentials type.
