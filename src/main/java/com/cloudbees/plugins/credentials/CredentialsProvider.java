@@ -1370,7 +1370,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Track the usage of credentials in a specific build
+     * Track the usage of credentials in a specific build.
      *
      * @param build       the run to tag the fingerprint
      * @param credentials the credentials to fingerprint.
@@ -1387,7 +1387,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Track the usage of credentials in a specific build
+     * Track the usage of credentials in a specific build.
      *
      * @param build       the run to tag the fingerprint
      * @param credentials the credentials to fingerprint.
@@ -1404,7 +1404,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Track the usage of credentials in a specific build
+     * Track the usage of credentials in a specific build.
      *
      * @param build       the run to tag the fingerprint
      * @param credentials the credentials to fingerprint.
@@ -1427,8 +1427,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Track the usage of credentials in a specific build
-     *
+     * Track the usage of credentials in a specific node.
+     * Would be used for example when launching an agent.
      * @param node        the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
      * @param <C>         the credentials type.
@@ -1444,8 +1444,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Track the usage of credentials in a specific build
-     *
+     * Track the usage of credentials in a specific node.
+     * Would be used for example when launching an agent.
      * @param node        the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
      * @param <C>         the credentials type.
@@ -1461,8 +1461,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Track the usage of credentials in a specific build
-     *
+     * Track the usage of credentials in a specific node.
+     * Would be used for example when launching an agent.
      * @param node        the node to tag the fingerprint
      * @param credentials the credentials to fingerprint.
      * @param <C>         the credentials type.
@@ -1540,7 +1540,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Track the usage of credentials in a specific build
+     * Track the usage of credentials in a specific item but not associated with a specific build, for example SCM
+     * polling.
      *
      * @param item        the item to tag the fingerprint against
      * @param credentials the credentials to fingerprint.
