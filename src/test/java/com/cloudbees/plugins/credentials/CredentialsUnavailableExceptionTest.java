@@ -156,8 +156,7 @@ public class CredentialsUnavailableExceptionTest {
         Trigger.checkTriggers(cal);
         // we should get here without an exception being thrown or else core is handling the runtime exceptions poorly
         r.waitUntilNoActivity();
-        Collection<? extends Action> actions = trigger.getProjectActions();
-        SCMTrigger.SCMAction action = (SCMTrigger.SCMAction)actions.iterator().next();
+        SCMTrigger.SCMAction action = getScmAction(trigger);
         assertThat(action.getLog(), allOf(
                 containsString("Checking remote revision as user: manchu"),
                 containsString("Property 'password' is currently unavailable")));
@@ -166,9 +165,8 @@ public class CredentialsUnavailableExceptionTest {
         // now we trigger polling the second time to verify that polling is not stuck
         Trigger.checkTriggers(cal);
         r.waitUntilNoActivity();
-        actions = trigger.getProjectActions();
-        action = (SCMTrigger.SCMAction)actions.iterator().next();
-        assertThat(((SCMTrigger.SCMAction)actions.iterator().next()).getLog(), allOf(
+        action = getScmAction(trigger);
+        assertThat(action.getLog(), allOf(
                 containsString("Checking remote revision as user: manchu"),
                 containsString("Property 'password' is currently unavailable")));
         assertThat("No new builds", project.getLastBuild().getNumber(), is(number));
@@ -176,13 +174,22 @@ public class CredentialsUnavailableExceptionTest {
         // now we trigger polling the third time... now with working credentials
         Trigger.checkTriggers(cal);
         r.waitUntilNoActivity();
-        actions = trigger.getProjectActions();
-        action = (SCMTrigger.SCMAction)actions.iterator().next();
+        action = getScmAction(trigger);
         assertThat(action.getLog(), allOf(
                 containsString("Checking remote revision as user: manchu"),
                 not(containsString("Property 'password' is currently unavailable")),
                 containsString("Checking remote revision with password: secret")));
         assertThat("New build", project.getLastBuild().getNumber(), greaterThan(number));
+    }
+
+    private SCMTrigger.SCMAction getScmAction(SCMTrigger trigger) {
+        Collection<? extends Action> actions = trigger.getProjectActions();
+        for (Action a : actions) {
+            if (a instanceof SCMTrigger.SCMAction) {
+                return (SCMTrigger.SCMAction)a;
+            }
+        }
+        return null;
     }
 
     public static class PasswordSCM extends SCM {
