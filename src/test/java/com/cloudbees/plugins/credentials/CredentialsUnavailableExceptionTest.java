@@ -34,6 +34,7 @@ import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
+import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.model.FreeStyleBuild;
@@ -63,6 +64,7 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -154,7 +156,8 @@ public class CredentialsUnavailableExceptionTest {
         Trigger.checkTriggers(cal);
         // we should get here without an exception being thrown or else core is handling the runtime exceptions poorly
         r.waitUntilNoActivity();
-        assertThat(project.getAction(SCMTrigger.SCMAction.class).getLog(), allOf(
+        SCMTrigger.SCMAction action = getScmAction(trigger);
+        assertThat(action.getLog(), allOf(
                 containsString("Checking remote revision as user: manchu"),
                 containsString("Property 'password' is currently unavailable")));
         assertThat("No new builds", project.getLastBuild().getNumber(), is(number));
@@ -162,7 +165,8 @@ public class CredentialsUnavailableExceptionTest {
         // now we trigger polling the second time to verify that polling is not stuck
         Trigger.checkTriggers(cal);
         r.waitUntilNoActivity();
-        assertThat(project.getAction(SCMTrigger.SCMAction.class).getLog(), allOf(
+        action = getScmAction(trigger);
+        assertThat(action.getLog(), allOf(
                 containsString("Checking remote revision as user: manchu"),
                 containsString("Property 'password' is currently unavailable")));
         assertThat("No new builds", project.getLastBuild().getNumber(), is(number));
@@ -170,11 +174,22 @@ public class CredentialsUnavailableExceptionTest {
         // now we trigger polling the third time... now with working credentials
         Trigger.checkTriggers(cal);
         r.waitUntilNoActivity();
-        assertThat(project.getAction(SCMTrigger.SCMAction.class).getLog(), allOf(
+        action = getScmAction(trigger);
+        assertThat(action.getLog(), allOf(
                 containsString("Checking remote revision as user: manchu"),
                 not(containsString("Property 'password' is currently unavailable")),
                 containsString("Checking remote revision with password: secret")));
         assertThat("New build", project.getLastBuild().getNumber(), greaterThan(number));
+    }
+
+    private SCMTrigger.SCMAction getScmAction(SCMTrigger trigger) {
+        Collection<? extends Action> actions = trigger.getProjectActions();
+        for (Action a : actions) {
+            if (a instanceof SCMTrigger.SCMAction) {
+                return (SCMTrigger.SCMAction)a;
+            }
+        }
+        return null;
     }
 
     public static class PasswordSCM extends SCM {
