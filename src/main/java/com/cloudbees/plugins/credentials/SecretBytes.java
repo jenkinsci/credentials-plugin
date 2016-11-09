@@ -290,6 +290,21 @@ public class SecretBytes implements Serializable {
     }
 
     /**
+     * check if the given String is a SecretBytes text by attempting to decrypt it
+     * @param data the string to check
+     * @return true if the decryption was successful, false otherwise
+     */
+    public static boolean iSecretBytes(String data) {
+        data = Util.fixNull(data);
+        int len = data.length();
+        if (len >= 2 && ENCRYPTED_VALUE_PATTERN.matcher(data).matches()) {
+            byte[] decoded = Base64.decode(data.substring(1, len - 1));
+            return decrypt(decoded) != null;
+        }
+        return false;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
