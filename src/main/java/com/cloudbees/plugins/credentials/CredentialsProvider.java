@@ -35,6 +35,7 @@ import hudson.DescriptorExtensionList;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.Util;
+import hudson.init.InitMilestone;
 import hudson.model.Cause;
 import hudson.model.Computer;
 import hudson.model.ComputerSet;
@@ -51,12 +52,14 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.Queue;
 import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.model.User;
 import hudson.model.queue.Tasks;
 import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
+import hudson.security.SecurityRealm;
 import hudson.util.ListBoxModel;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -82,12 +85,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.FingerprintFacet;
 import jenkins.model.Jenkins;
+import jenkins.util.Timer;
 import org.acegisecurity.Authentication;
+import org.acegisecurity.GrantedAuthority;
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
+import org.acegisecurity.providers.UsernamePasswordAuthenticationToken;
 import org.acegisecurity.userdetails.UsernameNotFoundException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -1581,6 +1591,106 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             }
         }
         return credentials;
+    }
+
+    /**
+     * A helper method for Groovy Scripting to address use cases such as JENKINS-39317 where all credential stores
+     * need to be resaved. As this is a potentially very expensive operation the method has been marked
+     * {@link DoNotUse} in order to ensure that no plugin attempts to call this method. If invoking this method
+     * from an {@code init.d} Groovy script, ensure that the call is guarded by a marker file such that
+     *
+     * @throws IOException if things go wrong.
+     */
+    @Restricted(DoNotUse.class) // Do not use from plugins
+    public static void saveAll() throws IOException {
+        LOGGER.entering(CredentialsProvider.class.getName(), "saveAll");
+        try {
+            final Jenkins jenkins = Jenkins.getActiveInstance();
+            jenkins.checkPermission(Jenkins.ADMINISTER);
+            LOGGER.log(Level.INFO, "Forced save credentials stores: Requested by {0}",
+                    StringUtils.defaultIfBlank(Jenkins.getAuthentication().getName(), "anonymous"));
+            Timer.get().execute(new Runnable() {
+            @Override
+            public void run() {
+                SecurityContext ctx = ACL.impersonate(ACL.SYSTEM);
+                try {
+                    if (jenkins.getInitLevel().compareTo(InitMilestone.JOB_LOADED) < 0) {
+                        LOGGER.log(Level.INFO, "Forced save credentials stores: Initialization has not completed");
+                        while (jenkins.getInitLevel().compareTo(InitMilestone.JOB_LOADED) < 0) {
+                            LOGGER.log(Level.INFO, "Forced save credentials stores: Sleeping for 1 second");
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                LOGGER.log(Level.WARNING, "Forced save credentials stores: Aborting due to interrupt",
+                                        e);
+                                return;
+                            }
+                        }
+                        LOGGER.log(Level.INFO, "Forced save credentials stores: Initialization has completed");
+                    }
+                    LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Jenkins");
+                    for (CredentialsStore s : lookupStores(jenkins)) {
+                        try {
+                            s.save();
+                        } catch (IOException e) {
+                            LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + s, e);
+                        }
+                    }
+                    LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Items...");
+                    int count = 0;
+                    for (Item item : jenkins.getAllItems(Item.class)) {
+                        count++;
+                        if (count % 100 == 0) {
+                            LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Items ({0} processed)",
+                                    count);
+                        }
+                        for (CredentialsStore s : lookupStores(item)) {
+                            if (item == s.getContext()) {
+                                // only save if the store is associated with this context item as otherwise will
+                                // have been saved already / later
+                                try {
+                                    s.save();
+                                } catch (IOException e) {
+                                    LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + s, e);
+                                }
+                            }
+                        }
+                    }
+                    LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Users...");
+                    count = 0;
+                    for (User user : User.getAll()) {
+                        count++;
+                        if (count % 100 == 0) {
+                            LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Users ({0} processed)",
+                                    count);
+                        }
+                        // HACK ALERT we just want to access the user's stores so we do just enough impersonation
+                        // to ensure that User.current() == user
+                        // while we could use User.impersonate() that would force a query against the backing
+                        // SecurityRealm to revalidate
+                        ACL.impersonate(new UsernamePasswordAuthenticationToken(user.getId(), "",
+                                new GrantedAuthority[]{SecurityRealm.AUTHENTICATED_AUTHORITY}));
+                        for (CredentialsStore s : lookupStores(user)) {
+                            if (user == s.getContext()) {
+                                // only save if the store is associated with this context item as otherwise will
+                                // have been saved already / later
+                                try {
+                                    s.save();
+                                } catch (IOException e) {
+                                    LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + s, e);
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                    LOGGER.log(Level.INFO, "Forced save credentials stores: Completed");
+                    SecurityContextHolder.setContext(ctx);
+                }
+            }
+        });
+        } finally {
+            LOGGER.exiting(CredentialsProvider.class.getName(), "saveAll");
+        }
     }
 
     /**

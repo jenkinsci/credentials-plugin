@@ -593,6 +593,17 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         public CredentialsStoreAction getStoreAction() {
             return storeAction;
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void save() throws IOException {
+            if (BulkChange.contains(this)) {
+                return;
+            }
+            SystemCredentialsProvider.getInstance().save();
+        }
     }
 
     /**
