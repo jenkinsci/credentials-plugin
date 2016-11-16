@@ -208,6 +208,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          *
          * @since 1.5
          */
+        @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
         private Map<Domain, List<Credentials>> domainCredentialsMap;
 
         /**
