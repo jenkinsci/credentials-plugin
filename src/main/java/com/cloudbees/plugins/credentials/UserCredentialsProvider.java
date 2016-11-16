@@ -30,6 +30,7 @@ import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.BulkChange;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
@@ -207,8 +208,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          *
          * @since 1.5
          */
-        private Map<Domain, List<Credentials>> domainCredentialsMap =
-                new CopyOnWriteMap.Hash<Domain, List<Credentials>>();
+        private Map<Domain, List<Credentials>> domainCredentialsMap;
 
         /**
          * Backwards compatibility.
@@ -218,7 +218,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @Deprecated
         public UserCredentialsProperty(List<Credentials> credentials) {
-            domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
+            domainCredentialsMap = DomainCredentials.migrateListToMap(null, credentials);
         }
 
         /**
@@ -240,8 +240,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @SuppressWarnings("deprecation")
         private Object readResolve() throws ObjectStreamException {
             if (domainCredentialsMap == null) {
-                domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
-                credentials = null;
+                return new UserCredentialsProperty(credentials);
             }
             return this;
         }
@@ -464,7 +463,12 @@ public class UserCredentialsProvider extends CredentialsProvider {
             if (user.equals(User.current())) {
                 UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
                 if (property == null) {
-                    if (domainCredentialsMap.isEmpty()) {
+                    Map<Domain, List<Credentials>> domainCredentialsMap;
+                    synchronized (this) {
+                        // peek to save manipulating the object further
+                        domainCredentialsMap = this.domainCredentialsMap;
+                    }
+                    if (domainCredentialsMap == null || domainCredentialsMap.isEmpty()) {
                         // nothing to do here we do not want to persist the empty property and nobody
                         // has even called getDomainCredentialsMap so the global domain has not been populated
                         return;
