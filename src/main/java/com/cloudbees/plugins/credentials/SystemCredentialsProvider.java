@@ -29,6 +29,7 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.BulkChange;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.XmlFile;
@@ -349,6 +350,9 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      */
     public void save() throws IOException {
         checkPermission(Jenkins.ADMINISTER);
+        if (BulkChange.contains(this)) {
+            return;
+        }
         XmlFile configFile = getConfigFile();
         configFile.write(this);
         SaveableListener.fireOnChange(this, configFile);
