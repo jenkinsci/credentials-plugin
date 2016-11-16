@@ -52,11 +52,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
+import net.jcip.annotations.GuardedBy;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.context.SecurityContext;
@@ -85,6 +87,14 @@ public class UserCredentialsProvider extends CredentialsProvider {
      * We only care about {@link CredentialsScope#USER} scoped credentials.
      */
     private static final Set<CredentialsScope> SCOPES = Collections.singleton(CredentialsScope.USER);
+
+    /**
+     * The empty properties that have not been saved yet.
+     */
+    @GuardedBy("self")
+    private static final WeakHashMap<User, UserCredentialsProperty> emptyProperties =
+            new WeakHashMap<User, UserCredentialsProperty>();
+
 
     /**
      * {@inheritDoc}
@@ -452,6 +462,24 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         private void save() throws IOException {
             if (user.equals(User.current())) {
+                UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
+                if (property == null) {
+                    if (domainCredentialsMap.isEmpty()) {
+                        // nothing to do here we do not want to persist the empty property and nobody
+                        // has even called getDomainCredentialsMap so the global domain has not been populated
+                        return;
+                    } else if (domainCredentialsMap.size() == 1) {
+                        List<Credentials> global = domainCredentialsMap.get(Domain.global());
+                        if (global != null && global.isEmpty()) {
+                            // nothing to do here we do not want to persist the empty property
+                            return;
+                        }
+                    }
+                    synchronized (emptyProperties) {
+                        user.addProperty(this);
+                        emptyProperties.remove(user);
+                    }
+                }
                 user.save();
             }
         }
@@ -462,6 +490,14 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @Override
         public UserProperty reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
             return this;
+        }
+
+        /**
+         * Allow setting the user.
+         * @param user the user.
+         */
+        private void _setUser(User user) {
+            this.user = user;
         }
 
         /**
@@ -593,6 +629,11 @@ public class UserCredentialsProvider extends CredentialsProvider {
         private final UserFacingAction storeAction;
 
         /**
+         * The property;
+         */
+        private transient UserCredentialsProperty property;
+
+        /**
          * Constructor.
          *
          * @param user the user.
@@ -617,17 +658,23 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * @return the {@link UserCredentialsProperty} that we store the credentials in.
          */
         private UserCredentialsProperty getInstance() {
-            UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
             if (property == null) {
-                BulkChange bc = new BulkChange(user);
-                try {
-                    user.addProperty(property = new UserCredentialsProperty(new DomainCredentials[0]));
-                } catch (IOException e) {
-                    // ignore as we are not actually saving
-                } finally {
-                    // we don't want to save the user record unless the credentials are modified.
-                    bc.abort();
+                UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
+                if (property == null) {
+                    synchronized (emptyProperties) {
+                        // need to recheck as UserCredentialsProperty#save() may have added while we awaited the lock
+                        property = user.getProperty(UserCredentialsProperty.class);
+                        if (property == null) {
+                            property = emptyProperties.get(user);
+                            if (property == null) {
+                                property = new UserCredentialsProperty(new DomainCredentials[0]);
+                                property._setUser(user);
+                                emptyProperties.put(user, property);
+                            }
+                        }
+                    }
                 }
+                this.property = property; // idempotent write
             }
             return property;
         }
@@ -733,10 +780,24 @@ public class UserCredentialsProvider extends CredentialsProvider {
             return getInstance().updateCredentials(domain, current, replacement);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public String getRelativeLinkToContext() {
             StaplerRequest request = Stapler.getCurrentRequest();
             return URI.create(request.getContextPath() + "/" + user.getUrl() + "/").normalize().toString() ;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void save() throws IOException {
+            if (BulkChange.contains(this)) {
+                return;
+            }
+            getInstance().save();
         }
     }
 

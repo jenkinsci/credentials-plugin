@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.BulkChange;
 import hudson.ExtensionList;
 import hudson.Functions;
 import hudson.Util;
@@ -36,6 +37,7 @@ import hudson.model.DescriptorVisibilityFilter;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
+import hudson.model.Saveable;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.AccessControlled;
@@ -64,7 +66,7 @@ import org.kohsuke.stapler.StaplerRequest;
  * @author Stephen Connolly
  * @since 1.8
  */
-public abstract class CredentialsStore implements AccessControlled {
+public abstract class CredentialsStore implements AccessControlled, Saveable {
 
     /**
      * The {@link CredentialsProvider} class.
@@ -560,4 +562,20 @@ public abstract class CredentialsStore implements AccessControlled {
         return null;
     }
 
+    /**
+     * Persists the state of this object into XML. Default implementation delegates to {@link #getContext()} if it
+     * implements {@link Saveable} otherwise dropping back to a no-op.
+     *
+     * @see Saveable#save()
+     * @since 2.1.9
+     */
+    @Override
+    public void save() throws IOException {
+        if (BulkChange.contains(this)) {
+            return;
+        }
+        if (getContext() instanceof Saveable) {
+            ((Saveable) getContext()).save();
+        }
+    }
 }
