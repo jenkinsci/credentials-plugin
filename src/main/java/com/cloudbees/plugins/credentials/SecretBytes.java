@@ -294,7 +294,7 @@ public class SecretBytes implements Serializable {
      * @param data the string to check
      * @return true if the decryption was successful, false otherwise
      */
-    public static boolean iSecretBytes(String data) {
+    public static boolean isSecretBytes(String data) {
         data = Util.fixNull(data);
         int len = data.length();
         if (len >= 2 && ENCRYPTED_VALUE_PATTERN.matcher(data).matches()) {
