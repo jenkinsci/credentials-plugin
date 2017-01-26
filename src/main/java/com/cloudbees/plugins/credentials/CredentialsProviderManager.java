@@ -181,7 +181,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
      */
     public static XmlFile getConfigFile() {
         // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return new XmlFile(new File(Jenkins.getActiveInstance().getRootDir(), "credentials-configuration.xml"));
+        return new XmlFile(Jenkins.XSTREAM2, new File(Jenkins.getActiveInstance().getRootDir(), "credentials-configuration.xml"));
     }
 
     /**
