@@ -74,6 +74,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -406,10 +407,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             return resolver.resolve(originals);
         }
         List<C> result = new ArrayList<C>();
+        Set<String> ids = new HashSet<String>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
-                    result.addAll(provider.getCredentials(type, itemGroup, authentication, domainRequirements));
+                    for (C c : provider.getCredentials(type, itemGroup, authentication, domainRequirements)) {
+                        if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
+                            // if IdCredentials, only add if we havent added already
+                            // if not IdCredentials, always add
+                            result.add(c);
+                        }
+                    }
                 } catch (NoClassDefFoundError e) {
                     LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
                             + " likely due to missing optional dependency", e);
@@ -456,11 +464,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     matcher);
         }
         ListBoxModel result = new ListBoxModel();
+        Set<String> ids = new HashSet<String>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
-                    result.addAll(
-                            provider.getCredentialIds(type, itemGroup, authentication, domainRequirements, matcher));
+                    for (ListBoxModel.Option option : provider.getCredentialIds(
+                            type, itemGroup, authentication, domainRequirements, matcher)
+                            ) {
+                        if (ids.add(option.value)) {
+                            result.add(option);
+                        }
+                    }
                 } catch (NoClassDefFoundError e) {
                     LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
                             + " likely due to missing optional dependency", e);
@@ -531,10 +545,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             return resolver.resolve(originals);
         }
         List<C> result = new ArrayList<C>();
+        Set<String> ids = new HashSet<String>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    result.addAll(provider.getCredentials(type, item, authentication, domainRequirements));
+                    for (C c: provider.getCredentials(type, item, authentication, domainRequirements)) {
+                        if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
+                            // if IdCredentials, only add if we havent added already
+                            // if not IdCredentials, always add
+                            result.add(c);
+                        }
+                    }
                 } catch (NoClassDefFoundError e) {
                     LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
                             + " likely due to missing optional dependency", e);
@@ -585,10 +606,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     domainRequirements, matcher);
         }
         ListBoxModel result = new ListBoxModel();
+        Set<String> ids = new HashSet<String>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    result.addAll(provider.getCredentialIds(type, item, authentication, domainRequirements, matcher));
+                    for (ListBoxModel.Option option : provider.getCredentialIds(
+                            type, item, authentication, domainRequirements, matcher)
+                            ) {
+                        if (ids.add(option.value)) {
+                            result.add(option);
+                        }
+                    }
                 } catch (NoClassDefFoundError e) {
                     LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
                             + " likely due to missing optional dependency", e);
