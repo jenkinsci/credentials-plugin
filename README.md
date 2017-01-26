@@ -8,7 +8,7 @@ Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin](http:
 Bug Reports
 ===========
 
-File bug reports here: https://issues.jenkins-ci.org/issues/?jql=project%20%3D%20JENKINS%20AND%20component%20%3D%20credentials-plugin
+File bug reports here: [In the JENKINS jira project with component `credentials-plugin`](https://issues.jenkins-ci.org/issues/?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened%2C%20%22In%20Review%22)%20AND%20component%20%3D%20credentials-plugin)
 
 **DO NOT USE GITHUB ISSUES** Any GitHub Issues will be ignored and closed as soon as they are spotted.
 
