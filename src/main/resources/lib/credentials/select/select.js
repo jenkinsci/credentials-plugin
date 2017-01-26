@@ -200,6 +200,17 @@ Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, func
             }
             window.credentials.add(item.srcElement.getAttribute('data-url'));
         });
+        // YUI menu will not parse disabled when using DIV-LI only when using SELECT-OPTION
+        // but SELECT-OPTION doesn't support images, so we need to catch the rendering and roll our
+        // own disabled attribute support
+        menuButton.getMenu().beforeShowEvent.subscribe(function(type,args,value){
+            var items = this.getItems();
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].srcElement.getAttribute('disabled')) {
+                    items[i].cfg.setProperty('disabled', true);
+                }
+            }
+        });
     }
     e=null;
 });

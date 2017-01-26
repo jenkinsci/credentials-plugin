@@ -180,6 +180,37 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
     }
 
     /**
+     * Checks if the current user has permission to create a credential.
+     *
+     * @param context     the context.
+     * @param includeUser whether they can use their own credentials store.
+     * @return {@code true} if they can create a permission.
+     * @since FIXME
+     */
+    @Restricted(NoExternalUse.class)
+    @SuppressWarnings("unused") // used via jelly
+    public boolean hasCreatePermission(ModelObject context, boolean includeUser) {
+        if (includeUser) {
+            User current = User.current();
+            if (current != null && current.hasPermission(CREATE)) {
+                return true;
+            }
+        }
+        if (context == null) {
+            StaplerRequest request = Stapler.getCurrentRequest();
+            if (request != null) {
+                context = request.findAncestorObject(ModelObject.class);
+            }
+        }
+        for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
+            if (store.hasPermission(CREATE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Stapler binding for the resolver URL segment.
      *
      * @param className the class name of the resolver.
@@ -405,7 +436,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          * @return {@code true} if the current user can add credentials to this store.
          */
         public boolean isEnabled() {
-            return url != null && store.hasPermission(Permission.CREATE) && !store.getCredentialsDescriptors()
+            return url != null && store.hasPermission(CREATE) && !store.getCredentialsDescriptors()
                     .isEmpty();
         }
 
