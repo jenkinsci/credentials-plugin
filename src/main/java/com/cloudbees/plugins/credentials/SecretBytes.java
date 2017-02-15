@@ -352,6 +352,7 @@ public class SecretBytes implements Serializable {
         }
     }
 
+    @Restricted(NoExternalUse.class)
     public static class StaplerConverterImpl implements org.apache.commons.beanutils.Converter {
         public SecretBytes convert(Class type, Object value) {
             if (value==null)
@@ -361,21 +362,5 @@ public class SecretBytes implements Serializable {
             }
             throw new IllegalClassException(SecretBytes.class, value.getClass());
         }
-    }
-
-    /*
-     * TODO why do we need this static registration if we have StaplerConverterImpl?
-     *
-     * Register a converter for Stapler form binding.
-     */
-    static {
-        Stapler.CONVERT_UTILS.register(new org.apache.commons.beanutils.Converter() {
-            /**
-             * {@inheritDoc}
-             */
-            public SecretBytes convert(Class type, Object value) {
-                return SecretBytes.fromString(value.toString());
-            }
-        }, SecretBytes.class);
     }
 }
