@@ -31,6 +31,7 @@ import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import com.trilead.ssh2.crypto.Base64;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
@@ -304,6 +305,10 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @NonNull
         protected static FormValidation validateCertificateKeystore(String type, byte[] keystoreBytes,
                                                                     String password) {
+
+            if (keystoreBytes == null || keystoreBytes.length == 0) {
+                return FormValidation.warning(Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
+            }
 
             char[] passwordChars = toCharArray(Secret.fromString(password));
             try {
@@ -594,7 +599,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              * @return the keystore bytes.
              * @see #toSecret(byte[])
              */
-            public static byte[] toByteArray(Secret secret) {
+            @NonNull
+            public static byte[] toByteArray(@Nullable Secret secret) {
                 if (secret != null) {
                     try {
                         return Base64.decode(secret.getPlainText().toCharArray());
@@ -611,8 +617,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              * @param contents the keystore bytes.
              * @return the keystore as a secret.
              * @see #toByteArray(Secret)
+             * @deprecated use {@link SecretBytes#fromBytes(byte[])}
              */
-            public static Secret toSecret(byte[] contents) {
+            @Deprecated
+            @CheckForNull
+            public static Secret toSecret(@Nullable byte[] contents) {
                 return contents == null || contents.length == 0
                         ? null
                         : Secret.fromString(new String(Base64.encode(contents)));
@@ -640,7 +649,14 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 if (StringUtils.isBlank(value)) {
                     return FormValidation.error(Messages.CertificateCredentialsImpl_NoCertificateUploaded());
                 }
-                return validateCertificateKeystore("PKCS12", toByteArray(Secret.fromString(value)), password);
+
+                SecretBytes secretBytes = SecretBytes.fromString(value);
+                byte[] keystoreBytes = secretBytes.getPlainData();
+                if (keystoreBytes == null || keystoreBytes.length == 0) {
+                    return FormValidation.error(Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
+                }
+
+                return validateCertificateKeystore("PKCS12", keystoreBytes, password);
             }
 
             /**
@@ -673,7 +689,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              * The uploaded content.
              */
             @CheckForNull
-            private final Secret uploadedKeystore;
+            private final SecretBytes uploadedKeystore;
 
             /**
              * Our constructor.
@@ -682,7 +698,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              *                         pop-up to inject the uploaded content into.
              * @param uploadedKeystore the content.
              */
-            public Upload(@NonNull String divId, @CheckForNull Secret uploadedKeystore) {
+            public Upload(@NonNull String divId, @CheckForNull SecretBytes uploadedKeystore) {
                 this.divId = divId;
                 this.uploadedKeystore = uploadedKeystore;
             }
@@ -705,7 +721,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              * @return the content.
              */
             @SuppressWarnings("unused") // used by Jelly EL
-            public Secret getUploadedKeystore() {
+            public SecretBytes getUploadedKeystore() {
                 return uploadedKeystore;
             }
 
@@ -728,8 +744,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 // view for that instance. The "complete" view can then do the injection and close itself so that
                 // the user experience is the pop-up then click upload and finally we inject back in the content to
                 // the form.
+                SecretBytes uploadedKeystore = SecretBytes.fromBytes(file.get());
                 return HttpResponses.forwardToView(
-                        new Upload(getDivId(), UploadedKeyStoreSource.DescriptorImpl.toSecret(file.get())), "complete");
+                        new Upload(getDivId(), uploadedKeystore), "complete");
             }
         }
     }

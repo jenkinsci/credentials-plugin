@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 import javax.crypto.Cipher;
 import jcifs.util.Base64;
 import jenkins.security.ConfidentialStore;
+import org.apache.commons.lang.IllegalClassException;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
@@ -351,17 +352,15 @@ public class SecretBytes implements Serializable {
         }
     }
 
-    /*
-     * Register a converter for Stapler form binding.
-     */
-    static {
-        Stapler.CONVERT_UTILS.register(new org.apache.commons.beanutils.Converter() {
-            /**
-             * {@inheritDoc}
-             */
-            public SecretBytes convert(Class type, Object value) {
-                return SecretBytes.fromString(value.toString());
+    @Restricted(NoExternalUse.class)
+    public static class StaplerConverterImpl implements org.apache.commons.beanutils.Converter {
+        public SecretBytes convert(Class type, Object value) {
+            if (value==null)
+                return null;
+            if (value instanceof String) {
+                return SecretBytes.fromString((String) value);
             }
-        }, SecretBytes.class);
+            throw new IllegalClassException(SecretBytes.class, value.getClass());
+        }
     }
 }
