@@ -299,7 +299,13 @@ public class SecretBytes implements Serializable {
         data = Util.fixNull(data);
         int len = data.length();
         if (len >= 2 && ENCRYPTED_VALUE_PATTERN.matcher(data).matches()) {
-            byte[] decoded = Base64.decode(data.substring(1, len - 1));
+            byte[] decoded;
+            try {
+                decoded = Base64.decode(data.substring(1, len - 1));
+            } catch (StringIndexOutOfBoundsException e) {
+                // invalid Base64
+                return false;
+            }
             return decrypt(decoded) != null;
         }
         return false;

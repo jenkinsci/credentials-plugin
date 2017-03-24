@@ -70,6 +70,29 @@ public class SecretBytesTest {
     }
 
     @Test
+    public void isSecretBytes() throws Exception {
+        assertThat(SecretBytes.isSecretBytes(SecretBytes.fromBytes("abc".getBytes()).toString()), is(true));
+        assertThat(SecretBytes.isSecretBytes(""), is(false));
+        assertThat(SecretBytes.isSecretBytes("{}"), is(false));
+        assertThat(SecretBytes.isSecretBytes("{ABCDEFG===}"), is(false));
+        String text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod"
+                + " tempor incididunt ut labore et dolore magna aliqua";
+        byte[] data = text.getBytes();
+        String valid = SecretBytes.fromBytes(data).toString();
+        assertThat(SecretBytes.isSecretBytes(valid), is(true));
+        assertThat(SecretBytes.isSecretBytes(valid.substring(0, 20)+valid.substring(22)), is(false));
+        String invalid =
+                "Fu".equals(valid.substring(20,22))
+                        ? valid.substring(0, 20) + "fU" + valid.substring(22)
+                        : valid.substring(0, 20) + "Fu" + valid.substring(22);
+        if (SecretBytes.isSecretBytes(invalid)) {
+            assertThat(new String(SecretBytes.fromString(invalid).getPlainData()), not(is(text)));
+        } else {
+            assertThat(SecretBytes.isSecretBytes(invalid), is(false));
+        }
+    }
+
+    @Test
     public void noAccidentalDecrypt() throws Exception {
         // if this fails then you have magically picked up the secret key that this was generated from
         // running the test again should pass... but it is highly unlikely that you will ever get the
