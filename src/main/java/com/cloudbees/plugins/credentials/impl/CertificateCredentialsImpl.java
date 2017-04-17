@@ -28,7 +28,6 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
-import com.trilead.ssh2.crypto.Base64;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -36,6 +35,7 @@ import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import hudson.remoting.Base64;
 import hudson.remoting.Channel;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
@@ -602,10 +602,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             @NonNull
             public static byte[] toByteArray(@Nullable Secret secret) {
                 if (secret != null) {
-                    try {
-                        return Base64.decode(secret.getPlainText().toCharArray());
-                    } catch (IOException e) {
-                        // ignore
+                    byte[] decoded = Base64.decode(secret.getPlainText());
+                    if (null != decoded) {
+                        return decoded;
                     }
                 }
                 return new byte[0];
@@ -624,7 +623,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             public static Secret toSecret(@Nullable byte[] contents) {
                 return contents == null || contents.length == 0
                         ? null
-                        : Secret.fromString(new String(Base64.encode(contents)));
+                        : Secret.fromString(Base64.encode(contents));
             }
 
             /**
