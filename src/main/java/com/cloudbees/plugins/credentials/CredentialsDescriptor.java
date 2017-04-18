@@ -85,6 +85,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
     /**
      * Fills in the scopes for a scope list-box.
      *
+     * @param context list-box context
      * @return the scopes for the nearest request object that acts as a container for credentials.
      */
     @SuppressWarnings("unused") // used by stapler
