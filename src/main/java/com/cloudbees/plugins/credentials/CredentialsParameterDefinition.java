@@ -19,6 +19,7 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -111,6 +112,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
      * Our descriptor.
      */
     @Extension
+    @Symbol("credentials")
     public static class DescriptorImpl extends ParameterDescriptor {
 
         /**
