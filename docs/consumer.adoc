@@ -1,0 +1,15 @@
+== Consumer guide
+
+This document provides guidelines for plugin authors using the Credentials API from within their plugins.
+
+This document is structued as follows:
+
+* The first section provides dome background into the use cases driving the development of the Credenyials API.
+
+* The second section is an overview of all the functionality provided by the Credentials API.
+
+* The subsequent sections consider each of the API extension points in turn and the recommended usage patterns.
+
+=== Background
+
+=== Overview

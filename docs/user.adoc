@@ -1,0 +1,323 @@
+== User guide
+
+This document provides guidelines for using the Credentials API.
+
+This document is structured as follows:
+
+* The first section provides dome background into the use cases driving the development of the Credentials API.
+
+* The second section is an overview of all the functionality provided by the Credentials API.
+
+* The subsequent sections consider how to use the different pieces of functionality provided by the Credentials API.
+
+=== Background
+
+=== Overview
+
+=== Managing credentials
+
+The Credentials API plugin defines three classes of context within Jenkins where the credential can be exposed:
+
+1. The Jenkins root object itself
+2. A folder within Jenkins
+3. A user within Jenkins
+
+[NOTE]
+.Credential scope
+====
+When exposing a credentials from the Jenkins root object, you will also need to decide what scope to give the exposed credentials.
+
+* Using the `SYSTEM` scope will allow the credentials to be used for launching Jenkins agents as well as for some secondary system wide processes configured through the menu:Jenkins[Manage Jenkins > Configure Jenkins] screen.
+The credential will not be available to jobs within Jenkins.
+
+* Using the `GLOBAL` scope will, in addition to the usage permitted by `SYSTEM` scope, will make the credential available to all jobs within Jenkins running as an authentication that has the `Credentials/UseItem` permission.
+====
+
+[TIP]
+.Understanding the Authorize Project Plugin and Credentials
+====
+Jenkins associates an authentication with all internal operations.
+
+When a user makes a request from the web browser or from the Jenkins CLI, that request is tagged with the user's authentication and permission checks will restrict the scope of that request to the user's permissions.
+
+The internal operations of Jenkins typically run with the authentication of `SYSTEM` which is the most powerful authentication and has all permissions.
+
+For simple build jobs, this is typically not an issue.
+More complex build jobs can involve bi-directional control between Jenkins and the build job.
+If the build job has the ability to control Jenkins itself, then the authentication that the build job is running as within Jenkins becomes important.
+
+The https://wiki.jenkins-ci.org/display/JENKINS/Authorize+Project+plugin[Authorize Project plugin] was developed to allow jobs to run with a lesser authentication.
+
+In a Jenkins instance without the Authorize Project plugin (or an alternative plugin providing a http://javadoc.jenkins-ci.org/jenkins/security/QueueItemAuthenticator.html[Queue item authenticator]) the menu:Jenkins[Manage Jenkins > Configure Global Security] screen will not show any Access control for builds options
+
+[id=config-no-authorize-project]
+.The Configure Global Security screen without any http://javadoc.jenkins-ci.org/jenkins/security/QueueItemAuthenticator.html[Queue item authenticator] plugins installed
+image::images/global-config-no-authorize-project.png[scaledwidth="90%"]
+
+Once at least one http://javadoc.jenkins-ci.org/jenkins/security/QueueItemAuthenticator.html[Queue item authenticator] is installed in the Jenkins instance, then the configuration options will be displayed.
+
+[id=config-authorize-project]
+.The Configure Global Security screen with at least one http://javadoc.jenkins-ci.org/jenkins/security/QueueItemAuthenticator.html[Queue item authenticator] plugins installed
+image::images/global-config-authorize-project.png[scaledwidth="90%"]
+
+The Access Control for Builds section is an ordered list of http://javadoc.jenkins-ci.org/jenkins/security/QueueItemAuthenticator.html[Queue item authenticator].
+The first one that declares an interest in providing authentication for the build job will determine the authentication that the build job will run as.
+
+[id=config-authorize-project-config]
+.The Configure Global Security screen adding the https://wiki.jenkins-ci.org/display/JENKINS/Authorize+Project+plugin[Authorize Project plugin]'s http://javadoc.jenkins-ci.org/jenkins/security/QueueItemAuthenticator.html[Queue item authenticator]
+image::images/global-config-authorize-project-config.png[scaledwidth="90%"]
+
+To actually use the https://wiki.jenkins-ci.org/display/JENKINS/Authorize+Project+plugin[Authorize Project plugin] you also need to enable it for the specific build job.
+
+[id=job-config-authorize-project]
+.Configuring a job to use the https://wiki.jenkins-ci.org/display/JENKINS/Authorize+Project+plugin[Authorize Project plugin]
+image::images/job-config-authorize-project.png[scaledwidth="90%"]
+
+Once you switch jobs from running as `SYSTEM` you will encounter a feature of the Credentials API, namely that credentials are only exposed to specific authentications.
+
+There is a permission within the Credentials plugin known as `Credentials/UseItem`.
+In order for an authentication to be able to resolve a credentials in either the root scoped store or a folder scoped store, that authentication must have the `Credentials/UseItem` permission.
+
+By default the `Credentials/UseItem` permission is hidden and users receive this permission through implication by the `Job/Configure` permission.
+A Jenkins administrator can make the permission visible by defining the `com.cloudbees.plugins.credentials.UseItemPermission` system property with the value of `true`, e.g. by adding `-Dcom.cloudbees.plugins.credentials.UseItemPermission=true` to the Jenkins JVM start-up options.
+====
+
+
+
+
+==== Creating credentials
+
+===== Using the Jenkins Command Line Interface
+
+The `create-credentials-by-xml` Jenkins CLI command is the command used to expose CyberArk credentials.
+
+[id=cyberark-credentials-add-flow-cli-command]
+.The Jenkins CLI command for adding credentials to a credentials store.
+image::images/add-flow-cli-command.png[scaledwidth="90%"]
+
+Before we can use this CLI command we need to determine the Store Id and Domain.
+
+The Store Id consists of three components separated by the `::`.
+The components are  _provider_ `::` _resolver_ `::` _context path_.
+
+The Credentials API provides implementations for three stores, but as the stores are an extension point it is probable best to illustrate the general process for identifying the store id:
+
+1. List the credentials providers:
++
+.Listing the credentials providers
+----
+$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+list-credentials-providers
+Name                                                                           Provider
+============================================================================== ==============================
+FolderCredentialsProvider                                                      Folder Credentials Provider
+SystemCredentialsProvider                                                      Jenkins Credentials Provider
+UserCredentialsProvider                                                        User Credentials Provider
+com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider       Folder Credentials Provider
+com.cloudbees.plugins.credentials.SystemCredentialsProvider$ProviderImpl       Jenkins Credentials Provider
+com.cloudbees.plugins.credentials.UserCredentialsProvider                      User Credentials Provider
+folder                                                                         Folder Credentials Provider
+system                                                                         Jenkins Credentials Provider
+user                                                                           User Credentials Provider
+----
++
+The each Credentials Provider is exposed using up to three different names (the names are derived by code and simplifications are only exposed if there are no conflicting credentials provider implementations). In the case of the root system credentials store, the most specific provider identifier is `com.cloudbees.plugins.credentials.SystemCredentialsProvider$ProviderImpl` but in the above instance we also have available the short form `system`.
+
+2. List the context resolvers
++
+.Listing the context resolvers
+----
+$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+list-credentials-context-resolvers
+Name                                                                            Resolves
+=============================================================================== =======
+ItemContextResolver                                                             Items
+SystemContextResolver                                                           Jenkins
+UserContextResolver                                                             Users
+com.cloudbees.plugins.credentials.CredentialsSelectHelper$ItemContextResolver   Items
+com.cloudbees.plugins.credentials.CredentialsSelectHelper$SystemContextResolver Jenkins
+com.cloudbees.plugins.credentials.CredentialsSelectHelper$UserContextResolver   Users
+item                                                                            Items
+system                                                                          Jenkins
+user                                                                            Users
+----
++
+While context resolvers are also an extension point, it is probably unlikely that plugins will find it necessary to define new resolvers in addition to the standard ones.
+Normally the context resolvers that we want are either `com.cloudbees.plugins.credentials.CredentialsSelectHelper$SystemContextResolver` (which has the short alias of `system`) or `com.cloudbees.plugins.credentials.CredentialsSelectHelper$ItemContextResolver` (which has the short alias of `item`)
++
+If you want to interact with your own per-user credential store then you will want the `com.cloudbees.plugins.credentials.CredentialsSelectHelper$UserContextResolver` (which has the short alias of `user`)
+
+3. Specify the context path
++
+* For the `system` context resolver, this is always the fixed value `jenkins`.
+* For the `item` context resolver, this is the full name of the item (folder).
+The full name is normally the names separated by '/' characters.
+The full name is not the URL of the job as that includes `/job/` in the URL.
+For example a folder with the URL `http://local.example.com/jenkins/job/example-folder/job/example-sub-folder/` would have the full name `/example-folder/example-sub-folder`
++
+[NOTE]
+====
+The `config.xml` of that folder would - by default - be stored in `$JENKINS_HOME/jobs/example-folder/jobs/example-sub-folder`.
+
+The breadcrumb bar, if the display name has been customized for these folders might look like `Jenkins » Example Folder » Example Sub-Folder`)
+====
+* For the `user` context resolver, this is the username.
+
+So the some possible Store Id variants are:
+
+* `system::system::jenkins` for the root credentials store
+* `folder::item::/full/name/of/folder` for a per-folder credentials store
+* `user::user::wecoyote` for the per-user store of Wile E. Coyote, who's username is `wecoyote`.
+
+Next we need to create the XML representation of the credential we want to expose.
+The best way to get this is to inspect the configuration of an existing credential of the same type.
+
+If we navigate using a Web browser to find an existing credential, we will end up at an URL something like: `https://jenkins.example.com/credentials/store/system/domain/_/credential/some-credential-id/` by appending `config.xml` to the URL we can see the configuration of that credentials, e.g.:
+
+.Inspecting the `config.xml` of an existing username password credential.
+[source,xml]
+----
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
+  <scope>GLOBAL</scope>
+  <id>some-credential-id</id>
+  <description>This is an example username password credential</description>
+  <username>wecoyote</username>
+  <password>
+    <secret-redacted/>
+  </password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+----
+
+.Inspecting the `config.xml` of an existing SSH private key credential.
+[source,xml]
+----
+<com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey plugin="ssh-credentials@1.13">
+  <scope>GLOBAL</scope>
+  <id>some-credential-id</id>
+  <description>This is an example ssh key credential</description>
+  <username>wecoyote</username>
+  <privateKeySource class="com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$DirectEntryPrivateKeySource">
+    <privateKey>
+      <secret-redacted/>
+    </privateKey>
+  </privateKeySource>
+</com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey>
+----
+
+NOTE: when accessing credentials in this way, the secret text will be replaced by `<secret-redacted/>`
+
+So it is just a question of providing our own `config.xml` with the appropriate content.
+
+TIP: When providing the actual secret value, you should exploit the way Jenkins deserializes secrets. If the secret does not decrypt then it is assumed to be the corresponding unencrypted value, which Jenkins will then encrypt before persisting the credentials.
+
+.Example of adding a `deploy-key` credential using the username `wecoyote` and the password `secret123` in the `/example-folder` folder.
+[source,bash]
+----
+$ cat > credential.xml <<EOF
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
+  <scope>GLOBAL</scope>
+  <id>deploy-key</id>
+  <username>wecoyote</username>
+  <password>secret123</password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+EOF
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
+create-credentials-by-xml folder::item::/example-folder  _ < credential.xml
+$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+list-credentials folder::item::/example-folder
+================================
+Domain           (global)
+Description
+# of Credentials 1
+================================
+Id               Name
+================ ===============
+deploy-key       wecoyote/******
+================================
+----
+
+===== Using the Jenkins REST Interface
+
+To use the REST interface, you need to make a POST request to the `createCredentials` sub-URL of the credentials domain. For example, for the folder `example-folder` in a Jenkins instance hosted at http://local.example.com/ this would be the URL http://local.example.com/job/example-folder/credentials/store/cyber-ark/domain/_/createCredentials
+
+.Example of adding a `deploy-key` credential using the username `wecoyote` and the password `secret123` in the `/example-folder` folder.
+[source,bash]
+----
+$ cat > credential.xml <<EOF
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
+  <scope>GLOBAL</scope>
+  <id>deploy-key</id>
+  <username>wecoyote</username>
+  <password>secret123</password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+EOF
+$ curl -X POST -H content-type:application/xml -d @credential.xml \
+https://jenkins.example.com/job/example-folder/credentials/store/cyber-ark/\
+domain/_/createCredentials
+----
+
+NOTE: If your Jenkins instance has CSRF protection enabled or uses authentication then you will need to provide the required headers to the REST request.
+Details of the exact headers required depends on the CSRF protection that has been configured and the exact authentication mechanism being used.
+
+==== Removing credentials
+
+If the backing credentials are removed from CyberArk, you will need to remove the corresponding credential definition from the credentials store in Jenkins.
+
+===== Using the Web User Interface
+
+Navigate to the Credentials view for the context containing the the credentials to be removed.
+
+There are two ways to remove the credential:
+
+* Use the context menu for the credential and select menu:Delete[]
++
+[id=credentials-del-flow-shortcut]
+.Using the context menu for removing a credentials from a credentials store.
+image::images/del-flow-shortcut.png[scaledwidth="90%"]
+
+
+* Navigate to the credential and select the menu:Delete[] left hand menu action.
++
+[id=credentials-del-flow-long-way]
+.Using the credential's menu:Delete[] action directly.
+image::images/del-flow-long-way.png[scaledwidth="90%"]
+
+===== Using the Jenkins Command Line Interface
+
+The `delete-credentials` Jenkins CLI command is the command used to remove credentials.
+
+[id=credentials-del-flow-cli-command]
+.The Jenkins CLI command for removing credentials from a credentials store.
+image::images/del-flow-cli-command.png[scaledwidth="90%"]
+
+.Example of removing the `deploy-key` credential from the global domain of the `/example-folder` folder.
+[source,bash]
+----
+$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+delete-credentials folder::item::/example-folder  _ deploy-key
+$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+list-credentials folder::item::/example-folder
+========================
+Domain           (global)
+Description
+# of Credentials 0
+========================
+Id               Name
+================ =======
+========================
+----
+
+===== Using the Jenkins REST Interface
+
+To use the REST interface, you need to make a DELETE request to the `config.xml` sub-URL of the credentials.
+For example, for the `deploy-key` credential in the global domain of the folder `example-folder` in a Jenkins instance hosted at https://jenkins.example.com/ this would be the URL https://jenkins.example.com/job/example-folder/credentials/store/folder/domain/_/credential/deploy-key/config.xml
+
+.Example of removing the `deploy-key` credential from the global domain of `/example-folder` folder.
+[source,bash]
+----
+$ curl -X DELETE  https://jenkins.example.com/job/example-folder/credentials/\
+store/folder/domain/_/credential/deploy-key/config.xml
+----
+
+NOTE: If your Jenkins instance has CSRF protection enabled or uses authentication then you will need to provide the required headers to the REST request.
+Details of the exact headers required depends on the CSRF protection that has been configured and the exact authentication mechanism being used.

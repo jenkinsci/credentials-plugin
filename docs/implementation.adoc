@@ -1,0 +1,11 @@
+== Implementation Guide
+
+This document provides the guidelines for plugin authors seeking to implementation extensions to the Credentials API.
+
+This document is structured as follows:
+
+* The first section is an overview of all the areas of the extension points provided by the Credentials API.
+
+* The subsequent sections consider each of the API extension points in turn.
+
+=== Overview
