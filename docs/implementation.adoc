@@ -9,3 +9,135 @@ This document is structured as follows:
 * The subsequent sections consider each of the API extension points in turn.
 
 === Overview
+
+There are three main facets of the Credentials API that are designed for extension by plugin authors:
+
+* Credential types themselves - if you need a new type of credential.
+
+* Credential domains - if you need to provide users with a new way of categorising their credentials.
+
+* Credential providers - if you are exposing a new credential store.
+
+The expectation is that most plugin authors requiring to implement a Credentials API extension point will be implementing new credential types.
+
+When implementing a service specific credential type, it may be useful to provide a credential domain specific to that service.
+An other use-case for implementing a custom credential domains would be if the credentials are being used over a specific protocol.
+
+Implementing a credentials provider should be reserved to integration of Jenkins with external credentials stores although there may be some exotic use-cases around exposing a credential from one authentication scope and context into another authentication scope and context.
+
+=== Implementing a new Credentials type
+
+The first question you should ask yourself is _"Should I implement a new credentials type?"_
+
+There are a number of existing credentials types, when should you reuse an existing credential and when should you create a new one.
+The criteria for making this decision is centred around the possibility for re-use of those credentials in another context.
+
+.First rule for implementing a new credential type
+[TIP]
+====
+When there is no possibility of the credentials being used in another context outside of your plugin, implement a new type.
+
+If the credentials may be reused in a different context, then the credentials type should be available to both contexts.
+====
+
+* If I am using a username and password to connect to a service, we have the choice of using the `StandardUsernamePasswordCredentials` interface or creating our own type.
++
+** _If the service provides a SSO or LDAP integration_, then we can expect that some users will have enabled the integration and thus their corporate username and password will be the same as the username and password they use when connecting to the service.
+_This means that it is reasonable to expect the correct password to be changed in sync across all these services_.
+If we implemented a custom credential type, when the 90 day reset of their LDAP password comes around, the user will have to race to update two or more credentials in Jenkins to prevent a lockout of LDAP.
+_Therefore we reuse the `StandardUsernamePasswordCredentials` credentials type_.
+** _If the service does not provide any SSO or LDAP integration and does not expose such to other services_, then we can expect that the password will be changed without correlation to any other service's passwords.
+This could be a case where it makes sense to implement a custom credentials type, but we would need to be certain that the passwords would never be used against other services.
++
+[NOTE]
+====
+Yes the foolish user may actually change all their passwords to the same password across all these different services, but they will be manually logging into each service one at a time and changing the passwords as they go.
+====
+** _If the service is actually using something that only *looks like* a username and password_, then there may be utility in implementing a custom credentials type.
+The authentication might be by username and application token or by application token and application secret.
+These things look like username/password from a certain perspective, but _there is no expectation that they would be valid against any other service_.
+In fact there may even be the possibility of providing a Jenkins specific integration to obtain / refresh these credentials, for example we could trigger a web flow that would allow the user to connect to the service and request a token/secret that could then be fed back into Jenkins removing the need for the user to copy & paste.
+_This is a perfect case for implementing a custom credential type_.
+* If I am using a token to authenticate with the service, we have the choice of using something like https://github.com/jenkinsci/plain-credentials-plugin/blob/da51ba8703eefb201f3f6c4f4da3714fb83a37d6/src/main/java/org/jenkinsci/plugins/plaincredentials/StringCredentials.java[`StringCredentials`] our creating our own type of credential.
+** _If the service uses some form of OAuth or OAuth-like authentication_, then:
++
+--
+*** the token will never be valid against any other service.
+*** we probably want to provide a custom web flow to make it easier for the user to get the token to Jenkins without resorting to copy&paste
+--
++
+So, _we implement a service specific credential type_.
+** _If the token is going to be used across multiple Jenkins plugins_, then we need to seek to find the common denominator credentials type that is valid for all these plugins.
+It may make sense for our plugin to be the provider of the common denominator credential type, say if we can be certain that any other Jenkins plugins will use our plugin as a dependency.
+Or it may be that some other plugin has already won the battle, in which case add that plugin as a dependency.
+Or it may not make sense for your plugin to depend on this other plugin, in which case you should seek to extract the common credential type into a third plugin that both plugins can then depend on.
++
+Only in the very last resort should we use https://github.com/jenkinsci/plain-credentials-plugin/blob/da51ba8703eefb201f3f6c4f4da3714fb83a37d6/src/main/java/org/jenkinsci/plugins/plaincredentials/StringCredentials.java[`StringCredentials`] as that using that credential type would throw away all contextual information from the credential type and therefore would force users to use credentials domains to restore contextual information.
++
+[NOTE]
+====
+It may indeed be correct to use https://github.com/jenkinsci/plain-credentials-plugin/blob/da51ba8703eefb201f3f6c4f4da3714fb83a37d6/src/main/java/org/jenkinsci/plugins/plaincredentials/StringCredentials.java[`StringCredentials`] as the credentials type, but you should think long and hard and be sure you have a valid reason to require the generic type.
+
+`StandardUsernamePasswordCredentials` has it easier as the potential for SSO or LDAP integration will typically drive the choice to the common credential type.
+
+The `StringCredentials` type use case is for injecting secrets into builds, not for connecting to third party services using a plugin native integration.
+====
+
+So we will assume, if you have got this far, that you have convinced yourself of the need to implement a custom credentials type.
+
+At this point, the lazy developer will do something like:
+
+.Do not do what Johnny Dont does
+----
+public class DoNotDoThis extends BaseStandardCredentials {
+  ...
+  public String getApplicationToken() {...}
+  public Secret getApplicationSecret() {...}
+  ...
+}
+----
+
+The issue here is that by implementing the custom credential type as a `class` we prevent any `CredentialsProvider` extensions that store credentials externally from using the `java.lang.reflect.Proxy` mechanism to lazily fetch the secrets from an external store.
+
+.Second rule for implementing a new credential type
+[TIP]
+====
+Define and access the credential through an interface.
+
+Provide users with a default implementation class.
+
+Do not assume the credentials will be using your implementation class.
+====
+
+So we should have:
+
+.Use an interface
+----
+public interface DoThis extends StandardCredentials {
+  String getApplicationToken();
+  Secret getApplicationSecret() throws IOException, InterruptedException;
+}
+
+public class DoThisImpl extends BaseStandardCredentials implements DoThis {
+  ...
+  @Override
+  public String getApplicationToken() {...}
+  @Override
+  public Secret getApplicationSecret() {...}
+  ...
+}
+----
+
+You should note that we have used `Secret` to define the secret.
+And furthermore, we have added the `throws IOException, InterruptedException` to the getter!
+Again this is so that a new `CredentialsProvider` can lazily fetch the secret.
+
+.Third rule for implementing a new credential type
+[TIP]
+====
+The credentials interface shall follow the JavaBeans conventions.
+
+The getters that retrieve the actual secrets shall use either `Secret` or `SecretBytes` as the return type and shall throw `IOException` and `InterruptedException`
+====
+
+NOTE: It was a mistake in the original API to not have the throws on `PasswordCredentials.getPassword()`, do not repeat that mistake!
