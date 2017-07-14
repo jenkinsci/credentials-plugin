@@ -88,12 +88,15 @@ So we will assume, if you have got this far, that you have convinced yourself of
 At this point, the lazy developer will do something like:
 
 .Do not do what Johnny Dont does
+[source,java]
 ----
 public class DoNotDoThis extends BaseStandardCredentials {
   ...
   public String getApplicationToken() {...}
   public Secret getApplicationSecret() {...}
   ...
+  @Extension
+  public class DescriptorImpl extends BaseStandardCredentialsDescriptor { ... }
 }
 ----
 
@@ -112,6 +115,7 @@ Do not assume the credentials will be using your implementation class.
 So we should have:
 
 .Use an interface
+[source,java]
 ----
 public interface DoThis extends StandardCredentials {
   String getApplicationToken();
@@ -125,6 +129,8 @@ public class DoThisImpl extends BaseStandardCredentials implements DoThis {
   @Override
   public Secret getApplicationSecret() {...}
   ...
+  @Extension
+  public class DescriptorImpl extends BaseStandardCredentialsDescriptor { ... }
 }
 ----
 
@@ -141,3 +147,233 @@ The getters that retrieve the actual secrets shall use either `Secret` or `Secre
 ====
 
 NOTE: It was a mistake in the original API to not have the throws on `PasswordCredentials.getPassword()`, do not repeat that mistake!
+
+==== Walk-through
+
+At this point it is probably easier to provide a walk-through for implementing a custom credentials type.
+
+We start with the scenario:
+
+====
+*Scenario:*
+
+We are implementing a Jenkins plugin to integrate with Acme Corp's on-line ordering service.
+
+Our plugin will scan the blueprints from the workspace and submit a purchase order with Acme Corp.
+
+This enables users like Wile E. Coyote to run simulations of the blueprints and only submit orders for tested designs.
+
+Acme Corp's on-line services are protected by Two-Factor Authentication, so username password authentication will not work, instead the user creates an application token for each authorized application and that token can be used in place of their password.
+Users are encouraged to use a different application token for each application.
+====
+
+So, we start by seeing if we need to implement a custom credentials type:
+
+* The credentials we will be using look like `UsernamePasswordCredentials` in that there is a username and a secret that acts like a password.
+* The credentials are actually not a username and password because we have the explicit expectation that the passwords we will be provided with will only ever be valid against Acme Corp's on-line services.
+
+So we are going to create a custom credentials type.
+
+We start with the interface:
+
+* We need to extend `StandardUsernameCredentials` because the username is actually the user's username.
+If Wile E. Coyote and Roadrunner are sharing the same Jenkins server, they will expect to see their username as the identifier to use when selecting the credentials to use.
+* We do not extend `PasswordCredentials` because this is not the password but actually an Acme Corp specific application token.
+If there were use cases where this application token needs to be used by other plugins and those other plugins are somewhat more generic then we might consider extending `StandardUsernamePasswordCredentials` but it is hard to see that need and use of the https://wiki.jenkins.io/display/JENKINS/Authentication+Tokens+API+Plugin[Authentication Tokens API] plugin would probably be a better solution for those use cases.
+
+.`AcmeApplicationTokenCredentials.java`
+[source,java]
+----
+@NameWith( // <1>
+  value = AcmeApplicationTokenCredentials.NameProvider.class,
+  priority = 32 // <2>
+)
+public interface AcmeApplicationTokenCredentials extends StandardUsernameCredentials {
+  Secret getApplicationToken() throws IOException, InterruptedException; // <3>
+  class NameProvider extends CredentialsNameProvider<AcmeApplicationTokenCredentials> {
+    @NonNull
+    @Override
+    public String getName(@NonNull AcmeApplicationTokenCredentials c) {
+      String description = Util.fixEmptyAndTrim(c.getDescription());
+      return c.getUsername()
+          + "/*acme*" // <4>
+          + (description != null ? " (" + description + ")" : "");
+    }
+  }
+}
+----
+<1> We want to override the default naming strategy from the parent interface.
+(This may not always be required, for example if one of the name provider from the implemented interfaces provides a good enough name)
+<2> We need to specify a priority that is higher than that of the parent interface.
+<3> We ensure that the getter follows JavaBeans conventions and uses `Secret` or `SecretBytes` as the return type. Because this getter returns a secret, we also declare `throws IOException, InterruptedException` so that consumers can take reasonable defenses against `java.lang.reflect.Proxy` implementations that make remote calls to obtain the secret.
+<4> We want the name of the credential to indicate that this is an Acme Corp application token, so rather than `wecoyote/******` which is what `StandardUsernamePasswordCredentials` would generate or `wecoyote` which we would get from `StandardUsernameCredentials`, we generate the name `wecoyote/\*acme*`
+
+Next we need to provide users with an implementation of this credentials type so that they can create them in the UI.
+
+.`AcmeApplicationTokenCredentialsImpl.java`
+[source,java]
+----
+public class AcmeApplicationTokenCredentialsImpl
+    extends BaseStandardCredentials // <1>
+    implements AcmeApplicationTokenCredentials { // <2>
+  private final String username;
+  private final Secret applicationToken;
+  @DataBoundConstructor // <3>
+  public AcmeApplicationTokenCredentialsImpl(
+      @CheckForNull CredentialsScope scope, // <4>
+      @CheckForNull String id, // <4>
+      @NonNull String username, // <5>
+      @NonNull String applicationToken, // <6>
+      @CheckForNull String description) { // <4>
+    super(scope, id, description);
+    this.username = username;
+    this.applicationToken = Secret.fromString(applicationToken); // <7>
+  }
+  /*
+  public AcmeApplicationTokenCredentialsImpl( // <8>
+  @CheckForNull String id,
+  @NonNull String username,
+  @NonNull Secret applicationToken) {
+    super(null, id, null);
+    this.username = username;
+    this.applicationToken = applicationToken;
+  }
+  */
+  @NonNull
+  @Override
+  public String getUsername() { return username; }
+  @NonNull
+  @Override
+  public Secret getApplicationToken() { // <9>
+    return applicationToken;
+  }
+  @Extension
+  public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
+    @Override
+    public String getDisplayName() {
+        return "Acme Corp Application Token"; // <10>
+    }
+    @Override
+    public String getIconClassName() {
+        return "icon-acmecorp-credentials"; // <11>
+    }
+    static { // <12>
+      IconSet.icons.addIcon(new Icon(
+          "icon-acmecorp-credentials icon-sm",
+          "acmecorp-order-step/images/16x16/credentials.png",
+          Icon.ICON_SMALL_STYLE,
+          IconType.PLUGIN
+      ));
+      IconSet.icons.addIcon(new Icon(
+          "icon-acmecorp-credentials icon-md",
+          "acmecorp-order-step/images/24x24/credentials.png",
+          Icon.ICON_SMALL_STYLE,
+          IconType.PLUGIN
+      ));
+      IconSet.icons.addIcon(new Icon(
+          "icon-acmecorp-credentials icon-lg",
+          "acmecorp-order-step/images/32x32/credentials.png",
+          Icon.ICON_SMALL_STYLE,
+          IconType.PLUGIN
+      ));
+      IconSet.icons.addIcon(new Icon(
+          "icon-acmecorp-credentials icon-xlg",
+          "acmecorp-order-step/images/48x48/credentials.png",
+          Icon.ICON_SMALL_STYLE,
+          IconType.PLUGIN
+      ));
+    }
+  }
+}
+----
+<1> Always extend from the most specific `BaseStandardCredentials` subclass available.
+<2> Do not forget to implement your actual interface.
+<3> We need a `@DataBoundConstructor` or users will not be able to create the credentials.
+<4> Pass-through the `scope`, `id` and `description`, because this is a `@DataBoundConstructor` these names must match.
+<5> The username field must be called `username` because we are inheriting the contract from `UsernameCredentials`.
+<6> Use a `String` type in the `@DataBoundConstructor` for the `Secret` parameter (same would apply for `SecretBytes`).
+<7> We need to convert from the `String` from the submitted web form into the `Secret`.
+With this approach we can have the test cases just provide a raw unencrypted string value to the constructor and Jenkins will encrypt it for us.
+<8> If you need a simplified programmatic constructor - for example when converting credentials or for use from plugin unit / integration testing, by all means add them, the only minimum requirement is that there be one (and only one) `@DataBoundConstructor`.
+<9> We can remove the exceptions from our implementation as we will not throw these exceptions from the default implementation. The exceptions are on the interface to assist consumers.
+<10> Ideally we would use Jenkins' I18N support and put this string in a `Messages.properties` resource, just showing the text here to keep the example more self-contained.
+<11> While not strictly required to provide a custom icon, it is recommended to provide one to give users additional visual queues.
+<12> You need to register the custom icon somewhere in a class that is guaranteed to be loaded before the icon class name is referenced. You can either do this in a `hudson.Plugin` or in a non-optional `Descriptor` or `@Extension`.
+
+Finally we need the configuration Stapler facet fragment / tear-off.
+The example here uses Jelly, but any of the supported tear-off frameworks can be used.
+
+.`credentials.jelly`
+[source,xml]
+----
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
+  <st:include page="id-and-description" class="${descriptor.clazz}"/> // <1>
+  <f:entry title="${%Username}" field="username">
+    <f:textbox/>
+  </f:entry>
+  <f:entry title="${%Application Token}" field="applicationToken">
+    <f:password/> // <2>
+  </f:entry>
+</j:jelly>
+----
+<1> Because we inherit from `BaseStandardCredentials` we need to include the `id-and-description` tear-off.
+(At least until https://issues.jenkins-ci.org/browse/JENKINS-45540[JENKINS-45540] has been resolved in the base version of the Credentials API plugin that your plugin depends on.)
+<2> We use a `<f:password/>` input to hold the application token.
+This is the most basic implementation of a UI.
+A more complicated UI (which would have an improved UX for users) could use an invisible entry to round-trip the application token and display a "Authenticate / Reauthenticate" button that would open a new browser window, initiate a request for generating an application token and then pass the resulting token back into the hidden field once the request was fulfilled.
+
+Our plugin should look something like this:
+
+----
+pom.xml
+src/
+    main/
+        java/
+            org/
+                jenkinsci/
+                    plugins/
+                        acmecorp/
+                            credentials/
+                                AcmeApplicationTokenCredentials.java
+                                AcmeApplicationTokenCredentialsImpl.java
+        resources/
+            org/
+                jenkinsci/
+                    plugins/
+                        acmecorp/
+                            credentials/
+                                AcmeApplicationTokenCredentialsImpl/
+                                    credentials.jelly
+                                    help.html // <1>
+                                    help-username.html // <1>
+                                    help-applicationToken.html // <1>
+                                Messages.properties // <2>
+        webapp/
+            images/
+                16x16/
+                    credentials.png
+                24x24/
+                    credentials.png
+                32x32/
+                    credentials.png
+                48x48/
+                    credentials.png
+----
+<1> You will want to provide in-line help for the user.
+<2> You should use Jenkins I18N facilities to localize strings such as the return value from `DescriptorImpl.getDisplayName()`
+
+==== Additional concerns
+
+There may be some additional concerns that you need to address:
+
+* If your credential type keeps secrets external from the CredentialsProvider, for example the https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/SSHUserPrivateKey.java[SSHUserPrivateKey] default implementation can store the key either within the CredentialsProvider or on disk.
+If we need to transport the credential to an agent, the on-disk file will not be available from the agent.
+The solution to this issue is to implement a https://github.com/jenkinsci/credentials-plugin/blob/9fffc2b5d69424a1502b487d4a7c579472e5fd45/src/main/java/com/cloudbees/plugins/credentials/CredentialsSnapshotTaker.java[CredentialsSnapshotTaker] extension, e.g. https://github.com/jenkinsci/ssh-credentials-plugin/blob/master/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPrivateKey.java#L558-L584[BasicSSHUserPrivateKey.CredentialsSnapshotTakerImpl]
+* If you need to migrate from one credential type to another *and* there are existing plugins that are depending on your legacy type, you may want to implement a https://github.com/jenkinsci/credentials-plugin/blob/9fffc2b5d69424a1502b487d4a7c579472e5fd45/src/main/java/com/cloudbees/plugins/credentials/CredentialsResolver.java[CredentialsResolver] to instantiate the legacy type from instances of the new type.
+See https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java[BasicSSHUserPassword] for an example of how to perform this type of migration.
+Key points to note:
+** The class has a https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java#L39[`@ResolveWith`] annotation to trigger the resolution process.
+** There is a https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java#L76-L78[readResolve()] that returns the new credential type.
+** There is no `DescriptorImpl` because this should not be a user visible type.
+Also there is no `@DataBoundConstructor`.
+** The resolver https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java#L98[instantiates an equivalent legacy credential instance from the new credential type]
