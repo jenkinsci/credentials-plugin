@@ -597,6 +597,7 @@ These existing examples are probably not good as reference examples as they have
 +
 A good reference implementation would be clean of such distractions.
 * [ ] Provide links to some other implementations of credentials providers for other use cases.
+* [ ] Provide some details on how the Credentials Query Language can be used to limit querying credentials from the remote service
 
 ====
 
