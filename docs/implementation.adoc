@@ -366,14 +366,397 @@ src/
 
 There may be some additional concerns that you need to address:
 
-* If your credential type keeps secrets external from the CredentialsProvider, for example the https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/SSHUserPrivateKey.java[SSHUserPrivateKey] default implementation can store the key either within the CredentialsProvider or on disk.
+* If your credential type keeps secrets external from the CredentialsProvider, for example the https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/SSHUserPrivateKey.java[`SSHUserPrivateKey`] default implementation can store the key either within the CredentialsProvider or on disk.
 If we need to transport the credential to an agent, the on-disk file will not be available from the agent.
-The solution to this issue is to implement a https://github.com/jenkinsci/credentials-plugin/blob/9fffc2b5d69424a1502b487d4a7c579472e5fd45/src/main/java/com/cloudbees/plugins/credentials/CredentialsSnapshotTaker.java[CredentialsSnapshotTaker] extension, e.g. https://github.com/jenkinsci/ssh-credentials-plugin/blob/master/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPrivateKey.java#L558-L584[BasicSSHUserPrivateKey.CredentialsSnapshotTakerImpl]
-* If you need to migrate from one credential type to another *and* there are existing plugins that are depending on your legacy type, you may want to implement a https://github.com/jenkinsci/credentials-plugin/blob/9fffc2b5d69424a1502b487d4a7c579472e5fd45/src/main/java/com/cloudbees/plugins/credentials/CredentialsResolver.java[CredentialsResolver] to instantiate the legacy type from instances of the new type.
-See https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java[BasicSSHUserPassword] for an example of how to perform this type of migration.
+The solution to this issue is to implement a https://github.com/jenkinsci/credentials-plugin/blob/9fffc2b5d69424a1502b487d4a7c579472e5fd45/src/main/java/com/cloudbees/plugins/credentials/CredentialsSnapshotTaker.java[`CredentialsSnapshotTaker`] extension, e.g. https://github.com/jenkinsci/ssh-credentials-plugin/blob/master/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPrivateKey.java#L558-L584[`BasicSSHUserPrivateKey.CredentialsSnapshotTakerImpl`]
+* If you need to migrate from one credential type to another *and* there are existing plugins that are depending on your legacy type, you may want to implement a https://github.com/jenkinsci/credentials-plugin/blob/9fffc2b5d69424a1502b487d4a7c579472e5fd45/src/main/java/com/cloudbees/plugins/credentials/CredentialsResolver.java[`CredentialsResolver`] to instantiate the legacy type from instances of the new type.
+See https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java[`BasicSSHUserPassword`] for an example of how to perform this type of migration.
 Key points to note:
 ** The class has a https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java#L39[`@ResolveWith`] annotation to trigger the resolution process.
 ** There is a https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java#L76-L78[readResolve()] that returns the new credential type.
 ** There is no `DescriptorImpl` because this should not be a user visible type.
 Also there is no `@DataBoundConstructor`.
 ** The resolver https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPassword.java#L98[instantiates an equivalent legacy credential instance from the new credential type]
+
+=== Implementing new Domain specification / requirement types
+
+When a Jenkins instance has lots of credentials, it can become confusing for users to determine which credentials are supposed to be used against each different service.
+
+Where a service requires a specific type of credential, the consuming plugin can just limit the available options to those that are of the required type.
+
+However, often times the type of credential can be somewhat generic, for example `StandardUsernamePasswordCredentials` or https://github.com/jenkinsci/ssh-credentials-plugin/blob/026d3be896556d5342368dfbb2f1d2ca7b8bd69e/src/main/java/com/cloudbees/jenkins/plugins/sshcredentials/SSHUserPrivateKey.java[`SSHUserPrivateKey`].
+The user needs some way to indicate that credentials X are for use with service A and credentials Y are for use with service B.
+
+The Credentials API plugin provides for this categorization through the concept of Credentials Domains.
+
+The user defines different credentials domains and puts the appropriate credentials into those domains.
+The consuming plugin builds up the domain requirements, and then the Credentials API returns a list of all credentials from domains having compatible specifications.
+
+[IMPORTANT]
+====
+In general, domain specifications are lenient matching, in other words, if a request does not have the matching requirements then the specification is deemed to have been met.
+
+This does not have to be the case, but if you choose to define a strict matching domain specification you should be aware that this will:
+
+* force users to use credentials domains as credentials in the global domain will never match; and
+* prevent the use of credentials providers that do not support domains.
+====
+
+Technically, you do not need to implement a new `DomainRequirement` class when providing a new `DomainSpecification` as the specification could test for pre-existing requirements.
+
+If you implement a new `DomainRequirement` class, in general you will need to implement a `DomainSpecification` that tests for this requirement.
+
+You should provide some utility methods to assist consuming plugins to instantiate the `DomainRequirement` collection for any requests that they make, see https://github.com/jenkinsci/credentials-plugin/blob/3766c1c2cd8baeb81e96c172af81be18b7be4555/src/main/java/com/cloudbees/plugins/credentials/domains/URIRequirementBuilder.java#L41[`URIRequirementBuilder`]
+
+==== Walk-through
+
+We will continue the previous scenario for creating a custom credential.
+
+In this case, as the new credential type is specific to Acme Corp we want to allow users to segregate the credentials for use against the production Acme Corp service from the credentials for use against their test server.
+
+While users could use hostname specifications to segregate credentials between `test.acme.example.com` and `prod.acme.example.com`, in this case we are going to provide an simplified user experience.
+
+We start with a `DomainRequirement`:
+
+.`AcmeRequirement.java`
+[source,java]
+----
+public class AcmeRequirement extends DomainRequirement {
+  private static final long serialVersionUID = 1L; // <1>
+  private final boolean test;
+  public AcmeRequirement(boolean test) {
+    this.test = test;
+  }
+  public boolean isTest() { return test; }
+}
+----
+<1> `DomainRequirement` is `Serializable` so ensure you define a `serialVersionUID`.
+Convention is to start newly created classes off with the value `1L`.
+If you forgot and have to add the value after you released your plugin, you will need to calculate the effective value of the version you released.
+
+Now we need to create a `DomainSpecification` to test against this requirement:
+
+.`AcmeSpecification.java`
+[source,java]
+----
+public class AcmeSpecification extends DomainSpecification {
+  private final boolean test;
+  @DataBoundConstructor // <1>
+  public AcmeSpecification(boolean test) {
+    this.test = test;
+  }
+  public boolean isTest() { return test; }
+  @NonNull
+  @Override
+  public Result test(@NonNull DomainRequirement r) {
+    if (r instanceof AcmeRequirement) {
+      if (this.test == ((AcmeRequirement)r).isTest()) {
+        return Result.POSITIVE; // <2>
+      } else {
+        return Result.NEGATIVE; // <3>
+      }
+    } else if (r instanceof HostnameRequirement) {
+      String hostname = ((HostnameRequirement) r).getHostname();
+      if (test) {
+        if ("test.acme.example.com".equalsIgnoreCase(hostname)) {
+          return Result.PARTIAL; // <4>
+        } else {
+          return Result.NEGATIVE; // <5>
+        }
+      } else {
+        if ("prod.acme.example.com".equalsIgnoreCase(hostname)) {
+          return Result.PARTIAL; // <4>
+        } else {
+          return Result.NEGATIVE; // <5>
+        }
+      }
+    }
+    return Result.UNKNOWN; // <6>
+  }
+  @Extension
+  public static class DescriptorImpl extends DomainSpecificationDescriptor {
+      @Override
+      public String getDisplayName() {
+          return "Acme Corp On-line Store"; // <7>
+      }
+  }
+}
+----
+<1> We need a `@DataBoundConstructor` or users will not be able to create the specification.
+<2> If we see an `AcmeRequirement` and it matches we know the specification has matched exactly, no other specification is expected to match an `AcmeRequirement` so we return the short-circuit result.
+<3> If we see an `AcmeRequirement` and it doesn't match, we know this is a miss.
+<4> If we see a `HostnameRequirement` and it matches, that means that we do not have a miss.
+We return the `Result.PARTIAL` to indicate that the remaining specifications should be checked against this requirement.
+<5> If we see a `HostnameRequirement` and it doesn't match, we know this is a miss.
+<6> All other requirements are unknown, so we signal checking the other specifications against the requirement.
+<7> Ideally we would use Jenkins' I18N support and put this string in a `Messages.properties` resource, just showing the text here to keep the example more self-contained.
+
+We will need a `config` facet fragment:
+
+.`config.jelly`
+[source,xml]
+----
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
+  <f:entry title="${%Test server}" field="test">
+    <f:checkbox/>
+  </f:entry>
+</j:jelly>
+----
+
+Finally, we will create a builder to assist consumer plugins:
+
+.`AcmeRequirementBuilder.java`
+[source,java]
+----
+public static class AcmeRequirementBuilder {
+  private boolean test;
+  private AcmeRequirementBuilder() {} // <1>
+  @NonNull
+  public AcmeRequirementBuilder create() { // <1>
+    return new AcmeRequirementBuilder();
+  }
+  @NonNull
+  public AcmeRequirementBuilder withTestServer(boolean test) { // <1>
+    this.test = test;
+    return this;
+  }
+  @NonNull
+  public List<DomainRequirement> build() {
+    List<DomainRequirement> result = new ArrayList<>();
+    result.add(new AcmeRequirement(test)); // <2>
+    result.addAll(URIRequirementBuilder.create() // <3>
+        .withUri(test
+            ? "https://test.acme.example.com/"
+            : "https://prod.acme.example.com/")
+        .build();
+    );
+    return result;
+  }
+}
+----
+<1> This is a builder so we follow the builder pattern.
+<2> Add in our `AcmeRequirement`
+<3> Because we know this is a requirement against Acme Corp, we can limit the other standard requirements also.
+This allows the user to create a domain using the standard `HostnameSpecification` and have that work for segregation.
+
+Our plugin should look something like this:
+
+----
+pom.xml
+src/
+    main/
+        java/
+            org/
+                jenkinsci/
+                    plugins/
+                        acmecorp/
+                            domains/
+                                AcmeRequirement.java
+                                AcmeRequirementBuilder.java
+                                AcmeRequirementSpecification.java
+        resources/
+            org/
+                jenkinsci/
+                    plugins/
+                        acmecorp/
+                            domains/
+                                AcmeRequirementSpecification/
+                                    config.jelly
+                                    help.html // <1>
+                                    help-test.html // <1>
+                                Messages.properties // <2>
+----
+<1> You will want to provide in-line help for the user.
+<2> You should use Jenkins I18N facilities to localize strings such as the return value from `DescriptorImpl.getDisplayName()`
+
+=== Implementing a new CredentialsProvider
+
+The `CredentialsProvider` extension point is perhaps one of the more complicated extension points:
+
+* Where the backing store is remote from Jenkins then:
+
+** potentially has to be able to either instantiate `java.lang.reflect.Proxy` implementations for credentials, or create on-demand implementation classes using http://asm.ow2.org/[ASM] (or similar).
+** potentially has to deal with parsing the `CredentialsMatcher` query language in order to minimize transfer of information over the network.
+** may need to store Jenkins specific state in Jenkins in order to provide credentials domain support.
+
+* Where the backing store is local to Jenkins but contextual to a specific Jenkins model object and not covered by the three existing credentials providers: System, User and Folder, then replication of that code will likely be required.
+
+* Where the backing store is another credentials provider in Jenkins, is probably the simplest case.
+
+==== Walk-through
+
+.Contributors welcome
+[WARNING]
+====
+This walk-through is incomplete and needs the following additions:
+
+* [ ] Provide links to a reference implementation of an external credentials provider.
+* [ ] Provide links to a reference implementation of a Jenkins native credentials provider that exposes credentials in a Jenkins context other than the https://github.com/jenkinsci/credentials-plugin/blob/3766c1c2cd8baeb81e96c172af81be18b7be4555/src/main/java/com/cloudbees/plugins/credentials/SystemCredentialsProvider.java[SystemCredentialsProvider], https://github.com/jenkinsci/credentials-plugin/blob/3766c1c2cd8baeb81e96c172af81be18b7be4555/src/main/java/com/cloudbees/plugins/credentials/UserCredentialsProvider.java[UserCredentialsProvider] or  https://github.com/jenkinsci/cloudbees-folder-plugin/blob/1dc79b5bb52f56782606bd2edb9953948df8b05e/src/main/java/com/cloudbees/hudson/plugins/folder/properties/FolderCredentialsProvider.java[FolderCredentialsProvider].
++
+These existing examples are probably not good as reference examples as they have distractions to do with the evolution of their implementations with the API.
++
+A good reference implementation would be clean of such distractions.
+* [ ] Provide links to some other implementations of credentials providers for other use cases.
+
+====
+
+We will need a new scenario:
+
+====
+*Scenario:*
+
+Acme Corp has written a secure credentials storage service and wants to write a plugin to integrate that service with Jenkins.
+The service offers six different higher level functions:
+
+* Search - returns a list of the non-secret portions of those credentials that have properties matching any given query
+* Create - adds a credential with the supplied properties
+* Update - modifies the properties associated with a credential
+* Retrieve - returns the non-secret properties of a specified credential
+* Retrieve Secret - returns the secret value of a specified credential
+* Delete - removes a specified credential
+====
+
+There are a number of different ways we can integrate this service with Jenkins:
+
+* Read-only, explicitly exposed - in this integration we only use the "Retrieve" and "Retrieve Secret" functionality from within Jenkins.
++
+The Jenkins admin will define which credentials from the external system are exposed to Jenkins by providing Jenkins with the IDs of the credentials to expose in each Jenkins context.
++
+At the system level, the Jenkins admin will select an Acme credentials property to be used to map to the Jenkins credential type.
++
+The Jenkins admin will then define how the Acme credentials properties of each type get mapped to that type's Jenkins credentials properties.
+
+* Read-only, implicitly exposed - in this integration we add the "Search" functionality.
++
+The Jenkins admin will define a property (or properties) that can be used to determine the Jenkins context that the credential should be exposed in.
+
+* Read-Write, explicitly exposed - in this integration we use the CRUD functionality but not the search functionality.
++
+Jenkins is using the Acme credentials service as the backing store, but it is not intended that Jenkins be able to discover existing credentials.
+
+* Read-Write, implicitly exposed - this integration essentially makes Jenkins a rich client for the credentials service.
++
+Jenkins will only manage those credentials that have the correct properties to associate them with the corresponding Jenkins contexts, but if a credential is created externally with those properties it will be automatically available to Jenkins.
+
+We will also need to consider how the availability of the Acme service affects Jenkins.
+
+* If the service is off-line, how should we respond to requests for:
+
+** Listing credentials available within a specific Jenkins context
+** Querying non-secret properties of credentials
+** Retrieving the secret of the credentials
+
+* If the service is on-line but over-loaded, how should we respond to requests for:
+
+** Listing credentials available within a specific Jenkins context
+** Querying non-secret properties of credentials
+** Retrieving the secret of the credentials
+
+Due to how Jenkins works, there is actually only one way to solve the above choices without risking breakage of Job configuration when users are modifying jobs.
+
+* Retrieval of the secret of a credential *must* always be live.
+If the service is off-line or if the credential has been removed from the backing service, throw an `IOException`.
+If the response takes too long (ideally let the admin define a timeout), throw an `InterruptedException`.
++
+[TIP]
+====
+It is critical that the secret only be retrieved at the point in time where it is required.
+
+This enables the backing service to identify and track those credentials that are actually being used.
+
+Additionally, some users may have security requirements that mandate credentials not be stored outside of their secure "vault" so Jenkins *must* not make any attempt at caching the secret portion of a credential.
+====
+* Querying non-secret properties of credentials should use short time-window cache with background update.
+If the cache is stale, block for a short time before falling back to returning the stale values.
+The Jenkins admin should be able to configure the various timeouts.
++
+[TIP]
+====
+Consuming plugins will repeatedly query the non-secret properties of credentials.
+
+While it would be ideal to have all these properties live, in practical terms doing so would negatively visibly impact the performance of the Jenkins UI as well as the non-visible impact on the overall Jenkins performance.
+
+For this reason we want to use a cache with a short time window (admin configurable, default to 5 minutes).
+Thus repeatedly accessing properties when the cache is within this short time window will respond immediately using the cached value.
+An access near the end of the cache time window (e.g. in the last 20% of the window) should initiate a background update (unless one is already in flight)
+An access after the end of the cache time window should block for no more than 1-2 seconds before returning the cached value.
+
+It is an implementation choice whether to repeatedly block access after the cache time window expires if no response is forthcoming.
+The recommendation is that for any given credential:
+
+* There should only ever be one update request in flight at any point in time.
+* If the update request fails, the failure should be cached for a period of time (in effect making the previous cached value "live" again, but perhaps for a shorter time period)
+====
+* Listing credentials available within a specific Jenkins context should use a live query with short timeout.
+If the timeout expires before the response arrives, then attempt to reconstruct the response from the cache.
++
+[TIP]
+====
+Listing credentials operations are normally restricted to the population of credentials selection drop-down lists.
+
+Such requests are AJAX requests, so we have the option to block without affecting the rest of the Jenkins UI.
+
+Blocking for more than between 5 and 10 seconds, however, will cause user frustration, thus for this type of request we try to serve the response live and fall-back to the cache if the live response takes too long.
+====
+
+These different caching concerns are addresses at different points in the credentials API:
+
+* A `CredentialsProvider` implementation is expected to return their own implementation of each `Credentials` subclass that they support.
+When instantiated, the non-secret properties should be populated, but the secret properties will be deferred until accessed.
++
+Ideally, this should be achieved using either `java.lang.reflect.Proxy` or byte-code generation, something like:
++
+[source,java]
+----
+public static class CredentialProxy implements Serializable, InvocationHandler {
+  private final Map<String,Object> properties;
+  private final String secretName;
+  private final transient AcmeConnection connection;
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    if (args != null || args.length > 0) {
+      return null; // <1>
+    }
+    String n = method.getName();
+    if (n.startsWith("get")) {
+      n = n.substring(3,4).toLowerCase() + n.substring(4);
+    } else if (n.startsWith("is")) {
+      n = n.substring(2,3).toLowerCase() + n.substring(3);
+    } else {
+      return null; // <1>
+    }
+    if (secretName.equals(n)) {
+      if (connection != null) {
+        return connection.getSecret(...);
+      } else {
+        throw new IOException("No connection"); // <2>
+      }
+    } else {
+      return properties.get(n);
+    }
+  }
+}
+----
+<1> Should be unreachable code, as you should refuse to create a proxy for any `Credentials` interface that has anything other than simple JavaBean style getters.
+If you have implemented that check before creating the proxy then you could be more explicit and throw an exception.
+<2> Any consumer plugin that is transferring a credential to another JVM is supposed to call `CredentialsProvider.snapshot(credential)` and send the return value.
+The `CredentialsSnapshotTaker` is supposed to fetch the secret as part of the snapshotting, so a proper consumer will never be at risk of this `IOException`.
+
+* The `CredentialsProvider.getCredentials(...)` methods should instantiate the proxies, so these methods will operate from the cache while initiate background refresh. Where the cache is a miss or where the cache is stale, a short term block is acceptable.
+
+* The `CredentialsProvider.getCredentialIds(...)` methods are used to list credentials for drop-down list population, so these methods should use a live request with a fall-back to the cache where the live request takes too long.
+
+[NOTE]
+====
+When implementing a credentials non-secret properties cache, ideally the cache should survive Jenkins restarts so that users do not end up breaking job configuration if Jenkins starts up while the backing service is off-line.
+====
+
+The main work in an implementation will be the mapping to `CredentialStore` instances.
+
+* Any "explicitly exposed" style implementation will have `CredentialsStore` instance for each context that persists the IDs of the credentials to be exposed and the credentials domains with which those credentials are to be associated.
+* A "read-only, implicitly exposed" style implementation can semi-dynamically create `CredentialsStore` instances for each context.
++
+[NOTE]
+====
+Technically, the "read-only, implicitly exposed" style credentials provider implementation does not need to interact with the `CredentialsStore` portion of the API as it can expose credentials directly using just the `CredentialsProvider.getCredentials(...)` and `CredentialsProvider.getCredentialIds(...)`, however, implementing the `CredentialsStore` contract is required in order for the credentials to be visible to users via the Credentials side action on the different Jenkins context objects.
+====
+* A "read-write, implicitly exposed" style implementation will need to semi-dynamically create `CredentialsStore` instances for each context in order to integrate with the Jenkins credentials management UI.
