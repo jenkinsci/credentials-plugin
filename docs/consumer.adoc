@@ -2,9 +2,9 @@
 
 This document provides guidelines for plugin authors using the Credentials API from within their plugins.
 
-This document is structued as follows:
+This document is structured as follows:
 
-* The first section provides dome background into the use cases driving the development of the Credenyials API.
+* The first section provides some background into the use cases driving the development of the Credentials API.
 
 * The second section is an overview of all the functionality provided by the Credentials API.
 
@@ -12,4 +12,339 @@ This document is structued as follows:
 
 === Background
 
+There are a lot of different use cases where Jenkins requires to access secrets.
+Even if Jenkins did not directly connect to additional third-party services there are cases, such as code signing, where Jenkins would need secrets.
+
+Prior to the development of the Credentials API, each plugin was responsible for managing these secrets.
+In some cases this would give rise to user frustration where they would have to provide effectively the same secret multiple times for each plugin that required it.
+
+In the case of username/password secrets, things were even worse.
+A lot of corporate IT security policies mandate that passwords be changed every 45-90 days.
+While the current https://pages.nist.gov/800-63-3/[NIST standards] recommend against periodic rotation, the fact remains that a lot of organizations use enforced rotation.
+
+When each plugin was storing the username/password separately, the user would be forced to race to update the password *everywhere* before Jenkins tried to use the old password three times in a row and trigger a lockout of their account.
+
+The Credentials API plugin provides a single centralized store of credentials within Jenkins, which should enable the user to easily update the credentials when they need to change.
+
 === Overview
+
+A plugin that is consuming the Credentials API has a relatively simple set of requirements:
+
+* Provide a UI form element to let a user select credentials
+* List available credentials matching some specific set of criteria.
+* Persist a reference to a specific credential instance (typically selected by the user)
+* Retrieve a previously selected credentials instance.
+* Retrieve the secret from a specific credentials instance.
+* Track usage of a credential against specific Jenkins context objects.
+
+[TIP]
+====
+The Credentials API has evolved over time and there are a number of credentials interfaces that have been retained in order to maintain binary compatibility for plugins compiled against prior versions.
+
+The https://github.com/jenkinsci/credentials-plugin/blob/619d7751a62689b2b0d722f504a62aed206fef17/src/main/java/com/cloudbees/plugins/credentials/common/Recommended.java[`@Recommended`] annotation is used to distingush credentials interfaces that are recommended to use.
+====
+
+In a lot of cases, consumer plugins will want to use credentials to authenticate against some external service.
+The recommendation is to use the https://wiki.jenkins.io/display/JENKINS/Authentication+Tokens+API+Plugin[Authentication Tokens API] to convert the Jenkins Credentials type into a service specific authentication as this allows the conversion logic to be separated cleanly from your connection code.
+
+=== Providing a UI form element to let a user select credentials
+
+The Credentials API provides a custom Jenkins `<select>` form control that allows users to select credentials and provides users with appropriate permissions with the ability to add additional credentials.
+
+In the normal case, using this form control is relatively simple:
+
+[source,xml]
+----
+<j:jelly ... xmlns:c="/lib/credentials" ... >
+  ..
+  <f:entry field="credentialsId" title="${%Credentials}">
+    <c:select/>
+  </f:entry>
+</j:jelly>
+----
+
+There are some additional parameters available in this form control:
+
+* In the case where the credentials to be used by a job may be selected by a job parameter, you may want to allow the user to choose between providing an expression and selecting the credentials:
++
+[source,xml]
+----
+<j:jelly ... xmlns:c="/lib/credentials" ... >
+  ..
+  <f:entry field="credentialsId" title="${%Credentials}">
+    <c:select expressionAllowed="true"/>
+  </f:entry>
+</j:jelly>
+----
+
+* In the case where the credentials will be used immediately in the context of the user selecting the credentials (as opposed to deferred usage in the context of a queued build job), you may want to allow credentials from the user's per-user credentials store:
++
+[source,xml]
+----
+<j:jelly ... xmlns:c="/lib/credentials" ... >
+  ..
+  <f:entry field="credentialsId" title="${%Credentials}">
+    <c:select includeUser="true"/>
+  </f:entry>
+</j:jelly>
+----
+
+* In the case of failure to infer the correct context from which the credentials may be sourced, you can supply the correct context:
++
+[source,xml]
+----
+<j:jelly ... xmlns:c="/lib/credentials" ... >
+  ..
+  <f:entry field="credentialsId" title="${%Credentials}">
+    <c:select context="${...}"/>
+  </f:entry>
+</j:jelly>
+----
+
+You will need to supply a `doFillXYZItems` method on your descriptor in order to populate the drop-down list:
+
+[source,java]
+----
+public ListBoxModel doFillCredentialsIdItems(
+        @AncestorInPath Item item,
+        @QueryParameter String credentialsId,
+        ... // <1>
+        ) {
+  StandardListBoxModel result = new StandardListBoxModel();
+  if (item == null) {
+    if (!Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+      return result.includeCurrentValue(credentialsId); // <2>
+    }
+  } else {
+    if (!item.hasPermission(Item.EXTENDED_READ)
+        && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
+      return result.includeCurrentValue(credentialsId); // <2>
+    }
+  }
+  return result
+    .includeEmptySelection() // <3>
+    .includeMatchingAs(...) // <4>
+    .includeCurrentValue(credentialsId); // <5>
+}
+----
+<1> Include any additional contextual parameters that you need in order to refine the credentials list.
+For example, if the credentials will be used to connect to a remote server, you might include the server URL form element as a `@QueryParameter` so that the domain requirements can be built from that URL.
+<2> We protect against fully populating the drop-down list for users that have no ability to actually make a selection.
+This is also useful in preventing unwanted requests being made to an external credentials store.
+<3> If it is valid for the user to select no credentials, then include the empty selection.
+<4> We need to include the matching credentials.
+In some cases you may have disjoint unions of credentials, in which case you can call this method multiple times, the first credential added for any given ID wins.
+<5> If you include the current value then the form configuration will remain unchanged in the event that the backing credential is removed.
+An alternative is to let the form "magically" select a new credential, but typically this will be the wrong credential.
+The recommendation is to just add the "non-existing" credential and have form validation report the error
+
+It is recommended to have a `doCheckXYZ` method to validate the credentials.
+Ideally this method will check the credentials against the service that they will be used with.
+At a minimum the method should verify that the credentials exist.
+
+[source,java]
+----
+public FormValidation doCheckCredentialsId(
+@AncestorInPath Item item, // <2>
+@QueryParameter String value, // <1>
+... // <2>
+) {
+  if (item == null) {
+    if (!Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+      return FormValidation.ok(); // <3>
+    }
+  } else {
+    if (!item.hasPermission(Item.EXTENDED_READ)
+        && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
+      return FormValidation.ok(); // <3>
+    }
+  }
+  if (StringUtils.isBlank(value)) { // <4>
+    return FormValidation.ok(); // <4>
+  }
+  if (value.startWith("${") && value.endsWith("}")) { // <5>
+    return FormValidation.warning("Cannot validate expression based credentials");
+  }
+  if (CredentialsProvider.listCredentials( // <6>
+    ...,
+    CredentialsMatchers.withId(value) // <6>
+  ).isEmpty()) {
+    return FormValidation.error("Cannot find currently selected credentials");
+  }
+  return FormValidation.ok();
+}
+----
+<1> This is a `doCheckXYZ` method so the value to check will be in the parameter called `value`
+<2> Replicate the other parameters from the `doFillXYZItems` method.
+<3> Return no-op validation results for users that do not have permission to list credentials.
+<4> If anonymous connection is permitted, we can return OK for an empty selected credentials.
+Better yet would be to try and ping the remote service anonymously and report success / error if anonymous access is actually enabled on the remote service.
+_You may want to cache the check result for a short time-span if the remote service has rate limits on anonymous access._
+<6> This example checks that the credentials exist, but does not use them to connect.
+Alternatively `CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(...), withId(value))` can be used to retrieve the credentials, a `null` return value would indicate that the error that they cannot be found, while the non-`null` return value could be used to validate the credentials against the remote service.
+_You may want to cache the check result for a short time-span if the remote service has rate limits._
+
+=== Listing available credentials matching some specific set of criteria
+
+We use the `CredentialsProvider.listCredentials()` overloads to list credentials.
+An external credentials provider may be recording usage of the credential and as such the `listCredentials` methods are supposed to not access the secret information and hence should not trigger such usage records.
+
+[TIP]
+====
+If you are listing available credentials in order to populate a drop-down list, then `StandardListBoxModel.includeMatchingAs()` may be a more convenient way to call `CredentialsProvider.listCredentials()`
+====
+
+There are currently two overloads, one taking `Item` as the context and the other taking `ItemGroup` as the context, the other parameters are otherwise identical.
+
+NOTE: A current RFE https://issues.jenkins-ci.org/browse/JENKINS-39324[JENKINS-39324] is looking to replace overloaded methods with a single method taking the more generic `ModelObject`.
+
+The parameters are:
+
+`type`::
+The type of credentials to list.
+
+`item` or `itemGroup`::
+The context within which to list available credentials.
+
+`authentication`::
+The authentication that is listing available credentials.
+
+`domainRequirements`::
+The requirements of the credentials domains appropriate to the credentials.
+
+`matcher`::
+The additional criteria that must be met by the credentials.
+
+Here are some examples of usage:
+
+* We want to let the user select the username password credentials to be used to check out the source from source control as part of a build:
++
+[source,java]
+----
+CredentialsProvider.listCredentials(
+    StandardUsernamePasswordCredentials.class, // <1>
+    job, // <2>
+    job instanceof Queue.Task // <3>
+      ? Tasks.getAuthenticationOf((Queue.Task)job)) // <4>
+      : ACL.SYSTEM, // <5>
+    URIRequirementBuilder.fromUri(scmUrl), // <6>
+    null // <7>
+);
+----
+<1> We want username password credentials and we want the user to be able to selected them
+We need `StandardCredentials.getId()` to allow retrieval when building the job.
+We need `UsernamePasswordCredentials` to ensure that they are username and password.
+<2> We will be using these credentials in the context of a specific job.
+<3> For almost all implementations of `Job`, this will be `true`.
++
+[NOTE]
+====
+https://wiki.jenkins.io/display/JENKINS/Monitoring+external+jobs[external jobs] do *not* implement `Queue.Task`
+====
+<4> This is important, we must use the authentication that the job is likely to run as.
+<5> If not a `Queue.Task` then use `ACL.SYSTEM`
+<6> We use the requirements builder most idiomatically appropriate to our use case.
+In most cases, unless `URIRequirementBuilder` can be used to construct at least some domain requirements.
+<7> We do not have any additional requirements to place, so we can specify `null` for the matcher.
+
+* We want to let the user select the username password credentials to be used to tag a build:
++
+[source,java]
+----
+CredentialsProvider.listCredentials(
+    StandardUsernamePasswordCredentials.class,
+    job,
+    Jenkins.getAuthentication(), // <1>
+    URIRequirementBuilder.fromUri(scmUrl),
+    null
+)
+----
+<1> This is a UI immediate operation that will be performed as the user not a queued operation that will be performed as the authentication of the `Job`.
+
+* We want to let the user select the credentials to update the issue tracker with each build result of a specific job.
++
+[source,java]
+----
+CredentialsProvider.listCredentials(
+    StandardCredentials.class, // <1>
+    job,
+    job instanceof Queue.Task
+      ? Tasks.getAuthenticationOf((Queue.Task)job))
+      : ACL.SYSTEM,
+    URIRequirementBuilder.fromUri(issueTrackerUrl),
+    AuthenticationTokens.matcher(IssueTrackerAuthentication.class) // <2>
+)
+----
+<1> There are different credential types that can be used to authenticate with the issue tracker, e.g. application tokens, OAuth authentication, user/password, etc.
+The only common feature is that we need each credential to have a StandardCredentials.getId()` to allow retrieval when building the job.
+<2> We need to limit the credentials to those types that we can actually use to authenticate with the issue tracker.
+We leverage the https://wiki.jenkins.io/display/JENKINS/Authentication+Tokens+API+Plugin[Authentication Tokens API] to convert the Jenkins credentials types into the issue tracker API's native authentication types.
+This means that we can use the `AuthenticationTokens.matcher(Class)` to restrict the list of credentials to the subset that can be converted.
+
+* We want to let the user select the credentials to toggle the deployment state of a blue/green deployment for a completed build.
++
+[source,java]
+----
+CredentialsProvider.listCredentials(
+    StandardCredentials.class, // <1>
+    job,
+    Jenkins.getAuthentication(), // <2>
+    URIRequirementBuilder.fromUri(loadBalancerUrl),
+    CredentialsMatchers.allOf(
+      AuthenticationTokens.matcher(LoadBalancerAuthentication.class),
+      CredentialsMatchers.withProperty("permission", "lb.switch") // <3>
+    )
+)
+----
+<1> There are different credential types that can be used to authenticate with the load balancer, this is the common base class.
+<2> This is an immediate action performed by the user.
+<3> In this case there may be multiple credentials available to the user, we only want the ones with `"lb.switch".equals(credential.getPermission())`.
+Any credentials that do not have a `getPermission()` method will be excluded as well as any that do not have the corresponding return value.
+
+* We want to let the user specify the credentials used to update the post commit receive hooks of a source control system for any corresponding jobs configured in Jenkins.
++
+[NOTE]
+====
+This drop down list would typically be displayed from one of the _Manage Jenkins_ screens and limited to Jenkins Administrators.
+====
++
+[source,java]
+----
+CredentialsProvider.listCredentials(
+    StandardUsernameCredentials.class, // <1>
+    Jenkins.getInstance(), // <2>
+    ACL.SYSTEM, // <2>
+    URIRequirementBuilder.fromUri(scmUrl),
+    AuthenticationTokens.matcher(MySCMAuthentication.class) // <1>
+)
+----
+<1> For this SCM, management of post commit hooks requires authentication that has specified a username, so even though there are other authentication mechanisms supported by `AuthenticationTokens.matcher(...)` we limit at the type level as that reduces the response that needs to be filtered.
+The alternative would have been a matcher that combined `CredentialsMatchers.instanceOf(StandardUsernameCredentials.class)` but this reduces the ability of an external credentials provider to filter the query on the remote side.
+<2> We are doing this operation outside of the context of a single job, rather this is being performed on behalf of the entire Jenkins instance.
+Thus we should be performing this as `ACL.SYSTEM` and in the context of `Jenkins.getInstance()`.
+This has the additional benefit that the admin can restrict the high permission hook management credentials to `CredentialsScope.SYSTEM` which will prevent access by jobs.
+
+=== Persist a reference to a specific credential instance
+
+You should be using `StandardCredentials` (or a more specific sub-interface) to access the Credentials API.
+Persist the `StandardCredentials.getId()` of a credentials.
+For any given context and authentication, the `StandardCredentials.getId()` should consistently return the same credentials instance.
+
+[TIP]
+====
+Do not make any assumptions about the format of a `StandardCredentials.getId()` other than it must not contain `${...}`
+====
+
+.Historical evolution of the API
+****
+Prior to the introduction of the `StandardCredentials` interface, the assuption was that each credentials type would have its own unique identifier, e.g. a `UsernamePasswordCredentials` would have the username, etc.
+
+This breaks down because the same username may have different passwords for different services, hence the introduction of a separate ID.
+
+Initially the ID was generated using a UUID in order to ensure that it was unique.
+Also the intent was that the generated ID would be completely hidden from the user.
+
+The introduction of configuration as code, such as https://jenkins.io/doc/book/pipeline/[Jenkins pipelines] means that users now need to be able to specify the ID from code, and consequently when users are creating credentials they need to be able to define the id that the credential will be assigned.
+****
+
+=== Retrieve a previously selected credentials instance
