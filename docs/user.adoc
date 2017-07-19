@@ -308,11 +308,17 @@ In all cases, the credentials from the *global* domain are always present.
 ====
 The use-case for credentials domains is to provide a way for the user to provide information about the services with which the credentials are expected to work.
 
+Credential domains are intended to help select correct credentials for each services.
+
 Credential domains are not intended to prevent credentials from being used against the wrong services.
 
-Credential domains are not intended to restrict access to credentials.
+In some cases, the domain requirements of a credential cannot be determined, such as when using a credentials parameter or when using a plugin that has not fully implemented the recommendations of the link:consumer.adoc[consumer guide].
 
-If you want to restrict access to credentials put those credentials in a context that limits their usage, e.g. create a "Deployment" folder and put the keys for deploying into the "Deployment" folder, restrict access to the "Deployment" folder to only those users permitted to deploy.
+In order to ensure that users can actually select the required credentials in these cases, the Credentials API needs to return credentials from all domains, which is why we use _Excluding credentials from domains that do not match_.
+
+Because of the above: *Credential domains are not intended to restrict access to credentials.*
+
+If you need to restrict access to credentials put those credentials in a context that limits their usage, e.g. create a "Deployment" folder and put the keys for deploying into the "Deployment" folder, restrict access to the "Deployment" folder to only those users permitted to deploy.
 ====
 
 ==== Credentials providers
