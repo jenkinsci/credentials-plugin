@@ -12,7 +12,146 @@ This document is structured as follows:
 
 === Background
 
+In the ideal world, we wouldn't need any secrets in order to build and deploy software or perform any of the other automation tasks that Jenkins can be co-opted into.
+
+But the reality is that in almost all cases even something as basic as building software requires at least one secret:
+
+* You need a SCM username/password to checkout the source code to build
+
+Once you start using Jenkins for more than just Continuous Integration, you are going to find more and more use cases for needing to share secrets with Jenkins:
+
+* Building the release version of the application requires signing the application using a code signing key.
+* Deploying the application to staging requires the credentials for the staging environment
+* Deploying the application to production requires the credentials for the production environment
+* Updating the issue tracker with details of relevant Jenkins builds requires credentials for the issue tracker
+* etc.
+
+Before the introduction of the Credentials API plugin (in early 2012), each Jenkins plugin was responsible for managing their own credentials.
+This meant that you would have to give the Subversion plugin a username and password, you would also need to give the JIRA plugin a username and password, etc.
+Perhaps the biggest issue would occur every 45-90 days...
+We should all know that https://pages.nist.gov/800-63-3/[the current NIST standards] recommend against enforced periodic password rotation, but a lot of corporate IT SECURITY policies still mandate it.
+So your password has changed, welcome to hell where you have to race to change all the places that you stored that password in Jenkins before it attempts to use the old password more than three times causing your account to be locked out, phone up the help-desk, get your password reset _again_ and repeat.
+
+This exact use case was the driver for the initial development of the Credentials API plugin.
+
+With the Credentials API plugin, we get:
+
+* An API for plugin authors to use to define credential types
+* An API for plugin authors to use to integrate external credentials stores with Jenkins
+* An API for plugin authors to use to retrieve credentials from credentials stores (transparently integrating the internal/external credentials stores)
+* A UI for users to manage the credentials available to Jenkins.
+
+For the Jenkins user, this means that when the password (or other secret) needs updating, they only have to update it once and all the plugins that have been using those credentials will immediately switch to the new password, lockout prevented.
+
+.The Jenkins-internal credentials store
+[WARNING]
+====
+While the Credentials API plugin provides a default _internal_ credentials store, the intent is that other, more secure, _external_ credentials stores will provide integrations with the Credentials API.
+
+If you are using the _internal_ credentials store to store *high value* credentials then you will need to lock down your Jenkins configuration:
+
+* Apply all of the recommendations from the  https://wiki.jenkins.io/display/JENKINS/Securing+Jenkins[Securing Jenkins] wiki page.
+* No builds on the master (ideally zero executors)
+* Probably use the https://plugins.jenkins.io/authorize-project[Authorize Project plugin] to control effective permission of running builds.
+* etc.
+
+If a non-trusted user can gain access to the files in the `JENKINS_HOME/secrets` directory, then it is game over.
+
+image::images/use-case-intro.png[scaledwidth="40%",width="300px"]
+
+While the above security recommendations are generally valid for any situation where Jenkins has access to *high value* credentials, because:
+
+* the _internal_ store is stored in the `JENKINS_HOME`
+* the _internal_ store is encrypted using a key that is also stored in `JENKINS_HOME`
+* the JVM running Jenkins must have access to these files
+
+It becomes critical to secure the filesystem of the Jenkins master process.
+
+With an _external_ credentials store, access to the Jenkins master filesystem will not generically compromise credentials.
+In the event of a breach, the last-accessed tracking facilities of an enterprise-grade external store will enable identification of _at risk_ credentials in need of rotation.
+====
+
 === Overview
+
+In order to understand how to manage credentials with the Credentials API plugin, you need to understand a number of Jenkins concepts:
+
+* Contexts within Jenkins
+* Authentication within Jenkins
+* The Jenkins security model
+
+The Credentials API plugin introduces some more concepts:
+
+* Credentials types
+* Credentials scopes
+* Credentials domains
+* Credentials providers
+* Credentials stores
+
+There are three ways to manage credentials with the Credentials API:
+
+* Through the Web UI
+* Through the REST API
+* Through the Jenkins CLI
+
+The holy grail is that each credentials selection lists will display exactly the relevant credentials:
+
+image::images/ideal-select-population.png[scaledwidth="90%"]
+
+==== Contexts within Jenkins
+
+Jenkins implements a hierarchical context model.
+Every context within Jenkins has a chain of parent contexts leading ultimately to the root context.
+
+The root context is Jenkins itself.
+Plugins can define additional child contexts, for example the https://plugins.jenkins.io/cloudbees-folder[Folders plugin] adds the Folder context, but by default Jenkins provides the following child contexts from the root context:
+
+Jobs:: Each job is its own context, the individual builds of a job could be considered as child contexts, but no plugins currently make use of that potential.
+Users:: Each user recorded by Jenkins has their own context.
+Build agents:: Build agents have their own context, though this is typically not really relevant from the point of view of credentials.
+Views:: Views have their own context. It is important to note that jobs are only weakly associated with views, they are not child contexts of the views they are members of.
+
+The hierarchical nature of contexts becomes more relevant once plugins such as the https://plugins.jenkins.io/cloudbees-folder[Folders plugin] are installed as then you can have more complex trees of jobs.
+
+==== Authentication within Jenkins
+
+Jenkins is a multithreaded application.
+Each execution thread has an associated authentication.
+There are three classes of authentication that a thread can be associated with:
+
+* `ACL.SYSTEM` this is the super-user authentication of the Jenkins master process itself.
+Also known as `SYSTEM`.
+Any actions performed by Jenkins itself will start in a thread using this authentication.
+* A user authentication, this type of authentication is assigned to any web/CLI requests by a logged in user.
+Additionally, plugins like https://plugins.jenkins.io/authorize-project[Authorize Project plugin] can be used to configure jobs to run as specific users or even as the user that triggered the job.
+* `Jenkins.ANONYMOUS` this is the authentication of a web/CLI request that has not been authenticated.
+Also known as `ANONYMOUS`.
+Additionally, plugins like https://plugins.jenkins.io/authorize-project[Authorize Project plugin] can be used to configure jobs to run as `ANONYMOUS`.
+
+==== The Jenkins security model
+
+Jenkins uses a permissions based security model.
+Different operations have different permissions.
+Plugins can define their own permissions.
+
+To determine whether an operation can be performed, Jenkins asks the currently configured authorization strategy whether a specific authentication has the required permission in a specific context.
+
+The authorization strategy is an extension point and there are multiple plugins providing their own implementations.
+In most cases, these strategies are mostly hierarchical, so if an authentication has a permission in a parent context it will typically have the same permission in the children of that context.
+
+[NOTE]
+====
+Authorization strategies that provide for use-cases such as secret skunkworks projects may provide for removal of permissions from child contexts.
+====
+
+In short, each authorization strategy is provided with the :
+
+* Permission requested
+* Authentication requesting
+* Context of request
+
+And returns a `yes` / `no` answer.
+
+==== Credentials types
 
 === Managing credentials
 
@@ -168,6 +307,8 @@ So the some possible Store Id variants are:
 * `system::system::jenkins` for the root credentials store
 * `folder::item::/full/name/of/folder` for a per-folder credentials store
 * `user::user::wecoyote` for the per-user store of Wile E. Coyote, who's username is `wecoyote`.
+
+Next we need to determine the credentials domain that we want to put the credential into.
 
 Next we need to create the XML representation of the credential we want to expose.
 The best way to get this is to inspect the configuration of an existing credential of the same type.

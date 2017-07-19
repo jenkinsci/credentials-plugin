@@ -179,7 +179,7 @@ We start with the interface:
 * We need to extend `StandardUsernameCredentials` because the username is actually the user's username.
 If Wile E. Coyote and Roadrunner are sharing the same Jenkins server, they will expect to see their username as the identifier to use when selecting the credentials to use.
 * We do not extend `PasswordCredentials` because this is not the password but actually an Acme Corp specific application token.
-If there were use cases where this application token needs to be used by other plugins and those other plugins are somewhat more generic then we might consider extending `StandardUsernamePasswordCredentials` but it is hard to see that need and use of the https://wiki.jenkins.io/display/JENKINS/Authentication+Tokens+API+Plugin[Authentication Tokens API] plugin would probably be a better solution for those use cases.
+If there were use cases where this application token needs to be used by other plugins and those other plugins are somewhat more generic then we might consider extending `StandardUsernamePasswordCredentials` but it is hard to see that need and use of the https://plugins.jenkins.io/authentication-tokens[Authentication Tokens API] plugin would probably be a better solution for those use cases.
 
 .`AcmeApplicationTokenCredentials.java`
 [source,java]

@@ -45,7 +45,7 @@ The https://github.com/jenkinsci/credentials-plugin/blob/619d7751a62689b2b0d722f
 ====
 
 In a lot of cases, consumer plugins will want to use credentials to authenticate against some external service.
-The recommendation is to use the https://wiki.jenkins.io/display/JENKINS/Authentication+Tokens+API+Plugin[Authentication Tokens API] to convert the Jenkins Credentials type into a service specific authentication as this allows the conversion logic to be separated cleanly from your connection code.
+The recommendation is to use the https://plugins.jenkins.io/authentication-tokens[Authentication Tokens API] to convert the Jenkins Credentials type into a service specific authentication as this allows the conversion logic to be separated cleanly from your connection code.
 
 === Providing a UI form element to let a user select credentials
 
@@ -244,7 +244,7 @@ We need `UsernamePasswordCredentials` to ensure that they are username and passw
 +
 [NOTE]
 ====
-https://wiki.jenkins.io/display/JENKINS/Monitoring+external+jobs[external jobs] do *not* implement `Queue.Task`
+https://plugins.jenkins.io/external-monitor-job[external jobs] do *not* implement `Queue.Task`
 ====
 <4> This is important, we must use the authentication that the job is likely to run as.
 <5> If not a `Queue.Task` then use `ACL.SYSTEM`
@@ -283,7 +283,7 @@ CredentialsProvider.listCredentials(
 <1> There are different credential types that can be used to authenticate with the issue tracker, e.g. application tokens, OAuth authentication, user/password, etc.
 The only common feature is that we need each credential to have a IdCredentials.getId()` to allow retrieval when building the job.
 <2> We need to limit the credentials to those types that we can actually use to authenticate with the issue tracker.
-We leverage the https://wiki.jenkins.io/display/JENKINS/Authentication+Tokens+API+Plugin[Authentication Tokens API] to convert the Jenkins credentials types into the issue tracker API's native authentication types.
+We leverage the https://plugins.jenkins.io/authentication-tokens[Authentication Tokens API] to convert the Jenkins credentials types into the issue tracker API's native authentication types.
 This means that we can use the `AuthenticationTokens.matcher(Class)` to restrict the list of credentials to the subset that can be converted.
 Alternatively, more complex conversion contexts can be handled with `AuthenticationTokens.matcher(AuthenticationTokenContext)`
 
@@ -414,7 +414,7 @@ If you access a `Secret` or `SecretBytes` property, you should ensure that the c
 
 If you need to send the credentials instance to another node (which is not recommended) then you should use `CredentialsProvider.snapshot(...)` and send the snapshot. Taking a snapshot is equivalent to accessing a `Secret` or `SecretBytes` property from the point of view of credentials usage tracking.
 
-The recommended way to use a credential is through the https://wiki.jenkins.io/display/JENKINS/Authentication+Tokens+API+Plugin[Authentication Tokens API]:
+The recommended way to use a credential is through the https://plugins.jenkins.io/authentication-tokens[Authentication Tokens API]:
 
 [source,java]
 ----
