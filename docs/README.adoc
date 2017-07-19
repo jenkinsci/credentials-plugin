@@ -1,0 +1,22 @@
+== Credentials API Plugin documentation
+
+image::images/directions.png[]
+
+There are three guides:
+
+User guide::
+If you are using Jenkins and want to understand how to manage credentials using the Credentials API plugin, you should read link:user.adoc[the user guide].
+
+Consumer guide::
+If you are writing a plugin for Jenkins and you need to retrieve credentials using the Credentials API, you should read link:consumer.adoc[the consumer guide].
+
+Implementation guide::
+If you are writing a plugin for Jenkins and you need to:
++
+
+* Define a new type of credential
+* Define a new type of credentials domain specification
+* Define a new credentials providers
+
++
+Then link:implementation.adoc[the implementation guide] is for you.
