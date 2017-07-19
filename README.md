@@ -1,16 +1,13 @@
-Jenkins Credentials Plugin
-=====================
+# Jenkins Credentials Plugin
 
 Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin)
 
-Documentation
-=============
+## Documentation
 
 [![Documentation](docs/images/manual.png)](docs/)
 [ documentation here](docs/)
 
-Bug Reports
-===========
+## Bug Reports
 
 ![NO GITHUB ISSUES](https://i.imgflip.com/18d2ou.jpg)
 
@@ -18,16 +15,14 @@ File bug reports here: [In the JENKINS jira project with component `credentials-
 
 **DO NOT USE GITHUB ISSUES** Any GitHub Issues will be ignored and closed as soon as they are spotted.
 
-Development
-===========
+## Development
 
 Start the local Jenkins instance:
 
     mvn hpi:run
 
 
-How to install
---------------
+### How to install
 
 Run
 
@@ -43,14 +38,12 @@ To install:
 2. or use the plugin management console (http://example.com:8080/pluginManager/advanced) to upload the hpi file. You have to restart Jenkins in order to find the pluing in the installed plugins list.
 
 
-Plugin releases
----------------
+### Plugin releases
 
 	mvn release:prepare release:perform -B
 
 
-License
--------
+## License
 
 	(The MIT License)
 
