@@ -452,7 +452,21 @@ By default the `Credentials/UseItem` permission is hidden and users receive this
 A Jenkins administrator can make the permission visible by defining the `com.cloudbees.plugins.credentials.UseItemPermission` system property with the value of `true`, e.g. by adding `-Dcom.cloudbees.plugins.credentials.UseItemPermission=true` to the Jenkins JVM start-up options.
 ====
 
+[[credentials-ids]]
+.Credentials IDs
+[TIP]
+====
+The Credentials API plugin assigns a semi-unique identifier to every credentials.
 
+It is strongly likely that you will need to reference credentials from pipeline scripts.
+Make your life easier and assign the credentials ID rather than relying on the randomly generated UUID.
+
+When giving credentials an ID, remember that the credentials storage may be migrated to an external credentials store.
+Because we cannot know _a priori_ what will be valid IDs in an external credentials store it is recommended to follow some basic principles in assigning IDs:
+
+* Keep them less than approximately 40 characters long
+* Keep to alpha-numeric with `-`, `_` and `.` as separators
+====
 
 
 ==== Creating credentials
