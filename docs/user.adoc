@@ -1,4 +1,5 @@
 == User guide
+:experimental:
 
 This document provides guidelines for using the Credentials API.
 
@@ -194,6 +195,11 @@ We should use the most specific credentials type supported by the plugins we are
 So if there is a _Acme Corp Issue Tracker Application Token_ credentials type provided by the _Acme Corp Issue Tracker_ plugin, even though the application token is logically equivalent to a password, we should choose the specific credentials type.
 If the plugin doesn't provide a dedicated credentials type, then in that case we would fall back to Username and Password and we would likely have to leverage <<credentials-domains,Credentials Domains>> to try and recreate some of the contextual information that a service specific credentials can provide.
 
+[NOTE]
+====
+The Jenkins Administrator can configure which credentials types are actually permitted to be used in a Jenkins instance using the menu:Jenkins[Manage Jenkins > Configure Credentials] screen
+====
+
 ==== Credentials scopes
 
 Each credentials instance in the Credentials API plugin has an associated scope.
@@ -323,7 +329,43 @@ If you need to restrict access to credentials put those credentials in a context
 
 ==== Credentials providers
 
+The Jenkins extension point `CredentialsProvider` is responsible for connecting Jenkins to an external credentials vault.
+
+Not everyone will be exposing *high value* credentials to Jenkins.
+Similarly, not everyone needs the complexity of an enterprise credentials vault.
+For people who do not need to use an enterprise credentials vault, the Credentials API plugin provides two credentials providers and the https://plugins.jenkins.io/cloudbees-folder[Folders plugin]
+
+[NOTE]
+====
+The Jenkins Administrator can configure which credentials providers are actually permitted to be used in a Jenkins instance using the menu:Jenkins[Manage Jenkins > Configure Credentials] screen
+====
+
+The standard credentials providers are:
+
+System Credentials Provider::
+** This credentials provider exposes a credentials store at the root context.
+** The credentials store supports credentials domains.
+** The credentials store supports two scopes: *system* and *global*.
+** The credentials store can be inspected from menu:Jenkins[Credentials>System].
+
+User Credentials Provider::
+** This credentials provider exposes a per-user credentials store for each user.
+** The credentials store supports credentials domains.
+** The credentials store only supports *user* scope.
+** The credentials store can be inspected from either menu:Jenkins[__username in the banner bar__>Credentials>User] or  menu:Jenkins[People>__username__>Credentials>User].
+A user cannot access the per-user credentials store of another user.
+
+The https://plugins.jenkins.io/cloudbees-folder[Folders plugin] adds the following credentials provider:
+
+Folder Credentials Provider::
+** This credentials provider exposes a per-folder credentials store in the context each folder.
+** The credentials store supports credentials domains.
+** The credentials store only supports *global* scope which will expose the credentials to any children of the folder.
+** The credentials store can be inspected from menu:Jenkins[__folder name__>Credentials>Folder]
+
 ==== Credentials stores
+
+
 
 === Managing credentials
 
