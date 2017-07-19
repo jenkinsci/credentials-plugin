@@ -353,7 +353,7 @@ User Credentials Provider::
 ** The credentials store supports credentials domains.
 ** The credentials store only supports *user* scope.
 ** The credentials store can be inspected from either menu:Jenkins[__username in the banner bar__>Credentials>User] or  menu:Jenkins[People>__username__>Credentials>User].
-A user cannot access the per-user credentials store of another user.
+** A user cannot access the per-user credentials store of another user.
 
 The https://plugins.jenkins.io/cloudbees-folder[Folders plugin] adds the following credentials provider:
 
@@ -365,7 +365,24 @@ Folder Credentials Provider::
 
 ==== Credentials stores
 
+Credentials providers expose credentials to Jenkins through the credentials store extension point.
 
+* A credentials store is associated with a specific context within Jenkins.
+* A credentials store either only supports the global domain or has full support for custom domains.
+* A credentials store will support a defined list of credentials scopes.
+* Some credentials stores are read-write and others are essentially read-only derived from a computation.
+* _Internal_ credentials stores will be responsible for storing the actual credentials.
+* _External_ credentials stores can work in a number of different ways depending on the backing external service:
+** In some cases the external service provides essentially a flat namespace of credentials without any ability to infer structure or list available credentials.
++
+In these cases the external credentials store will hold the credentials identifiers and any categorization within credentials domains.
++
+In some cases the credentials store may need to store additional metadata in order to reconstruct the Jenkins credentials.
+** In some cases the external service provides a very rich metadata model and query language.
++
+Jenkins can leverage a metadata property to associate credentials with the different Jenkins contexts and perhaps even with infer credentials domains.
++
+This type of credentials store is typically read-only though an advanced implementation may be able to create credentials in the external vault and thereby present as a read-write store.
 
 === Managing credentials
 
@@ -442,9 +459,9 @@ A Jenkins administrator can make the permission visible by defining the `com.clo
 
 ===== Using the Jenkins Command Line Interface
 
-The `create-credentials-by-xml` Jenkins CLI command is the command used to expose CyberArk credentials.
+The `create-credentials-by-xml` Jenkins CLI command is the command used to expose credentials.
 
-[id=cyberark-credentials-add-flow-cli-command]
+[id=credentials-add-flow-cli-command]
 .The Jenkins CLI command for adding credentials to a credentials store.
 image::images/add-flow-cli-command.png[scaledwidth="90%"]
 
@@ -593,7 +610,7 @@ deploy-key       wecoyote/******
 
 ===== Using the Jenkins REST Interface
 
-To use the REST interface, you need to make a POST request to the `createCredentials` sub-URL of the credentials domain. For example, for the folder `example-folder` in a Jenkins instance hosted at http://local.example.com/ this would be the URL http://local.example.com/job/example-folder/credentials/store/cyber-ark/domain/_/createCredentials
+To use the REST interface, you need to make a POST request to the `createCredentials` sub-URL of the credentials domain. For example, for the folder `example-folder` in a Jenkins instance hosted at http://local.example.com/ this would be the URL http://local.example.com/job/example-folder/credentials/store/folder/domain/_/createCredentials
 
 .Example of adding a `deploy-key` credential using the username `wecoyote` and the password `secret123` in the `/example-folder` folder.
 [source,bash]
@@ -607,7 +624,7 @@ $ cat > credential.xml <<EOF
 </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
 EOF
 $ curl -X POST -H content-type:application/xml -d @credential.xml \
-https://jenkins.example.com/job/example-folder/credentials/store/cyber-ark/\
+https://jenkins.example.com/job/example-folder/credentials/store/folder/\
 domain/_/createCredentials
 ----
 
@@ -616,7 +633,6 @@ Details of the exact headers required depends on the CSRF protection that has be
 
 ==== Removing credentials
 
-If the backing credentials are removed from CyberArk, you will need to remove the corresponding credential definition from the credentials store in Jenkins.
 
 ===== Using the Web User Interface
 
