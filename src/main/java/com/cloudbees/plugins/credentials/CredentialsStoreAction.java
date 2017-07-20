@@ -62,6 +62,9 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -82,6 +85,7 @@ import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
 import org.acegisecurity.AccessDeniedException;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
@@ -95,6 +99,7 @@ import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.mindrot.jbcrypt.BCrypt;
 import org.xml.sax.SAXException;
 
 import static com.cloudbees.plugins.credentials.ContextMenuIconUtils.getMenuItemIconUrlByClassSpec;
@@ -128,22 +133,23 @@ public abstract class CredentialsStoreAction
     public static final Permission MANAGE_DOMAINS = CredentialsProvider.MANAGE_DOMAINS;
 
     /**
-     * An {@link XStream2} that replaces {@link Secret} instances with {@literal REDACTED}
+     * An {@link XStream2} that replaces {@link Secret} and {@link SecretBytes} instances with {@code <secret-redacted/>}
      *
      * @since 2.1.1
      */
     public static final XStream2 SECRETS_REDACTED;
 
     /**
-     * An {@link XStream2} that replaces {@link Secret} instances with {@literal REDACTED} and omits fields that
-     * should be excluded from credentials fingerprinting.
+     * An {@link XStream2} that replaces {@link Secret} and {@link SecretBytes} instances with a hash of the secret and
+     * omits fields that should be excluded from credentials fingerprinting.
      *
      * @since 2.1.15
      */
     public static final XStream2 FINGERPRINT_XML;
 
     static {
-        Converter converter = new Converter() {
+        SECRETS_REDACTED = new XStream2();
+        SECRETS_REDACTED.registerConverter(new Converter() {
             /**
              * {@inheritDoc}
              */
@@ -165,13 +171,49 @@ public abstract class CredentialsStoreAction
             public Object unmarshal(HierarchicalStreamReader reader, final UnmarshallingContext context) {
                 return null;
             }
-        };
-        SECRETS_REDACTED = new XStream2();
-        SECRETS_REDACTED.registerConverter(converter);
+        });
         FINGERPRINT_XML = new XStream2();
         FINGERPRINT_XML.omitField(BaseStandardCredentials.class, "description");
         FINGERPRINT_XML.omitField(StandardCredentials.class, "description");
-        FINGERPRINT_XML.registerConverter(converter);
+        FINGERPRINT_XML.registerConverter(new Converter() {
+            /**
+             * {@inheritDoc}
+             */
+            public boolean canConvert(Class type) {
+                return type == Secret.class || type == SecretBytes.class;
+            }
+
+            /**
+             * {@inheritDoc}
+             */
+            public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
+                writer.startNode("secret-hashed");
+                try {
+                    // we hash the encrypted value to mix the secret data is mixed with the instance encryption
+                    // key and make it harder to infer from the final MD5 hash of the whole what either the exact
+                    // encrypted value or the encryption key is.
+                    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                    if (source instanceof Secret) {
+                        Secret s = (Secret) source;
+                        digest.update(s.getEncryptedValue().getBytes(StandardCharsets.US_ASCII));
+                    } else if (source instanceof SecretBytes) {
+                        SecretBytes s = (SecretBytes) source;
+                        digest.update(s.toString().getBytes(StandardCharsets.US_ASCII));
+                    }
+                    writer.setValue(Base64.encodeBase64String(digest.digest()));
+                } catch (NoSuchAlgorithmException e) {
+                    // will never happen as JLS mandates SHA-256, but if it does we just don't provide a hash
+                }
+                writer.endNode();
+            }
+
+            /**
+             * {@inheritDoc}
+             */
+            public Object unmarshal(HierarchicalStreamReader reader, final UnmarshallingContext context) {
+                return null;
+            }
+        });
     }
 
     /**
