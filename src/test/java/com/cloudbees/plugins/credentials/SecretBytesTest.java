@@ -23,10 +23,11 @@
  */
 package com.cloudbees.plugins.credentials;
 
-import hudson.remoting.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import jenkins.model.Jenkins;
 import jenkins.security.ConfidentialStoreRule;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,7 +56,7 @@ public class SecretBytesTest {
     public void encryptedValuePattern() {
         Random entropy = new Random();
         for (int i = 1; i < 100; i++) {
-            String plaintext = Base64.encode(RandomStringUtils.random(entropy.nextInt(i)).getBytes());
+            String plaintext = Base64.encodeBase64String(RandomStringUtils.random(entropy.nextInt(i)).getBytes());
             SecretBytes secretBytes = SecretBytes.fromString(plaintext);
             String ciphertext = secretBytes.toString();
             // System.out.printf("%s%n → %s%n → %s%n", plaintext, ciphertext, secretBytes);
@@ -105,7 +106,7 @@ public class SecretBytesTest {
     public void serialization() throws Exception {
         SecretBytes s = SecretBytes.fromBytes("Mr.Jenkins".getBytes());
         String xml = Jenkins.XSTREAM.toXML(s);
-        assertThat(xml, not(containsString(Base64.encode("Mr.Jenkins".getBytes()))));
+        assertThat(xml, not(containsString(Base64.encodeBase64String("Mr.Jenkins".getBytes()))));
         Object o = Jenkins.XSTREAM.fromXML(xml);
         assertThat(o, is((Object)s));
     }
@@ -120,12 +121,40 @@ public class SecretBytesTest {
     @Test
     public void testCompatibilityFromString() {
         String tagName = Foo.class.getName().replace("$", "_-");
-        String xml = String.format("<%s><password>%s</password></%s>", tagName, Base64.encode("secret".getBytes()), tagName);
+        String xml = String.format("<%s><password>%s</password></%s>", tagName, Base64.encodeBase64String("secret".getBytes()), tagName);
         Foo foo = new Foo();
         Jenkins.XSTREAM.fromXML(xml, foo);
         assertThat(SecretBytes.getPlainData(foo.password), is("secret".getBytes()));
         //System.out.println(Jenkins.XSTREAM.toXML(foo));
         //System.out.println(Jenkins.XSTREAM.toXML(foo));
+    }
+
+    @Test
+    public void largeRawString__noChunking__noUrlSafe() throws Exception {
+        byte[] data = new byte[2048];
+        new Random().nextBytes(data);
+        assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, false, false), StandardCharsets.US_ASCII)).getPlainData(), is(data));
+    }
+
+    @Test
+    public void largeRawString__chunking__noUrlSafe() throws Exception {
+        byte[] data = new byte[2048];
+        new Random().nextBytes(data);
+        assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, true, false), StandardCharsets.US_ASCII)).getPlainData(), is(data));
+    }
+
+    @Test
+    public void largeRawString__noChunking__urlSafe() throws Exception {
+        byte[] data = new byte[2048];
+        new Random().nextBytes(data);
+        assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, false, true), StandardCharsets.US_ASCII)).getPlainData(), is(data));
+    }
+
+    @Test
+    public void largeRawString__chunking__urlSafe() throws Exception {
+        byte[] data = new byte[2048];
+        new Random().nextBytes(data);
+        assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, true, true), StandardCharsets.US_ASCII)).getPlainData(), is(data));
     }
 
 

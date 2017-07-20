@@ -35,7 +35,6 @@ import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
-import hudson.remoting.Base64;
 import hudson.remoting.Channel;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
@@ -61,6 +60,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import net.jcip.annotations.GuardedBy;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -602,7 +602,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             @NonNull
             public static byte[] toByteArray(@Nullable Secret secret) {
                 if (secret != null) {
-                    byte[] decoded = Base64.decode(secret.getPlainText());
+                    byte[] decoded = Base64.decodeBase64(secret.getPlainText());
                     if (null != decoded) {
                         return decoded;
                     }
@@ -623,7 +623,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             public static Secret toSecret(@Nullable byte[] contents) {
                 return contents == null || contents.length == 0
                         ? null
-                        : Secret.fromString(Base64.encode(contents));
+                        : Secret.fromString(Base64.encodeBase64String(contents));
             }
 
             /**

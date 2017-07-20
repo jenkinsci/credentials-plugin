@@ -38,17 +38,15 @@ import hudson.Util;
 import hudson.util.Secret;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.crypto.Cipher;
-import jcifs.util.Base64;
 import jenkins.security.ConfidentialStore;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.IllegalClassException;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.Stapler;
 
 /**
  * An analogue of {@link Secret} to be used for efficient storage of {@link byte[]}. The serialized form will embed the
@@ -276,13 +274,13 @@ public class SecretBytes implements Serializable {
         try {
             int len = data.length();
             if (len >= 2 && ENCRYPTED_VALUE_PATTERN.matcher(data).matches()) {
-                byte[] decoded = Base64.decode(data.substring(1, len - 1));
+                byte[] decoded = Base64.decodeBase64(data.substring(1, len - 1));
                 s = decrypt(decoded);
                 if (s != null) {
                     return s;
                 }
             }
-            s = new SecretBytes(false, Base64.decode(data));
+            s = new SecretBytes(false, Base64.decodeBase64(data));
         } catch (StringIndexOutOfBoundsException e) {
             // wasn't valid Base64
             s = new SecretBytes(false, new byte[0]);
@@ -301,7 +299,7 @@ public class SecretBytes implements Serializable {
         if (len >= 2 && ENCRYPTED_VALUE_PATTERN.matcher(data).matches()) {
             byte[] decoded;
             try {
-                decoded = Base64.decode(data.substring(1, len - 1));
+                decoded = Base64.decodeBase64(data.substring(1, len - 1));
             } catch (StringIndexOutOfBoundsException e) {
                 // invalid Base64
                 return false;
@@ -316,7 +314,7 @@ public class SecretBytes implements Serializable {
      */
     @Override
     public String toString() {
-        return "{" + Base64.encode(getEncryptedData()) + "}";
+        return "{" + Base64.encodeBase64String(getEncryptedData()) + "}";
     }
 
     /**
