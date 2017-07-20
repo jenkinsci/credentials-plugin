@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
+import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
@@ -133,9 +134,16 @@ public abstract class CredentialsStoreAction
      */
     public static final XStream2 SECRETS_REDACTED;
 
+    /**
+     * An {@link XStream2} that replaces {@link Secret} instances with {@literal REDACTED} and omits fields that
+     * should be excluded from credentials fingerprinting.
+     *
+     * @since 2.1.15
+     */
+    public static final XStream2 FINGERPRINT_XML;
+
     static {
-        SECRETS_REDACTED = new XStream2();
-        SECRETS_REDACTED.registerConverter(new Converter() {
+        Converter converter = new Converter() {
             /**
              * {@inheritDoc}
              */
@@ -157,7 +165,13 @@ public abstract class CredentialsStoreAction
             public Object unmarshal(HierarchicalStreamReader reader, final UnmarshallingContext context) {
                 return null;
             }
-        });
+        };
+        SECRETS_REDACTED = new XStream2();
+        SECRETS_REDACTED.registerConverter(converter);
+        FINGERPRINT_XML = new XStream2();
+        FINGERPRINT_XML.omitField(BaseStandardCredentials.class, "description");
+        FINGERPRINT_XML.omitField(StandardCredentials.class, "description");
+        FINGERPRINT_XML.registerConverter(converter);
     }
 
     /**
