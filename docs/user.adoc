@@ -281,7 +281,7 @@ Pay *very* close attention.
 "Excluding credentials from domains that do not match" is _not_ the same as "Only including credentials from domains that do match".
 ====
 
-By initially, there is only one credentials domain, the global domain.
+Initially, there is only one credentials domain, the global domain.
 The global domain has no specification, so credentials in the global domain will always match any set of domain requirements.
 
 .Example
@@ -299,11 +299,11 @@ A domain with the specification: hostname is `myscm.example.com`; protocol is `h
 
 We start typing in the URL of the service we want to connect to.
 
-Initially the URL is empty, so the drop-down list will show credentials from all four domains.
+The URL is empty, so the drop-down list will show credentials from all four domains.
 
 Suppose we now have typed in `https://`, at this point the requirements are just that the protocol is `https`, so as *public-service* has a specification of `http` it is excluded from the drop-down list.
 
-Suppose we now type in `https://myservice.example.com`, at this point we have the requirements are: protocol is 'https' and hostname is 'myservice.example.com', so both *public-service* and *source-control* are now excluded.
+Suppose we now type in `https://myservice.example.com`, at this point we have the requirements: protocol is 'https' and hostname is 'myservice.example.com', so both *public-service* and *source-control* are now excluded.
 
 Finally, suppose we had typed in `myservice.example.com`, in this case we exclude only `source-control` as the requirements are just that the hostname is `myservice.example.com`
 
@@ -333,7 +333,7 @@ The Jenkins extension point `CredentialsProvider` is responsible for connecting 
 
 Not everyone will be exposing *high value* credentials to Jenkins.
 Similarly, not everyone needs the complexity of an enterprise credentials vault.
-For people who do not need to use an enterprise credentials vault, the Credentials API plugin provides two credentials providers and the https://plugins.jenkins.io/cloudbees-folder[Folders plugin]
+For people who do not need to use an enterprise credentials vault, the Credentials API plugin provides two credentials providers and the https://plugins.jenkins.io/cloudbees-folder[Folders plugin] adds another for the folders contexts it adds to Jenkins.
 
 [NOTE]
 ====
@@ -384,7 +384,77 @@ Jenkins can leverage a metadata property to associate credentials with the diffe
 +
 This type of credentials store is typically read-only though an advanced implementation may be able to create credentials in the external vault and thereby present as a read-write store.
 
+=== Administrative controls
+
+The administrative controls are available from menu:Jenkins[Manage Jenkins>Configure Credentials]:
+
+.The menu:Jenkins[Manage Jenkins>Configure Credentials] defaults
+image::images/global-config-credentials.png[scaledwidth="90%"]
+
+This allows for control over:
+
+* the installed credentials providers that can be used to resolve credentials
+* the installed credentials types that can be configured and resolved
+* fine-grained configuration of specific credentials types on specific providers
+
+Credentials providers can be configured using the Providers option
+
+.Restricting the available credentials providers to a subset of those installed.
+image::images/global-config-credentials-providers.png[scaledwidth="90%"]
+
+For example if you want to prevent user's from being able to store credentials in the per-user credentials store you have two options:
+
+* Configure an _Excludes selected_ that targets the per-user credentials provider.
++
+image::images/global-config-credentials-providers-exclude.png[scaledwidth="90%"]
++
+This has the side-effect that when you install plugins with new credentials providers they will be available immediately after installation.
+* Configure an _Only selected_ that targets everything but the per-user credentials provider.
++
+image::images/global-config-credentials-providers-include.png[scaledwidth="90%"]
++
+This has the side-effect that when you install plugins with new credentials providers you will need to configure them before they are available.
+
+[NOTE]
+====
+[quote, William Shakespeare, "Hamlet: Act 2, Scene 2"]
+____
+there is nothing either good or bad, but thinking makes it so.
+____
+The two options:
+
+* Only selected
+* Exclude selected
+
+Are logically equivalent.
+The difference between these two options is in how they react as new plugins are installed.
+
+_Only selected_ is essentially a whitelist strategy.
+When new plugins are installed the configuration will not automatically select any new options to be enabled.
+
+_Exclude selected_ is essentially a blacklist strategy.
+When new plugins are installed the configuration will not automatically select any new options to be disabled.
+====
+
+The credentials types can also be configured with the same choice of: _All available_; _Exclude selected_; and _Only selected_.
+
+.Restricting the available credentials types to a subset of those installed.
+image::images/global-config-credentials-type.png[scaledwidth="90%"]
+
+The final set of options are the fine-grained restrictions.
+With these you can define include or exclude rules that determine the available credentials types for each individual credentials provider.
+
+* The restrictions rules are applied after the global settings and cannot override the global settings.
+* The restrictions rules are grouped by each credentials provider.
+** If there is at least one includes rule for any specific credentials provider then only those credentials types that have include rules for that provider will be available.
+** Exclude rules are applied after include rules.
+
+.The two types of restrictions rules available
+image::images/global-config-credentials-restrictions.png[scaledwidth="90%"]
+
 === Managing credentials
+
+==== Credentials stores
 
 The Credentials API plugin defines three classes of context within Jenkins where the credential can be exposed:
 
