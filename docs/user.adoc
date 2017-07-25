@@ -1099,6 +1099,49 @@ So the some possible Store Id variants are:
 
 // TODO ===== Listing domains
 
+===== Listing credentials and domains
+
+The CLI Command for listing credentials and domains in a credentials store is `list-credentials`.
+
+image::images/list-credentials.png[scaledwidth="90%"]
+
+.Example of listing the credentials and domains in the `/example-folder` folder.
+[source,bash]
+----
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
+list-credentials folder::item::/example-folder
+===============================================
+Domain                               (global)
+Description
+# of Credentials                     1
+===============================================
+Id                                   Name
+==================================== ==========
+7d9702ee-9ce3-4ecd-82b5-9ebe125459fb bob/******
+===============================================
+
+=================================================
+Domain                               production
+Description                          Credentials used for the production roadrunner cooking infrastructure
+# of Credentials                     1
+=================================================
+Id                                   Name
+==================================== ============
+ae68086e-ccb1-43cc-8820-4f111bceda7c wilma/******
+=================================================
+
+====================================================
+Domain                               testing
+Description                          Credentials for use during testing of any new recipes
+# of Credentials                     2
+====================================================
+Id                                   Name
+==================================== ===============
+deploy-key                           wecoyote/******
+c5e80c99-d7c3-4acb-a5e1-73592ceebbbc fred/******
+====================================================
+----
+
 ===== Creating a domain
 
 The CLI command for creating a credentials domain is `create-credentials-domain-by-xml`.
@@ -1192,9 +1235,7 @@ delete-credentials-domain folder::item::/example-folder testing
 
 The `create-credentials-by-xml` Jenkins CLI command is the command used to expose credentials.
 
-[id=credentials-add-flow-cli-command]
-.The Jenkins CLI command for adding credentials to a credentials store.
-image::images/add-flow-cli-command.png[scaledwidth="90%"]
+image::images/create-credentials-by-xml.png[scaledwidth="90%"]
 
 This command needs the XML representation of the credential we want to expose.
 The best way to get this is to inspect the configuration of an existing credential of the same type.
@@ -1237,11 +1278,11 @@ So it is just a question of providing our own `config.xml` with the appropriate 
 
 TIP: When providing the actual secret value, you should exploit the way Jenkins deserializes secrets. If the secret does not decrypt then it is assumed to be the corresponding unencrypted value, which Jenkins will then encrypt before persisting the credentials.
 
-.Example of adding a `deploy-key` credential using the username `wecoyote` and the password `secret123` in the `/example-folder` folder.
+.Example of adding a `deploy-key` credential using the username `wecoyote` and the password `secret123` in the `testing` domain of the `/example-folder` folder.
 [source,bash]
 ----
 $ cat > credential.xml <<EOF
-<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
   <scope>GLOBAL</scope>
   <id>deploy-key</id>
   <username>wecoyote</username>
@@ -1249,41 +1290,66 @@ $ cat > credential.xml <<EOF
 </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
 EOF
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
-create-credentials-by-xml folder::item::/example-folder  _ < credential.xml
-$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
-list-credentials folder::item::/example-folder
-================================
-Domain           (global)
-Description
-# of Credentials 1
-================================
-Id               Name
-================ ===============
-deploy-key       wecoyote/******
-================================
+create-credentials-by-xml folder::item::/example-folder testing < credential.xml
 ----
 
-==== Removing credentials
+===== Retrieving credentials
 
-The `delete-credentials` Jenkins CLI command is the command used to remove credentials.
+The `get-credentials-as-xml` Jenkins CLI command is the command used to remove credentials.
 
-[id=credentials-del-flow-cli-command]
 .The Jenkins CLI command for removing credentials from a credentials store.
-image::images/del-flow-cli-command.png[scaledwidth="90%"]
+image::images/get-credentials-as-xml.png[scaledwidth="90%"]
 
-.Example of removing the `deploy-key` credential from the global domain of the `/example-folder` folder.
+.Example of removing the `deploy-key` credential from the `testing` domain of the `/example-folder` folder.
 [source,bash]
 ----
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
-delete-credentials folder::item::/example-folder  _ deploy-key
+get-credentials-as-xml folder::item::/example-folder testing deploy-key
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
+  <scope>GLOBAL</scope>
+  <id>deploy-key</id>
+  <username>wecoyote</username>
+  <password>
+    <secret-redacted/>
+  </password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+----
+
+===== Updating credentials
+
+The CLI command for updating an existing credentials domain is `update-credentials-by-xml`
+
+image::images/update-credentials-by-xml.png[scaledwidth="90%"]
+
+This command takes the XML configuration from standard input
+
+.Example of updating the `deploy-key` credentials in the `testing` domain of the `/example-folder` folder.
+[source,bash]
+----
+$ cat > credential.xml <<EOF
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+  <scope>GLOBAL</scope>
+  <id>deploy-key</id>
+  <username>wecoyote</username>
+  <password>secret123</password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+EOF
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
-list-credentials folder::item::/example-folder
-========================
-Domain           (global)
-Description
-# of Credentials 0
-========================
-Id               Name
-================ =======
-========================
+update-credentials-by-xml folder::item::/example-folder testing deploy-key < credentials.xml
+----
+
+
+
+===== Deleting credentials
+
+The `delete-credentials` Jenkins CLI command is the command used to remove credentials.
+
+.The Jenkins CLI command for removing credentials from a credentials store.
+image::images/delete-credentials.png[scaledwidth="90%"]
+
+.Example of removing the `deploy-key` credential from the `testing` domain of the `/example-folder` folder.
+[source,bash]
+----
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
+delete-credentials folder::item::/example-folder testing deploy-key
 ----
