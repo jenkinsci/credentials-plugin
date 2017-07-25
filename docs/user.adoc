@@ -452,27 +452,6 @@ With these you can define include or exclude rules that determine the available 
 .The two types of restrictions rules available
 image::images/global-config-credentials-restrictions.png[scaledwidth="90%"]
 
-=== Managing credentials
-
-==== Credentials stores
-
-The Credentials API plugin defines three classes of context within Jenkins where the credential can be exposed:
-
-1. The Jenkins root object itself
-2. A folder within Jenkins
-3. A user within Jenkins
-
-[NOTE]
-.Credential scope
-====
-When exposing a credentials from the Jenkins root object, you will also need to decide what scope to give the exposed credentials.
-
-* Using the `SYSTEM` scope will allow the credentials to be used for launching Jenkins agents as well as for some secondary system wide processes configured through the menu:Jenkins[Manage Jenkins > Configure Jenkins] screen.
-The credential will not be available to jobs within Jenkins.
-
-* Using the `GLOBAL` scope will, in addition to the usage permitted by `SYSTEM` scope, will make the credential available to all jobs within Jenkins running as an authentication that has the `Credentials/UseItem` permission.
-====
-
 [TIP]
 .Understanding the Authorize Project Plugin and Credentials
 ====
@@ -522,6 +501,112 @@ By default the `Credentials/UseItem` permission is hidden and users receive this
 A Jenkins administrator can make the permission visible by defining the `com.cloudbees.plugins.credentials.UseItemPermission` system property with the value of `true`, e.g. by adding `-Dcom.cloudbees.plugins.credentials.UseItemPermission=true` to the Jenkins JVM start-up options.
 ====
 
+=== Managing credentials
+
+The Credentials API plugin adds a Credentials action to every context item that has at least one associated credentials store.
+By default, this means that there will be a Credentials action on:
+
+* The Jenkins root object itself
++
+image::images/root-credentials-action.png[scaledwidth="90%"]
+* A user within Jenkins
++
+image::images/user-credentials-action.png[scaledwidth="90%"]
+* (_If the folders plugin has been installed_) A folder within Jenkins
++
+image::images/folder-credentials-action.png[scaledwidth="90%"]
+
+These actions provide standardized interfaces for managing credentials.
+
+.Credentials Action UI elements
+image::images/web-ui-elements.png[scaledwith="90%"]
+<1> Credentials available within the current context, both from the current context and parent contexts
+<2> A credentials instance from a parent scope that has been masked by a credentials instance with the same ID in the current scope
+<3> The credentials stores in the current context
+<4> The credentials stores from parent contexts
+<5> Links with context menus
+
+The main page of the credentials action consists of three tables:
+
+1. The credentials available within the current context.
+There are six columns:
++
+--
+* Type
+* Provider
+* Store
+* Domain
+* ID
+* Name
+--
++
+Any credentials from parent contexts that have been masked by credentials with a the same ID will be shown as a disabled or greyed out row.
+2. The stores that are associated with the current context.
+There are three columns:
++
+--
+* Provider
+* Store
+* Domains
+--
+3. The stores from all parent contexts.
+There are three columns:
++
+--
+* Provider
+* Store
+* Domains
+--
+
+The links in the main page are all context menu links which can be used to navigate more efficiently.
+
+.Context menus are available when the mouse hovers over links
+image::images/context-links.png[scaledwith="90%"]
+
+Navigating from the credentials action main page, brings you to the credentials store sub-action.
+
+.Credentials store sub-action
+image::images/credentials-store-action.png[scaledwith="90%"]
+
+The credentials store sub-action consists of a single table with two columns:
+
+* Domain
+* Description
+
+You can either _Add domain_ or navigate to an existing one.
+The links to existing domains are all context menu enabled.
+
+Adding a domain will display the _Add domain_ page:
+
+.Adding a new credentials domain
+image::images/adding-domain.png[scaledwith="90%"]
+
+The only mandatory field is the domain name.
+
+[NOTE]
+====
+The domain name is used as an URL path component so URL unsafe characters are not recommended.
+
+If you intend to use either the REST API or the Jenkins CLI API for interacting with the domain then things will be significantly easier if you stick to alpha-numeric domain names with just `-` or `_` as a word separator.
+====
+
+It is recommended to provide a description.
+
+If you do not provide a domain specification then the domain is effectively equivalent to the global domain, so you will probably want to define a specification.
+
+.Adding domain specifications
+image::images/defining-specification.png[scaledwith="90%"]
+
+The most basic domain specification is a hostname specification
+
+.Configuring a hostname domain specification
+image::images/hostname-specification.png[scaledwith="90%"]
+
+When configuring credentials domains remember
+
+[quote]
+The credentials API will excluding credentials from domains that do *not* match.
+
 [[credentials-ids]]
 .Credentials IDs
 [TIP]
@@ -537,6 +622,18 @@ Because we cannot know _a priori_ what will be valid IDs in an external credenti
 * Keep them less than approximately 40 characters long
 * Keep to alpha-numeric with `-`, `_` and `.` as separators
 ====
+
+[NOTE]
+.Credential scope
+====
+When exposing a credentials from the Jenkins root object, you will also need to decide what scope to give the exposed credentials.
+
+* Using the `SYSTEM` scope will allow the credentials to be used for launching Jenkins agents as well as for some secondary system wide processes configured through the menu:Jenkins[Manage Jenkins > Configure Jenkins] screen.
+The credential will not be available to jobs within Jenkins.
+
+* Using the `GLOBAL` scope will, in addition to the usage permitted by `SYSTEM` scope, will make the credential available to all jobs within Jenkins running as an authentication that has the `Credentials/UseItem` permission.
+====
+
 
 
 ==== Creating credentials
