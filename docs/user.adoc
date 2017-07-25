@@ -519,7 +519,7 @@ image::images/folder-credentials-action.png[scaledwidth="90%"]
 These actions provide standardized interfaces for managing credentials.
 
 .Credentials Action UI elements
-image::images/web-ui-elements.png[scaledwith="90%"]
+image::images/web-ui-elements.png[scaledwidth="90%"]
 <1> Credentials available within the current context, both from the current context and parent contexts
 <2> A credentials instance from a parent scope that has been masked by a credentials instance with the same ID in the current scope
 <3> The credentials stores in the current context
@@ -561,12 +561,12 @@ There are three columns:
 The links in the main page are all context menu links which can be used to navigate more efficiently.
 
 .Context menus are available when the mouse hovers over links
-image::images/context-links.png[scaledwith="90%"]
+image::images/context-links.png[scaledwidth="90%"]
 
 Navigating from the credentials action main page, brings you to the credentials store sub-action.
 
 .Credentials store sub-action
-image::images/credentials-store-action.png[scaledwith="90%"]
+image::images/credentials-store-action.png[scaledwidth="90%"]
 
 The credentials store sub-action consists of a single table with two columns:
 
@@ -578,8 +578,8 @@ The links to existing domains are all context menu enabled.
 
 Adding a domain will display the _Add domain_ page:
 
-.Adding a new credentials domain
-image::images/adding-domain.png[scaledwith="90%"]
+.Adding a new credentials domain / configuring an existing credentials domain.
+image::images/adding-domain.png[scaledwidth="90%"]
 
 The only mandatory field is the domain name.
 
@@ -595,18 +595,56 @@ It is recommended to provide a description.
 If you do not provide a domain specification then the domain is effectively equivalent to the global domain, so you will probably want to define a specification.
 
 .Adding domain specifications
-image::images/defining-specification.png[scaledwith="90%"]
+image::images/defining-specification.png[scaledwidth="90%"]
 
 The most basic domain specification is a hostname specification
 
 .Configuring a hostname domain specification
-image::images/hostname-specification.png[scaledwith="90%"]
+image::images/hostname-specification.png[scaledwidth="90%"]
 
-When configuring credentials domains remember
+When configuring credentials domains remember:
 
 [quote]
-The credentials API will excluding credentials from domains that do *not* match.
+The credentials API will exclude credentials from domains that do *not* match.
 
+This means that if you define a hostname specification of say, `*.test.example.com` then credentials in this domain will be available for selection in cases where the plugin populating the drop-down selection list _either_ has not declared a hostname requirement _or_ has declared a matching requirement.
+
+The domain details page consists of a table listing all credentials defined in the domain.
+
+.Domain details
+image::images/view-domain.png[scaledwidth="90%"]
+
+There are three columns:
+
+// TODO there should probably be four columns (add ID) and change Kind to Type
+
+* Name
+* Kind
+* Description
+
+Adding credentials requires selection of the type of credentials to add.
+A credentials instance cannot be changed from one type to another, though you can update the credentials with new secrets.
+
+.Adding credentials to a credentials domain
+image::images/adding-credentials.png[scaledwidth="90%"]
+
+Each credentials type defines its own fields, but all credentials should have the following common fields:
+
+Scope::
+If the credentials domain is in a credentials store that supports multiple scopes then you will be able to select the credentials scope.
++
+[NOTE]
+.Credential scope
+====
+When exposing a credentials from the Jenkins root object, you will also need to decide what scope to give the exposed credentials.
+
+* Using the `SYSTEM` scope will allow the credentials to be used for launching Jenkins agents as well as for some secondary system wide processes configured through the menu:Jenkins[Manage Jenkins > Configure Jenkins] screen.
+The credential will not be available to jobs within Jenkins.
+
+* Using the `GLOBAL` scope will, in addition to the usage permitted by `SYSTEM` scope, will make the credential available to all jobs within Jenkins running as an authentication that has the `Credentials/UseItem` permission.
+====
+ID::
+The credentials ID is used to persist references to a credentials in job configuration, etc
 [[credentials-ids]]
 .Credentials IDs
 [TIP]
@@ -622,19 +660,25 @@ Because we cannot know _a priori_ what will be valid IDs in an external credenti
 * Keep them less than approximately 40 characters long
 * Keep to alpha-numeric with `-`, `_` and `.` as separators
 ====
+Description::
+The description is an optional text field.
+Normally when displaying a list of credentials for selection, the description will be appended to the credentials name, so this field can be useful to help users select the appropriate credentials in cases where there may be confusion.
+
+The credentials details screen for each credentials will show the usage tracking information available for that credentials instance:
+
+.A credentials instance that has not been used yet
+image::images/credentials-unused.png[scaledwidth="90%"]
+
+As the credentials are used by different jobs, the usage tracking information should be populated.
 
 [NOTE]
-.Credential scope
-====
-When exposing a credentials from the Jenkins root object, you will also need to decide what scope to give the exposed credentials.
+--
+The cooperation of credentials consumer plugins is required in order to track usage.
+The usage tracking information should not be considered as definitive.
+--
 
-* Using the `SYSTEM` scope will allow the credentials to be used for launching Jenkins agents as well as for some secondary system wide processes configured through the menu:Jenkins[Manage Jenkins > Configure Jenkins] screen.
-The credential will not be available to jobs within Jenkins.
-
-* Using the `GLOBAL` scope will, in addition to the usage permitted by `SYSTEM` scope, will make the credential available to all jobs within Jenkins running as an authentication that has the `Credentials/UseItem` permission.
-====
-
-
+.A credentials instance that has been tracked as used.
+image::images/credentials-used.png[scaledwidth="90%"]
 
 ==== Creating credentials
 
