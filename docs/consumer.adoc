@@ -185,6 +185,7 @@ public FormValidation doCheckCredentialsId(
 <4> If anonymous connection is permitted, we can return OK for an empty selected credentials.
 Better yet would be to try and ping the remote service anonymously and report success / error if anonymous access is actually enabled on the remote service.
 _You may want to cache the check result for a short time-span if the remote service has rate limits on anonymous access._
+<5> If you have not enabled credentials parameter expressions on the select control then you do not need this test.
 <6> This example checks that the credentials exist, but does not use them to connect.
 Alternatively `CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(...), withId(value))` can be used to retrieve the credentials, a `null` return value would indicate that the error that they cannot be found, while the non-`null` return value could be used to validate the credentials against the remote service.
 _You may want to cache the check result for a short time-span if the remote service has rate limits._
@@ -241,11 +242,7 @@ We need `IdCredentials.getId()` to allow retrieval when building the job.
 We need `UsernamePasswordCredentials` to ensure that they are username and password.
 <2> We will be using these credentials in the context of a specific job.
 <3> For almost all implementations of `Job`, this will be `true`.
-+
-[NOTE]
-====
-https://plugins.jenkins.io/external-monitor-job[external jobs] do *not* implement `Queue.Task`
-====
+(Note: https://plugins.jenkins.io/external-monitor-job[external jobs] do *not* implement `Queue.Task`)
 <4> This is important, we must use the authentication that the job is likely to run as.
 <5> If not a `Queue.Task` then use `ACL.SYSTEM`
 <6> We use the requirements builder most idiomatically appropriate to our use case.
