@@ -1338,8 +1338,6 @@ $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
 update-credentials-by-xml folder::item::/example-folder testing deploy-key < credentials.xml
 ----
 
-
-
 ===== Deleting credentials
 
 The `delete-credentials` Jenkins CLI command is the command used to remove credentials.
@@ -1353,3 +1351,92 @@ image::images/delete-credentials.png[scaledwidth="90%"]
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
 delete-credentials folder::item::/example-folder testing deploy-key
 ----
+
+=== Using credentials
+
+The Credentials API plugin provides a standardized control for selecting credentials.
+
+Depending on how the consuming plugin author has configured this control it can be in one or two modes:
+
+* Select only mode, which will look something like:
++
+image::images/select-only-control.png[scaledwidth="60%"]
+* Switchable mode, which has a radio button to allow switching between select mode
++
+image::images/select-or-expr-as-select.png[scaledwidth="60%"]
++
+and expression mode
++
+image::images/select-or-expr-as-expr.png[scaledwidth="90%"]
+
+In select mode there is an _Add_ button.
+This button displays a drop-down of all the credentials stores in the context.
+Clicking on a store will open a modal dialog that enabled addition of credentials.
+
+.The select control's _Add_ button menu showing available contexts
+image::images/select-add-button.png[scaledwidth="60%"]
+
+.The modal dialog for adding credentials
+image::images/select-add-dialog.png[scaledwidth="90%"]
+
+[NOTE]
+====
+The _Add_ dialog currently has no way to know what types of credentials are valid for the credentials select control that triggered it (link:https://issues.jenkins-ci.org/browse/JENKINS-40293[JENKINS-40293])
+
+In general it will always open with the "first" available credentials type, which is typically Username & Password.
+====
+
+You can add credentials to any existing credentials domain in the selected credentials store.
+
+[TIP]
+====
+If the browser window size is too small and hides modal dialog's _Add_ and _Cancel_ buttons, the dialog can be closed with the `ESC` key.
+====
+
+After the dialog has closed, _all_ the credentials select controls on the page will request an updated list of available credentials.
+
+==== Credentials parameters
+
+The Credentials API plugin defines a credentials parameter type.
+Credentials parameters are only useful with credentials select controls that offer expression mode.
+
+image::images/credentials-parameter-definition.png[scaledwidth="90%"]
+
+There are five fields to configure for the credentials parameter:
+
+Name:: the name of the credentials parameter, this name will be used in the credentials expression.
+Convention is to use all UPPERCASE with `_` as a word separator.
+Credentials type:: the type of credentials to limit selection to.
+Required:: when checked, a credentials instance must be selected, when unchecked the `- none -` option will be available.
+Default Value:: the default credentials to select by default.
+Description:: the description of the parameter to display to users.
+
+In a parameterized job, you can then toggle the credentials select controls to _parameter expression_ and provide the expression in the form `${_PARAMETER NAME_}`
+
+[NOTE]
+====
+Only simple parameter expressions of the form `${` followed by the parameter name followed by `}` are allowed.
+====
+
+When building the job, the user will be presented with a credentials select control in select only mode for each credentials parameter.
+
+.Building a parameterized job with a credentials parameter
+image::images/build-with-parameters.png[scaledwidth="90%"]
+
+The list of available credentials will depend on a number of factors:
+
+* If the credentials parameter definition specified a credentials type, only credentials of that type will be available for selection.
+* If the user has the  https://github.com/jenkinsci/credentials-plugin/blob/dc35d4d99f9d4e9bf5fd434aee4f6e1bfca4c47d/src/main/java/com/cloudbees/plugins/credentials/CredentialsProvider.java#L144[`Credentials/UseOwn`] (which by default is implied by the `Item/Build` permission) then any suitable credentials from their own per-user credentials store will be available from the drop-down list.
+* If the user has the  https://github.com/jenkinsci/credentials-plugin/blob/dc35d4d99f9d4e9bf5fd434aee4f6e1bfca4c47d/src/main/java/com/cloudbees/plugins/credentials/CredentialsProvider.java#L160[`Credentials/UseItem`] (which by default is implied by the `Job/Configure` permission) then any suitable credentials from the default authentication that the build job will run as will be available from the drop-down list.
+* If the credentials parameter definition specified a default value, that value will always be present irrespective of whether the user has the https://github.com/jenkinsci/credentials-plugin/blob/dc35d4d99f9d4e9bf5fd434aee4f6e1bfca4c47d/src/main/java/com/cloudbees/plugins/credentials/CredentialsProvider.java#L160[`Credentials/UseItem`] permission.
+
+[WARNING]
+====
+Credentials parameters can only access the per-user credentials store of the job that was explicitly triggered by the user.
+
+Downstream jobs will be passed the credentials ID but will not be passed access to the user's per-user credentials store.
+This restriction is to prevent a malicious actor adding a hidden job as a downstream job and thereby gaining access to the per-user credentials store.
+====
+
+The credentials parameter value will be the ID of the selected credentials.
+Use the link:https://plugins.jenkins.io/credentials-binding[Credentials Binding] plugin if you need to get access to the secrets of a credentials instance, for example to use a password for authenticating a request to a third party system.
