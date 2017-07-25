@@ -680,28 +680,358 @@ The usage tracking information should not be considered as definitive.
 .A credentials instance that has been tracked as used.
 image::images/credentials-used.png[scaledwidth="90%"]
 
-==== Creating credentials
+There are three actions available on a credentials instance:
 
-===== Using the Jenkins Command Line Interface
+Update:: Allows changing the fields of the credentials instance.
+Delete:: Removes the credentials instance.
+Move:: Allows moving the credentials instance to another domain in the same credentials store.
++
+[NOTE]
+====
+It is not currently possible to move a credentials instance from one store to another store (link:https://issues.jenkins-ci.org/browse/JENKINS-20075[JENKINS-20075]).
 
-The `create-credentials-by-xml` Jenkins CLI command is the command used to expose credentials.
+There are potential issues with allowing credentials instances to be moved from one store to another.
+In the event that the feature is ever implemented, it is likely that moving between stores would be restricted to moving between stores from the same provider.
+====
 
-[id=credentials-add-flow-cli-command]
-.The Jenkins CLI command for adding credentials to a credentials store.
-image::images/add-flow-cli-command.png[scaledwidth="90%"]
+==== REST API
 
-Before we can use this CLI command we need to determine the Store Id and Domain.
+The REST API for managing credentials uses the similar URLs as the Web UI.
 
+[TIP]
+====
+Your Jenkins instance probably has CSRF protection enabled or uses authentication then you will need to provide the required headers to the REST request.
+Details of the exact headers required depends on the CSRF protection that has been configured and the exact authentication mechanism being used.
+====
+
+===== Listing domains
+
+The most basic URLs for listing the domains in a store are:
+
+* `http://_jenkins root url_/_path to context_/credentials/store/_store id_/api/xml?tree=domains[urlName]` for the XML representation
+* `http://_jenkins root url_/_path to context_/credentials/store/_store id_/api/json?tree=domains[urlName]` for the JSON representation
+
+This URL expects a `GET` request.
+You can modify the `tree=...` query parameter to fetch additional data.
+
+.Example of retrieving the XML representation of domains stored in the folder store `/example-folder` folder
+[source,bash]
+----
+$ curl -g https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+api/xml?tree=domains[urlName]
+<credentialsStoreActionImpl _class='com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider$FolderCredentialsProperty$CredentialsStoreActionImpl'>
+  <domains>
+    <_ _class='com.cloudbees.plugins.credentials.CredentialsStoreAction$DomainWrapper'>
+      <urlName>_</urlName>
+    </_>
+    <production _class='com.cloudbees.plugins.credentials.CredentialsStoreAction$DomainWrapper'>
+      <urlName>production</urlName>
+    </production>
+    <testing _class='com.cloudbees.plugins.credentials.CredentialsStoreAction$DomainWrapper'>
+      <urlName>testing</urlName>
+    </testing>
+  </domains>
+</credentialsStoreActionImpl>
+----
+<1> Whitespace has been added to the response to make a more readable example
+
+.Example of retrieving the JSON representation of credentials IDs stored in the `testing` credentials domain in the `/example-folder` folder
+[source,bash]
+----
+$ curl -g https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+api/json?tree=domains[urlName]
+{
+  "_class":"com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider$FolderCredentialsProperty$CredentialsStoreActionImpl",
+  "domains":{
+    "_":{
+      "_class":"com.cloudbees.plugins.credentials.CredentialsStoreAction$DomainWrapper",
+      "urlName":"_"
+    },
+    "production":{
+      "_class":"com.cloudbees.plugins.credentials.CredentialsStoreAction$DomainWrapper",
+      "urlName":"production"
+    },
+    "testing":{
+      "_class":"com.cloudbees.plugins.credentials.CredentialsStoreAction$DomainWrapper",
+      "urlName":"testing"
+    }
+  }
+}
+----
+<1> Whitespace has been added to the response to make a more readable example
+
+===== Creating a domain
+
+The URL for creating a domain is: `http://_jenkins root url_/_path to context_/credentials/store/_store id_/createDomain`.
+This URL expects a `POST` request with a `Content-Type` header of type `application/xml`.
+The body of the `POST` request should be the XML configuration of the credentials domain.
+
+The expected responses are:
+
+HTTP/200::
+Success, the domain has been created.
+HTTP/400::
+Bad request, this credentials store does not support user created credentials domains.
+HTTP/409::
+Failure, a domain with that name already exists.
+HTTP/50x::
+Could not parse the supplied domain XML body.
+
+.Example of adding a `testing` credentials domain the `/example-folder` folder.
+[source,bash]
+----
+$ cat > domain.xml <<EOF
+<com.cloudbees.plugins.credentials.domains.Domain>
+  <name>testing</name>
+  <description>Credentials for use during testing of any new recipes</description>
+  <specifications>
+    <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+      <includes>*.test.example.com</includes>
+      <excludes></excludes>
+    </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+  </specifications>
+</com.cloudbees.plugins.credentials.domains.Domain>
+EOF
+$ curl -X POST -H content-type:application/xml -d @domain.xml \
+https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+createDomain
+----
+
+===== Managing the configuration of an existing domain
+
+The URL for managing the configuration of an existing domain is: `http://_jenkins root url_/_path to context_/credentials/store/_store id_/domain/_domain name_/config.xml`.
+This URL expects `GET`, `POST` or `DELETE` request.
+
+A `GET` request will retrieve the existing configuration.
+The expected response is:
+
+HTTP/200::
+Success, the body of the response is the XML representation of the credentials domain.
+
+.Example of retrieving the configuration of the `testing` credentials domain in the `/example-folder` folder
+[source,bash]
+----
+$ curl https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/config.xml
+<com.cloudbees.plugins.credentials.domains.Domain plugin="credentials@2.1.14">
+  <name>testing</name>
+  <description>Credentials for use during testing of any new recipes</description>
+  <specifications>
+    <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+      <includes>*.test.example.com</includes>
+      <excludes></excludes>
+    </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+  </specifications>
+</com.cloudbees.plugins.credentials.domains.Domain>
+----
+
+A `POST` request will update the existing configuration.
+The expected response is:
+
+HTTP/200::
+Success.
+
+.Example of updating the configuration of the `testing` credentials domain in the `/example-folder` folder
+[source,bash]
+----
+$ cat > domain.xml <<EOF
+<com.cloudbees.plugins.credentials.domains.Domain>
+ <name>testing</name>
+ <description>Credentials for use against the *.test.example.com hosts</description>
+ <specifications>
+   <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+     <includes>*.test.example.com</includes>
+     <excludes></excludes>
+   </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+ </specifications>
+</com.cloudbees.plugins.credentials.domains.Domain>
+EOF
+$ curl -X POST -H content-type:application/xml -d @domain.xml \
+https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/config.xml
+----
+
+A `DELETE` requests will remove the credentials domain and all credentials associated with the domain.
+The expected response is:
+
+HTTP/200::
+Success.
+
+.Example of removing the `testing` credentilas domain from the `/example-folder` folder
+[source,bash]
+----
+$ curl -X DELETE https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/config.xml
+----
+
+===== Listing credentials within a credentials domain.
+
+The most basic URLs for listing the credentials in a domain are:
+
+* `http://_jenkins root url_/_path to context_/credentials/store/_store id_/domain/_domain name_/api/xml?tree=credentials[id]` for the XML representation
+* `http://_jenkins root url_/_path to context_/credentials/store/_store id_/domain/_domain name_/api/json?tree=credentials[id]` for the JSON representation
+
+This URL expects a `GET` request.
+You can modify the `tree=...` query parameter to fetch additional data.
+
+.Example of retrieving the XML representation of credentials IDs stored in the `testing` credentials domain in the `/example-folder` folder
+[source,bash]
+----
+$ curl -g https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/api/xml?tree=credentials[id]
+<domainWrapper _class='com.cloudbees.plugins.credentials.CredentialsStoreAction$DomainWrapper'>
+  <credential>
+    <id>deploy-key</id>
+  </credential>
+  <credential>
+    <id>c5e80c99-d7c3-4acb-a5e1-73592ceebbbc</id>
+  </credential>
+</domainWrapper>
+----
+<1> Whitespace has been added to the response to make a more readable example
+
+.Example of retrieving the JSON representation of credentials IDs stored in the `testing` credentials domain in the `/example-folder` folder
+[source,bash]
+----
+$ curl -g https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/api/json?tree=credentials[id]
+{
+  "_class":"com.cloudbees.plugins.credentials.CredentialsStoreAction$DomainWrapper",
+  "credentials":[
+    {"id":"deploy-key"},
+    {"id":"c5e80c99-d7c3-4acb-a5e1-73592ceebbbc"}
+  ]
+}
+----
+<1> Whitespace has been added to the response to make a more readable example
+
+===== Creating a credentials
+
+The URL for creating a domain is: `http://_jenkins root url_/_path to context_/credentials/store/_store id_/domain/_domain name_/createCredentials`.
+This URL expects a `POST` request with a `Content-Type` header of type `application/xml`.
+The body of the `POST` request should be the XML configuration of the credentials domain.
+
+[TIP]
+====
+The global domain has the name `_`
+====
+
+The expected responses are:
+
+HTTP/200::
+Success, the credentials has been created.
+HTTP/409::
+Failure, a credentiasl with that id already exists.
+HTTP/50x::
+Could not parse the supplied domain XML body.
+
+.Example of adding a `deploy-key` credential using the username `wecoyote` and the password `secret123` in the `testing` domain of the `/example-folder` folder.
+[source,bash]
+----
+$ cat > credential.xml <<EOF
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+  <scope>GLOBAL</scope>
+  <id>deploy-key</id>
+  <username>wecoyote</username>
+  <password>secret123</password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+EOF
+$ curl -X POST -H content-type:application/xml -d @credential.xml \
+https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/createCredentials
+----
+
+[TIP]
+====
+The secret is passed _in the clear_ so that Jenkins can then encrypt it before storing to disk.
+====
+
+===== Managing an existing credentials instance
+
+The URL for managing the an existing credentials instance is: `http://_jenkins root url_/_path to context_/credentials/store/_store id_/domain/_domain name_/credential/_credentials id_/config.xml`.
+This URL expects `GET`, `POST` or `DELETE` request.
+
+A `GET` request will retrieve the existing configuration.
+The expected response is:
+
+HTTP/200::
+Success, the body of the response is the XML representation of the credentials domain.
++
+[NOTE]
+====
+The secret portion of the credentials instance will always be replaced with `<secret-redacted/>`
+====
+
+.Example of retrieving the configuration of the `deploy-key` credential from the `testing` credentials domain in the `/example-folder` folder
+[source,bash]
+----
+$ curl https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/credentials/deploy-key/config.xml
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
+  <scope>GLOBAL</scope>
+  <id>deploy-key</id>
+  <username>wecoyote</username>
+  <password>
+    <secret-redacted/>
+  </password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+----
+
+A `POST` request will update the existing configuration.
+The expected response is:
+
+HTTP/200::
+Success.
+
+.Example of updating the details of the `deploy-key` credentials instance in the `testing` credentials domain in the `/example-folder` folder
+[source,bash]
+----
+$ cat > credential.xml <<EOF
+<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+  <scope>GLOBAL</scope>
+  <id>deploy-key</id>
+  <username>wecoyote</username>
+  <password>pAssw0rd</password>
+</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+EOF
+$ curl -X POST -H content-type:application/xml -d @domain.xml \
+https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/credentials/deploy-key/config.xml
+----
+
+A `DELETE` requests will remove the credentials .
+The expected response is:
+
+HTTP/200::
+Success.
+
+.Example of removing the `deploy-key` credentials instance from the `testing` credentilas domain in the `/example-folder` folder
+[source,bash]
+----
+$ curl -X DELETE https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/credentials/deploy-key/config.xml
+----
+
+==== Jenkins Command Line Interface
+
+===== Navigating credentials stores
+
+Unlike the Web UI or the REST API which can infer the credentials store from the URL, the Jenkins CLI needs to know how to identify the credentials store that you intend to operate on.
+
+The Jenkins CLI interface uses a composite Store Id.
 The Store Id consists of three components separated by the `::`.
 The components are  _provider_ `::` _resolver_ `::` _context path_.
 
-The Credentials API provides implementations for three stores, but as the stores are an extension point it is probable best to illustrate the general process for identifying the store id:
+TThe Credentials API provides implementations for three stores, but as the stores are an extension point it is probable best to illustrate the general process for identifying the store id:
 
 1. List the credentials providers:
 +
+image::images/list-credentials-providers.png[scaledwidth="90%"]
++
 .Listing the credentials providers
+[source,bash]
 ----
-$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
 list-credentials-providers
 Name                                                                           Provider
 ============================================================================== ==============================
@@ -720,9 +1050,12 @@ The each Credentials Provider is exposed using up to three different names (the 
 
 2. List the context resolvers
 +
+image::images/list-context-resolvers.png[scaledwidth="90%"]
++
 .Listing the context resolvers
+[source,bash]
 ----
-$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
 list-credentials-context-resolvers
 Name                                                                            Resolves
 =============================================================================== =======
@@ -764,9 +1097,106 @@ So the some possible Store Id variants are:
 * `folder::item::/full/name/of/folder` for a per-folder credentials store
 * `user::user::wecoyote` for the per-user store of Wile E. Coyote, who's username is `wecoyote`.
 
-Next we need to determine the credentials domain that we want to put the credential into.
+// TODO ===== Listing domains
 
-Next we need to create the XML representation of the credential we want to expose.
+===== Creating a domain
+
+The CLI command for creating a credentials domain is `create-credentials-domain-by-xml`.
+
+image::images/create-credentials-domain-by-xml.png[scaledwidth="90%"]
+
+This command takes the XML configuration from standard input
+
+.Example of adding a `testing` credentials domain the `/example-folder` folder.
+[source,bash]
+----
+$ cat > domain.xml <<EOF
+<com.cloudbees.plugins.credentials.domains.Domain>
+  <name>testing</name>
+  <description>Credentials for use during testing of any new recipes</description>
+  <specifications>
+    <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+      <includes>*.test.example.com</includes>
+      <excludes></excludes>
+    </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+  </specifications>
+</com.cloudbees.plugins.credentials.domains.Domain>
+EOF
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
+create-credentials-domain-by-xml folder::item::/example-folder < domain.xml
+----
+
+===== Retrieving a domain's configuration
+
+The CLI command for retrieving a credentials domain configuration is `get-credentials-domain-as-xml`
+
+image::images/get-credentials-domain-as-xml.png[scaledwidth="90%"]
+
+.Example of retrieving the configuration of the `testing` credentials domain from the `/example-folder` folder.
+[source,bash]
+----
+$ $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \ get-credentials-domain-as-xml folder::item::/example-folder testing
+<com.cloudbees.plugins.credentials.domains.Domain plugin="credentials@2.1.14">
+  <name>testing</name>
+  <description>Credentials for use during testing of any new recipes</description>
+  <specifications>
+    <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+      <includes>*.test.example.com</includes>
+      <excludes></excludes>
+    </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+  </specifications>
+</com.cloudbees.plugins.credentials.domains.Domain>
+----
+
+===== Updating a domain
+
+The CLI command for updating an existing credentials domain is `update-credentials-domain-by-xml`
+
+image::images/update-credentials-domain-by-xml.png[scaledwidth="90%"]
+
+This command takes the XML configuration from standard input
+
+.Example of updating the `testing` credentials domain in the `/example-folder` folder.
+[source,bash]
+----
+$ cat > domain.xml <<EOF
+<com.cloudbees.plugins.credentials.domains.Domain>
+  <name>testing</name>
+  <description>Credentials for use during testing of any new recipes</description>
+  <specifications>
+    <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+      <includes>*.test.example.com</includes>
+      <excludes></excludes>
+    </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+  </specifications>
+</com.cloudbees.plugins.credentials.domains.Domain>
+EOF
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
+update-credentials-domain-by-xml folder::item::/example-folder testing < domain.xml
+----
+
+===== Removing a domain
+
+The CLI command for deleting a credentials domain and all associated credentials is `delete-credentials-domain`
+
+image::images/delete-credentials-domain.png[scaledwidth="90%"]
+
+.Example of deleting the `testing` credentials domain from the `/example-folder` folder.
+[source,bash]
+----
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
+delete-credentials-domain folder::item::/example-folder testing
+----
+
+===== Creating credentials
+
+The `create-credentials-by-xml` Jenkins CLI command is the command used to expose credentials.
+
+[id=credentials-add-flow-cli-command]
+.The Jenkins CLI command for adding credentials to a credentials store.
+image::images/add-flow-cli-command.png[scaledwidth="90%"]
+
+This command needs the XML representation of the credential we want to expose.
 The best way to get this is to inspect the configuration of an existing credential of the same type.
 
 If we navigate using a Web browser to find an existing credential, we will end up at an URL something like: `https://jenkins.example.com/credentials/store/system/domain/_/credential/some-credential-id/` by appending `config.xml` to the URL we can see the configuration of that credentials, e.g.:
@@ -820,7 +1250,7 @@ $ cat > credential.xml <<EOF
 EOF
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
 create-credentials-by-xml folder::item::/example-folder  _ < credential.xml
-$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
 list-credentials folder::item::/example-folder
 ================================
 Domain           (global)
@@ -833,52 +1263,7 @@ deploy-key       wecoyote/******
 ================================
 ----
 
-===== Using the Jenkins REST Interface
-
-To use the REST interface, you need to make a POST request to the `createCredentials` sub-URL of the credentials domain. For example, for the folder `example-folder` in a Jenkins instance hosted at http://local.example.com/ this would be the URL http://local.example.com/job/example-folder/credentials/store/folder/domain/_/createCredentials
-
-.Example of adding a `deploy-key` credential using the username `wecoyote` and the password `secret123` in the `/example-folder` folder.
-[source,bash]
-----
-$ cat > credential.xml <<EOF
-<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl plugin="credentials@2.1.14">
-  <scope>GLOBAL</scope>
-  <id>deploy-key</id>
-  <username>wecoyote</username>
-  <password>secret123</password>
-</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
-EOF
-$ curl -X POST -H content-type:application/xml -d @credential.xml \
-https://jenkins.example.com/job/example-folder/credentials/store/folder/\
-domain/_/createCredentials
-----
-
-NOTE: If your Jenkins instance has CSRF protection enabled or uses authentication then you will need to provide the required headers to the REST request.
-Details of the exact headers required depends on the CSRF protection that has been configured and the exact authentication mechanism being used.
-
 ==== Removing credentials
-
-
-===== Using the Web User Interface
-
-Navigate to the Credentials view for the context containing the the credentials to be removed.
-
-There are two ways to remove the credential:
-
-* Use the context menu for the credential and select menu:Delete[]
-+
-[id=credentials-del-flow-shortcut]
-.Using the context menu for removing a credentials from a credentials store.
-image::images/del-flow-shortcut.png[scaledwidth="90%"]
-
-
-* Navigate to the credential and select the menu:Delete[] left hand menu action.
-+
-[id=credentials-del-flow-long-way]
-.Using the credential's menu:Delete[] action directly.
-image::images/del-flow-long-way.png[scaledwidth="90%"]
-
-===== Using the Jenkins Command Line Interface
 
 The `delete-credentials` Jenkins CLI command is the command used to remove credentials.
 
@@ -889,9 +1274,9 @@ image::images/del-flow-cli-command.png[scaledwidth="90%"]
 .Example of removing the `deploy-key` credential from the global domain of the `/example-folder` folder.
 [source,bash]
 ----
-$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
 delete-credentials folder::item::/example-folder  _ deploy-key
-$ java -jar jenkins-cli.jar -s http://local.example.com/ \
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
 list-credentials folder::item::/example-folder
 ========================
 Domain           (global)
@@ -902,18 +1287,3 @@ Id               Name
 ================ =======
 ========================
 ----
-
-===== Using the Jenkins REST Interface
-
-To use the REST interface, you need to make a DELETE request to the `config.xml` sub-URL of the credentials.
-For example, for the `deploy-key` credential in the global domain of the folder `example-folder` in a Jenkins instance hosted at https://jenkins.example.com/ this would be the URL https://jenkins.example.com/job/example-folder/credentials/store/folder/domain/_/credential/deploy-key/config.xml
-
-.Example of removing the `deploy-key` credential from the global domain of `/example-folder` folder.
-[source,bash]
-----
-$ curl -X DELETE  https://jenkins.example.com/job/example-folder/credentials/\
-store/folder/domain/_/credential/deploy-key/config.xml
-----
-
-NOTE: If your Jenkins instance has CSRF protection enabled or uses authentication then you will need to provide the required headers to the REST request.
-Details of the exact headers required depends on the CSRF protection that has been configured and the exact authentication mechanism being used.
