@@ -5,7 +5,7 @@ This document provides guidelines for using the Credentials API.
 
 This document is structured as follows:
 
-* The first section provides dome background into the use cases driving the development of the Credentials API.
+* The first section provides some background into the use cases driving the development of the Credentials API.
 
 * The second section is an overview of all the functionality provided by the Credentials API.
 
