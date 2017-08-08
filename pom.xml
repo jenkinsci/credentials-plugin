@@ -29,7 +29,8 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>2.21</version>
+    <version>2.32</version>
+    <relativePath/>
   </parent>
 
   <artifactId>credentials</artifactId>
@@ -40,11 +41,11 @@
   <description>
     This plugin allows you to store credentials in Jenkins.
   </description>
-  <url>http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin</url>
+  <url>https://wiki.jenkins.io/display/JENKINS/Credentials+Plugin</url>
   <licenses>
     <license>
       <name>The MIT license</name>
-      <url>http://www.opensource.org/licenses/mit-license.php</url>
+      <url>https://opensource.org/licenses/MIT</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -56,14 +57,10 @@
     </developer>
   </developers>
 
-  <prerequisites>
-    <maven>2.2.1</maven>
-  </prerequisites>
-
   <scm>
     <connection>scm:git:git://github.com/jenkinsci/credentials-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/credentials-plugin.git</developerConnection>
-    <url>http://github.com/jenkinsci/credentials-plugin</url>
+    <url>https://github.com/jenkinsci/credentials-plugin</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -74,13 +71,13 @@
   <repositories>
     <repository>
       <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
+      <url>https://repo.jenkins-ci.org/public/</url>
     </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
       <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
+      <url>https://repo.jenkins-ci.org/public/</url>
     </pluginRepository>
   </pluginRepositories>
 
