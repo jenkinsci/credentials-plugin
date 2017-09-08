@@ -96,7 +96,7 @@ public class ContextMenuIconUtils {
     public static void addMenuItem(@NonNull ModelObjectWithContextMenu.ContextMenu menu,
                                    @CheckForNull String prefix, @NonNull Action action,
                                    @CheckForNull ModelObjectWithContextMenu.ContextMenu subMenu) {
-        if (Functions.isContextMenuVisible(action) && action.getIconFileName() != null) {
+        if (isContextMenuVisible(action) && action.getIconFileName() != null) {
             Icon icon = action instanceof IconSpec ? ContextMenuIconUtils.getIcon(action) : null;
             String base = icon != null ? ContextMenuIconUtils.getQualifiedUrl(icon) : Functions.getIconFilePath(action);
             ModelObjectWithContextMenu.MenuItem item = new ModelObjectWithContextMenu.MenuItem(
@@ -106,6 +106,14 @@ public class ContextMenuIconUtils {
             );
             item.subMenu = subMenu;
             menu.add(item);
+        }
+    }
+    /** TODO copied from {@link Functions} but currently restricted */
+    private static boolean isContextMenuVisible(Action a) {
+        if (a instanceof ModelObjectWithContextMenu.ContextMenuVisibility) {
+            return ((ModelObjectWithContextMenu.ContextMenuVisibility) a).isVisible();
+        } else {
+            return true;
         }
     }
 
