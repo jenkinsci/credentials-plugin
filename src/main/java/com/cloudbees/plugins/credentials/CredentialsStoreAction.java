@@ -604,7 +604,7 @@ public abstract class CredentialsStoreAction
      */
     @ExportedBean
     public static class DomainWrapper extends AbstractDescribableImpl<DomainWrapper> implements
-            ModelObjectWithContextMenu, ModelObjectWithChildren {
+            ModelObjectWithContextMenu, ModelObjectWithChildren, AccessControlled {
 
         /**
          * The {@link CredentialsStoreAction} that we belong to.
@@ -1024,6 +1024,31 @@ public abstract class CredentialsStoreAction
         }
 
         /**
+         * {@inheritDoc}
+         */
+        @Nonnull
+        @Override
+        public ACL getACL() {
+            return getParent().getACL();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void checkPermission(@Nonnull Permission permission) throws AccessDeniedException {
+            getACL().checkPermission(permission);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean hasPermission(@Nonnull Permission permission) {
+            return getACL().hasPermission(permission);
+        }
+
+        /**
          * Our Descriptor.
          */
         @Extension
@@ -1086,7 +1111,7 @@ public abstract class CredentialsStoreAction
      */
     @ExportedBean
     public static class CredentialsWrapper extends AbstractDescribableImpl<CredentialsWrapper>
-            implements IconSpec, ModelObjectWithContextMenu {
+            implements IconSpec, ModelObjectWithContextMenu, AccessControlled {
 
         /**
          * Our {@link DomainWrapper}.
@@ -1498,6 +1523,31 @@ public abstract class CredentialsStoreAction
             Credentials credentials = (Credentials)
                     Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
             getStore().updateCredentials(domain.getDomain(), this.credentials, credentials);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Nonnull
+        @Override
+        public ACL getACL() {
+            return getParent().getACL();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void checkPermission(@Nonnull Permission permission) throws AccessDeniedException {
+            getACL().checkPermission(permission);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean hasPermission(@Nonnull Permission permission) {
+            return getACL().hasPermission(permission);
         }
 
         /**
