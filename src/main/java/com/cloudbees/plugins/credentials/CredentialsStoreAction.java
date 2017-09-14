@@ -894,7 +894,7 @@ public abstract class CredentialsStoreAction
         public ContextMenu getContextMenu(String prefix) {
             if (getStore().hasPermission(CREATE) || (getStore().hasPermission(MANAGE_DOMAINS) && !domain.isGlobal())) {
                 ContextMenu result = new ContextMenu();
-                if (getStore().hasPermission(CREATE)) {
+                if (getStore().isCredentialsModifiable() && getStore().hasPermission(CREATE)) {
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "newCredentials"),
                             getMenuItemIconUrlByClassSpec("icon-credentials-new-credential icon-md"),
@@ -1425,7 +1425,7 @@ public abstract class CredentialsStoreAction
         @CheckForNull
         @Restricted(NoExternalUse.class)
         public ContextMenu getContextMenu(String prefix) {
-            if (getStore().hasPermission(UPDATE) || getStore().hasPermission(DELETE)) {
+            if (getStore().isCredentialsModifiable() && (getStore().hasPermission(UPDATE) || getStore().hasPermission(DELETE))) {
                 ContextMenu result = new ContextMenu();
                 if (getStore().hasPermission(UPDATE)) {
                     result.add(new MenuItem(
