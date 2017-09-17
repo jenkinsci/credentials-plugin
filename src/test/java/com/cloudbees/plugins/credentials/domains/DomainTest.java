@@ -24,6 +24,7 @@
 
 package com.cloudbees.plugins.credentials.domains;
 
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -87,7 +88,7 @@ public class DomainTest {
         DummyCredentials systemCred1 = new DummyCredentials(CredentialsScope.SYSTEM, "systemCred1", "pwd");
         DummyCredentials systemCredMod = new DummyCredentials(CredentialsScope.SYSTEM, "systemCredMod", "pwd");
 
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        ModifiableCredentialsStore store = (ModifiableCredentialsStore) CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
         
         // Add domains with credentials
         store.addDomain(domainFoo, Collections.<Credentials>emptyList());

@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -43,7 +44,7 @@ import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
-import hudson.util.CopyOnWriteMap;
+
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.net.URI;
@@ -112,7 +113,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
      * {@inheritDoc}
      */
     @Override
-    public CredentialsStore getStore(@CheckForNull ModelObject object) {
+    public CredentialsStoreInterface getStoreImpl(@CheckForNull ModelObject object) {
         if (object instanceof User) {
             return new StoreImpl((User) object);
         }
@@ -585,7 +586,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @NonNull
         @Exported
-        public CredentialsStore getStore() {
+        public CredentialsStore getStoreImpl() {
             return store;
         }
 

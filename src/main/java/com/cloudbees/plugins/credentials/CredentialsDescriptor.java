@@ -179,7 +179,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
         CredentialsStoreAction action =
                 Stapler.getCurrentRequest().findAncestorObject(CredentialsStoreAction.class);
         if (action != null) {
-            return isScopeRelevant(action.getStore().getContext());
+            return isScopeRelevant(action.getStoreImpl().getContext());
         }
         return isScopeRelevant();
     }
@@ -201,7 +201,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
         CredentialsStoreAction action =
                 Stapler.getCurrentRequest().findAncestorObject(CredentialsStoreAction.class);
         if (action != null) {
-            return isScopeRelevant(action.getStore().getContext());
+            return isScopeRelevant(action.getStoreImpl().getContext());
         }
         return isScopeRelevant();
     }
@@ -223,7 +223,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
         CredentialsStoreAction action =
                 Stapler.getCurrentRequest().findAncestorObject(CredentialsStoreAction.class);
         if (action != null) {
-            return isScopeRelevant(action.getStore().getContext());
+            return isScopeRelevant(action.getStoreImpl().getContext());
         }
         return isScopeRelevant();
     }

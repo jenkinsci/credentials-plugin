@@ -21,57 +21,61 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.cloudbees.plugins.credentials;
+package com.cloudbees.plugins.credentials.store;
 
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.Saveable;
-import hudson.security.AccessControlled;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
- * A store of {@link Credentials}. Each {@link ModifiableItemsCredentialsStore} is associated with one and only one
- * {@link CredentialsProvider} though a {@link CredentialsProvider} may provide multiple {@link ModifiableItemsCredentialsStore}s
- * (for example a folder scoped {@link CredentialsProvider} may provide a {@link ModifiableItemsCredentialsStore} for each folder
- * or a user scoped {@link CredentialsProvider} may provide a {@link ModifiableItemsCredentialsStore} for each user).
+ * A store of {@link Credentials} that allows for modifying domains.
  *
- * @author Stephen Connolly
- * @since 1.8
+ * @author Hosh Sadiq
+ * @since 2.1.17
  */
-interface ModifiableItemsCredentialsStore extends AccessControlled, Saveable {
-
+public interface ModifiableDomainsCredentialsStore extends CredentialsStoreInterface, Saveable {
     /**
-     * Adds the specified {@link Credentials} within the specified {@link Domain} for this {@link
-     * CredentialsStore}.
+     * Adds a new {@link Domain} with seed credentials.
      *
      * @param domain      the domain.
-     * @param credentials the credentials
+     * @param credentials the initial credentials with which to populate the domain.
+     * @return {@code true} if the {@link CredentialsStore} was modified.
+     * @throws java.io.IOException if the change could not be persisted.
+     */
+    boolean addDomain(@NonNull Domain domain, Credentials... credentials) throws IOException;
+
+    /**
+     * Adds a new {@link Domain} with seed credentials.
+     *
+     * @param domain      the domain.
+     * @param credentials the initial credentials with which to populate the domain.
      * @return {@code true} if the {@link CredentialsStore} was modified.
      * @throws IOException if the change could not be persisted.
      */
-    boolean addCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException;
+    boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException;
 
     /**
-     * Removes the specified {@link Credentials} from the specified {@link Domain} for this {@link
-     * CredentialsStore}.
+     * Removes an existing {@link Domain} and all associated {@link Credentials}.
      *
-     * @param domain      the domain.
-     * @param credentials the credentials
+     * @param domain the domain.
      * @return {@code true} if the {@link CredentialsStore} was modified.
      * @throws IOException if the change could not be persisted.
      */
-    boolean removeCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException;
+    boolean removeDomain(@NonNull Domain domain) throws IOException;
 
     /**
-     * Updates the specified {@link Credentials} from the specified {@link Domain} for this {@link
-     * CredentialsStore} with the supplied replacement.
+     * Updates an existing {@link Domain} keeping the existing associated {@link Credentials}.
      *
-     * @param domain      the domain.
-     * @param current     the credentials to update.
-     * @param replacement the new replacement credentials.
+     * @param current     the domain to update.
+     * @param replacement the new replacement domain.
      * @return {@code true} if the {@link CredentialsStore} was modified.
      * @throws IOException if the change could not be persisted.
      */
-    boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current, @NonNull Credentials replacement) throws IOException;
+    boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException;
 }

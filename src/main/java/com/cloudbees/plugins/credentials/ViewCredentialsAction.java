@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
@@ -112,9 +113,9 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      * @return the {@link CredentialsStore} instances available to the {@link #getContext()}.
      */
     @NonNull
-    public List<CredentialsStore> getParentStores() {
-        List<CredentialsStore> result = new ArrayList<CredentialsStore>();
-        for (CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
+    public List<CredentialsStoreInterface> getParentStores() {
+        List<CredentialsStoreInterface> result = new ArrayList<>();
+        for (CredentialsStoreInterface s : CredentialsProvider.lookupStores(getContext())) {
             if (context != s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
                 result.add(s);
             }
@@ -128,9 +129,9 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      * @return the {@link CredentialsStore} instances available to the {@link #getContext()}.
      */
     @NonNull
-    public List<CredentialsStore> getLocalStores() {
-        List<CredentialsStore> result = new ArrayList<CredentialsStore>();
-        for (CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
+    public List<CredentialsStoreInterface> getLocalStores() {
+        List<CredentialsStoreInterface> result = new ArrayList<>();
+        for (CredentialsStoreInterface s : CredentialsProvider.lookupStores(getContext())) {
             if (context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
                 result.add(s);
             }
@@ -147,7 +148,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @SuppressWarnings("unused") // Jelly EL
     public List<CredentialsStoreAction> getStoreActions() {
         List<CredentialsStoreAction> result = new ArrayList<CredentialsStoreAction>();
-        for (final CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
+        for (final CredentialsStoreInterface s : CredentialsProvider.lookupStores(getContext())) {
             if (context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
                 CredentialsStoreAction action = s.getStoreAction();
                 if (action != null) {
@@ -184,7 +185,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @CheckForNull
     @SuppressWarnings("unused") // Stapler binding
     public CredentialsStoreAction getStore(String name) {
-        for (final CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
+        for (final CredentialsStoreInterface s : CredentialsProvider.lookupStores(getContext())) {
             if (context == s.getContext()) { // local stores only
                 CredentialsStoreAction action = s.getStoreAction();
                 if (action != null && name.equals(action.getUrlName())) {
@@ -257,7 +258,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         ItemGroup group = context instanceof ItemGroup ? (ItemGroup) context
                 : context instanceof User ? Jenkins.getActiveInstance() : null;
         Set<String> ids = new HashSet<String>();
-        for (CredentialsStore p : CredentialsProvider.lookupStores(context)) {
+        for (CredentialsStoreInterface p : CredentialsProvider.lookupStores(context)) {
             if (p.hasPermission(CredentialsProvider.VIEW)) {
                 for (Domain domain : p.getDomains()) {
                     for (Credentials c : p.getCredentials(domain)) {
@@ -372,7 +373,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             @Override
             public boolean hasPermission(@Nonnull Authentication a, @Nonnull Permission permission) {
                 if (accessControlled.getACL().hasPermission(a, permission)) {
-                    for (CredentialsStore s : getLocalStores()) {
+                    for (CredentialsStoreInterface s : getLocalStores()) {
                         if (s.hasPermission(a, permission)) {
                             return true;
                         }
@@ -485,7 +486,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         /**
          * The backing {@link CredentialsStore}.
          */
-        private final CredentialsStore store;
+        private final CredentialsStoreInterface store;
         /**
          * The backing {@link Domain}.
          */
@@ -504,7 +505,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
          * @param credentials the backing {@link Credentials}.
          * @param masked      whether this entry is masked or not.
          */
-        public TableEntry(CredentialsProvider provider, CredentialsStore store,
+        public TableEntry(CredentialsProvider provider, CredentialsStoreInterface store,
                           Domain domain, Credentials credentials, boolean masked) {
             this.provider = provider;
             this.store = store;
@@ -583,7 +584,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
          *
          * @return the {@link CredentialsStore}.
          */
-        public CredentialsStore getStore() {
+        public CredentialsStoreInterface getStore() {
             return store;
         }
 

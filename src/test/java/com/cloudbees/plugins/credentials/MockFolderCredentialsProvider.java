@@ -27,6 +27,7 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -113,7 +114,7 @@ import org.jvnet.hudson.test.MockFolder;
     }
 
     @Override
-    public CredentialsStore getStore(@CheckForNull ModelObject object) {
+    public CredentialsStoreInterface getStoreImpl(@CheckForNull ModelObject object) {
         if (object instanceof MockFolder) {
             final MockFolder folder = MockFolder.class.cast(object);
             return getProperty(folder).getStore();

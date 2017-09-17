@@ -27,12 +27,13 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
-import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.domains.HostnameSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import hudson.cli.CLICommand;
 import hudson.cli.CLICommandInvoker;
 import hudson.model.Items;
@@ -66,15 +67,15 @@ import static org.junit.Assume.assumeThat;
 public class CLICommandsTest {
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    private CredentialsStore store = null;
+    private ModifiableCredentialsStore store = null;
 
     @Before
     public void clearCredentials() {
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(
                 Collections.singletonMap(Domain.global(), Collections.<Credentials>emptyList()));
-        for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.getInstance())) {
-            if (s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
-                store = s;
+        for (CredentialsStoreInterface s : CredentialsProvider.lookupStores(Jenkins.getInstance())) {
+            if (s instanceof ModifiableCredentialsStore && s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
+                store = (ModifiableCredentialsStore) s;
                 break;
             }
         }
@@ -92,6 +93,7 @@ public class CLICommandsTest {
                         + "  <name>smokes</name>\n"
                         + "</com.cloudbees.plugins.credentials.domains.Domain>"))
                 .invokeWithArgs("system::system::jenkins"), succeededSilently());
+
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
                 (Matcher) hasItem(hasProperty("name", is("smokes"))));
         cmd = new CreateCredentialsByXmlCommand();

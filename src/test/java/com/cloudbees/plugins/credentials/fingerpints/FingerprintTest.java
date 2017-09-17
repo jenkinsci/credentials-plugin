@@ -32,6 +32,8 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
+import com.cloudbees.plugins.credentials.store.ModifiableItemsCredentialsStore;
 import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.Util;
@@ -59,15 +61,15 @@ public class FingerprintTest {
 
     @Rule
     public JenkinsRule j = new JenkinsRule();
-    private CredentialsStore store = null;
+    private ModifiableItemsCredentialsStore store = null;
 
     @Before
     public void setUp() throws Exception {
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(
                 Collections.singletonMap(Domain.global(), Collections.<Credentials>emptyList()));
-        for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.getInstance())) {
+        for (CredentialsStoreInterface s : CredentialsProvider.lookupStores(Jenkins.getInstance())) {
             if (s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
-                store = s;
+                store = (ModifiableItemsCredentialsStore) s;
                 break;
 
             }

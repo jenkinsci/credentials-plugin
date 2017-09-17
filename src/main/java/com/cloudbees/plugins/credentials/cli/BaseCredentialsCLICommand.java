@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.xml.XppDriver;
 import hudson.cli.CLICommand;
@@ -76,7 +77,7 @@ public abstract class BaseCredentialsCLICommand extends CLICommand {
         return existing;
     }
 
-    protected static Domain getDomainByName(CredentialsStore store, String domain) {
+    protected static Domain getDomainByName(CredentialsStoreInterface store, String domain) {
         if (StringUtils.equals("_", domain) || StringUtils.isBlank(domain) || "(global)".equals(domain)) {
             return Domain.global();
         } else {
@@ -99,9 +100,7 @@ public abstract class BaseCredentialsCLICommand extends CLICommand {
         try {
             XMLUtils.safeTransform(source, new StreamResult(out));
             out.close();
-        } catch (TransformerException e) {
-            throw new IOException("Failed to parse", e);
-        } catch (SAXException e) {
+        } catch (TransformerException | SAXException e) {
             throw new IOException("Failed to parse", e);
         }
         return new XppDriver().createReader(new StringReader(out.toString()));

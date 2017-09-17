@@ -3,6 +3,8 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import com.gargoylesoftware.htmlunit.WebResponse;
 import hudson.ExtensionList;
 import hudson.Util;
@@ -35,12 +37,12 @@ public class CredentialsStoreActionTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
     private SystemCredentialsProvider.ProviderImpl system;
-    private CredentialsStore systemStore;
+    private ModifiableCredentialsStore systemStore;
 
     @Before
     public void setUp() throws Exception {
         system = ExtensionList.lookup(CredentialsProvider.class).get(SystemCredentialsProvider.ProviderImpl.class);
-        systemStore = system.getStore(j.getInstance());
+        systemStore = (ModifiableCredentialsStore) system.getStoreImpl(j.getInstance());
     }
 
     @Test
@@ -276,7 +278,7 @@ public class CredentialsStoreActionTest {
         assertThat(con.getResponseCode(), is(HttpServletResponse.SC_CONFLICT));
     }
 
-    private HttpURLConnection postCreateByXml(CredentialsStore store, String xml)
+    private HttpURLConnection postCreateByXml(CredentialsStoreInterface store, String xml)
             throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
                 "credentials/store/" + store.getStoreAction().getUrlName() + "/createDomain").openConnection();
@@ -287,7 +289,7 @@ public class CredentialsStoreActionTest {
         return con;
     }
 
-    private HttpURLConnection postCreateByXml(CredentialsStore store, String domainName, String xml)
+    private HttpURLConnection postCreateByXml(CredentialsStoreInterface store, String domainName, String xml)
             throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
                 "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
@@ -301,7 +303,7 @@ public class CredentialsStoreActionTest {
         return con;
     }
 
-    private HttpURLConnection postConfigDotXml(CredentialsStore store, String domainName, String xml)
+    private HttpURLConnection postConfigDotXml(CredentialsStoreInterface store, String domainName, String xml)
             throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
                 "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
@@ -313,7 +315,7 @@ public class CredentialsStoreActionTest {
         return con;
     }
 
-    private HttpURLConnection postConfigDotXml(CredentialsStore store, String domainName, String credentialsId,
+    private HttpURLConnection postConfigDotXml(CredentialsStoreInterface store, String domainName, String credentialsId,
                                                String xml) throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
                 "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
@@ -326,7 +328,7 @@ public class CredentialsStoreActionTest {
         return con;
     }
 
-    private HttpURLConnection deleteConfigDotXml(CredentialsStore store, String domainName)
+    private HttpURLConnection deleteConfigDotXml(CredentialsStoreInterface store, String domainName)
             throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
                 "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
@@ -335,7 +337,7 @@ public class CredentialsStoreActionTest {
         return con;
     }
 
-    private HttpURLConnection deleteConfigDotXml(CredentialsStore store, String domainName, String credentialsId)
+    private HttpURLConnection deleteConfigDotXml(CredentialsStoreInterface store, String domainName, String credentialsId)
             throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
                 "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util

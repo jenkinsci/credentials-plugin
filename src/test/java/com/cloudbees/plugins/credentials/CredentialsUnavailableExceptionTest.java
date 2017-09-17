@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionList;
@@ -42,7 +43,6 @@ import hudson.model.FreeStyleProject;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
-import hudson.model.StreamBuildListener;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
@@ -55,13 +55,9 @@ import hudson.tasks.Builder;
 import hudson.triggers.SCMTrigger;
 import hudson.triggers.Trigger;
 import hudson.util.Secret;
-import java.io.ByteArrayOutputStream;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -88,14 +84,14 @@ public class CredentialsUnavailableExceptionTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    private CredentialsStore systemStore;
+    private ModifiableCredentialsStore systemStore;
 
     @Before
     public void setUp() throws Exception {
         SystemCredentialsProvider.ProviderImpl system = ExtensionList.lookup(CredentialsProvider.class).get(
                 SystemCredentialsProvider.ProviderImpl.class);
 
-        systemStore = system.getStore(r.getInstance());
+        systemStore = (ModifiableCredentialsStore) system.getStoreImpl(r.getInstance());
 
         List<Domain> domainList = new ArrayList<Domain>(systemStore.getDomains());
         domainList.remove(Domain.global());

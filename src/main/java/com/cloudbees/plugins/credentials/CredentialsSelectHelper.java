@@ -23,8 +23,11 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
@@ -142,7 +145,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             }
         }
         if (context != null) {
-            for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
+            for (CredentialsStoreInterface store : CredentialsProvider.lookupStores(context)) {
                 StoreItem item = new StoreItem(store);
                 String url = item.getUrl();
                 if (item.getUrl() != null && !urls.contains(url)) {
@@ -166,7 +169,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 }
             }
             if (hasPermission) {
-                for (CredentialsStore store : CredentialsProvider.lookupStores(User.current())) {
+                for (CredentialsStoreInterface store : CredentialsProvider.lookupStores(User.current())) {
                     StoreItem item = new StoreItem(store);
                     String url = item.getUrl();
                     if (item.getUrl() != null && !urls.contains(url)) {
@@ -202,7 +205,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 context = request.findAncestorObject(ModelObject.class);
             }
         }
-        for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
+        for (CredentialsStoreInterface store : CredentialsProvider.lookupStores(context)) {
             if (store.hasPermission(CREATE)) {
                 return true;
             }
@@ -236,7 +239,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      * @since 2.1.1
      */
     @CLIResolver
-    public static CredentialsStore resolveForCLI(
+    public static CredentialsStoreInterface resolveForCLI(
             @Argument(required = true, metaVar = "STORE", usage = "Store ID") String storeId) throws
             CmdLineException {
         int index1 = storeId.indexOf("::");
@@ -300,7 +303,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 }
             }, storeId);
         }
-        CredentialsStore store = provider.getStore(context);
+        CredentialsStoreInterface store = provider.getStoreImpl(context);
         if (store == null) {
             throw new CmdLineException(null, new Localizable() {
                 @Override
@@ -385,7 +388,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         /**
          * The store.
          */
-        private final CredentialsStore store;
+        private final CredentialsStoreInterface store;
         /**
          * The URL we will expose the store at.
          */
@@ -396,7 +399,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          *
          * @param store the store.
          */
-        public StoreItem(CredentialsStore store) {
+        public StoreItem(CredentialsStoreInterface store) {
             this.store = store;
             String provider = store.getProvider().getClass().getName();
             String resolver = null;
@@ -544,10 +547,11 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          * @param token the {@link ContextResolver#getToken(ModelObject)} of the context of the store.
          * @return the {@link WrappedContextResolverCredentialsProvider} or {@code null}
          */
+        @Nullable
         public WrappedCredentialsStore getContext(String token) {
             ModelObject context = resolver.getContext(token);
             if (context != null) {
-                CredentialsStore store = provider.getStore(context);
+                CredentialsStoreInterface store = provider.getStoreImpl(context);
                 if (store != null) {
                     return new WrappedCredentialsStore(resolver, provider, token, store);
                 }
@@ -581,18 +585,17 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         /**
          * Our {@link CredentialsStore}.
          */
-        private final CredentialsStore store;
+        private final CredentialsStoreInterface store;
 
         /**
          * Our constructor.
-         *
-         * @param resolver the {@link ContextResolver}
+         *  @param resolver the {@link ContextResolver}
          * @param provider the {@link CredentialsProvider}
          * @param token    the context's {@link ContextResolver#getToken(ModelObject)}.
          * @param store    the {@link CredentialsStore}
          */
         public WrappedCredentialsStore(ContextResolver resolver, CredentialsProvider provider,
-                                       String token, CredentialsStore store) {
+                                       String token, CredentialsStoreInterface store) {
             this.store = store;
             this.resolver = resolver;
             this.provider = provider;
@@ -609,22 +612,24 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          */
         @RequirePOST
         public void doAddCredentials(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
-            if (!store.isDomainsModifiable()) {
+            if (!(store instanceof ModifiableCredentialsStore)) {
                 hudson.util.HttpResponses.status(400).generateResponse(req, rsp, null);
-                FormApply.applyResponse("window.alert('Domain is read-only')").generateResponse(req, rsp, null);
+                FormApply.applyResponse("window.alert('CredentialsStore is read-only')").generateResponse(req, rsp, null);
             }
-            store.checkPermission(CredentialsStoreAction.CREATE);
+            ModifiableCredentialsStore credentialsStore = (ModifiableCredentialsStore) store;
+
+            credentialsStore.checkPermission(CredentialsStoreAction.CREATE);
             JSONObject data = req.getSubmittedForm();
             String domainName = data.getString("domain");
             CredentialsStoreAction.DomainWrapper wrapper = getWrappers().get(domainName);
-            if (!store.getDomains().contains(wrapper.getDomain())) {
+            if (!credentialsStore.getDomains().contains(wrapper.getDomain())) {
                 hudson.util.HttpResponses.status(400).generateResponse(req, rsp, null);
                 FormApply.applyResponse("window.alert('Store does not have selected domain')")
                         .generateResponse(req, rsp, null);
             }
-            store.checkPermission(CredentialsStoreAction.CREATE);
+            credentialsStore.checkPermission(CredentialsStoreAction.CREATE);
             Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
-            store.addCredentials(wrapper.getDomain(), credentials);
+            credentialsStore.addCredentials(wrapper.getDomain(), credentials);
             FormApply.applyResponse("window.credentials.refreshAll();").generateResponse(req, rsp, null);
         }
 
@@ -701,7 +706,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                  */
                 @NonNull
                 @Override
-                public CredentialsStore getStore() {
+                public CredentialsStoreInterface getStoreImpl() {
                     return store;
                 }
             }.getDomains();
@@ -712,7 +717,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          * @return backing {@link CredentialsStore}.
          * @since 2.1.5
          */
-        public CredentialsStore getStore() {
+        public CredentialsStoreInterface getStore() {
             return store;
         }
     }

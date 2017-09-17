@@ -21,20 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.cloudbees.plugins.credentials;
+package com.cloudbees.plugins.credentials.store;
 
-import hudson.model.Saveable;
-import hudson.security.AccessControlled;
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 
 /**
- * A store of {@link Credentials}. Each {@link ModifiableDomainsCredentialsStore} is associated with one and only one
- * {@link CredentialsProvider} though a {@link CredentialsProvider} may provide multiple {@link ModifiableDomainsCredentialsStore}s
- * (for example a folder scoped {@link CredentialsProvider} may provide a {@link ModifiableDomainsCredentialsStore} for each folder
- * or a user scoped {@link CredentialsProvider} may provide a {@link ModifiableDomainsCredentialsStore} for each user).
+ * A store of {@link Credentials}. Each {@link ModifiableCredentialsStore} is associated with one and only one
+ * {@link CredentialsProvider} though a {@link CredentialsProvider} may provide multiple {@link ModifiableCredentialsStore}s
+ * (for example a folder scoped {@link CredentialsProvider} may provide a {@link ModifiableCredentialsStore} for each folder
+ * or a user scoped {@link CredentialsProvider} may provide a {@link ModifiableCredentialsStore} for each user).
  *
  * @author Stephen Connolly
  * @since 1.8
  */
-interface ModifiableDomainsCredentialsStore extends AccessControlled, Saveable {
-
+public interface ModifiableCredentialsStore extends ModifiableDomainsCredentialsStore, ModifiableItemsCredentialsStore {
 }

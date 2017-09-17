@@ -24,6 +24,10 @@
 package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.store.BaseCredentialsStore;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
+import com.cloudbees.plugins.credentials.store.ModifiableDomainsCredentialsStore;
+import com.cloudbees.plugins.credentials.store.ModifiableItemsCredentialsStore;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.BulkChange;
 import hudson.model.Saveable;
@@ -49,8 +53,6 @@ import java.util.List;
  * @since 1.8
  */
 public abstract class CredentialsStore extends BaseCredentialsStore implements ModifiableCredentialsStore {
-    // todo need to make this BaseCredentialsStore
-
     /**
      * Cache for {@link #isDomainsModifiable()}.
      */
@@ -84,7 +86,6 @@ public abstract class CredentialsStore extends BaseCredentialsStore implements M
      * Note: in order for implementations to return {@code true} all of the following methods must be overridden:
      * </p>
      * <ul>
-     * <li>{@link #getDomains}</li>
      * <li>{@link #addDomain(Domain, java.util.List)}</li>
      * <li>{@link #removeDomain(Domain)}</li>
      * <li>{@link #updateDomain(Domain, Domain)} </li>
@@ -98,8 +99,7 @@ public abstract class CredentialsStore extends BaseCredentialsStore implements M
     public boolean isDomainsModifiable() {
         if (domainsModifiable == null) {
             try {
-                domainsModifiable = isOverridden("getDomains")
-                        && isOverridden("addDomain", Domain.class, List.class)
+                domainsModifiable = isOverridden("addDomain", Domain.class, List.class)
                         && isOverridden("removeDomain", Domain.class)
                         && isOverridden("updateDomain", Domain.class, Domain.class);
             } catch (NoSuchMethodException e) {
@@ -124,52 +124,29 @@ public abstract class CredentialsStore extends BaseCredentialsStore implements M
     }
 
     /**
-     * Adds a new {@link Domain} with seed credentials.
-     *
-     * @param domain      the domain.
-     * @param credentials the initial credentials with which to populate the domain.
-     * @return {@code true} if the {@link CredentialsStore} was modified.
-     * @throws java.io.IOException if the change could not be persisted.
+     * {@inheritDoc}
      */
-    @Deprecated
     public final boolean addDomain(@NonNull Domain domain, Credentials... credentials) throws IOException {
         return addDomain(domain, Arrays.asList(credentials));
     }
 
     /**
-     * Adds a new {@link Domain} with seed credentials.
-     *
-     * @param domain      the domain.
-     * @param credentials the initial credentials with which to populate the domain.
-     * @return {@code true} if the {@link CredentialsStore} was modified.
-     * @throws IOException if the change could not be persisted.
+     * {@inheritDoc}
      */
-    @Deprecated
     public boolean addDomain(@NonNull Domain domain, List<Credentials> credentials) throws IOException {
         throw new UnsupportedOperationException("Implementation does not support adding domains");
     }
 
     /**
-     * Removes an existing {@link Domain} and all associated {@link Credentials}.
-     *
-     * @param domain the domain.
-     * @return {@code true} if the {@link CredentialsStore} was modified.
-     * @throws IOException if the change could not be persisted.
+     * {@inheritDoc}
      */
-    @Deprecated
     public boolean removeDomain(@NonNull Domain domain) throws IOException {
         throw new UnsupportedOperationException("Implementation does not support removing domains");
     }
 
     /**
-     * Updates an existing {@link Domain} keeping the existing associated {@link Credentials}.
-     *
-     * @param current     the domain to update.
-     * @param replacement the new replacement domain.
-     * @return {@code true} if the {@link CredentialsStore} was modified.
-     * @throws IOException if the change could not be persisted.
+     * {@inheritDoc}
      */
-    @Deprecated
     public boolean updateDomain(@NonNull Domain current, @NonNull Domain replacement) throws IOException {
         throw new UnsupportedOperationException("Implementation does not support updating domains");
     }

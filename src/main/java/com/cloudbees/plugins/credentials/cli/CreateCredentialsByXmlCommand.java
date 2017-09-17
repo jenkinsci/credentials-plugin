@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import hudson.Extension;
 import hudson.model.Items;
 import org.kohsuke.args4j.Argument;
@@ -39,7 +40,7 @@ import org.kohsuke.args4j.Argument;
 @Extension
 public class CreateCredentialsByXmlCommand extends BaseCredentialsCLICommand {
     @Argument(metaVar = "STORE", usage = "Store Id", required = true)
-    public CredentialsStore store;
+    public ModifiableCredentialsStore store;
 
     @Argument(metaVar = "DOMAIN", usage = "Domain Name", required = true, index = 1)
     public String domain;

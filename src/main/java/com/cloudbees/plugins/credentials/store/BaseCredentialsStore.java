@@ -21,8 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.cloudbees.plugins.credentials;
+package com.cloudbees.plugins.credentials.store;
 
+import com.cloudbees.plugins.credentials.*;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -53,7 +54,7 @@ import java.util.*;
  * @author Stephen Connolly
  * @since 1.8
  */
-public abstract class BaseCredentialsStore implements AccessControlled {
+public abstract class BaseCredentialsStore implements CredentialsStoreInterface, AccessControlled {
 
     /**
      * The {@link CredentialsProvider} class.
@@ -97,10 +98,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Returns the {@link CredentialsProvider} or dies trying.
-     *
-     * @return the {@link CredentialsProvider}
-     * @since 2.0
+     * {@inheritDoc}
      */
     @NonNull
     public final CredentialsProvider getProviderOrDie() {
@@ -116,11 +114,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Returns the {@link CredentialsProvider}.
-     *
-     * @return the {@link CredentialsProvider} (may be {@code null} if the admin has removed the provider from
-     * the {@link ExtensionList})
-     * @since 2.0
+     * {@inheritDoc}
      */
     @Nullable
     public final CredentialsProvider getProvider() {
@@ -128,36 +122,13 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Returns the {@link CredentialsScope} instances that are applicable to this store.
-     *
-     * @return the {@link CredentialsScope} instances that are applicable to this store or {@code null} if the store
-     * instance is no longer enabled.
-     * @since 2.1.5
+     * {@inheritDoc}
      */
     @Nullable
     public final Set<CredentialsScope> getScopes() {
         CredentialsProvider provider = getProvider();
         return provider == null ? null : provider.getScopes(getContext());
     }
-
-    /**
-     * Returns the context within which this store operates. Credentials in this store will be available to
-     * child contexts (unless {@link CredentialsScope#SYSTEM} is valid for the store) but will not be available to
-     * parent contexts.
-     *
-     * @return the context within which this store operates.
-     */
-    @NonNull
-    public abstract ModelObject getContext();
-
-    /**
-     * Checks if the given principle has the given permission.
-     *
-     * @param a          the principle.
-     * @param permission the permission.
-     * @return {@code false} if the user doesn't have the permission.
-     */
-    public abstract boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission);
 
     /**
      * {@inheritDoc}
@@ -174,12 +145,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Checks if the current security principal has this permission.
-     * <p>
-     * Note: This is just a convenience function.
-     * </p>
-     *
-     * @throws org.acegisecurity.AccessDeniedException if the user doesn't have the permission.
+     * {@inheritDoc}
      */
     public final void checkPermission(@NonNull Permission p) {
         Authentication a = Jenkins.getAuthentication();
@@ -189,19 +155,14 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Checks if the current security principal has this permission.
-     *
-     * @return {@code false} if the user doesn't have the permission.
+     * {@inheritDoc}
      */
     public final boolean hasPermission(@NonNull Permission p) {
         return hasPermission(Jenkins.getAuthentication(), p);
     }
 
     /**
-     * Returns all the {@link Domain}s that this credential provider has.
-     * Most implementers of {@link BaseCredentialsStore} will probably want to override this method.
-     *
-     * @return the list of domains.
+     * {@inheritDoc}
      */
     @NonNull
     public List<Domain> getDomains() {
@@ -209,11 +170,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Retrieves the domain with the matching name.
-     *
-     * @param name the name (or {@code null} to match {@link Domain#global()} as that is the domain with a null name)
-     * @return the domain or {@code null} if there is no domain with the supplied name.
-     * @since 2.1.1
+     * {@inheritDoc}
      */
     @CheckForNull
     public Domain getDomainByName(@CheckForNull String name) {
@@ -226,34 +183,15 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Returns an unmodifiable list of credentials for the specified domain.
-     *
-     * @param domain the domain.
-     * @return the possibly empty (e.g. for an unknown {@link Domain}) unmodifiable list of credentials for the
-     * specified domain.
-     */
-    @NonNull
-    public abstract List<Credentials> getCredentials(@NonNull Domain domain);
-
-    /**
-     * Identifies whether this {@link BaseCredentialsStore} supports making changes to the credentials.
-     * <p>
-     * Note: in order for implementations to return {@code true} the class must implement ModifiableItemsCredentialsStore:
-     * </p>
-     *
-     * @return {@code true} if class implements {@link ModifiableItemsCredentialsStore}
+     * {@inheritDoc}
      */
     public boolean isDomainsModifiable() {
         return this instanceof ModifiableDomainsCredentialsStore;
     }
 
+    // todo this should become final once BaseCredentialsStore replaces CredentialsStore
     /**
-     * Identifies whether this {@link BaseCredentialsStore} supports making changes to the credentials.
-     * <p>
-     * Note: in order for implementations to return {@code true} the class must implement ModifiableItemsCredentialsStore:
-     * </p>
-     *
-     * @return {@code true} if class implements {@link ModifiableItemsCredentialsStore}
+     * {@inheritDoc}
      */
     public boolean isCredentialsModifiable() {
         return this instanceof ModifiableItemsCredentialsStore;
@@ -265,9 +203,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
      * The default implementation consults the {@link DescriptorVisibilityFilter}s, {@link #_isApplicable(Descriptor)}
      * and the {@link #getProviderOrDie()}.
      *
-     * @param descriptor the {@link Descriptor} to check.
-     * @return {@code true} if the supplied {@link Descriptor} is applicable in this {@link BaseCredentialsStore}
-     * @since 2.0
+     * {@inheritDoc}
      */
     public final boolean isApplicable(Descriptor<?> descriptor) {
         for (DescriptorVisibilityFilter filter : DescriptorVisibilityFilter.all()) {
@@ -280,26 +216,14 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * {@link BaseCredentialsStore} subtypes can override this method to veto some  {@link Descriptor}s
-     * from being available from their store. This is often useful when you are building
-     * a custom store that holds a specific type of credentials or where you want to limit the
-     * number of choices given to the users.
-     *
-     * @param descriptor the {@link Descriptor} to check.
-     * @return {@code true} if the supplied {@link Descriptor} is applicable in this {@link BaseCredentialsStore}
-     * @since 2.0
+     * {@inheritDoc}
      */
     protected boolean _isApplicable(Descriptor<?> descriptor) {
         return true;
     }
 
     /**
-     * Returns the list of {@link CredentialsDescriptor} instances that are applicable within this
-     * {@link BaseCredentialsStore}.
-     *
-     * @return the list of {@link CredentialsDescriptor} instances that are applicable within this
-     * {@link BaseCredentialsStore}.
-     * @since 2.0
+     * {@inheritDoc}
      */
     public final List<CredentialsDescriptor> getCredentialsDescriptors() {
         CredentialsProvider provider = getProvider();
@@ -321,10 +245,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Computes the relative path from the current page to this store.
-     *
-     * @return the relative path from the current page or {@code null}
-     * @since 2.0
+     * {@inheritDoc}
      */
     @CheckForNull
     public String getRelativeLinkToContext() {
@@ -347,10 +268,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Computes the relative path from the current page to this store.
-     *
-     * @return the relative path from the current page or {@code null}
-     * @since 2.0
+     * {@inheritDoc}
      */
     @CheckForNull
     public String getRelativeLinkToAction() {
@@ -374,7 +292,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
             return null;
         }
         for (CredentialsStoreAction action : actions) {
-            if (action.getStore() == this) {
+            if (action.getStoreImpl() == this) {
                 return relativeLink + action.getUrlName() + "/";
             }
         }
@@ -382,11 +300,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Computes the relative path from the current page to the specified domain.
-     *
-     * @param domain the domain
-     * @return the relative path from the current page or {@code null}
-     * @since 2.0
+     * {@inheritDoc}
      */
     @CheckForNull
     public String getRelativeLinkTo(Domain domain) {
@@ -398,14 +312,7 @@ public abstract class BaseCredentialsStore implements AccessControlled {
     }
 
     /**
-     * Returns the display name of the {@link #getContext()} of this {@link BaseCredentialsStore}. The default
-     * implementation can handle both {@link Item} and {@link ItemGroup} as long as these are accessible from
-     * {@link Jenkins}, and {@link User}. If the {@link BaseCredentialsStore} provides an alternative
-     * {@link #getContext()} that is outside of the normal tree then that implementation is responsible for
-     * overriding this method to produce the correct display name.
-     *
-     * @return the display name.
-     * @since 2.0
+     * {@inheritDoc}
      */
     public final String getContextDisplayName() {
         ModelObject context = getContext();
@@ -416,20 +323,14 @@ public abstract class BaseCredentialsStore implements AccessControlled {
         } else if (context instanceof ItemGroup) {
             return ((ItemGroup) context).getFullDisplayName();
         } else if (context instanceof User) {
-            return Messages.CredentialsStoreAction_UserDisplayName(context.getDisplayName());
+            return com.cloudbees.plugins.credentials.Messages.CredentialsStoreAction_UserDisplayName(context.getDisplayName());
         } else {
             return context.getDisplayName();
         }
     }
 
     /**
-     * Return the {@link CredentialsStoreAction} for this store. The action will be displayed as a sub-item of the
-     * {@link ViewCredentialsAction}. Return {@code null} if this store will take control of displaying its action
-     * (which will be the case for legacy implementations)
-     *
-     * @return the {@link CredentialsStoreAction} for this store to be rendered in {@link ViewCredentialsAction} or
-     * {@code null} for old implementations compiled against pre 2.0 versions of credentials plugin.
-     * @since 2.0
+     * {@inheritDoc}
      */
     @Nullable
     public CredentialsStoreAction getStoreAction() {

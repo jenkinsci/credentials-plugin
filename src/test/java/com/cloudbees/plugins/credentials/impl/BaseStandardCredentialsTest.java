@@ -29,6 +29,8 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
+import com.cloudbees.plugins.credentials.store.ModifiableItemsCredentialsStore;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.ACL;
@@ -68,7 +70,7 @@ public class BaseStandardCredentialsTest {
         final User alice = User.get("alice");
         SecurityContext ctx = ACL.impersonate(alice.impersonate());
         try {
-            CredentialsStore store = lookupStore(alice);
+            ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) lookupStore(alice);
             addCreds(store, CredentialsScope.USER, "alice");
             addCreds(store, CredentialsScope.USER, "per-user");
         } finally {
@@ -77,7 +79,7 @@ public class BaseStandardCredentialsTest {
         User bob = User.get("bob");
         ctx = ACL.impersonate(bob.impersonate());
         try {
-            CredentialsStore store = lookupStore(bob);
+            ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) lookupStore(bob);
             addCreds(store, CredentialsScope.USER, "bob");
             addCreds(store, CredentialsScope.USER, "per-user");
         } finally {
@@ -85,16 +87,16 @@ public class BaseStandardCredentialsTest {
         }
 
         // Now set up a folder tree with some masking of credentials.
-        CredentialsStore store = lookupStore(r.jenkins);
+        ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) lookupStore(r.jenkins);
         addCreds(store, CredentialsScope.GLOBAL, "masked");
         addCreds(store, CredentialsScope.GLOBAL, "root");
         addCreds(store, CredentialsScope.SYSTEM, "rootSystem");
         final MockFolder top = r.jenkins.createProject(MockFolder.class, "top");
-        store = lookupStore(top);
+        store = (ModifiableItemsCredentialsStore) lookupStore(top);
         addCreds(store, CredentialsScope.GLOBAL, "masked");
         addCreds(store, CredentialsScope.GLOBAL, "top");
         final MockFolder bottom = top.createProject(MockFolder.class, "bottom");
-        store = lookupStore(bottom);
+        store = (ModifiableItemsCredentialsStore) lookupStore(bottom);
         addCreds(store, CredentialsScope.GLOBAL, "masked");
         addCreds(store, CredentialsScope.GLOBAL, "bottom");
 
@@ -139,15 +141,15 @@ public class BaseStandardCredentialsTest {
         // TODO could test the case that alice has Item.READ but not CredentialsProvider.VIEW on a folder, and mocks a web request passing that folder as context
     }
     
-    private static CredentialsStore lookupStore(ModelObject object) {
-        Iterator<CredentialsStore> stores = CredentialsProvider.lookupStores(object).iterator();
+    private static CredentialsStoreInterface lookupStore(ModelObject object) {
+        Iterator<CredentialsStoreInterface> stores = CredentialsProvider.lookupStores(object).iterator();
         assertTrue(stores.hasNext());
-        CredentialsStore store = stores.next();
+        CredentialsStoreInterface store = stores.next();
         assertEquals("we got the expected store", object, store.getContext());
         return store;
     }
 
-    private static void addCreds(CredentialsStore store, CredentialsScope scope, String id) throws IOException {
+    private static void addCreds(ModifiableItemsCredentialsStore store, CredentialsScope scope, String id) throws IOException {
         // For purposes of this test we do not care about domains.
         store.addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(scope, id, null, "x", "y"));
     }
