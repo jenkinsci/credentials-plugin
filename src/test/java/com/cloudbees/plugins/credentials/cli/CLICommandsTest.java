@@ -33,7 +33,7 @@ import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.domains.HostnameSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
-import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
+import com.cloudbees.plugins.credentials.store.ModifiableDomainsCredentialsStore;
 import hudson.cli.CLICommand;
 import hudson.cli.CLICommandInvoker;
 import hudson.model.Items;
@@ -67,15 +67,15 @@ import static org.junit.Assume.assumeThat;
 public class CLICommandsTest {
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    private ModifiableCredentialsStore store = null;
+    private CredentialsStoreInterface store = null;
 
     @Before
     public void clearCredentials() {
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(
                 Collections.singletonMap(Domain.global(), Collections.<Credentials>emptyList()));
         for (CredentialsStoreInterface s : CredentialsProvider.lookupStores(Jenkins.getInstance())) {
-            if (s instanceof ModifiableCredentialsStore && s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
-                store = (ModifiableCredentialsStore) s;
+            if (s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
+                store = s;
                 break;
             }
         }
@@ -175,7 +175,7 @@ public class CLICommandsTest {
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
-        store.addDomain(smokes, smokey);
+        ((ModifiableDomainsCredentialsStore) store).addDomain(smokes, smokey);
         CLICommandInvoker invoker = new CLICommandInvoker(r, new GetCredentialsDomainAsXmlCommand());
         CLICommandInvoker.Result result = invoker.invokeWithArgs("system::system::jenkins", "smokes");
         assertThat(result, succeeded());
@@ -235,7 +235,7 @@ public class CLICommandsTest {
                 not(containsString(" Domain smokes "))
         ));
 
-        store.addDomain(smokes, smokey);
+        ((ModifiableDomainsCredentialsStore) store).addDomain(smokes, smokey);
         invoker = new CLICommandInvoker(r, new ListCredentialsCommand());
         result = invoker.invokeWithArgs("system::system::jenkins");
         assertThat(result, succeeded());
@@ -253,7 +253,7 @@ public class CLICommandsTest {
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
-        store.addDomain(smokes, smokey);
+        ((ModifiableDomainsCredentialsStore) store).addDomain(smokes, smokey);
         CLICommandInvoker invoker = new CLICommandInvoker(r, new UpdateCredentialsDomainByXmlCommand());
         Domain replacement = new Domain("smokes", "smoke test domain updated",
                 Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", "update.example.com")));
@@ -297,7 +297,7 @@ public class CLICommandsTest {
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
-        store.addDomain(smokes, smokey);
+        ((ModifiableDomainsCredentialsStore) store).addDomain(smokes, smokey);
         CLICommandInvoker invoker = new CLICommandInvoker(r, new DeleteCredentialsCommand());
         assertThat(store.getCredentials(smokes), not(is(Collections.<Credentials>emptyList())));
         assertThat(invoker.invokeWithArgs("system::system::jenkins", "smokes", "smokes-id"), succeededSilently());

@@ -224,6 +224,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
                 modified = true;
             }
             if (modified) {
+                LOGGER.info("testing");
                 checkedSave(CredentialsProvider.MANAGE_DOMAINS);
             }
             return modified;
