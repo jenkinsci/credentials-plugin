@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyLegacyCredentials;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import hudson.model.Descriptor;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
@@ -109,7 +110,7 @@ public class CredentialsProviderTest {
     public void testNoCredentialsUntilWeAddSomeViaStore() throws Exception {
         FreeStyleProject project = r.createFreeStyleProject();
         assertTrue(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        ModifiableCredentialsStore store = (ModifiableCredentialsStore) CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
         store.addCredentials(Domain.global(), new DummyCredentials(CredentialsScope.SYSTEM, "foo", "bar"));
         assertFalse(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
         assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class).isEmpty());
@@ -157,10 +158,10 @@ public class CredentialsProviderTest {
         DummyCredentials aliceCred3 = new DummyCredentials(CredentialsScope.USER, "aliceCred3", "pwd");
         
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        
-        CredentialsStore userStore;
+
+        ModifiableCredentialsStore userStore;
         SecurityContext ctx = ACL.impersonate(alice.impersonate());
-        userStore = CredentialsProvider.lookupStores(alice).iterator().next();
+        userStore = (ModifiableCredentialsStore ) CredentialsProvider.lookupStores(alice).iterator().next();
         userStore.addCredentials(Domain.global(), aliceCred1);
         userStore.addCredentials(Domain.global(), aliceCred2);
     
@@ -191,7 +192,7 @@ public class CredentialsProviderTest {
         DummyCredentials globalCred = new DummyCredentials(CredentialsScope.GLOBAL, "globalCred", "pwd");
         DummyCredentials modCredential = new DummyCredentials(CredentialsScope.GLOBAL, "modCredential", "pwd");
 
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        ModifiableCredentialsStore store = (ModifiableCredentialsStore) CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
         
         // Add credentials
         store.addCredentials(Domain.global(), systemCred);

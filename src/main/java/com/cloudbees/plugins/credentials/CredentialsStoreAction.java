@@ -28,6 +28,10 @@ import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
+import com.cloudbees.plugins.credentials.store.ModifiableDomainsCredentialsStore;
+import com.cloudbees.plugins.credentials.store.ModifiableItemsCredentialsStore;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
@@ -221,7 +225,25 @@ public abstract class CredentialsStoreAction
      * @return the {@link CredentialsStore}.
      */
     @NonNull
-    public abstract CredentialsStore getStore();
+    @Deprecated
+    public CredentialsStore getStore() {
+        throw new RuntimeException("getStoreImpl used but is not implemented");
+    }
+
+    /**
+     * todo this should be a abstract but is not due to backwards compatibility
+     * Returns the {@link CredentialsStoreInterface} backing this action.
+     *
+     * @return the {@link CredentialsStoreInterface}.
+     */
+    @NonNull
+    public CredentialsStoreInterface getStoreImpl() {
+        if(getStore() != null) {
+            return getStore();
+        }
+
+        throw new RuntimeException("getStoreImpl used but is not implemented nor is getStore() for fallback");
+    }
 
     /**
      * {@inheritDoc}
@@ -238,7 +260,7 @@ public abstract class CredentialsStoreAction
      */
     @Override
     public String getDisplayName() {
-        CredentialsStore store = getStore();
+        CredentialsStoreInterface store = getStoreImpl();
         if (this == store.getStoreAction()) {
             Class<?> c = store.getClass();
             while (c.getEnclosingClass() != null) {
@@ -297,7 +319,7 @@ public abstract class CredentialsStoreAction
     @CheckForNull
     public ContextMenu getContextMenu(String prefix) {
         ContextMenu menu = new ContextMenu();
-        if (getStore().isDomainsModifiable() && getStore().hasPermission(MANAGE_DOMAINS)) {
+        if (getStoreImpl().isDomainsModifiable() && getStoreImpl().hasPermission(MANAGE_DOMAINS)) {
             menu.add(ContextMenuIconUtils.buildUrl(prefix, "newDomain"),
                     getMenuItemIconUrlByClassSpec("icon-credentials-new-domain icon-md"),
                     Messages.CredentialsStoreAction_AddDomainAction()
@@ -319,7 +341,7 @@ public abstract class CredentialsStoreAction
     @CheckForNull
     public ContextMenu getChildrenContextMenu(String prefix) {
         ContextMenu menu = new ContextMenu();
-        for (Domain d : getStore().getDomains()) {
+        for (Domain d : getStoreImpl().getDomains()) {
             MenuItem item =
                     new MenuItem(d.getUrl(), getMenuItemIconUrlByClassSpec("icon-credentials-domain icon-md"),
                             d.isGlobal()
@@ -354,7 +376,7 @@ public abstract class CredentialsStoreAction
      */
     @Override
     public String getUrlName() {
-        CredentialsStore store = getStore();
+        CredentialsStoreInterface store = getStoreImpl();
         if (this == store.getStoreAction()) {
             Class<?> c = store.getClass();
             while (c.getEnclosingClass() != null) {
@@ -385,7 +407,7 @@ public abstract class CredentialsStoreAction
      * @return {@code true} if the action should be visible.
      */
     public boolean isVisible() {
-        CredentialsStore store = getStore();
+        CredentialsStoreInterface store = getStoreImpl();
         if (!store.getProvider().isEnabled()) {
             return false;
         }
@@ -418,7 +440,7 @@ public abstract class CredentialsStoreAction
      */
     public final String getFullName() {
         String n;
-        ModelObject context = getStore().getContext();
+        ModelObject context = getStoreImpl().getContext();
         if (context instanceof Item) {
             n = ((Item) context).getFullName();
         } else if (context instanceof ItemGroup) {
@@ -442,7 +464,7 @@ public abstract class CredentialsStoreAction
      */
     public final String getFullDisplayName() {
         String n;
-        ModelObject context = getStore().getContext();
+        ModelObject context = getStoreImpl().getContext();
         if (context instanceof Item) {
             n = ((Item) context).getFullDisplayName();
         } else if (context instanceof ItemGroup) {
@@ -469,7 +491,7 @@ public abstract class CredentialsStoreAction
     @NonNull
     public Map<String, DomainWrapper> getDomains() {
         Map<String, DomainWrapper> result = new TreeMap<String, DomainWrapper>();
-        for (Domain d : getStore().getDomains()) {
+        for (Domain d : getStoreImpl().getDomains()) {
             String name;
             if (d.isGlobal()) {
                 name = "_";
@@ -498,7 +520,7 @@ public abstract class CredentialsStoreAction
      * @return {@link CredentialsStore#isDomainsModifiable()}.
      */
     public boolean isDomainsModifiable() {
-        return getStore().isDomainsModifiable();
+        return getStoreImpl().isDomainsModifiable();
     }
 
     /**
@@ -534,10 +556,13 @@ public abstract class CredentialsStoreAction
     @Restricted(NoExternalUse.class)
     @RequirePOST
     public HttpResponse doCreateDomain(StaplerRequest req) throws ServletException, IOException {
-        getStore().checkPermission(MANAGE_DOMAINS);
-        if (!getStore().isDomainsModifiable()) {
+        if (!(getStoreImpl() instanceof ModifiableDomainsCredentialsStore)) {
             return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
         }
+
+        ModifiableDomainsCredentialsStore store = (ModifiableDomainsCredentialsStore) getStoreImpl();
+
+        store.checkPermission(MANAGE_DOMAINS);
         String requestContentType = req.getContentType();
         if (requestContentType == null) {
             throw new Failure("No Content-Type header set");
@@ -548,15 +573,13 @@ public abstract class CredentialsStoreAction
             try {
                 XMLUtils.safeTransform(new StreamSource(req.getReader()), new StreamResult(out));
                 out.close();
-            } catch (TransformerException e) {
-                throw new IOException("Failed to parse credential", e);
-            } catch (SAXException e) {
+            } catch (TransformerException | SAXException e) {
                 throw new IOException("Failed to parse credential", e);
             }
 
             Domain domain = (Domain)
                     Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
-            if (getStore().addDomain(domain)) {
+            if (store.addDomain(domain)) {
                 return HttpResponses.ok();
             } else {
                 return HttpResponses.status(HttpServletResponse.SC_CONFLICT);
@@ -565,7 +588,7 @@ public abstract class CredentialsStoreAction
             JSONObject data = req.getSubmittedForm();
             Domain domain = req.bindJSON(Domain.class, data);
             String domainName = domain.getName();
-            if (domainName != null && getStore().addDomain(domain)) {
+            if (domainName != null && store.addDomain(domain)) {
                 return HttpResponses.redirectTo("./domain/" + Util.rawEncode(domainName));
 
             }
@@ -579,7 +602,7 @@ public abstract class CredentialsStoreAction
     @Nonnull
     @Override
     public ACL getACL() {
-        return getStore().getACL();
+        return getStoreImpl().getACL();
     }
 
     /**
@@ -639,8 +662,8 @@ public abstract class CredentialsStoreAction
          *
          * @return the backing {@link CredentialsStore}.
          */
-        public CredentialsStore getStore() {
-            return getParent().getStore();
+        public CredentialsStoreInterface getStore() {
+            return getParent().getStoreImpl();
         }
 
         /**
@@ -803,7 +826,13 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doCreateCredentials(StaplerRequest req) throws ServletException, IOException {
-            getStore().checkPermission(CREATE);
+            if (!(getStore() instanceof ModifiableCredentialsStore)) {
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+            }
+
+            ModifiableCredentialsStore store = (ModifiableCredentialsStore) getStore();
+
+            store.checkPermission(CREATE);
             String requestContentType = req.getContentType();
             if (requestContentType == null) {
                 throw new Failure("No Content-Type header set");
@@ -822,7 +851,7 @@ public abstract class CredentialsStoreAction
 
                 Credentials credentials = (Credentials)
                         Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
-                if (getStore().addCredentials(domain, credentials)) {
+                if (store.addCredentials(domain, credentials)) {
                     return HttpResponses.ok();
                 } else {
                     return HttpResponses.status(HttpServletResponse.SC_CONFLICT);
@@ -830,7 +859,7 @@ public abstract class CredentialsStoreAction
             } else {
                 JSONObject data = req.getSubmittedForm();
                 Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
-                getStore().addCredentials(domain, credentials);
+                store.addCredentials(domain, credentials);
                 return HttpResponses.redirectTo("../../domain/" + getUrlName());
             }
         }
@@ -847,14 +876,17 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
-            if (!getStore().isDomainsModifiable()) {
-                return HttpResponses.status(400);
+            if (!(getStore() instanceof ModifiableDomainsCredentialsStore)) {
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
             }
-            getStore().checkPermission(MANAGE_DOMAINS);
+
+            ModifiableDomainsCredentialsStore store = (ModifiableDomainsCredentialsStore) getStore();
+
+            store.checkPermission(MANAGE_DOMAINS);
             JSONObject data = req.getSubmittedForm();
             Domain domain = req.bindJSON(Domain.class, data);
             String domainName = domain.getName();
-            if (domainName != null && getStore().updateDomain(this.domain, domain)) {
+            if (domainName != null && store.updateDomain(this.domain, domain)) {
                 return HttpResponses.redirectTo("../../domain/" + Util.rawEncode(domainName));
 
             }
@@ -872,11 +904,14 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
-            if (!getStore().isDomainsModifiable()) {
-                return HttpResponses.status(400);
+            if (!(getStore() instanceof ModifiableDomainsCredentialsStore)) {
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
             }
-            getStore().checkPermission(MANAGE_DOMAINS);
-            if (getStore().removeDomain(domain)) {
+
+            ModifiableDomainsCredentialsStore store = (ModifiableDomainsCredentialsStore) getStore();
+
+            store.checkPermission(MANAGE_DOMAINS);
+            if (store.removeDomain(domain)) {
                 return HttpResponses.redirectTo("../..");
             }
             return HttpResponses.redirectToDot();
@@ -891,16 +926,18 @@ public abstract class CredentialsStoreAction
          */
         @CheckForNull
         public ContextMenu getContextMenu(String prefix) {
-            if (getStore().hasPermission(CREATE) || (getStore().hasPermission(MANAGE_DOMAINS) && !domain.isGlobal())) {
+            CredentialsStoreInterface store = getStore();
+
+            if (store.hasPermission(CREATE) || (store.hasPermission(MANAGE_DOMAINS) && !domain.isGlobal())) {
                 ContextMenu result = new ContextMenu();
-                if (getStore().hasPermission(CREATE)) {
+                if (store instanceof ModifiableCredentialsStore && store.hasPermission(CREATE)) {
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "newCredentials"),
                             getMenuItemIconUrlByClassSpec("icon-credentials-new-credential icon-md"),
                             Messages.CredentialsStoreAction_AddCredentialsAction()
                     ));
                 }
-                if (getStore().hasPermission(MANAGE_DOMAINS) && !domain.isGlobal()) {
+                if (store instanceof ModifiableDomainsCredentialsStore && store.hasPermission(MANAGE_DOMAINS) && !domain.isGlobal()) {
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "configure"),
                             getMenuItemIconUrlByClassSpec("icon-setting icon-md"),
                             Messages.CredentialsStoreAction_ConfigureDomainAction()
@@ -969,7 +1006,14 @@ public abstract class CredentialsStoreAction
         @SuppressWarnings("unused") // stapler web method
         public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp)
                 throws IOException {
-            getStore().checkPermission(CredentialsProvider.MANAGE_DOMAINS);
+            if (!(getStore() instanceof ModifiableDomainsCredentialsStore)) {
+                rsp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            ModifiableDomainsCredentialsStore store = (ModifiableDomainsCredentialsStore) getStore();
+
+            store.checkPermission(CredentialsProvider.MANAGE_DOMAINS);
             if (req.getMethod().equals("GET")) {
                 // read
                 rsp.setContentType("application/xml");
@@ -977,13 +1021,14 @@ public abstract class CredentialsStoreAction
                         new OutputStreamWriter(rsp.getOutputStream(), rsp.getCharacterEncoding()));
                 return;
             }
-            if (req.getMethod().equals("POST") && getStore().isDomainsModifiable()) {
+
+            if (req.getMethod().equals("POST") && store.isDomainsModifiable()) {
                 // submission
                 updateByXml(new StreamSource(req.getReader()));
                 return;
             }
-            if (req.getMethod().equals("DELETE") && getStore().isDomainsModifiable()) {
-                if (getStore().removeDomain(domain)) {
+            if (req.getMethod().equals("DELETE") && store.isDomainsModifiable()) {
+                if (store.removeDomain(domain)) {
                     return;
                 } else {
                     rsp.sendError(HttpServletResponse.SC_CONFLICT);
@@ -1006,20 +1051,25 @@ public abstract class CredentialsStoreAction
          */
         @Restricted(NoExternalUse.class)
         public void updateByXml(Source source) throws IOException {
-            getStore().checkPermission(CredentialsProvider.MANAGE_DOMAINS);
+            if (!(getStore() instanceof ModifiableDomainsCredentialsStore)) {
+                throw new IOException("CredentialsStore does not allow modifying domains");
+            }
+
+            ModifiableDomainsCredentialsStore store = (ModifiableDomainsCredentialsStore) getStore();
+
+
+            store.checkPermission(CredentialsProvider.MANAGE_DOMAINS);
             final StringWriter out = new StringWriter();
             try {
                 XMLUtils.safeTransform(source, new StreamResult(out));
                 out.close();
-            } catch (TransformerException e) {
-                throw new IOException("Failed to parse credential", e);
-            } catch (SAXException e) {
+            } catch (TransformerException | SAXException e) {
                 throw new IOException("Failed to parse credential", e);
             }
 
             Domain replacement = (Domain)
                     Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
-            getStore().updateDomain(domain, replacement);
+            store.updateDomain(domain, replacement);
         }
 
         /**
@@ -1090,7 +1140,7 @@ public abstract class CredentialsStoreAction
                     return FormValidation.error(e.getMessage());
                 }
                 if (action != null) {
-                    for (Domain d : action.getStore().getDomains()) {
+                    for (Domain d : action.getStoreImpl().getDomains()) {
                         if (wrapper != null && wrapper.domain == d) {
                             continue;
                         }
@@ -1271,7 +1321,7 @@ public abstract class CredentialsStoreAction
          *
          * @return the backing {@link CredentialsStore}.
          */
-        public CredentialsStore getStore() {
+        public CredentialsStoreInterface getStore() {
             return domain.getStore();
         }
 
@@ -1303,8 +1353,14 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
-            getStore().checkPermission(DELETE);
-            if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+            if (!(getStore() instanceof ModifiableCredentialsStore) ) {
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+            }
+
+            ModifiableCredentialsStore store = (ModifiableCredentialsStore) getStore();
+
+            store.checkPermission(DELETE);
+            if (store.removeCredentials(domain.getDomain(), credentials)) {
                 return HttpResponses.redirectTo("../..");
             }
             return HttpResponses.redirectToDot();
@@ -1322,27 +1378,28 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoMove(StaplerRequest req, @QueryParameter String destination) throws IOException {
-            if (getStore().getDomains().size() <= 1) {
-                return HttpResponses.status(400);
+            if (getStore().getDomains().size() <= 1 || !(getStore() instanceof ModifiableItemsCredentialsStore)) {
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
             }
+
+            ModifiableItemsCredentialsStore currentStore = (ModifiableItemsCredentialsStore) getStore();
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
             Jenkins jenkins = Jenkins.getActiveInstance();
-            getStore().checkPermission(DELETE);
+            currentStore.checkPermission(DELETE);
             final String splitKey = domain.getParent().getUrlName() + "/";
             int split = destination.lastIndexOf(splitKey);
             if (split == -1) {
-                return HttpResponses.status(400);
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
             }
             String contextName = destination.substring(0, split);
             String domainName = destination.substring(split + splitKey.length());
             ModelObject context = null;
-            if ("".equals(contextName)) {
+            if (contextName.isEmpty()) {
                 context = jenkins;
             } else {
                 while (context == null && split > 0) {
                     context = contextName.startsWith("user:")
-                            ? User
-                            .get(contextName.substring("user:".length(), split - 1), false, Collections.emptyMap())
+                            ? User.get(contextName.substring("user:".length(), split - 1), false, Collections.emptyMap())
                             : jenkins.getItemByFullName(contextName);
                     if (context == null) {
                         split = destination.lastIndexOf(splitKey, split - 1);
@@ -1354,15 +1411,15 @@ public abstract class CredentialsStoreAction
                 }
             }
             if (context == null) {
-                return HttpResponses.status(400);
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
             }
-            CredentialsStore destinationStore = null;
+            ModifiableCredentialsStore destinationStore = null;
             Domain destinationDomain = null;
-            for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
-                if (store.getContext() == context) {
+            for (CredentialsStoreInterface store : CredentialsProvider.lookupStores(context)) {
+                if (store.getContext() == context && store instanceof ModifiableCredentialsStore) {
                     for (Domain d : store.getDomains()) {
                         if (domainName.equals("_") ? d.getName() == null : domainName.equals(d.getName())) {
-                            destinationStore = store;
+                            destinationStore = (ModifiableCredentialsStore) store;
                             destinationDomain = d;
                             break;
                         }
@@ -1373,18 +1430,17 @@ public abstract class CredentialsStoreAction
                 }
             }
             if (destinationDomain == null) {
-                return HttpResponses.status(400);
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
             }
-            if (!destinationStore.isDomainsModifiable()) {
-                return HttpResponses.status(400);
-            }
+
             destinationStore.checkPermission(CREATE);
             if (destinationDomain.equals(domain.getDomain())) {
                 return HttpResponses.redirectToDot();
             }
 
+
             if (destinationStore.addCredentials(destinationDomain, credentials)) {
-                if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+                if (currentStore.removeCredentials(domain.getDomain(), credentials)) {
                     return HttpResponses.redirectTo("../..");
                 } else {
                     destinationStore.removeCredentials(destinationDomain, credentials);
@@ -1405,10 +1461,16 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doUpdateSubmit(StaplerRequest req) throws ServletException, IOException {
-            getStore().checkPermission(UPDATE);
+            if (!(getStore() instanceof ModifiableItemsCredentialsStore) ) {
+                return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
+            }
+
+            ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) getStore();
+
+            store.checkPermission(UPDATE);
             JSONObject data = req.getSubmittedForm();
             Credentials credentials = req.bindJSON(Credentials.class, data);
-            if (!getStore().updateCredentials(this.domain.domain, this.credentials, credentials)) {
+            if (!store.updateCredentials(this.domain.domain, this.credentials, credentials)) {
                 return HttpResponses.redirectTo("concurrentModification");
             }
             return HttpResponses.redirectToDot();
@@ -1424,16 +1486,17 @@ public abstract class CredentialsStoreAction
         @CheckForNull
         @Restricted(NoExternalUse.class)
         public ContextMenu getContextMenu(String prefix) {
-            if (getStore().hasPermission(UPDATE) || getStore().hasPermission(DELETE)) {
+            CredentialsStoreInterface store = getStore();
+            if (store instanceof ModifiableItemsCredentialsStore && (store.hasPermission(UPDATE) || store.hasPermission(DELETE))) {
                 ContextMenu result = new ContextMenu();
-                if (getStore().hasPermission(UPDATE)) {
+                if (store.hasPermission(UPDATE)) {
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "update"),
                             getMenuItemIconUrlByClassSpec("icon-setting icon-md"),
                             Messages.CredentialsStoreAction_UpdateCredentialAction()
                     ));
                 }
-                if (getStore().hasPermission(DELETE)) {
+                if (store.hasPermission(DELETE)) {
                     result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "delete"),
                             getMenuItemIconUrlByClassSpec("icon-edit-delete icon-md"),
                             Messages.CredentialsStoreAction_DeleteCredentialAction()
@@ -1468,11 +1531,17 @@ public abstract class CredentialsStoreAction
         @WebMethod(name = "config.xml")
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp)
-                throws IOException {
+        public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp) throws IOException {
+            if (!(getStore() instanceof ModifiableItemsCredentialsStore) ) {
+                rsp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) getStore();
+
             if (req.getMethod().equals("GET")) {
                 // read
-                getStore().checkPermission(VIEW);
+                store.checkPermission(VIEW);
                 rsp.setContentType("application/xml");
                 SECRETS_REDACTED.toXML(credentials,
                         new OutputStreamWriter(rsp.getOutputStream(), rsp.getCharacterEncoding()));
@@ -1484,8 +1553,8 @@ public abstract class CredentialsStoreAction
                 return;
             }
             if (req.getMethod().equals("DELETE")) {
-                getStore().checkPermission(DELETE);
-                if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+                store.checkPermission(DELETE);
+                if (store.removeCredentials(domain.getDomain(), credentials)) {
                     return;
                 } else {
                     rsp.sendError(HttpServletResponse.SC_CONFLICT);
@@ -1508,20 +1577,24 @@ public abstract class CredentialsStoreAction
          */
         @Restricted(NoExternalUse.class)
         public void updateByXml(Source source) throws IOException {
-            getStore().checkPermission(UPDATE);
+            if (!(getStore() instanceof ModifiableItemsCredentialsStore) ) {
+                throw new IOException("CredentialsStore does not modifying credentials");
+            }
+
+            ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) getStore();
+
+            store.checkPermission(UPDATE);
             final StringWriter out = new StringWriter();
             try {
                 XMLUtils.safeTransform(source, new StreamResult(out));
                 out.close();
-            } catch (TransformerException e) {
-                throw new IOException("Failed to parse credential", e);
-            } catch (SAXException e) {
+            } catch (TransformerException | SAXException e) {
                 throw new IOException("Failed to parse credential", e);
             }
 
             Credentials credentials = (Credentials)
                     Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
-            getStore().updateCredentials(domain.getDomain(), this.credentials, credentials);
+            store.updateCredentials(domain.getDomain(), this.credentials, credentials);
         }
 
         /**

@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -223,6 +224,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
                 modified = true;
             }
             if (modified) {
+                LOGGER.info("testing");
                 checkedSave(CredentialsProvider.MANAGE_DOMAINS);
             }
             return modified;
@@ -407,7 +409,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          * {@inheritDoc}
          */
         @Override
-        public CredentialsStore getStore(@CheckForNull ModelObject object) {
+        public CredentialsStoreInterface getStoreImpl(@CheckForNull ModelObject object) {
             if (object == Jenkins.getInstance()) {
                 return SystemCredentialsProvider.getInstance().getStore();
             }
@@ -616,7 +618,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          * {@inheritDoc}
          */
         @NonNull
-        public CredentialsStore getStore() {
+        public CredentialsStore getStoreImpl() {
             return SystemCredentialsProvider.getInstance().getStore();
         }
 

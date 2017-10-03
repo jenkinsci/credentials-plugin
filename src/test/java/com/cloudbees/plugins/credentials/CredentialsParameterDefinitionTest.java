@@ -27,6 +27,7 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
@@ -55,7 +56,7 @@ public class CredentialsParameterDefinitionTest {
     @Test public void defaultValue() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
 
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        ModifiableCredentialsStore store = (ModifiableCredentialsStore) CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
         store.addCredentials(Domain.global(),
                 new UsernamePasswordCredentialsImpl(
                         CredentialsScope.GLOBAL, "id", "description", "username", "password"));

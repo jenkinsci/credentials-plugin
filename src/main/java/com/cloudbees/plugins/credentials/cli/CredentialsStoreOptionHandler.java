@@ -25,6 +25,7 @@ package com.cloudbees.plugins.credentials.cli;
 
 import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
 import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import org.kohsuke.MetaInfServices;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -39,12 +40,12 @@ import org.kohsuke.args4j.spi.Setter;
  * @since 2.1.1
  */
 @MetaInfServices(OptionHandler.class)
-public class CredentialsStoreOptionHandler extends OptionHandler<CredentialsStore> {
+public class CredentialsStoreOptionHandler extends OptionHandler<CredentialsStoreInterface> {
     /**
      * {@inheritDoc}
      */
     public CredentialsStoreOptionHandler(CmdLineParser parser, OptionDef option,
-                                         Setter<? super CredentialsStore> setter) {
+                                         Setter<? super CredentialsStoreInterface> setter) {
         super(parser, option, setter);
     }
 

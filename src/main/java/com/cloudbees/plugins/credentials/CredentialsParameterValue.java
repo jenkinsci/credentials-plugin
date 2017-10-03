@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
 import hudson.Util;
@@ -175,7 +176,7 @@ public class CredentialsParameterValue extends ParameterValue {
         }
             SecurityContext oldContext = ACL.impersonate(ACL.SYSTEM);
             try {
-                for (CredentialsStore store : CredentialsProvider.lookupStores(run.getParent())) {
+                for (CredentialsStoreInterface store : CredentialsProvider.lookupStores(run.getParent())) {
                     String url = url(store);
                     if (url != null) {
                         return url;
@@ -184,7 +185,7 @@ public class CredentialsParameterValue extends ParameterValue {
             } finally {
                 SecurityContextHolder.setContext(oldContext);
             }
-        for (CredentialsStore store: CredentialsProvider.lookupStores(User.current())) {
+        for (CredentialsStoreInterface store: CredentialsProvider.lookupStores(User.current())) {
             String url = url(store);
             if (url != null) {
                 return url;
@@ -193,7 +194,7 @@ public class CredentialsParameterValue extends ParameterValue {
         return null;
     }
 
-    private String url(CredentialsStore store) {
+    private String url(CredentialsStoreInterface store) {
         for (Domain d: store.getDomains()) {
             for (Credentials c: store.getCredentials(d)) {
                 if (c instanceof IdCredentials && value.equals(((IdCredentials) c).getId())) {

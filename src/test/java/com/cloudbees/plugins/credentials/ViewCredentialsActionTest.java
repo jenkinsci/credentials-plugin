@@ -3,6 +3,7 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
 import com.gargoylesoftware.htmlunit.WebResponse;
 import hudson.ExtensionList;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class ViewCredentialsActionTest {
         SystemCredentialsProvider.ProviderImpl system = ExtensionList.lookup(CredentialsProvider.class).get(
                 SystemCredentialsProvider.ProviderImpl.class);
 
-        CredentialsStore systemStore = system.getStore(j.getInstance());
+        ModifiableCredentialsStore systemStore = (ModifiableCredentialsStore) system.getStoreImpl(j.getInstance());
 
         List<Domain> domainList = new ArrayList<Domain>(systemStore.getDomains());
         domainList.remove(Domain.global());

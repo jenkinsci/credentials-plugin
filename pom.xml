@@ -66,6 +66,7 @@
 
   <properties>
     <antlr4.version>4.5</antlr4.version>
+    <jenkins-test-harness.version>2.27-20170919.194540-1</jenkins-test-harness.version>
   </properties>
 
   <repositories>

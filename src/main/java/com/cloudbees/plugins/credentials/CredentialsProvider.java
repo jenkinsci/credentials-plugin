@@ -27,6 +27,8 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.fingerprints.ItemCredentialsFingerprintFacet;
 import com.cloudbees.plugins.credentials.fingerprints.NodeCredentialsFingerprintFacet;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
+import com.cloudbees.plugins.credentials.store.ModifiableItemsCredentialsStore;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -36,23 +38,7 @@ import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.Util;
 import hudson.init.InitMilestone;
-import hudson.model.Cause;
-import hudson.model.Computer;
-import hudson.model.ComputerSet;
-import hudson.model.Describable;
-import hudson.model.Descriptor;
-import hudson.model.DescriptorVisibilityFilter;
-import hudson.model.Fingerprint;
-import hudson.model.Item;
-import hudson.model.ItemGroup;
-import hudson.model.Job;
-import hudson.model.ModelObject;
-import hudson.model.Node;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
-import hudson.model.Queue;
-import hudson.model.Run;
-import hudson.model.User;
+import hudson.model.*;
 import hudson.model.queue.Tasks;
 import hudson.security.ACL;
 import hudson.security.Permission;
@@ -667,7 +653,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     public static boolean hasStores(final ModelObject context) {
         for (CredentialsProvider p : all()) {
-            if (p.isEnabled(context) && p.getStore(context) != null) {
+            if (p.isEnabled(context) && p.getStoreImpl(context) != null) {
                 return true;
             }
         }
@@ -682,14 +668,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @return a lazy {@link Iterable} of all {@link CredentialsStore} instances.
      * @since 1.8
      */
-    public static Iterable<CredentialsStore> lookupStores(final ModelObject context) {
+    public static Iterable<CredentialsStoreInterface> lookupStores(final ModelObject context) {
         final ExtensionList<CredentialsProvider> providers = all();
-        return new Iterable<CredentialsStore>() {
-            public Iterator<CredentialsStore> iterator() {
-                return new Iterator<CredentialsStore>() {
+        return new Iterable<CredentialsStoreInterface>() {
+            public Iterator<CredentialsStoreInterface> iterator() {
+                return new Iterator<CredentialsStoreInterface>() {
                     private ModelObject current = context;
                     private Iterator<CredentialsProvider> iterator = providers.iterator();
-                    private CredentialsStore next;
+                    private CredentialsStoreInterface next;
 
                     public boolean hasNext() {
                         if (next != null) {
@@ -701,7 +687,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                 if (!p.isEnabled(context)) {
                                     continue;
                                 }
-                                next = p.getStore(current);
+                                next = p.getStoreImpl(current);
                                 if (next != null) {
                                     return true;
                                 }
@@ -751,7 +737,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                         return false;
                     }
 
-                    public CredentialsStore next() {
+                    public CredentialsStoreInterface next() {
                         if (!hasNext()) {
                             throw new NoSuchElementException();
                         }
@@ -1093,6 +1079,26 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 1.8
      */
     @CheckForNull
+    public CredentialsStoreInterface getStoreImpl(@CheckForNull ModelObject object) {
+        if(getStore(object) != null) {
+            return getStore(object);
+        }
+
+        throw new RuntimeException("getStoreImpl used but is not implemented nor is getStore() for fallback");
+    }
+
+    /**
+     * Returns the {@link CredentialsStore} that this {@link CredentialsProvider} maintains specifically for this
+     * {@link ModelObject} or {@code null} if either the object is not a credentials container or this
+     * {@link CredentialsProvider} does not maintain a store specifically bound to this {@link ModelObject}.
+     *
+     * @param object the {@link Item} or {@link ItemGroup} or {@link User} that the store is being requested of.
+     * @return either {@code null} or a scoped {@link CredentialsStore} where
+     * {@link com.cloudbees.plugins.credentials.CredentialsStore#getContext()} {@code == object}.
+     * @since 1.8
+     */
+    @CheckForNull
+    @Deprecated
     public CredentialsStore getStore(@CheckForNull ModelObject object) {
         return null;
     }
@@ -1304,7 +1310,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @return {@code true} if the supplied {@link Descriptor} is applicable in this {@link CredentialsProvider}
      * @since 2.0
      */
-    protected boolean _isApplicable(Descriptor<?> descriptor) {
+    public boolean _isApplicable(Descriptor<?> descriptor) {
         return true;
     }
 
@@ -1656,11 +1662,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                         LOGGER.log(Level.INFO, "Forced save credentials stores: Initialization has completed");
                     }
                     LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Jenkins");
-                    for (CredentialsStore s : lookupStores(jenkins)) {
+                    for (CredentialsStoreInterface s : lookupStores(jenkins)) {
+                        if(!(s instanceof ModifiableItemsCredentialsStore)) {
+                            continue;
+                        }
+
+                        ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) s;
+
                         try {
-                            s.save();
+                            store.save();
                         } catch (IOException e) {
-                            LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + s, e);
+                            LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + store, e);
                         }
                     }
                     LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Items...");
@@ -1671,14 +1683,20 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                             LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Items ({0} processed)",
                                     count);
                         }
-                        for (CredentialsStore s : lookupStores(item)) {
-                            if (item == s.getContext()) {
+                        for (CredentialsStoreInterface s : lookupStores(item)) {
+                            if(!(s instanceof ModifiableItemsCredentialsStore)) {
+                                continue;
+                            }
+
+                            ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) s;
+
+                            if (item == store.getContext()) {
                                 // only save if the store is associated with this context item as otherwise will
                                 // have been saved already / later
                                 try {
-                                    s.save();
+                                    store.save();
                                 } catch (IOException e) {
-                                    LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + s, e);
+                                    LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + store, e);
                                 }
                             }
                         }
@@ -1697,14 +1715,20 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                         // SecurityRealm to revalidate
                         ACL.impersonate(new UsernamePasswordAuthenticationToken(user.getId(), "",
                                 new GrantedAuthority[]{SecurityRealm.AUTHENTICATED_AUTHORITY}));
-                        for (CredentialsStore s : lookupStores(user)) {
-                            if (user == s.getContext()) {
+                        for (CredentialsStoreInterface s : lookupStores(user)) {
+                            if(!(s instanceof ModifiableItemsCredentialsStore)) {
+                                continue;
+                            }
+
+                            ModifiableItemsCredentialsStore store = (ModifiableItemsCredentialsStore) s;
+
+                            if (user == store.getContext()) {
                                 // only save if the store is associated with this context item as otherwise will
                                 // have been saved already / later
                                 try {
-                                    s.save();
+                                    store.save();
                                 } catch (IOException e) {
-                                    LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + s, e);
+                                    LOGGER.log(Level.WARNING, "Forced save credentials stores: Could not save " + store, e);
                                 }
                             }
                         }

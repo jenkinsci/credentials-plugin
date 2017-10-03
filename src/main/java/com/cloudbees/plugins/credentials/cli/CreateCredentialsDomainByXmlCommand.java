@@ -26,6 +26,9 @@ package com.cloudbees.plugins.credentials.cli;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
+import com.cloudbees.plugins.credentials.store.ModifiableCredentialsStore;
+import com.cloudbees.plugins.credentials.store.ModifiableDomainsCredentialsStore;
 import hudson.Extension;
 import hudson.model.Items;
 import org.kohsuke.args4j.Argument;
@@ -38,7 +41,7 @@ import org.kohsuke.args4j.Argument;
 @Extension
 public class CreateCredentialsDomainByXmlCommand extends BaseCredentialsCLICommand {
     @Argument(metaVar = "STORE", usage = "Store Id", required = true)
-    public CredentialsStore store;
+    public CredentialsStoreInterface store;
 
     /**
      * {@inheritDoc}
@@ -56,7 +59,7 @@ public class CreateCredentialsDomainByXmlCommand extends BaseCredentialsCLIComma
         store.checkPermission(CredentialsProvider.MANAGE_DOMAINS);
 
         Domain domain = (Domain) Items.XSTREAM.unmarshal(safeXmlStreamReader(stdin));
-        if (store.addDomain(domain)) {
+        if (((ModifiableDomainsCredentialsStore) store).addDomain(domain)) {
             return 0;
         }
         stderr.println("No change");

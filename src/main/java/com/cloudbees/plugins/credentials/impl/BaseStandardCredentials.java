@@ -37,6 +37,7 @@ import com.cloudbees.plugins.credentials.CredentialsStoreAction;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.store.CredentialsStoreInterface;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionList;
@@ -152,7 +153,7 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
         @CheckForNull
         private static FormValidation checkForDuplicates(String value, ModelObject context, ModelObject object) {
             CredentialsMatcher withId = CredentialsMatchers.withId(value);
-            for (CredentialsStore store : CredentialsProvider.lookupStores(object)) {
+            for (CredentialsStoreInterface store : CredentialsProvider.lookupStores(object)) {
                 if (!store.hasPermission(CredentialsProvider.VIEW)) {
                     continue;
                 }
