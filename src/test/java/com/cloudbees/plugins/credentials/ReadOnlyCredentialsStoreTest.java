@@ -26,7 +26,12 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.Extension;
+import hudson.model.ItemGroup;
 import hudson.model.ModelObject;
+import jenkins.model.Jenkins;
+import org.acegisecurity.Authentication;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -41,23 +46,41 @@ public class ReadOnlyCredentialsStoreTest {
 
     private Domain testDomain = new Domain("some-domain", "some description", null);
 
-    CredentialsStore credentialsStore = new ReadOnlyCredentialsStore() {
+    @Extension
+    public static class MockReadOnlyCredentialsProvider extends CredentialsProvider {
         @NonNull
         @Override
-        public ModelObject getContext() {
-            return j.getInstance();
+        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+                                                              @Nullable Authentication authentication
+        ) {
+            return null;
         }
 
-        @NonNull
-        @Override
-        public List<Credentials> getCredentials(@NonNull Domain domain) {
-            ArrayList<Credentials> credentials = new ArrayList<>();
-            credentials.add(createRandomCredentials("some-id"));
-            return credentials;
-        }
-    };
+        static class ReadOnlyStoreImpl extends ReadOnlyCredentialsStore {
+            @NonNull
+            @Override
+            public ModelObject getContext() {
+                return new ModelObject() {
+                    @Override
+                    public String getDisplayName() {
+                        return "dumb-context";
+                    }
+                };
+            }
 
-    private Credentials createRandomCredentials(String id) {
+            @NonNull
+            @Override
+            public List<Credentials> getCredentials(@NonNull Domain domain) {
+                ArrayList<Credentials> credentials = new ArrayList<>();
+                credentials.add(createRandomCredentials("some-id"));
+                return credentials;
+            }
+        }
+    }
+
+    private MockReadOnlyCredentialsProvider.ReadOnlyStoreImpl credentialsStore = new MockReadOnlyCredentialsProvider.ReadOnlyStoreImpl();
+
+    private static Credentials createRandomCredentials(String id) {
         return new UsernamePasswordCredentialsImpl(
                 CredentialsScope.GLOBAL,
                 id,

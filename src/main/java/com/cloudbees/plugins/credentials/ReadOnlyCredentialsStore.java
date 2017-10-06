@@ -43,17 +43,38 @@ import java.io.IOException;
  * @since 2.1.17
  */
 public abstract class ReadOnlyCredentialsStore extends CredentialsStore {
+    /**
+     * The {@link CredentialsProvider} class.
+     *
+     * @since 2.0
+     */
+    private final Class<? extends CredentialsProvider> providerClass;
+
     public ReadOnlyCredentialsStore(Class<? extends CredentialsProvider> providerClass) {
-        super(providerClass);
+        this.providerClass = providerClass;
     }
 
     public ReadOnlyCredentialsStore() {
-        super();
+        // now let's infer our provider, Jesse will not like this evil
+        Class<?> clazz = getClass().getEnclosingClass();
+        while (clazz != null && !CredentialsProvider.class.isAssignableFrom(clazz)) {
+            clazz = clazz.getEnclosingClass();
+        }
+        if (clazz == null) {
+            throw new AssertionError(getClass() + " doesn't have an outer class. "
+                    + "Use the constructor that takes the Class object explicitly.");
+        }
+        if (!CredentialsProvider.class.isAssignableFrom(clazz)) {
+            throw new AssertionError(getClass() + " doesn't have an outer class implementing CredentialsProvider. "
+                    + "Use the constructor that takes the Class object explicitly");
+        }
+        providerClass = (Class<? extends CredentialsProvider>) clazz;
     }
 
     /**
      * If this method is overridden, ensure permissions {@link CredentialsProvider#CREATE}, {@link CredentialsProvider#UPDATE},
      * {@link CredentialsProvider#DELETE} will return false
+     *
      * @param a          the principle.
      * @param permission the permission.
      * @return boolean
@@ -83,12 +104,15 @@ public abstract class ReadOnlyCredentialsStore extends CredentialsStore {
     }
 
     @Override
-    public final boolean removeCredentials(@NonNull Domain domain, @NonNull Credentials credentials) throws IOException {
+    public final boolean removeCredentials(@NonNull Domain domain, @NonNull Credentials credentials
+    ) throws IOException {
         throw new UnsupportedOperationException("Cannot remove items to read-only credentials store");
     }
 
     @Override
-    public final boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current, @NonNull Credentials replacement) throws IOException {
+    public final boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
+                                           @NonNull Credentials replacement
+    ) throws IOException {
         throw new UnsupportedOperationException("Cannot update items to read-only credentials store");
     }
 }
