@@ -81,6 +81,11 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
     private transient Boolean domainsModifiable;
 
     /**
+     * Cache for {@link #isCredentialsModifiable()}.
+     */
+    private transient Boolean credentialsModifiable;
+
+    /**
      * Constructor for use when the {@link CredentialsStore} is not an inner class of its {@link CredentialsProvider}.
      *
      * @param providerClass the {@link CredentialsProvider} class.
@@ -256,7 +261,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * <li>{@link #updateDomain(Domain, Domain)} </li>
      * </ul>
      *
-     * @return {@code true} iff {@link #addDomain(Domain, List)}
+     * @return {@code true} if {@link #addDomain(Domain, List)}
      * {@link #addDomain(Domain, Credentials...)}, {@link #removeDomain(Domain)}
      * and {@link #updateDomain(Domain, Domain)} are expected to work
      */
@@ -273,6 +278,20 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
 
         }
         return domainsModifiable;
+    }
+
+    /**
+     * Identifies whether this {@link CredentialsStore} supports making changes to the credentials or
+     * whether it only supports a fixed set of credentials (i.e. read-only backend).
+     * <p>
+     * Note: in order for implementations to return {@code false} you simply need to extend {@link ReadOnlyCredentialsStore}:
+     * </p>
+     *
+     * @return {@code true} if {@link #addCredentials(Domain, Credentials)}, {@link #removeCredentials(Domain, Credentials)}
+     * and {@link #updateCredentials(Domain, Credentials, Credentials)} are not from {@link ReadOnlyCredentialsStore}
+     */
+    public final boolean isCredentialsModifiable() {
+        return !(this instanceof ReadOnlyCredentialsStore);
     }
 
     /**
