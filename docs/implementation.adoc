@@ -758,7 +758,7 @@ The main work in an implementation will be the mapping to `CredentialStore` inst
 +
 [TIP]
 ====
-To prevent edit actions on a credentials store, you may extend `ReadOnlyCredentialsStore` instead and implement the `getCredentials(...)` of implementing `CredentialsStore()` and trying to hack your way around.
+To prevent edit actions on a credentials store, you may extend `ReadOnlyCredentialsStore` instead and implement the `getCredentials(...)` of extending `CredentialsStore` class and trying to hack your way around.
 ====
 [NOTE]
 ====
