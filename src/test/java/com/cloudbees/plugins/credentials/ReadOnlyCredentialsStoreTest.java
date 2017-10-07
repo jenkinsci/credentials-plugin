@@ -38,6 +38,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ReadOnlyCredentialsStoreTest {
@@ -53,7 +54,7 @@ public class ReadOnlyCredentialsStoreTest {
         public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
                                                               @Nullable Authentication authentication
         ) {
-            return null;
+            return Collections.emptyList();
         }
 
         static class ReadOnlyStoreImpl extends ReadOnlyCredentialsStore {
