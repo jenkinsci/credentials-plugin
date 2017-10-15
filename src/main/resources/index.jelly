@@ -1,4 +1,4 @@
 <?jelly escape-by-default='true'?>
 <div>
-${%description}
+This plugin allows you to store credentials in Jenkins.
 </div>
