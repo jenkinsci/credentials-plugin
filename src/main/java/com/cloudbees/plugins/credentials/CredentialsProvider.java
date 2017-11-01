@@ -36,6 +36,7 @@ import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.Util;
 import hudson.init.InitMilestone;
+import hudson.model.Action;
 import hudson.model.Cause;
 import hudson.model.Computer;
 import hudson.model.ComputerSet;
@@ -60,29 +61,6 @@ import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
 import hudson.security.SecurityRealm;
 import hudson.util.ListBoxModel;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.Collator;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jenkins.model.FingerprintFacet;
 import jenkins.model.Jenkins;
 import jenkins.util.Timer;
@@ -100,6 +78,33 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
+
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.charset.Charset;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.Collator;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.cloudbees.plugins.credentials.CredentialsStoreAction.FINGERPRINT_XML;
 
@@ -879,17 +884,35 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         id = id.trim();
         boolean isParameter = false;
         boolean isDefaultValue = false;
+        Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
         if (id.startsWith("${") && id.endsWith("}")) {
+            final String paramId = id.substring(2, id.length() - 1);
+
             final ParametersAction action = run.getAction(ParametersAction.class);
             if (action != null) {
-                final ParameterValue parameter = action.getParameter(id.substring(2, id.length() - 1));
+                final ParameterValue parameter = action.getParameter(paramId);
                 if (parameter instanceof CredentialsParameterValue) {
                     isParameter = true;
                     isDefaultValue = ((CredentialsParameterValue) parameter).isDefaultValue();
                     id = ((CredentialsParameterValue) parameter).getValue();
                 }
             }
+
+            Map<String, ParametersAction> inputParams = getInputParameters(run);
+            for (Map.Entry<String, ParametersAction> entry : inputParams.entrySet()) {
+                String approver = entry.getKey();
+                ParametersAction a = entry.getValue();
+                ParameterValue v = a.getParameter(paramId);
+                if (v instanceof CredentialsParameterValue){
+                    isParameter = true;
+                    isDefaultValue = ((CredentialsParameterValue) v).isDefaultValue();
+                    id = ((CredentialsParameterValue) v).getValue();
+                    User u = User.get(approver);
+                    triggeredBy = new AbstractMap.SimpleImmutableEntry<User, Run<?, ?>>(u, run);
+                }
+            }
         }
+
         // non parameters or default parameter values can only come from the job's context
         if (!isParameter || isDefaultValue) {
             // we use the default authentication of the job as those are the only ones that can be configured
@@ -910,7 +933,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
         }
         // this is a parameter and not the default value, we need to determine who triggered the build
-        final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
         final Authentication a = triggeredBy == null ? Jenkins.ANONYMOUS : triggeredBy.getKey().impersonate();
         List<C> candidates = new ArrayList<C>();
         if (triggeredBy != null && run == triggeredBy.getValue()
@@ -969,6 +991,34 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             run = (c != null) ? c.getUpstreamRun() : null;
         }
         return null;
+    }
+
+    /**
+     * Finds ApproverAction actions on the build and looks for userId and ParametersAction that was approved
+     *
+     * @param run the {@link Run} to find the trigger of.
+     * @return the map of user id to ParametersAction found on the run
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<String, ParametersAction> getInputParameters(Run<?, ?> run) {
+        Map<String, ParametersAction> parameters = new HashMap<>();
+        try {
+            Class cl = Class.forName("org.jenkinsci.plugins.workflow.support.steps.input.ApproverAction", true, Jenkins.getActiveInstance().getPluginManager().uberClassLoader);
+            List<Action> actions = run.getActions(cl);
+            for (Action action : actions) {
+                Method getApproverMethod = cl.getMethod("getUserId", null);
+                String approver = (String) getApproverMethod.invoke(action, null);
+
+                Method getParametersMethod = cl.getMethod("getParameters", null);
+                ParametersAction params = (ParametersAction) getParametersMethod.invoke(action, null);
+
+                parameters.put(approver, params);
+            }
+        } catch (NoSuchMethodException | IllegalAccessException | ClassNotFoundException | InvocationTargetException e) {
+            LOGGER.log(Level.FINE, "Could not find input step ApproverAction", e);
+        }
+
+        return parameters;
     }
 
     /**
