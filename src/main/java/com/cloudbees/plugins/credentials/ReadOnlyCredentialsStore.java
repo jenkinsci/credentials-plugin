@@ -93,7 +93,13 @@ public abstract class ReadOnlyCredentialsStore extends CredentialsStore {
                     return false;
                 }
 
-                return Jenkins.getInstance().getACL().hasPermission(a, permission);
+                // todo this shouldn't be necessary, but findbugs is failing.
+                Jenkins jenkins = Jenkins.getInstance();
+                if(jenkins != null) {
+                    return jenkins.getACL().hasPermission(a, permission);
+                }
+
+                return false;
             }
         };
     }
