@@ -261,7 +261,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * <li>{@link #updateDomain(Domain, Domain)} </li>
      * </ul>
      *
-     * @return {@code true} if {@link #addDomain(Domain, List)}
+     * @return {@code true} iff {@link #addDomain(Domain, List)}
      * {@link #addDomain(Domain, Credentials...)}, {@link #removeDomain(Domain)}
      * and {@link #updateDomain(Domain, Domain)} are expected to work
      */
