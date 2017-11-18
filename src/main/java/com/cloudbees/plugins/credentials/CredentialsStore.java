@@ -81,11 +81,6 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
     private transient Boolean domainsModifiable;
 
     /**
-     * Cache for {@link #isCredentialsModifiable()}.
-     */
-    private transient Boolean credentialsModifiable;
-
-    /**
      * Constructor for use when the {@link CredentialsStore} is not an inner class of its {@link CredentialsProvider}.
      *
      * @param providerClass the {@link CredentialsProvider} class.

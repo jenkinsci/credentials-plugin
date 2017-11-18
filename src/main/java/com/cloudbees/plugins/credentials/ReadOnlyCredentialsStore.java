@@ -40,37 +40,9 @@ import java.io.IOException;
  * or a user scoped {@link CredentialsProvider} may provide a {@link ReadOnlyCredentialsStore} for each user).
  *
  * @author Hosh Sadiq
- * @since 2.1.17
+ * @since TODO
  */
 public abstract class ReadOnlyCredentialsStore extends CredentialsStore {
-    /**
-     * The {@link CredentialsProvider} class.
-     *
-     * @since 2.0
-     */
-    private final Class<? extends CredentialsProvider> providerClass;
-
-    public ReadOnlyCredentialsStore(Class<? extends CredentialsProvider> providerClass) {
-        this.providerClass = providerClass;
-    }
-
-    public ReadOnlyCredentialsStore() {
-        // now let's infer our provider, Jesse will not like this evil
-        Class<?> clazz = getClass().getEnclosingClass();
-        while (clazz != null && !CredentialsProvider.class.isAssignableFrom(clazz)) {
-            clazz = clazz.getEnclosingClass();
-        }
-        if (clazz == null) {
-            throw new AssertionError(getClass() + " doesn't have an outer class. "
-                    + "Use the constructor that takes the Class object explicitly.");
-        }
-        if (!CredentialsProvider.class.isAssignableFrom(clazz)) {
-            throw new AssertionError(getClass() + " doesn't have an outer class implementing CredentialsProvider. "
-                    + "Use the constructor that takes the Class object explicitly");
-        }
-        providerClass = (Class<? extends CredentialsProvider>) clazz;
-    }
-
     /**
      * If this method is overridden, ensure permissions {@link CredentialsProvider#CREATE}, {@link CredentialsProvider#UPDATE},
      * {@link CredentialsProvider#DELETE} will return false
