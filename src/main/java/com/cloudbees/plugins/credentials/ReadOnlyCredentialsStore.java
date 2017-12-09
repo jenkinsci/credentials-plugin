@@ -43,6 +43,14 @@ import java.io.IOException;
  * @since TODO
  */
 public abstract class ReadOnlyCredentialsStore extends CredentialsStore {
+    public ReadOnlyCredentialsStore(Class<? extends CredentialsProvider> providerClass) {
+        super(providerClass);
+    }
+
+    public ReadOnlyCredentialsStore() {
+        super();
+    }
+
     /**
      * If this method is overridden, ensure permissions {@link CredentialsProvider#CREATE}, {@link CredentialsProvider#UPDATE},
      * {@link CredentialsProvider#DELETE} will return false
