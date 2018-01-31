@@ -295,6 +295,11 @@ public class CredentialsProviderTest {
         CredentialsProvider.track(addedSlave, globalCred);
         assertEquals(initialFingerprintSize+1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
 
+        // Track the usage of the credential for a second time, this should
+        // not increase the number of fingerprints further
+        CredentialsProvider.track(addedSlave, globalCred);
+        assertEquals(initialFingerprintSize+1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
         // Remove the added slave from Jenkins, and register the
         // slave again to flush any mapped credentials for nodes that no-longer
         // exist - including this one
