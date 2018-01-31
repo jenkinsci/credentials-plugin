@@ -28,12 +28,20 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyLegacyCredentials;
+import com.cloudbees.plugins.credentials.fingerprints.NodeCredentialsFingerprintFacet;
 import hudson.model.Descriptor;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
+import hudson.model.Node;
+import hudson.model.Node.Mode;
+import hudson.slaves.NodeProperty;
 import hudson.model.User;
+import hudson.slaves.DumbSlave;
+import hudson.slaves.JNLPLauncher;
+import hudson.slaves.RetentionStrategy;
 import hudson.security.ACL;
+import jenkins.model.FingerprintFacet;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.context.SecurityContext;
@@ -47,6 +55,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -59,7 +68,7 @@ public class CredentialsProviderTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    
+
     @Test
     public void testNoCredentialsUntilWeAddSome() throws Exception {
         FreeStyleProject project = r.createFreeStyleProject();
@@ -104,7 +113,7 @@ public class CredentialsProviderTest {
                 "manchu");
 
     }
-    
+
     @Test
     public void testNoCredentialsUntilWeAddSomeViaStore() throws Exception {
         FreeStyleProject project = r.createFreeStyleProject();
@@ -155,34 +164,34 @@ public class CredentialsProviderTest {
         DummyCredentials aliceCred1 = new DummyCredentials(CredentialsScope.USER, "aliceCred1", "pwd");
         DummyCredentials aliceCred2 = new DummyCredentials(CredentialsScope.USER, "aliceCred2", "pwd");
         DummyCredentials aliceCred3 = new DummyCredentials(CredentialsScope.USER, "aliceCred3", "pwd");
-        
+
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        
+
         CredentialsStore userStore;
         SecurityContext ctx = ACL.impersonate(alice.impersonate());
         userStore = CredentialsProvider.lookupStores(alice).iterator().next();
         userStore.addCredentials(Domain.global(), aliceCred1);
         userStore.addCredentials(Domain.global(), aliceCred2);
-    
+
         assertEquals(2, CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null, alice.impersonate(), Collections.<DomainRequirement>emptyList()).size());
         assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).isEmpty());
         assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, Jenkins.ANONYMOUS, Collections.<DomainRequirement>emptyList()).isEmpty());
 
         // Remove credentials
         userStore.removeCredentials(Domain.global(), aliceCred2);
-        
+
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null, alice.impersonate(), Collections.<DomainRequirement>emptyList()).size());
         assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).isEmpty());
         assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, Jenkins.ANONYMOUS, Collections.<DomainRequirement>emptyList()).isEmpty());
-   
+
         // Update credentials
         userStore.updateCredentials(Domain.global(), aliceCred1, aliceCred3);
-        
+
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null, alice.impersonate(), Collections.<DomainRequirement>emptyList()).size());
         assertEquals(aliceCred3.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null, alice.impersonate(), Collections.<DomainRequirement>emptyList()).get(0).getUsername());
         SecurityContextHolder.setContext(ctx);
     }
-    
+
     @Test
     public void testUpdateAndDeleteCredentials() throws IOException {
         FreeStyleProject project = r.createFreeStyleProject();
@@ -192,26 +201,26 @@ public class CredentialsProviderTest {
         DummyCredentials modCredential = new DummyCredentials(CredentialsScope.GLOBAL, "modCredential", "pwd");
 
         CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
-        
+
         // Add credentials
         store.addCredentials(Domain.global(), systemCred);
         store.addCredentials(Domain.global(), systemCred2);
         store.addCredentials(Domain.global(), globalCred);
-        
+
         assertEquals(3, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(globalCred.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).get(0).getUsername());
-    
+
         // Update credentials
         store.updateCredentials(Domain.global(), globalCred, modCredential);
-        
+
         assertEquals(3, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(modCredential.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).get(0).getUsername());
-        
+
         // Remove credentials
         store.removeCredentials(Domain.global(), systemCred2);
-        
+
         assertEquals(2, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
     }
@@ -254,6 +263,45 @@ public class CredentialsProviderTest {
         assertEquals(legacyCredentials.getScope(), r.getScope());
         assertEquals(legacyCredentials.getUsername(), r.getUsername());
         assertEquals(legacyCredentials.getPassword(), r.getPassword());
+    }
+
+    @Test
+    public void testNodeCredentialFingerprintsAreRemovedForNonExistantNodes() throws Exception {
+        // Create dummy credentials to use
+        DummyCredentials globalCred = new DummyCredentials(CredentialsScope.GLOBAL, "globalCred", "pwd");
+        // Find how many times this credential has been currently tracked
+        int initialFingerprintSize = CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size();
+
+        // Create a DumbSlave, this time don't add it to the model,
+        // it should not be recorded
+        DumbSlave nonAddedSlave = new DumbSlave("non-added-slave",
+                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                new JNLPLauncher(),
+                RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
+
+
+        CredentialsProvider.track(nonAddedSlave, globalCred);
+        assertEquals(initialFingerprintSize, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
+
+        // Create a DumbSlave to use, and add it to the Jenkins model, this
+        // one should be recorded
+        DumbSlave addedSlave = new DumbSlave("added-slave",
+                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                new JNLPLauncher(),
+                RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
+
+        Jenkins.getInstance().addNode(addedSlave);
+        CredentialsProvider.track(addedSlave, globalCred);
+        assertEquals(initialFingerprintSize+1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
+        // Remove the added slave from Jenkins, and register the
+        // slave again to flush any mapped credentials for nodes that no-longer
+        // exist - including this one
+        Jenkins.getInstance().removeNode(addedSlave);
+        CredentialsProvider.track(addedSlave, globalCred);
+        assertEquals(initialFingerprintSize, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
     }
 
 }

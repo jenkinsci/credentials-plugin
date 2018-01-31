@@ -1515,20 +1515,38 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 try {
                     Fingerprint fingerprint = getOrCreateFingerprintOf(c);
                     BulkChange change = new BulkChange(fingerprint);
+
+                    // Create a list of all current node names, the
+                    // credential will only be fingerprinted if it is one of these
+                    Set<String> jenkinsNodeNames = new HashSet<String>();
+                    for (Node n: Jenkins.getInstance().getNodes()) {
+                        jenkinsNodeNames.add(n.getNodeName());
+                    }
+
                     try {
                         Collection<FingerprintFacet> facets = fingerprint.getFacets();
                         // purge any old facets
+                        // Current
                         long start = timestamp;
                         for (Iterator<FingerprintFacet> iterator = facets.iterator(); iterator.hasNext(); ) {
                             FingerprintFacet f = iterator.next();
-                            if (f instanceof NodeCredentialsFingerprintFacet && StringUtils
-                                    .equals(nodeName, ((NodeCredentialsFingerprintFacet) f).getNodeName())) {
-                                start = Math.min(start, f.getTimestamp());
-                                iterator.remove();
+                            // For all the node-tracking credentials, check to see if we can remove
+                            // older instances of these credential fingerprints, or from nodes which no longer exist
+                            if (f instanceof NodeCredentialsFingerprintFacet) {
+                                // Remove older instance
+                                if (StringUtils.equals(nodeName, ((NodeCredentialsFingerprintFacet) f).getNodeName())) {
+                                    start = Math.min(start, f.getTimestamp());
+                                    iterator.remove();
+                                // Remove unneeded instances
+                                } else if (!jenkinsNodeNames.contains(((NodeCredentialsFingerprintFacet) f).getNodeName())) {
+                                    iterator.remove();
+                                }
                             }
                         }
-                        // add in the new one
-                        facets.add(new NodeCredentialsFingerprintFacet(node, fingerprint, start, timestamp));
+                        // add in the new one if it is a valid current node
+                        if (jenkinsNodeNames.contains(node.getNodeName())) {
+                            facets.add(new NodeCredentialsFingerprintFacet(node, fingerprint, start, timestamp));
+                        }
                     } finally {
                         change.commit();
                     }
@@ -1754,4 +1772,3 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         }
     }
 }
-
