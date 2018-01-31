@@ -1526,14 +1526,13 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     try {
                         Collection<FingerprintFacet> facets = fingerprint.getFacets();
                         // purge any old facets
-                        // Current
                         long start = timestamp;
                         for (Iterator<FingerprintFacet> iterator = facets.iterator(); iterator.hasNext(); ) {
                             FingerprintFacet f = iterator.next();
                             // For all the node-tracking credentials, check to see if we can remove
                             // older instances of these credential fingerprints, or from nodes which no longer exist
                             if (f instanceof NodeCredentialsFingerprintFacet) {
-                                // Remove older instance
+                                // Remove older instances
                                 if (StringUtils.equals(nodeName, ((NodeCredentialsFingerprintFacet) f).getNodeName())) {
                                     start = Math.min(start, f.getTimestamp());
                                     iterator.remove();
