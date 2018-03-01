@@ -68,7 +68,7 @@ public class CredentialsProviderTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-
+    
     @Test
     public void testNoCredentialsUntilWeAddSome() throws Exception {
         FreeStyleProject project = r.createFreeStyleProject();
@@ -113,7 +113,7 @@ public class CredentialsProviderTest {
                 "manchu");
 
     }
-
+    
     @Test
     public void testNoCredentialsUntilWeAddSomeViaStore() throws Exception {
         FreeStyleProject project = r.createFreeStyleProject();
@@ -164,34 +164,34 @@ public class CredentialsProviderTest {
         DummyCredentials aliceCred1 = new DummyCredentials(CredentialsScope.USER, "aliceCred1", "pwd");
         DummyCredentials aliceCred2 = new DummyCredentials(CredentialsScope.USER, "aliceCred2", "pwd");
         DummyCredentials aliceCred3 = new DummyCredentials(CredentialsScope.USER, "aliceCred3", "pwd");
-
+        
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-
+        
         CredentialsStore userStore;
         SecurityContext ctx = ACL.impersonate(alice.impersonate());
         userStore = CredentialsProvider.lookupStores(alice).iterator().next();
         userStore.addCredentials(Domain.global(), aliceCred1);
         userStore.addCredentials(Domain.global(), aliceCred2);
-
+    
         assertEquals(2, CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null, alice.impersonate(), Collections.<DomainRequirement>emptyList()).size());
         assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).isEmpty());
         assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, Jenkins.ANONYMOUS, Collections.<DomainRequirement>emptyList()).isEmpty());
 
         // Remove credentials
         userStore.removeCredentials(Domain.global(), aliceCred2);
-
+        
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null, alice.impersonate(), Collections.<DomainRequirement>emptyList()).size());
         assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).isEmpty());
         assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, Jenkins.ANONYMOUS, Collections.<DomainRequirement>emptyList()).isEmpty());
-
+   
         // Update credentials
         userStore.updateCredentials(Domain.global(), aliceCred1, aliceCred3);
-
+        
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null, alice.impersonate(), Collections.<DomainRequirement>emptyList()).size());
         assertEquals(aliceCred3.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null, alice.impersonate(), Collections.<DomainRequirement>emptyList()).get(0).getUsername());
         SecurityContextHolder.setContext(ctx);
     }
-
+    
     @Test
     public void testUpdateAndDeleteCredentials() throws IOException {
         FreeStyleProject project = r.createFreeStyleProject();
@@ -201,26 +201,26 @@ public class CredentialsProviderTest {
         DummyCredentials modCredential = new DummyCredentials(CredentialsScope.GLOBAL, "modCredential", "pwd");
 
         CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
-
+        
         // Add credentials
         store.addCredentials(Domain.global(), systemCred);
         store.addCredentials(Domain.global(), systemCred2);
         store.addCredentials(Domain.global(), globalCred);
-
+        
         assertEquals(3, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(globalCred.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).get(0).getUsername());
-
+    
         // Update credentials
         store.updateCredentials(Domain.global(), globalCred, modCredential);
-
+        
         assertEquals(3, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(modCredential.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).get(0).getUsername());
-
+        
         // Remove credentials
         store.removeCredentials(Domain.global(), systemCred2);
-
+        
         assertEquals(2, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, project, ACL.SYSTEM, Collections.<DomainRequirement>emptyList()).size());
     }
