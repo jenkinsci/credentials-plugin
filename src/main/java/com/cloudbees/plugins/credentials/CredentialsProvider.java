@@ -1518,8 +1518,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
                     // Create a list of all current node names, the
                     // credential will only be fingerprinted if it is one of these
-                    Set<String> jenkinsNodeNames = new HashSet<String>();
-                    for (Node n: Jenkins.getInstance().getNodes()) {
+                    Set<String> jenkinsNodeNames = new HashSet<>();
+                    // TODO: Switch to Jenkins.get() once 2.98+ is the baseline
+                    for (Node n: Jenkins.getActiveInstance().getNodes()) {
                         jenkinsNodeNames.add(n.getNodeName());
                     }
 
