@@ -28,20 +28,17 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyLegacyCredentials;
-import com.cloudbees.plugins.credentials.fingerprints.NodeCredentialsFingerprintFacet;
 import hudson.model.Descriptor;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Node;
-import hudson.model.Node.Mode;
 import hudson.slaves.NodeProperty;
 import hudson.model.User;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.RetentionStrategy;
 import hudson.security.ACL;
-import jenkins.model.FingerprintFacet;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.context.SecurityContext;
@@ -55,7 +52,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -300,11 +296,10 @@ public class CredentialsProviderTest {
         CredentialsProvider.track(addedSlave, globalCred);
         assertEquals(initialFingerprintSize+1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
 
-        // Remove the added slave from Jenkins, and register the
-        // slave again to flush any mapped credentials for nodes that no-longer
-        // exist - including this one
+        // Remove the added slave from Jenkins, and track the non-added slave
+        // to flush any mapped credentials for nodes that no longer exist.
         Jenkins.getInstance().removeNode(addedSlave);
-        CredentialsProvider.track(addedSlave, globalCred);
+        CredentialsProvider.track(nonAddedSlave, globalCred);
         assertEquals(initialFingerprintSize, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
 
     }
