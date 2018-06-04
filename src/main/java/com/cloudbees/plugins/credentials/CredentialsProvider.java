@@ -1510,20 +1510,20 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static <C extends Credentials> List<C> trackAll(@NonNull Node node, @NonNull List<C> credentials) {
         long timestamp = System.currentTimeMillis();
         String nodeName = node.getNodeName();
+        // Create a list of all current node names. The credential will only be
+        // fingerprinted if it is one of these.
+        // TODO (JENKINS-51694): This breaks tracking for cloud agents. We should
+        // track those agents against the cloud instead of the node itself.
+        Set<String> jenkinsNodeNames = new HashSet<>();
+        // TODO: Switch to Jenkins.get() once 2.98+ is the baseline
+        for (Node n: Jenkins.getActiveInstance().getNodes()) {
+            jenkinsNodeNames.add(n.getNodeName());
+        }
         for (Credentials c : credentials) {
             if (c != null) {
                 try {
                     Fingerprint fingerprint = getOrCreateFingerprintOf(c);
                     BulkChange change = new BulkChange(fingerprint);
-
-                    // Create a list of all current node names, the
-                    // credential will only be fingerprinted if it is one of these
-                    Set<String> jenkinsNodeNames = new HashSet<>();
-                    // TODO: Switch to Jenkins.get() once 2.98+ is the baseline
-                    for (Node n: Jenkins.getActiveInstance().getNodes()) {
-                        jenkinsNodeNames.add(n.getNodeName());
-                    }
-
                     try {
                         Collection<FingerprintFacet> facets = fingerprint.getFacets();
                         // purge any old facets
