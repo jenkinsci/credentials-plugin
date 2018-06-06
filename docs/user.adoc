@@ -857,7 +857,7 @@ The expected response is:
 HTTP/200::
 Success.
 
-.Example of removing the `testing` credentilas domain from the `/example-folder` folder
+.Example of removing the `testing` credentials domain from the `/example-folder` folder
 [source,bash]
 ----
 $ curl -X DELETE https://jenkins.example.com/job/example-folder/credentials/store/folder/\
@@ -921,7 +921,7 @@ The expected responses are:
 HTTP/200::
 Success, the credentials has been created.
 HTTP/409::
-Failure, a credentiasl with that id already exists.
+Failure, a credentials with that id already exists.
 HTTP/50x::
 Could not parse the supplied domain XML body.
 
@@ -1005,7 +1005,7 @@ The expected response is:
 HTTP/200::
 Success.
 
-.Example of removing the `deploy-key` credentials instance from the `testing` credentilas domain in the `/example-folder` folder
+.Example of removing the `deploy-key` credentials instance from the `testing` credentials domain in the `/example-folder` folder
 [source,bash]
 ----
 $ curl -X DELETE https://jenkins.example.com/job/example-folder/credentials/store/folder/\
