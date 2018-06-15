@@ -33,6 +33,8 @@ import hudson.BulkChange;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.XmlFile;
+import hudson.init.InitMilestone;
+import hudson.init.Initializer;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
@@ -115,7 +117,15 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
         credentials = null;
     }
-
+    
+    /**
+     * Ensure the credentials are loaded using SYSTEM during the startup and migration occurs as expected
+     */
+    @Initializer(after = InitMilestone.JOB_LOADED)
+    public static void forceLoadDuringStartup() {
+        getInstance();
+    }
+    
     /**
      * Gets the configuration file that this {@link CredentialsProvider} uses to store its credentials.
      *
