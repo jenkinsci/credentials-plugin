@@ -37,11 +37,14 @@ import hudson.cli.CLICommand;
 import hudson.cli.CLICommandInvoker;
 import hudson.model.Items;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matcher;
+import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -305,6 +308,47 @@ public class CLICommandsTest {
         assertThat(invoker.invokeWithArgs("system::system::jenkins", "smokes"), succeededSilently());
         assertThat(store.getDomainByName("smokes"), nullValue());
     }
+
+    @Test
+    public void listCredentialsAsXML() throws IOException {
+        Domain smokes = new Domain("smokes", "smoke test domain",
+                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", null)));
+        UsernamePasswordCredentialsImpl smokey =
+                new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
+                        "smoke text");
+        UsernamePasswordCredentialsImpl global =
+                new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "global-cred-id", "Globla Credentials", "john",
+                        "john");
+        store.addDomain(smokes, smokey);
+        store.addCredentials(Domain.global(), global);
+
+        CLICommandInvoker invoker = new CLICommandInvoker(r, new ListCredentialsAsXmlCommand());
+        CLICommandInvoker.Result result = invoker.invokeWithArgs("system::system::jenkins");
+        assertThat(result, succeeded());
+        assertThat(result.stdout(), allOf(
+                containsString("<id>smokes-id</id>"),
+                containsString("<id>global-cred-id</id>"),
+                containsString("<name>smokes</name>")
+        ));
+    }
+
+    @Test
+    public void loadCredentialsAsXML() throws IOException {
+        InputStream input = this.getClass().getResourceAsStream("credentials-input.xml");
+        CLICommandInvoker invoker = new CLICommandInvoker(r, new ListCredentialsAsXmlCommand());
+
+        assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
+                (Matcher) not(hasItem(hasProperty("name", is("smokes")))));
+        CLICommandInvoker.Result result = invoker.withStdin(input).invokeWithArgs("system::system::jenkins", "--import");
+        assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
+                (Matcher) hasItem(hasProperty("name", is("smokes"))));
+        assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()),
+                (Matcher) hasItem(hasProperty("id", is("global-cred-id"))));
+        assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(new Domain("smokes", null, null)),
+                (Matcher) hasItem(hasProperty("id", is("smokes-id"))));
+
+    }
+
 
     private static ByteArrayInputStream asStream(String text) {
         return new ByteArrayInputStream(text.getBytes(Charset.forName("UTF-8")));
