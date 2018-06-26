@@ -887,32 +887,33 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     isParameter = true;
                     isDefaultValue = ((CredentialsParameterValue) parameter).isDefaultValue();
                     id = ((CredentialsParameterValue) parameter).getValue();
+                    if (id == null)
+                        return null;
                 }
             }
         }
+        List<C> jobContextCandidates = new ArrayList<>();
         // non parameters or default parameter values can only come from the job's context
         if (!isParameter || isDefaultValue) {
             // we use the default authentication of the job as those are the only ones that can be configured
             // if a different strategy is in play it doesn't make sense to consider the run-time authentication
             // as you would have no way to configure it
             Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf(run.getParent());
-            List<C> candidates = new ArrayList<C>();
             // we want the credentials available to the user the build is running as
-            candidates.addAll(
+            jobContextCandidates.addAll(
                     CredentialsProvider.lookupCredentials(type, run.getParent(), runAuth, domainRequirements)
             );
             // if that user can use the item's credentials, add those in too
             if (runAuth != ACL.SYSTEM && run.getACL().hasPermission(runAuth, CredentialsProvider.USE_ITEM)) {
-                candidates.addAll(
+                jobContextCandidates.addAll(
                         CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM, domainRequirements)
                 );
             }
-            return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
         }
+        List<C> candidates = new ArrayList<>();
         // this is a parameter and not the default value, we need to determine who triggered the build
         final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
         final Authentication a = triggeredBy == null ? Jenkins.ANONYMOUS : triggeredBy.getKey().impersonate();
-        List<C> candidates = new ArrayList<C>();
         if (triggeredBy != null && run == triggeredBy.getValue()
                 && run.getACL().hasPermission(a, CredentialsProvider.USE_OWN)) {
             // the user triggered this job directly and they are allowed to supply their own credentials, so
@@ -937,6 +938,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 );
             }
         }
+        // we need to add job's context candidates later to let user's credentials with the same id win
+        candidates.addAll(jobContextCandidates);
         C result = CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
         // if the run has not completed yet then we can safely assume that the credential is being used for this run
         // so we will track it's usage. We use isLogUpdated() as it could be used during post production
