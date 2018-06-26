@@ -21,7 +21,7 @@ import java.util.List;
 public class ListCredentialsAsXmlCommand extends BaseCredentialsCLICommand {
 
     @Argument(metaVar = "STORE", usage = "Store ID. For example the Jenkins credentials global store would " +
-            "be identified by \"system::system::jenkins\"",
+            "be identified by \"system::system::jenkins\", and folder scoped credentials as \"folder::item::/full/name/of/folder\"",
             required = true)
     private CredentialsStore store;
 
