@@ -319,8 +319,12 @@ public class CLICommandsTest {
         UsernamePasswordCredentialsImpl global =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "global-cred-id", "Globla Credentials", "john",
                         "john");
+        UsernamePasswordCredentialsImpl globalDomainSystemScope =
+                new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "global-cred-id-system", "Globla Credentials", "john",
+                        "john");
         store.addDomain(smokes, smokey);
         store.addCredentials(Domain.global(), global);
+        store.addCredentials(Domain.global(), globalDomainSystemScope);
 
         CLICommandInvoker invoker = new CLICommandInvoker(r, new ListCredentialsAsXmlCommand());
         CLICommandInvoker.Result result = invoker.invokeWithArgs("system::system::jenkins");
@@ -328,6 +332,7 @@ public class CLICommandsTest {
         assertThat(result.stdout(), allOf(
                 containsString("<id>smokes-id</id>"),
                 containsString("<id>global-cred-id</id>"),
+                containsString("<id>global-cred-id-system</id>"),
                 containsString("<name>smokes</name>")
         ));
     }
