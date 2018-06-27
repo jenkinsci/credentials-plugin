@@ -1105,7 +1105,7 @@ The CLI Command for listing credentials and domains in a credentials store is `l
 
 image::images/list-credentials.png[scaledwidth="90%"]
 
-.Example of listing the credentials and domains as XML in the `/example-folder` folder.
+.Example of listing the credentials and domains in the `/example-folder` folder.
 [source,bash]
 ----
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
@@ -1146,7 +1146,7 @@ c5e80c99-d7c3-4acb-a5e1-73592ceebbbc fred/******
 
 The CLI Command for listing and create credentials and domains in XML format in a credentials store is `list-credentials-as-xml`.
 
-.Example of listing the credentials and domains in the `/example-folder` folder.
+.Example of listing the credentials and domains as XML in the `/example-folder` folder.
 [source,bash]
 ----
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
