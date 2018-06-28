@@ -338,13 +338,13 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void loadCredentialsAsXML() throws IOException {
+    public void importCredentialsAsXML() throws IOException {
         InputStream input = this.getClass().getResourceAsStream("credentials-input.xml");
-        CLICommandInvoker invoker = new CLICommandInvoker(r, new ListCredentialsAsXmlCommand());
+        CLICommandInvoker invoker = new CLICommandInvoker(r, new ImportCredentialsAsXmlCommand());
 
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
                 (Matcher) not(hasItem(hasProperty("name", is("smokes")))));
-        CLICommandInvoker.Result result = invoker.withStdin(input).invokeWithArgs("system::system::jenkins", "--import");
+        invoker.withStdin(input).invokeWithArgs("system::system::jenkins");
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
                 (Matcher) hasItem(hasProperty("name", is("smokes"))));
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()),
