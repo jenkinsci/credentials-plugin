@@ -1142,9 +1142,9 @@ c5e80c99-d7c3-4acb-a5e1-73592ceebbbc fred/******
 ====================================================
 ----
 
-===== Listing/Creating domains and credentials as XML
+===== Listing domains and credentials as XML
 
-The CLI Command for listing and create credentials and domains in XML format in a credentials store is `list-credentials-as-xml`.
+The CLI Command for listing credentials and domains in XML format in a credentials store is `list-credentials-as-xml`.
 
 .Example of listing the credentials and domains as XML in the `/example-folder` folder.
 [source,bash]
@@ -1212,14 +1212,19 @@ list-credentials-as-xml folder::item::/example-folder
 </list>
 ----
 
-The output of the command can be used as input (for --import) as is, the only needed change is to set the actual
+The output of the command can be used as input for `import-credentials-as-xml` as is, the only needed change is to set the actual
 Secrets which are redacted in the output.
+
+===== Importing domains and credentials as XML
+
+The CLI Command for importing credentials and domains in XML format in a credentials store is `import-credentials-as-xml`.
+The command read the XML from standard input.
 
 .Example of importing the credentials and domains to the `/example-folder` folder.
 [source,bash]
 ----
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
-list-credentials-as-xml folder::item::/example-folder --import < credentials.xml
+import-credentials-as-xml folder::item::/example-folder < credentials.xml
 ----
 
 If a domain already exists it is not modified, credentials are added to it.
