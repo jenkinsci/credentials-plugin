@@ -322,12 +322,17 @@ public class CLICommandsTest {
         UsernamePasswordCredentialsImpl globalDomainSystemScope =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "global-cred-id-system", "Globla Credentials", "john",
                         "john");
+        CLICommandInvoker invoker = new CLICommandInvoker(r, new ListCredentialsAsXmlCommand());
+        CLICommandInvoker.Result result = invoker.invokeWithArgs("system::system::jenkins");
+        assertThat(result, succeeded());
+        assertThat(result.stdout(), not(containsString("<id>smokes-id</id>")));
+
         store.addDomain(smokes, smokey);
         store.addCredentials(Domain.global(), global);
         store.addCredentials(Domain.global(), globalDomainSystemScope);
 
-        CLICommandInvoker invoker = new CLICommandInvoker(r, new ListCredentialsAsXmlCommand());
-        CLICommandInvoker.Result result = invoker.invokeWithArgs("system::system::jenkins");
+        invoker = new CLICommandInvoker(r, new ListCredentialsAsXmlCommand());
+        result = invoker.invokeWithArgs("system::system::jenkins");
         assertThat(result, succeeded());
         assertThat(result.stdout(), allOf(
                 containsString("<id>smokes-id</id>"),
@@ -344,6 +349,7 @@ public class CLICommandsTest {
 
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
                 (Matcher) not(hasItem(hasProperty("name", is("smokes")))));
+
         invoker.withStdin(input).invokeWithArgs("system::system::jenkins");
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
                 (Matcher) hasItem(hasProperty("name", is("smokes"))));
