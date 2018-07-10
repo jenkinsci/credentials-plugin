@@ -1142,6 +1142,95 @@ c5e80c99-d7c3-4acb-a5e1-73592ceebbbc fred/******
 ====================================================
 ----
 
+===== Listing domains and credentials as XML
+
+The CLI Command for listing credentials and domains in XML format in a credentials store is `list-credentials-as-xml`.
+
+.Example of listing the credentials and domains as XML in the `/example-folder` folder.
+[source,bash]
+----
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
+list-credentials-as-xml folder::item::/example-folder
+<list>
+  <com.cloudbees.plugins.credentials.domains.DomainCredentials plugin="credentials@2.1.17-SNAPSHOT">
+    <domain>
+      <specifications/>
+    </domain>
+    <credentials>
+      <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+        <id>7d9702ee-9ce3-4ecd-82b5-9ebe125459fb</id>
+        <description></description>
+        <username>bob</username>
+        <password>
+          <secret-redacted/>
+        </password>
+      </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+    </credentials>
+  </com.cloudbees.plugins.credentials.domains.DomainCredentials>
+  <com.cloudbees.plugins.credentials.domains.DomainCredentials plugin="credentials@2.1.17-SNAPSHOT">
+    <domain>
+      <name>production</name>
+      <description>Credentials used for the production roadrunner cooking infrastructure</description>
+      <specifications/>
+    </domain>
+    <credentials>
+      <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+        <id>ae68086e-ccb1-43cc-8820-4f111bceda7c</id>
+        <description></description>
+        <username>wilma</username>
+        <password>
+          <secret-redacted/>
+        </password>
+      </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+    </credentials>
+  </com.cloudbees.plugins.credentials.domains.DomainCredentials>
+  <com.cloudbees.plugins.credentials.domains.DomainCredentials plugin="credentials@2.1.17-SNAPSHOT">
+    <domain>
+      <name>testing</name>
+      <description>Credentials for use during testing of any new recipes</description>
+      <specifications/>
+    </domain>
+    <credentials>
+      <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+        <id>deploy-key</id>
+        <description></description>
+        <username>wecoyote</username>
+        <password>
+          <secret-redacted/>
+        </password>
+      </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+      <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+        <id>c5e80c99-d7c3-4acb-a5e1-73592ceebbbc</id>
+        <description></description>
+        <username>fred</username>
+        <password>
+          <secret-redacted/>
+        </password>
+      </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+    </credentials>
+  </com.cloudbees.plugins.credentials.domains.DomainCredentials>
+</list>
+----
+
+The output of the command can be used as input for `import-credentials-as-xml` as is, the only needed change is to set the actual
+Secrets which are redacted in the output.
+
+===== Importing domains and credentials as XML
+
+The CLI Command for importing credentials and domains in XML format in a credentials store is `import-credentials-as-xml`.
+The command read the XML from standard input.
+
+.Example of importing the credentials and domains to the `/example-folder` folder.
+[source,bash]
+----
+$ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
+import-credentials-as-xml folder::item::/example-folder < credentials.xml
+----
+
+If a domain already exists it is not modified, credentials are added to it.
+If a credential already exists nothing is done on it.
+If a domain or a credential exists in the instance but not in the input XML, they are kept in the instance.
+
 ===== Creating a domain
 
 The CLI command for creating a credentials domain is `create-credentials-domain-by-xml`.
