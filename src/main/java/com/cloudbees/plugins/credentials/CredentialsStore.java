@@ -276,6 +276,20 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
     }
 
     /**
+     * Identifies whether this {@link CredentialsStore} supports making changes to the credentials or
+     * whether it only supports a fixed set of credentials (i.e. read-only backend).
+     * <p>
+     * Note: in order for implementations to return {@code false} you simply need to extend {@link ReadOnlyCredentialsStore}:
+     * </p>
+     *
+     * @return {@code true} if {@link #addCredentials(Domain, Credentials)}, {@link #removeCredentials(Domain, Credentials)}
+     * and {@link #updateCredentials(Domain, Credentials, Credentials)} are not from {@link ReadOnlyCredentialsStore}
+     */
+    public final boolean isCredentialsModifiable() {
+        return !(this instanceof ReadOnlyCredentialsStore);
+    }
+
+    /**
      * Verifies if the specified method has been overridden by a subclass.
      *
      * @param name the name of the method.
