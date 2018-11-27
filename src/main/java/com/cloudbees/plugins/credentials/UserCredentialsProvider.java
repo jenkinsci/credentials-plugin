@@ -448,11 +448,11 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * @param p the permission to checl.
          */
         private void checkPermission(Permission p) {
-            if (user.equals(User.current())) {
+           // if (user.equals(User.current())) {
                 user.checkPermission(p);
-            } else {
-                throw new AccessDeniedException2(Jenkins.getAuthentication(), p);
-            }
+          //  } else {
+            //    throw new AccessDeniedException2(Jenkins.getAuthentication(), p);
+            //}
         }
 
         /**
