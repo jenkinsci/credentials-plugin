@@ -57,6 +57,8 @@ import jenkins.model.TransientActionFactory;
 import org.acegisecurity.AccessDeniedException;
 import org.acegisecurity.Authentication;
 import org.jenkins.ui.icon.IconSpec;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
@@ -72,6 +74,12 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      * Expose {@link CredentialsProvider#VIEW} for Jelly.
      */
     public static final Permission VIEW = CredentialsProvider.VIEW;
+
+    /**
+     * Expose {@link CredentialsProvider#MANAGE_DOMAINS} for Jelly.
+     */
+    @Restricted(DoNotUse.class)
+    public static final Permission MANAGE_DOMAINS = CredentialsProvider.MANAGE_DOMAINS;
 
     /**
      * The context in which this {@link ViewCredentialsAction} was created.
