@@ -487,11 +487,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         private static final long serialVersionUID = 1L;
 
         /**
-         * Our logger.
-         */
-        private static final Logger LOGGER = Logger.getLogger(FileOnMasterKeyStoreSource.class.getName());
-
-        /**
          * The old uploaded keystore.
          */
         @CheckForNull
