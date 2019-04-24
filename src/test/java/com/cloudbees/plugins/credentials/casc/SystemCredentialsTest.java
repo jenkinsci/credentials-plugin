@@ -29,17 +29,23 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.HostnameRequirement;
 import hudson.security.ACL;
-import io.jenkins.plugins.casc.ConfigurationAsCode;
-import io.jenkins.plugins.casc.yaml.YamlSource;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.JenkinsRule;
-
+import io.jenkins.plugins.casc.ConfigurationContext;
+import io.jenkins.plugins.casc.ConfiguratorRegistry;
+import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
+import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
+import io.jenkins.plugins.casc.model.Mapping;
+import io.jenkins.plugins.casc.model.Sequence;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import jenkins.model.Jenkins;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -47,18 +53,46 @@ import static org.junit.Assert.assertThat;
  */
 public class SystemCredentialsTest {
 
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+    @ClassRule
+    @ConfiguredWithCode("SystemCredentialsTest.yaml")
+    public static JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
 
     @Test
-    public void configure_system_credentials() throws Exception {
-        ConfigurationAsCode.get().configureWith(new YamlSource(getClass().getResourceAsStream("SystemCredentialsTest.yaml"), YamlSource.READ_FROM_INPUTSTREAM));
+    public void import_system_credentials() throws Exception {
         List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentials(
-                UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM,
-                Collections.singletonList(new HostnameRequirement("api.test.com"))
+            UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM,
+            Collections.singletonList(new HostnameRequirement("api.test.com"))
         );
         assertThat(ups, hasSize(1));
         final UsernamePasswordCredentials up = ups.get(0);
         assertThat(up.getPassword().getPlainText(), equalTo("password"));
+    }
+
+    @Test
+    public void export_system_credentials() throws Exception {
+        CredentialsRootConfigurator root = Jenkins.getInstance()
+            .getExtensionList(CredentialsRootConfigurator.class).get(0);
+
+        ConfiguratorRegistry registry = ConfiguratorRegistry.get();
+        ConfigurationContext context = new ConfigurationContext(registry);
+        Mapping configNode = Objects
+            .requireNonNull(root.describe(root.getTargetComponent(context), context)).asMapping();
+        Mapping domainCredentials = configNode
+            .get("system").asMapping().get("domainCredentials")
+            .asSequence()
+            .get(0).asMapping();
+        Mapping domain = domainCredentials.get("domain").asMapping();
+        Sequence credentials = domainCredentials.get("credentials").asSequence();
+        Mapping usernamePassword = credentials.get(0).asMapping().get("usernamePassword")
+            .asMapping();
+        Mapping hostnameSpecification = domain.get("specifications").asSequence().get(0).asMapping()
+            .get("hostnameSpecification").asMapping();
+
+        assertThat(usernamePassword.getScalarValue("scope"), is("SYSTEM"));
+        assertThat(usernamePassword.getScalarValue("username"), is("root"));
+        assertThat(usernamePassword.getScalarValue("password"), is(not("password")));
+        assertThat(domain.getScalarValue("name"), is("test.com"));
+        assertThat(domain.getScalarValue("description"), is("test.com domain"));
+        assertThat(hostnameSpecification.getScalarValue("includes"), is("*.test.com"));
     }
 }

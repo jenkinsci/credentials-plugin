@@ -27,6 +27,8 @@ package com.cloudbees.plugins.credentials.casc;
 
 import com.cloudbees.plugins.credentials.GlobalCredentialsConfiguration;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import io.jenkins.plugins.casc.Attribute;
 import io.jenkins.plugins.casc.BaseConfigurator;
@@ -37,10 +39,8 @@ import io.jenkins.plugins.casc.model.Mapping;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
-import javax.annotation.CheckForNull;
 import java.util.Collections;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import static io.jenkins.plugins.casc.Attribute.noop;
 
@@ -48,11 +48,12 @@ import static io.jenkins.plugins.casc.Attribute.noop;
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
-@Extension(optional = true)
+@Extension(optional = true, ordinal = 2)
 @Restricted(NoExternalUse.class)
 public class CredentialsRootConfigurator extends BaseConfigurator<GlobalCredentialsConfiguration> implements RootElementConfigurator<GlobalCredentialsConfiguration> {
 
     @Override
+    @NonNull
     public String getName() {
         return "credentials";
     }
@@ -73,6 +74,7 @@ public class CredentialsRootConfigurator extends BaseConfigurator<GlobalCredenti
     }
 
     @Override
+    @NonNull
     public Set<Attribute<GlobalCredentialsConfiguration,?>> describe() {
         return Collections.singleton(new Attribute<GlobalCredentialsConfiguration, SystemCredentialsProvider>("system", SystemCredentialsProvider.class)
             .getter( t -> SystemCredentialsProvider.getInstance() )

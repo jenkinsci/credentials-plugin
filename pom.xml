@@ -68,6 +68,7 @@
     <jenkins.version>2.60.3</jenkins.version>
     <java.level>8</java.level>
     <antlr4.version>4.5</antlr4.version>
+    <jcasc.version>1.13</jcasc.version>
   </properties>
 
   <repositories>
@@ -92,7 +93,7 @@
     <dependency>
       <groupId>io.jenkins</groupId>
       <artifactId>configuration-as-code</artifactId>
-      <version>1.1-20180926.061808-1</version>
+      <version>${jcasc.version}</version>
       <optional>true</optional>
     </dependency>
 
@@ -125,6 +126,13 @@
       <groupId>org.xmlunit</groupId>
       <artifactId>xmlunit-matchers</artifactId>
       <version>2.2.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jenkins</groupId>
+      <artifactId>configuration-as-code</artifactId>
+      <version>${jcasc.version}</version>
+      <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
   </dependencies>
