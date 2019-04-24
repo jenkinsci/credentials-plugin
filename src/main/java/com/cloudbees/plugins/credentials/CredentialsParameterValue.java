@@ -53,6 +53,7 @@ public class CredentialsParameterValue extends ParameterValue {
         this.isDefaultValue = isDefaultValue;
     }
 
+    @NonNull
     public String getValue() {
         return value;
     }

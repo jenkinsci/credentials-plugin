@@ -884,9 +884,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             if (action != null) {
                 final ParameterValue parameter = action.getParameter(id.substring(2, id.length() - 1));
                 if (parameter instanceof CredentialsParameterValue) {
+                    CredentialsParameterValue parameterValue = (CredentialsParameterValue) parameter;
                     isParameter = true;
-                    isDefaultValue = ((CredentialsParameterValue) parameter).isDefaultValue();
-                    id = ((CredentialsParameterValue) parameter).getValue();
+                    isDefaultValue = parameterValue.isDefaultValue();
+                    id = parameterValue.getValue();
                 }
             }
         }
