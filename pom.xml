@@ -69,6 +69,7 @@
     <java.level>8</java.level>
     <antlr4.version>4.5</antlr4.version>
     <jcasc.version>1.13</jcasc.version>
+    <access-modifier-checker.failOnError>false</access-modifier-checker.failOnError>
   </properties>
 
   <repositories>
