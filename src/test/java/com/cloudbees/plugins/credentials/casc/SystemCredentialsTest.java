@@ -29,6 +29,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.HostnameRequirement;
 import hudson.security.ACL;
+import hudson.util.Secret;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
@@ -46,6 +47,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class SystemCredentialsTest {
@@ -85,9 +87,13 @@ public class SystemCredentialsTest {
         Mapping hostnameSpecification = domain.get("specifications").asSequence().get(0).asMapping()
             .get("hostnameSpecification").asMapping();
 
+        String password = usernamePassword.getScalarValue("password");
+        Secret decryptedPassword = Secret.decrypt(password);
+        assertNotNull(decryptedPassword);
         assertThat(usernamePassword.getScalarValue("scope"), is("SYSTEM"));
         assertThat(usernamePassword.getScalarValue("username"), is("root"));
-        assertThat(usernamePassword.getScalarValue("password"), is(not("password")));
+        assertThat(password, is(not("password")));
+        assertThat(decryptedPassword.getPlainText(), is("password"));
         assertThat(domain.getScalarValue("name"), is("test.com"));
         assertThat(domain.getScalarValue("description"), is("test.com domain"));
         assertThat(hostnameSpecification.getScalarValue("includes"), is("*.test.com"));
