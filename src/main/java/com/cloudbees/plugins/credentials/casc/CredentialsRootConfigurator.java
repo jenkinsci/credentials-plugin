@@ -46,7 +46,8 @@ import static io.jenkins.plugins.casc.Attribute.noop;
 
 
 /**
- * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
+ * a root element configurator used for configuring Jenkins credentials through {@link io.jenkins.plugins.casc.ConfigurationAsCode}
+ * https://github.com/jenkinsci/configuration-as-code-plugin
  */
 @Extension(optional = true, ordinal = 2)
 @Restricted(NoExternalUse.class)

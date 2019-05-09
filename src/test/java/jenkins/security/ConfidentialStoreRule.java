@@ -7,7 +7,6 @@ import org.junit.rules.TemporaryFolder;
 /**
  * Test rule that injects a temporary {@link DefaultConfidentialStore}
  *
- * @author Kohsuke Kawaguchi
  */
 // TODO remove this when available from the test harness
 public class ConfidentialStoreRule extends ExternalResource {

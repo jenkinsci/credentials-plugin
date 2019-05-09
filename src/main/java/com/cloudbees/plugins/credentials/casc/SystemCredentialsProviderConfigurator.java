@@ -43,7 +43,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
+ * A configurator for system credentials provider located beneath the {@link CredentialsRootConfigurator}
  */
 @Extension(optional = true, ordinal = 2)
 @Restricted(NoExternalUse.class)
