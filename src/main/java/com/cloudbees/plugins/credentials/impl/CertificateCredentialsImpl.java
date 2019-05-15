@@ -23,9 +23,7 @@
  */
 package com.cloudbees.plugins.credentials.impl;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -35,19 +33,20 @@ import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
-import hudson.remoting.Channel;
+import hudson.model.Items;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
 import hudson.util.IOUtils;
 import hudson.util.Secret;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -59,10 +58,12 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
+
+import hudson.util.XStream2;
+import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -136,19 +137,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     private static char[] toCharArray(@NonNull Secret password) {
         String plainText = Util.fixEmpty(password.getPlainText());
         return plainText == null ? null : plainText.toCharArray();
-    }
-
-    /**
-     * When serializing over a {@link Channel} ensure that we send a self-contained version.
-     *
-     * @return the object instance to write to the stream.
-     */
-    private Object writeReplace() {
-        if (/* XStream */Channel.current() == null || /* already safe to serialize */ keyStoreSource
-                .isSnapshotSource()) {
-            return this;
-        }
-        return CredentialsProvider.snapshot(this);
     }
 
     /**
@@ -268,7 +256,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          *
          * @return {@code true} if and only if the source is self contained.
          * @since 1.14
+         * @deprecated No longer need to distinguish snapshot sources.
          */
+        @Deprecated
         public boolean isSnapshotSource() {
             return false;
         }
@@ -364,7 +354,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
     /**
      * Let the user reference a file on the disk.
+     * @deprecated This approach has security vulnerabilities and should be migrated to {@link UploadedKeyStoreSource}
      */
+    @Deprecated
     public static class FileOnMasterKeyStoreSource extends KeyStoreSource {
 
         /**
@@ -377,13 +369,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         private final String keyStoreFile;
 
-        /**
-         * Our constructor.
-         *
-         * @param keyStoreFile the path of the file on the master.
-         */
-        @SuppressWarnings("unused") // by stapler
-        @DataBoundConstructor
         public FileOnMasterKeyStoreSource(String keyStoreFile) {
             this.keyStoreFile = keyStoreFile;
         }
@@ -408,15 +393,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         /**
-         * Returns the private key file name.
-         *
-         * @return the private key file name.
-         */
-        public String getKeyStoreFile() {
-            return keyStoreFile;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @Override
@@ -434,62 +410,27 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     "}";
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Extension
-        public static class DescriptorImpl extends KeyStoreSourceDescriptor {
-
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public String getDisplayName() {
-                return Messages.CertificateCredentialsImpl_FileOnMasterKeyStoreSourceDisplayName();
+        private Object readResolve() {
+            if (!Jenkins.getActiveInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
+                LOGGER.warning("SECURITY-1322: Permission failure migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource for a Certificate. An administrator may need to perform the migration.");
+                Jenkins.getActiveInstance().checkPermission(Jenkins.RUN_SCRIPTS);
             }
 
-            /**
-             * Checks the keystore file path.
-             *
-             * @param value    the file path.
-             * @param password the password.
-             * @return the {@link FormValidation} results.
-             */
-            @SuppressWarnings("unused") // stapler form validation
-            @Restricted(NoExternalUse.class)
-            public FormValidation doCheckKeyStoreFile(@QueryParameter String value,
-                                                      @QueryParameter String password) {
-                if (StringUtils.isBlank(value)) {
-                    return FormValidation.error(Messages.CertificateCredentialsImpl_KeyStoreFileUnspecified());
-                }
-                File file = new File(value);
-                if (file.isFile()) {
-                    try {
-                        return validateCertificateKeystore("PKCS12", FileUtils.readFileToByteArray(file), password);
-                    } catch (IOException e) {
-                        return FormValidation
-                                .error(Messages.CertificateCredentialsImpl_KeyStoreFileUnreadable(value), e);
-                    }
-                } else {
-                    return FormValidation.error(Messages.CertificateCredentialsImpl_KeyStoreFileDoesNotExist(value));
-                }
-            }
+            LOGGER.log(Level.INFO, "SECURITY-1322: Migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource. The containing item may need to be saved to complete the migration.");
+            SecretBytes secretBytes = SecretBytes.fromBytes(getKeyStoreBytes());
+            return new UploadedKeyStoreSource(secretBytes);
         }
+
     }
 
     /**
-     * Let the user reference a file on the disk.
+     * Let the user reference an uploaded file.
      */
     public static class UploadedKeyStoreSource extends KeyStoreSource implements Serializable {
         /**
          * Ensure consistent serialization.
          */
         private static final long serialVersionUID = 1L;
-
-        /**
-         * Our logger.
-         */
-        private static final Logger LOGGER = Logger.getLogger(FileOnMasterKeyStoreSource.class.getName());
 
         /**
          * The old uploaded keystore.
@@ -750,55 +691,21 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
     }
 
-    /**
-     * The {@link CredentialsSnapshotTaker} for {@link StandardCertificateCredentials}.
-     *
-     * @since 1.14
-     */
-    @Extension
-    public static class CredentialsSnapshotTakerImpl extends CredentialsSnapshotTaker<StandardCertificateCredentials> {
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Class<StandardCertificateCredentials> type() {
-            return StandardCertificateCredentials.class;
+    static {
+        try {
+            // the critical field allow the permission check to make the XML read to fail completely in case of violation
+            // TODO: Remove reflection once baseline is updated past 2.85.
+            Method m = XStream2.class.getMethod("addCriticalField", Class.class, String.class);
+            m.invoke(Items.XSTREAM2, CertificateCredentialsImpl.class, "keyStoreSource");
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public StandardCertificateCredentials snapshot(StandardCertificateCredentials credentials) {
-            if (credentials instanceof CertificateCredentialsImpl) {
-                final KeyStoreSource keyStoreSource = ((CertificateCredentialsImpl) credentials).getKeyStoreSource();
-                if (keyStoreSource.isSnapshotSource()) {
-                    return credentials;
-                }
-                return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
-                        credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
-                        new UploadedKeyStoreSource(SecretBytes.fromBytes(keyStoreSource.getKeyStoreBytes())));
-            }
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            final char[] password = credentials.getPassword().getPlainText().toCharArray();
-            try {
-                credentials.getKeyStore().store(bos, password);
-                bos.close();
-            } catch (KeyStoreException e) {
-                return credentials;
-            } catch (IOException e) {
-                return credentials;
-            } catch (NoSuchAlgorithmException e) {
-                return credentials;
-            } catch (CertificateException e) {
-                return credentials;
-            } finally {
-                Arrays.fill(password, (char) 0);
-            }
-            return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
-                    credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
-                    new UploadedKeyStoreSource(SecretBytes.fromBytes(bos.toByteArray())));
+        catch (IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+        catch (InvocationTargetException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+        catch (NoSuchMethodException e) {
+            throw new ExceptionInInitializerError(e);
         }
     }
 }
