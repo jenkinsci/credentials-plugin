@@ -121,11 +121,13 @@ public class CLICommandsTest {
         Credentials cred = credentials.isEmpty() ? null : credentials.get(0);
         assertThat(cred, instanceOf(UsernamePasswordCredentialsImpl.class));
         UsernamePasswordCredentialsImpl c = (UsernamePasswordCredentialsImpl) cred;
-        assertThat(c.getScope(), is(CredentialsScope.GLOBAL));
-        assertThat(c.getId(), is("smokey-id"));
-        assertThat(c.getDescription(), is("created from xml"));
-        assertThat(c.getUsername(), is("example-com-deployer"));
-        assertThat(c.getPassword().getPlainText(), is("super-secret"));
+        if (c != null){
+            assertThat(c.getScope(), is(CredentialsScope.GLOBAL));
+            assertThat(c.getId(), is("smokey-id"));
+            assertThat(c.getDescription(), is("created from xml"));
+            assertThat(c.getUsername(), is("example-com-deployer"));
+            assertThat(c.getPassword().getPlainText(), is("super-secret"));
+        }
     }
 
     @Test
