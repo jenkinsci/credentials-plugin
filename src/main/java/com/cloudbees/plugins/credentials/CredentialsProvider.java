@@ -887,7 +887,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     isParameter = true;
                     isDefaultValue = ((CredentialsParameterValue) parameter).isDefaultValue();
                     id = ((CredentialsParameterValue) parameter).getValue();
-                    // Avoid spotbugs complaining about id being null and used lately on CredentialsMatchers.withId
+                    // Avoid spotbugs complaining about the id being null and used lately on CredentialsMatchers.withId
                     id = (id == null) ? "" : id;
                 }
             }
