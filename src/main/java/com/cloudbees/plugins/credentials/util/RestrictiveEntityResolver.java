@@ -9,9 +9,10 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 
 /**
- * This class is a clone of {@link jenkins.util.xml.RestrictiveEntityResolver} because the last is Restricted. If we
- * ever unrestrict it, we should remove this class and use the first one.
+ * TODO This class is a clone of {@link jenkins.util.xml.RestrictiveEntityResolver} because the last is Restricted.
+ * It's expected that the weekly release 2.179 unrestrict this class. More info: https://github.com/jenkinsci/jenkins/pull/4032
  */
+
 @Restricted(NoExternalUse.class)
 public final class RestrictiveEntityResolver implements EntityResolver {
 

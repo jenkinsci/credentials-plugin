@@ -21,8 +21,8 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 /**
- * This class is a clone of {@link jenkins.util.xml.XMLUtils} because the last is Restricted. If we ever unrestrict
- * it, we should remove this class and use the first one.
+ * TODO This class is a clone of {@link jenkins.util.xml.XMLUtils} because the last is Restricted.
+ * It's expected that the weekly release 2.179 unrestrict this class. More info: https://github.com/jenkinsci/jenkins/pull/4032
  */
 @Restricted(NoExternalUse.class)
 public class XMLUtils {
