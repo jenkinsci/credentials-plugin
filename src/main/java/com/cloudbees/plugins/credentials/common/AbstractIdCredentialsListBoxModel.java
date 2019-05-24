@@ -67,7 +67,7 @@ import org.apache.commons.lang.StringUtils;
  * public String getCredentialsId() {return credentialsId;}
  * </pre>
  * <p>
- * Your <code>config.groovy</code> should have the following entry to render a drop-down list box:
+ * Your {@code config.groovy} should have the following entry to render a drop-down list box:
  * </p>
  * <pre>
  * f.entry(title:_("Credentials"), field:"credentialsId") {
