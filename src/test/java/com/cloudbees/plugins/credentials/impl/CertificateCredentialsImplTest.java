@@ -136,8 +136,8 @@ public class CertificateCredentialsImplTest {
                 .invokeWithArgs("folder1");
 
         assertThat(result.stderr(), containsString("user is missing the Overall/RunScripts permission"));
-        // -1 = means An error occurred, according to JENKINS-32273
-        assertThat(result, failedWith(-1));
+        // 1 = means An error occurred, according to https://github.com/jenkinsci/jenkins/pull/1997/files#diff-4459859ade69b51edffdb58020f5d3f7R217
+        assertThat(result, failedWith(1));
 
         String configFileContent = folder.getConfigFile().asString();
         assertThat(configFileContent, not(containsString("Master")));
