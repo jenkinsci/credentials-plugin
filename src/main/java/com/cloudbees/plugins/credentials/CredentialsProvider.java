@@ -884,10 +884,11 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             if (action != null) {
                 final ParameterValue parameter = action.getParameter(id.substring(2, id.length() - 1));
                 if (parameter instanceof CredentialsParameterValue) {
-                    CredentialsParameterValue parameterValue = (CredentialsParameterValue) parameter;
                     isParameter = true;
-                    isDefaultValue = parameterValue.isDefaultValue();
-                    id = parameterValue.getValue();
+                    isDefaultValue = ((CredentialsParameterValue) parameter).isDefaultValue();
+                    id = ((CredentialsParameterValue) parameter).getValue();
+                    // Avoid spotbugs complaining about the id being null and used lately on CredentialsMatchers.withId
+                    id = (id == null) ? "" : id;
                 }
             }
         }

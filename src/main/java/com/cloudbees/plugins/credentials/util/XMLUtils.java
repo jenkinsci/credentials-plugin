@@ -1,8 +1,12 @@
-package com.cloudbees.plugins.credentials.xml;
+package com.cloudbees.plugins.credentials.util;
 
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
+
 import javax.annotation.Nonnull;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Result;
@@ -12,34 +16,22 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.sax.SAXTransformerFactory;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 /**
- * Utilities useful when working with various XML types.
+ * TODO This class is a clone of {@link jenkins.util.xml.XMLUtils} because the last is Restricted.
+ * It's expected that the weekly release 2.179 unrestrict this class. More info: https://github.com/jenkinsci/jenkins/pull/4032
  */
 @Restricted(NoExternalUse.class)
-public final class XMLUtils {
-
-    private final static Logger LOGGER = LogManager.getLogManager().getLogger(
-        XMLUtils.class.getName());
-    private final static String DISABLED_PROPERTY_NAME = XMLUtils.class.getName() + ".disableXXEPrevention";
+public class XMLUtils {
+    private final static Logger LOGGER = LogManager.getLogManager().getLogger(XMLUtils.class.getName());
 
     private static final String FEATURE_HTTP_XML_ORG_SAX_FEATURES_EXTERNAL_GENERAL_ENTITIES = "http://xml.org/sax/features/external-general-entities";
     private static final String FEATURE_HTTP_XML_ORG_SAX_FEATURES_EXTERNAL_PARAMETER_ENTITIES = "http://xml.org/sax/features/external-parameter-entities";
+    private final static String DISABLED_PROPERTY_NAME = "jenkins.util.xml.XMLUtils.disableXXEPrevention";
 
-    /**
-     * Transform the source to the output in a manner that is protected against XXE attacks.
-     * If the transform can not be completed safely then an IOException is thrown.
-     * Note - to turn off safety set the system property <code>disableXXEPrevention</code> to <code>true</code>.
-     * @param source The XML input to transform. - This should be a <code>StreamSource</code> or a
-     *               <code>SAXSource</code> in order to be able to prevent XXE attacks.
-     * @param out The Result of transforming the <code>source</code>.
-     */
     public static void safeTransform(@Nonnull Source source, @Nonnull Result out) throws TransformerException,
             SAXException {
 
@@ -49,14 +41,9 @@ public final class XMLUtils {
             stFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 
             XMLReader xmlReader = XMLReaderFactory.createXMLReader();
-            try {
-                xmlReader.setFeature(FEATURE_HTTP_XML_ORG_SAX_FEATURES_EXTERNAL_GENERAL_ENTITIES, false);
-            }
-            catch (SAXException ignored) { /* ignored */ }
-            try {
-                xmlReader.setFeature(FEATURE_HTTP_XML_ORG_SAX_FEATURES_EXTERNAL_PARAMETER_ENTITIES, false);
-            }
-            catch (SAXException ignored) { /* ignored */ }
+            setFeatureQuietly(xmlReader, FEATURE_HTTP_XML_ORG_SAX_FEATURES_EXTERNAL_GENERAL_ENTITIES, false);
+            setFeatureQuietly(xmlReader, FEATURE_HTTP_XML_ORG_SAX_FEATURES_EXTERNAL_PARAMETER_ENTITIES, false);
+
             // defend against XXE
             // the above features should strip out entities - however the feature may not be supported depending
             // on the xml implementation used and this is out of our control.
@@ -84,11 +71,6 @@ public final class XMLUtils {
         }
     }
 
-    /**
-     * potentially unsafe XML transformation.
-     * @param source The XML input to transform.
-     * @param out The Result of transforming the <code>source</code>.
-     */
     private static void _transform(Source source, Result out) throws TransformerException {
         TransformerFactory factory = TransformerFactory.newInstance();
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -97,5 +79,14 @@ public final class XMLUtils {
         // plus it checks any well-formedness issue in the submitted data.
         Transformer t = factory.newTransformer();
         t.transform(source, out);
+    }
+
+    private static void setFeatureQuietly(XMLReader reader, String feature, boolean value) {
+        try {
+            reader.setFeature(feature, value);
+        }
+        catch (SAXException ignored) {
+            // ignore and continue in case the feature cannot be changed
+        }
     }
 }

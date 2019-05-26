@@ -1,16 +1,18 @@
-package com.cloudbees.plugins.credentials.xml;
+package com.cloudbees.plugins.credentials.util;
 
-import java.io.IOException;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
+
 /**
- * An EntityResolver that will fail to resolve any entities.
- * Useful in preventing External XML Entity injection attacks.
+ * TODO This class is a clone of {@link jenkins.util.xml.RestrictiveEntityResolver} because the last is Restricted.
+ * It's expected that the weekly release 2.179 unrestrict this class. More info: https://github.com/jenkinsci/jenkins/pull/4032
  */
+
 @Restricted(NoExternalUse.class)
 public final class RestrictiveEntityResolver implements EntityResolver {
 

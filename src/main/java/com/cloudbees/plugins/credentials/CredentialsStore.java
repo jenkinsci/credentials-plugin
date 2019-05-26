@@ -63,6 +63,7 @@ import org.kohsuke.stapler.StaplerRequest;
  * (for example a folder scoped {@link CredentialsProvider} may provide a {@link CredentialsStore} for each folder
  * or a user scoped {@link CredentialsProvider} may provide a {@link CredentialsStore} for each user).
  *
+ * @author Stephen Connolly
  * @since 1.8
  */
 public abstract class CredentialsStore implements AccessControlled, Saveable {

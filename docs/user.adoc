@@ -1529,3 +1529,37 @@ This restriction is to prevent a malicious actor adding a hidden job as a downst
 
 The credentials parameter value will be the ID of the selected credentials.
 Use the link:https://plugins.jenkins.io/credentials-binding[Credentials Binding] plugin if you need to get access to the secrets of a credentials instance, for example to use a password for authenticating a request to a third party system.
+
+==== Configuration as code (aka jcasc)
+This plugin supports the https://github.com/jenkinsci/configuration-as-code-plugin[configuration-code-plugin] to manage credentials through yaml
+
+
+You can find out what the yaml should be by:
+
+. configuring the credential in the UI first
+. going to the "Configuration as Code" admin page and clicking "View Configuration"
+
+Note the credential will be exported in encrypted form, it isn't recommended to use this when loading credentials.
+
+See the jcasc docs for how to make secrets available while loading credentials: https://github.com/jenkinsci/configuration-as-code-plugin#handling-secrets
+
+A basic example config:
+[source,yaml]
+----
+credentials:
+  system:
+    domainCredentials:
+      - domain:
+          name: "test.com"
+          description: "test.com domain"
+          specifications:
+            - hostnameSpecification:
+                includes: "*.test.com"
+        credentials:
+          - usernamePassword:
+              scope:    SYSTEM
+              id:       sudo_password
+              username: root
+              password: "${SUDO_PASSWORD}"
+
+----

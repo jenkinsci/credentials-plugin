@@ -69,6 +69,8 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * A descriptor used to assist the c:select tag with allowing in-place addition of credentials.
+ *
+ * @author Stephen Connolly
  */
 @Extension
 public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper> implements

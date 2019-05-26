@@ -67,7 +67,7 @@ import org.apache.commons.lang.StringUtils;
  * public String getCredentialsId() {return credentialsId;}
  * </pre>
  * <p>
- * Your <code>config.groovy</code> should have the following entry to render a drop-down list box:
+ * Your {@code config.groovy} should have the following entry to render a drop-down list box:
  * </p>
  * <pre>
  * f.entry(title:_("Credentials"), field:"credentialsId") {
@@ -75,7 +75,7 @@ import org.apache.commons.lang.StringUtils;
  * }
  * </pre>
  * <p>
- * Finally, your {@link Descriptor} implementation should have the <code>doFillCredentialsIdItems</code> method, which
+ * Finally, your {@link Descriptor} implementation should have the {@code doFillCredentialsIdItems} method, which
  * lists up the credentials available in this context:
  * </p>
  * <pre>
@@ -533,7 +533,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * list is nonempty.)
      *
      * @param c collection containing elements to be added to this list
-     * @return <code>true</code> if this list changed as a result of the call
+     * @return {@code true} if this list changed as a result of the call
      * @since 2.1.0
      */
     public boolean addMissing(@NonNull Collection<? extends Option> c) {

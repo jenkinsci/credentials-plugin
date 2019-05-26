@@ -10,6 +10,7 @@ import hudson.util.Secret;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
+ * @author stephenc
  * @since 02/08/2013 12:54
  */
 @ResolveWith(DummyLegacyCredentials.ResolverImpl.class)

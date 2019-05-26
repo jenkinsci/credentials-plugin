@@ -34,7 +34,7 @@
   </parent>
 
   <artifactId>credentials</artifactId>
-  <version>2.1.19-SNAPSHOT</version>
+  <version>2.1.20-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Credentials Plugin</name>
@@ -65,7 +65,7 @@
   </scm>
 
   <properties>
-    <jenkins.version>2.60.3</jenkins.version>
+    <jenkins.version>2.138.4</jenkins.version>
     <java.level>8</java.level>
     <antlr4.version>4.5</antlr4.version>
     <jcasc.version>1.14</jcasc.version>
@@ -135,6 +135,12 @@
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>org.jenkins-ci.plugins</groupId>
+          <artifactId>cloudbees-folder</artifactId>
+          <version>6.7</version>
+          <scope>test</scope>
+      </dependency>
   </dependencies>
 
   <build>
