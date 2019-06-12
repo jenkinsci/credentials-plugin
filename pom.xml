@@ -65,7 +65,7 @@
   </scm>
 
   <properties>
-    <jenkins.version>2.138.4</jenkins.version>
+    <jenkins.version>2.181-rc28392.03fa59130027</jenkins.version>
     <java.level>8</java.level>
     <antlr4.version>4.5</antlr4.version>
     <jcasc.version>1.14</jcasc.version>
