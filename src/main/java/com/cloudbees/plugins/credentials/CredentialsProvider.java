@@ -879,16 +879,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         id = id.trim();
         boolean isParameter = false;
         boolean isDefaultValue = false;
+        String inputUserId = null;
         if (id.startsWith("${") && id.endsWith("}")) {
-            final ParametersAction action = run.getAction(ParametersAction.class);
+            final String realId = id.substring(2, id.length() - 1);
+            final CredentialsParametersAction action = CredentialsParametersAction.forRun(run);
             if (action != null) {
-                final ParameterValue parameter = action.getParameter(id.substring(2, id.length() - 1));
-                if (parameter instanceof CredentialsParameterValue) {
+                final CredentialsParameterValue parameter = action.getParameter(realId);
+                if (parameter != null) {
                     isParameter = true;
-                    isDefaultValue = ((CredentialsParameterValue) parameter).isDefaultValue();
-                    id = ((CredentialsParameterValue) parameter).getValue();
-                    // Avoid spotbugs complaining about the id being null and used lately on CredentialsMatchers.withId
-                    id = (id == null) ? "" : id;
+                    isDefaultValue = parameter.isDefaultValue();
+                    id = Util.fixNull(parameter.getValue());
+                    inputUserId = parameter.getUserId();
                 }
             }
         }
@@ -921,6 +922,12 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // add those into the list. We do not want to follow the chain for the user's authentication
             // though, as there is no way to limit how far the passed-through parameters can be used
             candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), a, domainRequirements));
+        }
+        if (inputUserId != null) {
+            final Authentication inputAuth = User.getOrCreateByIdOrFullName(inputUserId).impersonate();
+            if (run.hasPermission(inputAuth, CredentialsProvider.USE_OWN)) {
+                candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), inputAuth, domainRequirements));
+            }
         }
         if (run.getACL().hasPermission(a, CredentialsProvider.USE_ITEM)) {
             // the triggering user is allowed to use the item's credentials, so add those into the list

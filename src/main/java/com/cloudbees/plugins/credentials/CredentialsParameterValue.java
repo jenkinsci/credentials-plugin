@@ -42,19 +42,40 @@ public class CredentialsParameterValue extends ParameterValue {
      */
     private final boolean isDefaultValue;
 
+    /**
+     * The user who supplied the parameter value.
+     */
+    private String userId;
+
     @DataBoundConstructor
     public CredentialsParameterValue(String name, String value, String description) {
         this(name, value, description, false);
     }
 
     public CredentialsParameterValue(String name, String value, String description, boolean isDefaultValue) {
+         this(name, value, description, isDefaultValue, Jenkins.getAuthentication().getName());
+    }
+
+    private CredentialsParameterValue(String name, String value, String description, boolean isDefaultValue, String userId) {
         super(name, description);
         this.value = value;
         this.isDefaultValue = isDefaultValue;
+        this.userId = userId;
+    }
+
+    private Object readResolve() {
+        if (userId == null) {
+            userId = Jenkins.getAuthentication().getName();
+        }
+        return this;
     }
 
     public String getValue() {
         return value;
+    }
+
+    String getUserId() {
+        return userId;
     }
 
     /**
