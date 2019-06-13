@@ -1,5 +1,7 @@
 package com.cloudbees.plugins.credentials;
 
+import hudson.EnvVars;
+import hudson.model.EnvironmentContributingAction;
 import hudson.model.InvisibleAction;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
@@ -13,7 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class CredentialsParametersAction extends InvisibleAction implements RunAction2, Iterable<CredentialsParameterValue> {
+public class CredentialsParametersAction extends InvisibleAction implements RunAction2, EnvironmentContributingAction, Iterable<CredentialsParameterValue> {
 
     private final Map<String, CredentialsParameterValue> values;
 
@@ -72,6 +74,13 @@ public class CredentialsParametersAction extends InvisibleAction implements RunA
     @Override
     public void onLoad(Run<?, ?> r) {
         // this space intentionally left blank
+    }
+
+    @Override
+    public void buildEnvironment(@Nonnull Run<?, ?> run, @Nonnull EnvVars env) {
+        for (Map.Entry<String, CredentialsParameterValue> entry : values.entrySet()) {
+            env.putIfNotNull(entry.getKey(), entry.getValue().getValue());
+        }
     }
 
     @Override
