@@ -49,8 +49,12 @@ public class CredentialsParametersAction extends InvisibleAction implements RunA
                 .forEach(this::add);
     }
 
-    public @CheckForNull CredentialsParameterValue getParameter(@Nonnull String name) {
+    @CheckForNull CredentialsParameterValue findParameterByName(@Nonnull String name) {
         return values.get(name);
+    }
+
+    @CheckForNull CredentialsParameterValue findParameterByValue(@Nonnull String value) {
+        return values.values().stream().filter(v -> value.equals(v.getValue())).findFirst().orElse(null);
     }
 
     @Override

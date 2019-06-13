@@ -48,8 +48,6 @@ import hudson.model.ItemGroup;
 import hudson.model.Job;
 import hudson.model.ModelObject;
 import hudson.model.Node;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
 import hudson.model.Queue;
 import hudson.model.Run;
 import hudson.model.User;
@@ -880,17 +878,16 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         boolean isParameter = false;
         boolean isDefaultValue = false;
         String inputUserId = null;
-        if (id.startsWith("${") && id.endsWith("}")) {
-            final String realId = id.substring(2, id.length() - 1);
-            final CredentialsParametersAction action = CredentialsParametersAction.forRun(run);
-            if (action != null) {
-                final CredentialsParameterValue parameter = action.getParameter(realId);
-                if (parameter != null) {
-                    isParameter = true;
-                    isDefaultValue = parameter.isDefaultValue();
-                    id = Util.fixNull(parameter.getValue());
-                    inputUserId = parameter.getUserId();
-                }
+        final CredentialsParametersAction action = CredentialsParametersAction.forRun(run);
+        if (action != null) {
+            final CredentialsParameterValue parameter = id.startsWith("${") && id.endsWith("}") ?
+                    action.findParameterByName(id.substring(2, id.length() - 1)) :
+                    action.findParameterByValue(id);
+            if (parameter != null) {
+                isParameter = true;
+                isDefaultValue = parameter.isDefaultValue();
+                id = Util.fixNull(parameter.getValue());
+                inputUserId = parameter.getUserId();
             }
         }
         // non parameters or default parameter values can only come from the job's context
