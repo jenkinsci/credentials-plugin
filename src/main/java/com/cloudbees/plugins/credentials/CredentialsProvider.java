@@ -882,7 +882,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (action != null) {
             final CredentialsParameterValue parameter = id.startsWith("${") && id.endsWith("}") ?
                     action.findParameterByName(id.substring(2, id.length() - 1)) :
-                    action.findParameterByValue(id);
+                    action.findParameterByName(id); // allow shadowing of credential id by credential parameter name instead
             if (parameter != null) {
                 isParameter = true;
                 isDefaultValue = parameter.isDefaultValue();
