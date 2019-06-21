@@ -33,9 +33,9 @@ import jenkins.model.RunAction2;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Contains a collection of {@link CredentialsParameterValue} values provided to a {@link Run}.
@@ -46,15 +46,7 @@ import java.util.Map;
  */
 public class CredentialsParametersAction extends InvisibleAction implements RunAction2, Iterable<CredentialsParameterValue> {
 
-    private final Map<String, CredentialsParameterValue> values;
-
-    public CredentialsParametersAction() {
-        this(new HashMap<>());
-    }
-
-    private CredentialsParametersAction(Map<String, CredentialsParameterValue> values) {
-        this.values = values;
-    }
+    private final Map<String, CredentialsParameterValue> values = new ConcurrentHashMap<>();
 
     /**
      * Looks up an existing CredentialsParameterAction for a Run or adapts and attaches an existing ParametersAction to
