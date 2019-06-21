@@ -56,7 +56,7 @@ public class CredentialsParameterValue extends ParameterValue {
          this(name, value, description, isDefaultValue, Jenkins.getAuthentication().getName());
     }
 
-    private CredentialsParameterValue(String name, String value, String description, boolean isDefaultValue, String userId) {
+    CredentialsParameterValue(String name, String value, String description, boolean isDefaultValue, String userId) {
         super(name, description);
         this.value = value;
         this.isDefaultValue = isDefaultValue;
