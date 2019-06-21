@@ -1,7 +1,5 @@
 package com.cloudbees.plugins.credentials;
 
-import hudson.EnvVars;
-import hudson.model.EnvironmentContributingAction;
 import hudson.model.InvisibleAction;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
@@ -15,7 +13,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class CredentialsParametersAction extends InvisibleAction implements RunAction2, EnvironmentContributingAction, Iterable<CredentialsParameterValue> {
+/**
+ * Contains a collection of {@link CredentialsParameterValue} values provided to a {@link Run}.
+ * When attached to a run, this action will import any CredentialsParameterValues contained in the run's optionally
+ * present {@link ParametersAction}.
+ *
+ * @since TODO
+ */
+public class CredentialsParametersAction extends InvisibleAction implements RunAction2, Iterable<CredentialsParameterValue> {
 
     private final Map<String, CredentialsParameterValue> values;
 
@@ -27,6 +32,10 @@ public class CredentialsParametersAction extends InvisibleAction implements RunA
         this.values = values;
     }
 
+    /**
+     * Looks up an existing CredentialsParameterAction for a Run or adapts and attaches an existing ParametersAction to
+     * a new CredentialsParametersAction. Returns {@code null} if the run has no parameters.
+     */
     static @CheckForNull CredentialsParametersAction forRun(@Nonnull Run<?, ?> run) {
         final CredentialsParametersAction existingAction = run.getAction(CredentialsParametersAction.class);
         if (existingAction != null) {
@@ -40,10 +49,17 @@ public class CredentialsParametersAction extends InvisibleAction implements RunA
         return run.getAction(CredentialsParametersAction.class);
     }
 
+    /**
+     * Adds a CredentialsParameterValue to this action if it does not already exist.
+     */
     public void add(@Nonnull CredentialsParameterValue value) {
         values.put(value.getName(), value);
     }
 
+    /**
+     * Adds CredentialsParameterValues from a collection of ParameterValues. Shortcut for filtering and adding items
+     * via {@link #add(CredentialsParameterValue)}.
+     */
     public void addFromParameterValues(@Nonnull Collection<ParameterValue> values) {
         values.stream()
                 .filter(CredentialsParameterValue.class::isInstance)
@@ -55,32 +71,17 @@ public class CredentialsParametersAction extends InvisibleAction implements RunA
         return values.get(name);
     }
 
-    @CheckForNull CredentialsParameterValue findParameterByValue(@Nonnull String value) {
-        return values.values().stream().filter(v -> value.equals(v.getValue())).findFirst().orElse(null);
-    }
-
     @Override
     public void onAttached(Run<?, ?> r) {
         final ParametersAction action = r.getAction(ParametersAction.class);
         if (action != null) {
-            for (ParameterValue value : action.getParameters()) {
-                if (value instanceof CredentialsParameterValue) {
-                    add((CredentialsParameterValue) value);
-                }
-            }
+            addFromParameterValues(action.getParameters());
         }
     }
 
     @Override
     public void onLoad(Run<?, ?> r) {
         // this space intentionally left blank
-    }
-
-    @Override
-    public void buildEnvironment(@Nonnull Run<?, ?> run, @Nonnull EnvVars env) {
-        for (Map.Entry<String, CredentialsParameterValue> entry : values.entrySet()) {
-            env.putIfNotNull(entry.getKey(), entry.getValue().getValue());
-        }
     }
 
     @Override

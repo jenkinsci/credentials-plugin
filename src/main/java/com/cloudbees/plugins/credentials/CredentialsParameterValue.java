@@ -74,6 +74,9 @@ public class CredentialsParameterValue extends ParameterValue {
         return value;
     }
 
+    /**
+     * Returns the user id of who filled in this credentials parameter.
+     */
     String getUserId() {
         return userId;
     }

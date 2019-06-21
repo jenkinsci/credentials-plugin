@@ -880,17 +880,12 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         String inputUserId = null;
         final CredentialsParametersAction action = CredentialsParametersAction.forRun(run);
         if (action != null) {
-            CredentialsParameterValue parameter = null;
-            if (id.startsWith("${") && id.endsWith("}")) {
-                // denotes explicitly that this is a parameterized credential
-                parameter = action.findParameterByName(id.substring(2, id.length() - 1));
-            } else {
-                // otherwise, we can check to see if there is a matching credential parameter name or id
-                parameter = action.findParameterByName(id);
-                if (parameter == null) {
-                    parameter = action.findParameterByValue(id);
-                }
-            }
+            final CredentialsParameterValue parameter = id.startsWith("${") && id.endsWith("}") ?
+                    // denotes explicitly that this is a parameterized credential
+                    action.findParameterByName(id.substring(2, id.length() - 1)) :
+                    // otherwise, we can check to see if there is a matching credential parameter name that shadows an
+                    // existing global credential id
+                    action.findParameterByName(id);
             if (parameter != null) {
                 isParameter = true;
                 isDefaultValue = parameter.isDefaultValue();
