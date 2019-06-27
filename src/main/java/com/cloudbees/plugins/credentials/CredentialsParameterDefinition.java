@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -41,6 +42,10 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
      * Whether to fail the build if the credential cannot be resolved.
      */
     private final boolean required;
+    /**
+     * Whether or not to include user-scoped credentials
+     */
+    private boolean includeUser;
 
     @DataBoundConstructor
     public CredentialsParameterDefinition(String name, String description, String defaultValue, String credentialType,
@@ -106,6 +111,15 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
 
     public boolean isRequired() {
         return required;
+    }
+
+    @DataBoundSetter
+    public void setIncludeUser(boolean includeUser) {
+        this.includeUser = includeUser;
+    }
+
+    public boolean isIncludeUser() {
+        return includeUser;
     }
 
     /**
