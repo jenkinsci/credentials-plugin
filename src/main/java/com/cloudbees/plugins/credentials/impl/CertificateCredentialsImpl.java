@@ -235,9 +235,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     public static abstract class KeyStoreSource extends AbstractDescribableImpl<KeyStoreSource> {
 
         /**
-         * Returns the {@link byte[]} content of the {@link KeyStore}.
+         * Returns the {@code byte[]} content of the {@link KeyStore}.
          *
-         * @return the {@link byte[]} content of the {@link KeyStore}.
+         * @return the {@code byte[]} content of the {@link KeyStore}.
          */
         @NonNull
         public abstract byte[] getKeyStoreBytes();
@@ -287,7 +287,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          * Helper method that performs form validation on a {@link KeyStore}.
          *
          * @param type          the type of keystore to instantiate, see {@link KeyStore#getInstance(String)}.
-         * @param keystoreBytes the {@link byte[]} content of the {@link KeyStore}.
+         * @param keystoreBytes the {@code byte[]} content of the {@link KeyStore}.
          * @param password      the password to use when loading the {@link KeyStore} and recovering the key from the
          *                      {@link KeyStore}.
          * @return the validation results.
