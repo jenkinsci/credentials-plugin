@@ -181,7 +181,8 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         public StandardListBoxModel doFillValueItems(@AncestorInPath Item context,
                                                      @QueryParameter(required = true) String credentialType,
                                                      @QueryParameter String value,
-                                                     @QueryParameter boolean required) {
+                                                     @QueryParameter boolean required,
+                                                     @QueryParameter boolean includeUser) {
             // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
             Jenkins jenkins = Jenkins.getActiveInstance();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
@@ -194,7 +195,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             if (!required) {
                 result.includeEmptyValue();
             }
-            if (!isSystem && acl.hasPermission(CredentialsProvider.USE_OWN)) {
+            if (!isSystem && acl.hasPermission(CredentialsProvider.USE_OWN) && includeUser) {
                 result.includeAs(authentication, context, typeClass, domainRequirements);
             }
             if (acl.hasPermission(CredentialsProvider.USE_ITEM) || isSystem || itemAuthentication

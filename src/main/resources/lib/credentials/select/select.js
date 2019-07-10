@@ -260,6 +260,18 @@ Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, functi
   }).bind($(x));
   x.onchange();
 });
+Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0, function (e) {
+    var includeUserCheckbox = e.querySelector("input[name='includeUser']");
+    var caution = e.querySelector("div.user-credentials-caution");
+    includeUserCheckbox.addEventListener('click', function (evt) {
+        if (this.checked) {
+            caution.setAttribute('style', 'display:block');
+        } else {
+            caution.setAttribute('style', 'display:none');
+        }
+        layoutUpdateCallback.call();
+    });
+})
 window.setTimeout(function() {
     // HACK: can be removed once base version of Jenkins has fix of https://issues.jenkins-ci.org/browse/JENKINS-26578
     // need to apply the new behaviours to existing objects
