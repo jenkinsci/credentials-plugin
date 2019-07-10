@@ -12,7 +12,6 @@ import hudson.model.SimpleParameterDefinition;
 import hudson.security.ACL;
 import hudson.util.ListBoxModel;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
@@ -148,7 +147,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
                     continue;
                 }
                 if (credentialType.equals(descriptor.clazz.getName())) {
-                    return (Class<? extends StandardCredentials>) descriptor.clazz;
+                    return descriptor.clazz.asSubclass(StandardCredentials.class);
                 }
             }
             return StandardCredentials.class;
@@ -165,11 +164,10 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
 
         public StandardListBoxModel doFillDefaultValueItems(@AncestorInPath Item context,
                                                             @QueryParameter(required = true) String credentialType) {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            Jenkins jenkins = Jenkins.getActiveInstance();
+            Jenkins jenkins = Jenkins.get();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
-            final List<DomainRequirement> domainRequirements = Collections.<DomainRequirement>emptyList();
+            final List<DomainRequirement> domainRequirements = Collections.emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
             result.includeEmptyValue();
             if (acl.hasPermission(CredentialsProvider.USE_ITEM)) {
@@ -183,14 +181,13 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
                                                      @QueryParameter String value,
                                                      @QueryParameter boolean required,
                                                      @QueryParameter boolean includeUser) {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            Jenkins jenkins = Jenkins.getActiveInstance();
+            Jenkins jenkins = Jenkins.get();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Authentication authentication = Jenkins.getAuthentication();
             final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf(context);
             final boolean isSystem = ACL.SYSTEM.equals(authentication);
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
-            final List<DomainRequirement> domainRequirements = Collections.<DomainRequirement>emptyList();
+            final List<DomainRequirement> domainRequirements = Collections.emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
             if (!required) {
                 result.includeEmptyValue();
