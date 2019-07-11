@@ -49,7 +49,7 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
- * An analogue of {@link Secret} to be used for efficient storage of {@link byte[]}. The serialized form will embed the
+ * An analogue of {@link Secret} to be used for efficient storage of {@code byte[]}. The serialized form will embed the
  * salt and padding so no two invocations of {@link #getEncryptedData()} will return the same result, but all will
  * decrypt to the same {@link #getPlainData()}. XStream serialization and Stapler form-binding will assume that
  * the {@link #toString()} representation is used (i.e. the Base64 encoded secret bytes wrapped with <code>{</code>
@@ -121,7 +121,7 @@ public class SecretBytes implements Serializable {
     }
 
     /**
-     * Returns the raw unencrypted data. The caller is responsible for zeroing out the returned {@link byte[]} after
+     * Returns the raw unencrypted data. The caller is responsible for zeroing out the returned {@code byte[]} after
      * use.
      *
      * @return the raw unencrypted data.
@@ -240,7 +240,7 @@ public class SecretBytes implements Serializable {
      * <p>
      * Useful for recovering a value from a form field.
      * If the supplied bytes are known to be unencrypted then the caller is responsible for zeroing out the supplied
-     * {@link byte[]} afterwards.
+     * {@code byte[]} afterwards.
      *
      * @param data the data to wrap or decrypt.
      * @return never null
