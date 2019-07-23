@@ -262,9 +262,9 @@ Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, functi
 });
 Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0, function (e) {
     e.querySelector("input[name='includeUser']").addEventListener('click', function (evt) {
-        var caution = e.querySelector("div.user-credentials-caution");
+        var caution = e.querySelector("span.user-credentials-caution");
         if (this.checked) {
-            caution.setAttribute('style', 'display:inline-block');
+            caution.setAttribute('style', 'display:inline');
         } else {
             caution.setAttribute('style', 'display:none');
         }

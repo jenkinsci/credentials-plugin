@@ -28,9 +28,9 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
-import com.gargoylesoftware.htmlunit.html.HtmlDivision;
 import com.gargoylesoftware.htmlunit.html.HtmlElementUtil;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlSpan;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
@@ -115,12 +115,12 @@ public class CredentialsParameterDefinitionTest {
 
         HtmlCheckBoxInput checkbox = form.getInputByName("includeUser");
         assertFalse("List user credentials checkbox should not be checked by default", checkbox.isChecked());
-        HtmlDivision div = form.getOneHtmlElementByAttribute("div", "class", "warning user-credentials-caution");
-        assertFalse("Caution message about user credentials should not be displayed yet", div.isDisplayed());
+        HtmlSpan span = form.getOneHtmlElementByAttribute("span", "class", "warning user-credentials-caution");
+        assertFalse("Caution message about user credentials should not be displayed yet", span.isDisplayed());
         form.getSelectByName("_.value").getOptions().forEach(option -> assertNotEquals("No user credential should be an option yet", userCredentialId, option.getValueAttribute()));
 
         HtmlElementUtil.click(checkbox);
-        assertTrue("Caution message about user credentials should be displayed after checking the box", div.isDisplayed());
+        assertTrue("Caution message about user credentials should be displayed after checking the box", span.isDisplayed());
         form.getSelectByName("_.value").getOptions().stream().filter(option -> option.getValueAttribute().equals(userCredentialId)).findAny()
                 .orElseThrow(() -> new AssertionError("No credential found matching user credential id " + userCredentialId));
     }
