@@ -261,9 +261,8 @@ Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, functi
   x.onchange();
 });
 Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0, function (e) {
-    var includeUserCheckbox = e.querySelector("input[name='includeUser']");
-    var caution = e.querySelector("div.user-credentials-caution");
-    includeUserCheckbox.addEventListener('click', function (evt) {
+    e.querySelector("input[name='includeUser']").addEventListener('click', function (evt) {
+        var caution = e.querySelector("div.user-credentials-caution");
         if (this.checked) {
             caution.setAttribute('style', 'display:block');
         } else {
