@@ -4,7 +4,6 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
 import hudson.Util;
@@ -43,37 +42,19 @@ public class CredentialsParameterValue extends ParameterValue {
      */
     private final boolean isDefaultValue;
 
-    /**
-     * The user who supplied the parameter value.
-     */
-    private transient final String userId;
-
     @DataBoundConstructor
     public CredentialsParameterValue(String name, String value, String description) {
         this(name, value, description, false);
     }
 
     public CredentialsParameterValue(String name, String value, String description, boolean isDefaultValue) {
-         this(name, value, description, isDefaultValue, Jenkins.getAuthentication().getName());
-    }
-
-    CredentialsParameterValue(String name, String value, String description, boolean isDefaultValue, String userId) {
         super(name, description);
         this.value = value;
         this.isDefaultValue = isDefaultValue;
-        this.userId = userId;
     }
 
     public String getValue() {
         return value;
-    }
-
-    /**
-     * Returns the user id of who filled in this credentials parameter.
-     */
-    @CheckForNull
-    String getUserId() {
-        return userId;
     }
 
     /**

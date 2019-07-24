@@ -24,6 +24,7 @@
 
 package com.cloudbees.plugins.credentials;
 
+import hudson.model.Cause;
 import hudson.model.InvisibleAction;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
@@ -33,20 +34,49 @@ import jenkins.model.RunAction2;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Contains a collection of {@link CredentialsParameterValue} values provided to a {@link Run}.
- * When attached to a run, this action will import any CredentialsParameterValues contained in the run's optionally
- * present {@link ParametersAction}.
+ * Invisible run action for tracking which user supplied which {@link CredentialsParameterValue} to a {@link Run}.
+ * This class exposes {@link #add(String, CredentialsParameterValue)} and {@link #addFromParameterValues(String, Collection)}
+ * for adding these parameter values to an existing action. When this action is attached to a run, this action imports
+ * any CredentialsParameterValues contained in the run's {@link ParametersAction} and associates it to the optionally
+ * present {@link hudson.model.Cause.UserIdCause}. Parameters without a user id cannot reference
+ * {@linkplain CredentialsScope#USER user-scoped credentials}.
  *
  * @since TODO
  */
-public class CredentialsParametersAction extends InvisibleAction implements RunAction2, Iterable<CredentialsParameterValue> {
+public class CredentialsParametersAction extends InvisibleAction implements RunAction2 {
 
-    private final Map<String, CredentialsParameterValue> values = new ConcurrentHashMap<>();
+    /**
+     * Maps a user id to a CredentialsParameterValue to indicate the user performing the credential action.
+     */
+    static class AuthenticatedCredentials {
+        private final String userId;
+        private final CredentialsParameterValue parameterValue;
+
+        private AuthenticatedCredentials(@CheckForNull String userId, @Nonnull CredentialsParameterValue parameterValue) {
+            this.userId = userId;
+            this.parameterValue = parameterValue;
+        }
+
+        /**
+         * @return the effective user id of who supplied this credentials parameter value
+         */
+        String getUserId() {
+            return userId;
+        }
+
+        /**
+         * @return the credentials parameter value supplied
+         */
+        CredentialsParameterValue getParameterValue() {
+            return parameterValue;
+        }
+    }
+
+    private final Map<String, AuthenticatedCredentials> values = new ConcurrentHashMap<>();
 
     /**
      * Looks up an existing CredentialsParameterAction for a Run or adapts and attaches an existing ParametersAction to
@@ -68,22 +98,21 @@ public class CredentialsParametersAction extends InvisibleAction implements RunA
     /**
      * Adds a CredentialsParameterValue to this action if it does not already exist.
      */
-    public void add(@Nonnull CredentialsParameterValue value) {
-        values.put(value.getName(), value);
+    public void add(@CheckForNull String userId, @Nonnull CredentialsParameterValue parameterValue) {
+        values.put(parameterValue.getName(), new AuthenticatedCredentials(userId, parameterValue));
     }
 
     /**
-     * Adds CredentialsParameterValues from a collection of ParameterValues. Shortcut for filtering and adding items
-     * via {@link #add(CredentialsParameterValue)}.
+     * Bulk add of CredentialsParameterValues from a heterogeneous collection of parameter values.
      */
-    public void addFromParameterValues(@Nonnull Collection<ParameterValue> values) {
-        values.stream()
+    public void addFromParameterValues(@CheckForNull String userId, @Nonnull Collection<ParameterValue> parameterValues) {
+        parameterValues.stream()
                 .filter(CredentialsParameterValue.class::isInstance)
                 .map(CredentialsParameterValue.class::cast)
-                .forEach(this::add);
+                .forEach(parameterValue -> add(userId, parameterValue));
     }
 
-    @CheckForNull CredentialsParameterValue findParameterByName(@Nonnull String name) {
+    @CheckForNull AuthenticatedCredentials findCredentialsByParameterName(@Nonnull String name) {
         return values.get(name);
     }
 
@@ -91,7 +120,8 @@ public class CredentialsParametersAction extends InvisibleAction implements RunA
     public void onAttached(Run<?, ?> r) {
         final ParametersAction action = r.getAction(ParametersAction.class);
         if (action != null) {
-            addFromParameterValues(action.getParameters());
+            final Cause.UserIdCause cause = r.getCause(Cause.UserIdCause.class);
+            addFromParameterValues(cause == null ? null : cause.getUserId(), action.getParameters());
         }
     }
 
@@ -100,8 +130,4 @@ public class CredentialsParametersAction extends InvisibleAction implements RunA
         // this space intentionally left blank
     }
 
-    @Override
-    public @Nonnull Iterator<CredentialsParameterValue> iterator() {
-        return values.values().iterator();
-    }
 }

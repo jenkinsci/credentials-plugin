@@ -32,6 +32,9 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.User;
+import hudson.security.ACL;
+import hudson.security.ACLContext;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -52,6 +55,11 @@ public class CredentialsParametersActionTest {
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
         CredentialsProvider.lookupStores(j.jenkins).iterator().next()
                 .addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "cred-id", "global credential", "root", "correct horse battery staple"));
+        final User alpha = User.getOrCreateByIdOrFullName("alpha");
+        try (ACLContext ignored = ACL.as(alpha)) {
+            CredentialsProvider.lookupStores(alpha).iterator().next()
+                    .addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(CredentialsScope.USER, "alpha-cred-id", "user credentials", "root", "hello world"));
+        }
     }
 
     @Test
@@ -65,10 +73,48 @@ public class CredentialsParametersActionTest {
     public void forRunCopiesParametersWhenRunIsParameterized() throws Exception {
         final FreeStyleProject project = j.createFreeStyleProject();
         project.addProperty(new ParametersDefinitionProperty(new CredentialsParameterDefinition("cred", "", null, IdCredentials.class.getName(), true)));
-        final CredentialsParameterValue parameterValue = new CredentialsParameterValue("cred", "cred-id", "", false, "alpha");
-        final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0, new Cause.UserIdCause("alpha"), new ParametersAction(parameterValue)));
+        final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0, new Cause.UserIdCause("alpha"), forParameter("cred-id")));
         final CredentialsParametersAction action = CredentialsParametersAction.forRun(build);
         assertNotNull(action);
-        assertEquals(parameterValue, action.findParameterByName("cred"));
+        final CredentialsParametersAction.AuthenticatedCredentials creds = action.findCredentialsByParameterName("cred");
+        assertNotNull(creds);
+        assertEquals("alpha", creds.getUserId());
+        assertEquals("cred-id", creds.getParameterValue().getValue());
+    }
+
+    @Test
+    public void forRunUsesUserIdCauseForInitialParametersOwnership() throws Exception {
+        final FreeStyleProject project = j.createFreeStyleProject();
+        project.addProperty(new ParametersDefinitionProperty(new CredentialsParameterDefinition("cred", "", null, IdCredentials.class.getName(), true)));
+
+        // no cause means no user id
+        {
+            final CredentialsParametersAction action = CredentialsParametersAction.forRun(
+                    j.assertBuildStatusSuccess(
+                            project.scheduleBuild2(0,
+                                    forParameter("cred-id"))));
+            assertNotNull(action);
+            final CredentialsParametersAction.AuthenticatedCredentials creds = action.findCredentialsByParameterName("cred");
+            assertNotNull(creds);
+            assertNull(creds.getUserId());
+            assertEquals("cred-id", creds.getParameterValue().getValue());
+        }
+
+        // cause of type UserIdCause means that user id
+        {
+            final CredentialsParametersAction action = CredentialsParametersAction.forRun(
+                    j.assertBuildStatusSuccess(
+                            project.scheduleBuild2(0,
+                                    new Cause.UserIdCause("alpha"), forParameter("alpha-cred-id"))));
+            assertNotNull(action);
+            final CredentialsParametersAction.AuthenticatedCredentials creds = action.findCredentialsByParameterName("cred");
+            assertNotNull(creds);
+            assertEquals("alpha", creds.getUserId());
+            assertEquals("alpha-cred-id", creds.getParameterValue().getValue());
+        }
+    }
+
+    private static ParametersAction forParameter(String credentialsId) {
+        return new ParametersAction(new CredentialsParameterValue("cred", credentialsId, null, false));
     }
 }

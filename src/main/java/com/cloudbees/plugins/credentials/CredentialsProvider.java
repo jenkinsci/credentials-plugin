@@ -880,17 +880,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         String inputUserId = null;
         final CredentialsParametersAction action = CredentialsParametersAction.forRun(run);
         if (action != null) {
-            final CredentialsParameterValue parameter = id.startsWith("${") && id.endsWith("}") ?
+            final CredentialsParametersAction.AuthenticatedCredentials credentials = id.startsWith("${") && id.endsWith("}") ?
                     // denotes explicitly that this is a parameterized credential
-                    action.findParameterByName(id.substring(2, id.length() - 1)) :
+                    action.findCredentialsByParameterName(id.substring(2, id.length() - 1)) :
                     // otherwise, we can check to see if there is a matching credential parameter name that shadows an
                     // existing global credential id
-                    action.findParameterByName(id);
-            if (parameter != null) {
+                    action.findCredentialsByParameterName(id);
+            if (credentials != null) {
                 isParameter = true;
-                isDefaultValue = parameter.isDefaultValue();
-                id = Util.fixNull(parameter.getValue());
-                inputUserId = parameter.getUserId();
+                inputUserId = credentials.getUserId();
+                isDefaultValue = credentials.getParameterValue().isDefaultValue();
+                id = Util.fixNull(credentials.getParameterValue().getValue());
             }
         }
         // non parameters or default parameter values can only come from the job's context
