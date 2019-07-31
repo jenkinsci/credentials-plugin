@@ -477,3 +477,25 @@ IssueTrackerAuthentication auth = AuthenticationTokens.convert(
   )
 );
 ----
+
+=== Adding user supplied credentials parameters to builds
+
+A running build can be supplied with credentials parameter values.
+Typically, these values are provided by using a parameterized job and supplying those parameters when triggering the build.
+Additional credentials parameters may be specified by adding or updating a build's `CredentialsParametersAction`.
+Each parameter value can be associated to a user who supplied the credentials which allows for multiple sources of credentials to contribute to a build throughout its lifecycle.
+Plugins acting on a build can do the following:
+
+[source,java]
+----
+CredentialsParametersAction action = run.getAction(CredentialsParametersAction.class);
+if (action == null) {
+  action = new CredentialsParametersAction();
+}
+action.add(userId, parameterValue); // <1>
+action.addFromParameterValues(userId, parameterValues); // <2>
+run.replaceAction(action); // <3>
+----
+<1> The `userId` is only required if the parameter value references user credentials.
+<2> Convenience method to add `CredentialsParameterValue`s from some collection of `ParameterValue`s:
+<3> Add or update the action.
