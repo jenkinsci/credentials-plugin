@@ -115,7 +115,7 @@ public class CredentialsParameterDefinitionTest {
 
         HtmlCheckBoxInput checkbox = form.getInputByName("includeUser");
         assertFalse("List user credentials checkbox should not be checked by default", checkbox.isChecked());
-        HtmlSpan span = form.getOneHtmlElementByAttribute("span", "class", "warning user-credentials-caution");
+        HtmlSpan span = form.getOneHtmlElementByAttribute("span", "class", "warning user-credentials-caution hidden");
         assertFalse("Caution message about user credentials should not be displayed yet", span.isDisplayed());
         form.getSelectByName("_.value").getOptions().forEach(option -> assertNotEquals("No user credential should be an option yet", userCredentialId, option.getValueAttribute()));
 
