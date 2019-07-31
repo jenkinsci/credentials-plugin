@@ -35,6 +35,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -62,18 +63,24 @@ public class CredentialsParametersActionTest {
         }
     }
 
+    private FreeStyleProject project;
+
+    @Before
+    public void setUp() throws Exception {
+        project = j.createFreeStyleProject();
+    }
+
     @Test
     public void forRunReturnsNullWhenRunHasNoParameters() throws Exception {
-        final FreeStyleProject project = j.createFreeStyleProject();
         final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0));
         assertNull(CredentialsParametersAction.forRun(build));
     }
 
     @Test
     public void forRunCopiesParametersWhenRunIsParameterized() throws Exception {
-        final FreeStyleProject project = j.createFreeStyleProject();
-        project.addProperty(new ParametersDefinitionProperty(new CredentialsParameterDefinition("cred", "", null, IdCredentials.class.getName(), true)));
-        final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0, new Cause.UserIdCause("alpha"), forParameter("cred-id")));
+        addCredentialsParameterDefinition();
+        final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0,
+                new Cause.UserIdCause("alpha"), forParameter("cred-id")));
         final CredentialsParametersAction action = CredentialsParametersAction.forRun(build);
         assertNotNull(action);
         final CredentialsParametersAction.AuthenticatedCredentials creds = action.findCredentialsByParameterName("cred");
@@ -83,35 +90,36 @@ public class CredentialsParametersActionTest {
     }
 
     @Test
-    public void forRunUsesUserIdCauseForInitialParametersOwnership() throws Exception {
-        final FreeStyleProject project = j.createFreeStyleProject();
-        project.addProperty(new ParametersDefinitionProperty(new CredentialsParameterDefinition("cred", "", null, IdCredentials.class.getName(), true)));
+    public void forRunWithoutUserIdCauseHasNoParameterOwnership() throws Exception {
+        addCredentialsParameterDefinition();
+        final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0,
+                forParameter("alpha-cred-id")));
+        final CredentialsParametersAction action = CredentialsParametersAction.forRun(build);
+        assertNotNull(action);
+        final CredentialsParametersAction.AuthenticatedCredentials creds = action.findCredentialsByParameterName("cred");
+        assertNotNull(creds);
+        assertNull(creds.getUserId());
+        // as a result:
+        assertNull(CredentialsProvider.findCredentialById("cred", IdCredentials.class, build));
+    }
 
-        // no cause means no user id
-        {
-            final CredentialsParametersAction action = CredentialsParametersAction.forRun(
-                    j.assertBuildStatusSuccess(
-                            project.scheduleBuild2(0,
-                                    forParameter("cred-id"))));
-            assertNotNull(action);
-            final CredentialsParametersAction.AuthenticatedCredentials creds = action.findCredentialsByParameterName("cred");
-            assertNotNull(creds);
-            assertNull(creds.getUserId());
-            assertEquals("cred-id", creds.getParameterValue().getValue());
-        }
+    @Test
+    public void forRunWithUserIdCauseHasParameterOwnership() throws Exception {
+        addCredentialsParameterDefinition();
+        final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0,
+                new Cause.UserIdCause("alpha"), forParameter("alpha-cred-id")));
+        final CredentialsParametersAction action = CredentialsParametersAction.forRun(build);
+        assertNotNull(action);
+        final CredentialsParametersAction.AuthenticatedCredentials creds = action.findCredentialsByParameterName("cred");
+        assertNotNull(creds);
+        assertEquals("alpha", creds.getUserId());
+        assertEquals("alpha-cred-id", creds.getParameterValue().getValue());
+        // as a result:
+        assertNotNull(CredentialsProvider.findCredentialById("cred", IdCredentials.class, build));
+    }
 
-        // cause of type UserIdCause means that user id
-        {
-            final CredentialsParametersAction action = CredentialsParametersAction.forRun(
-                    j.assertBuildStatusSuccess(
-                            project.scheduleBuild2(0,
-                                    new Cause.UserIdCause("alpha"), forParameter("alpha-cred-id"))));
-            assertNotNull(action);
-            final CredentialsParametersAction.AuthenticatedCredentials creds = action.findCredentialsByParameterName("cred");
-            assertNotNull(creds);
-            assertEquals("alpha", creds.getUserId());
-            assertEquals("alpha-cred-id", creds.getParameterValue().getValue());
-        }
+    private void addCredentialsParameterDefinition() throws IOException {
+        project.addProperty(new ParametersDefinitionProperty(new CredentialsParameterDefinition("cred", null, null, IdCredentials.class.getName(), true)));
     }
 
     private static ParametersAction forParameter(String credentialsId) {
