@@ -224,7 +224,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
     }
 
     /**
-     * Adds the matching subset of suppled credentials to the model.
+     * Adds the matching subset of supplied credentials to the model.
      *
      * @param matcher     the matcher.
      * @param credentials the superset of credentials.
@@ -242,7 +242,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
     }
 
     /**
-     * Adds the matching subset of suppled credentials to the model.
+     * Adds the matching subset of supplied credentials to the model.
      *
      * @param matcher     the matcher.
      * @param credentials the superset of credentials.
@@ -260,7 +260,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
     }
 
     /**
-     * Adds the matching subset of suppled credentials to the model.
+     * Adds the matching subset of supplied credentials to the model.
      *
      * @param matcher     the matcher.
      * @param credentials the superset of credentials.

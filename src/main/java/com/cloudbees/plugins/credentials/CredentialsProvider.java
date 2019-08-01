@@ -1519,6 +1519,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static <C extends Credentials> List<C> trackAll(@NonNull Node node, @NonNull List<C> credentials) {
         long timestamp = System.currentTimeMillis();
         String nodeName = node.getNodeName();
+        // Create a list of all current node names. The credential will only be
+        // fingerprinted if it is one of these.
+        // TODO (JENKINS-51694): This breaks tracking for cloud agents. We should
+        // track those agents against the cloud instead of the node itself.
+        Set<String> jenkinsNodeNames = new HashSet<>();
+        // TODO: Switch to Jenkins.get() once 2.98+ is the baseline
+        for (Node n: Jenkins.getActiveInstance().getNodes()) {
+            jenkinsNodeNames.add(n.getNodeName());
+        }
         for (Credentials c : credentials) {
             if (c != null) {
                 try {
@@ -1530,14 +1539,23 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                         long start = timestamp;
                         for (Iterator<FingerprintFacet> iterator = facets.iterator(); iterator.hasNext(); ) {
                             FingerprintFacet f = iterator.next();
-                            if (f instanceof NodeCredentialsFingerprintFacet && StringUtils
-                                    .equals(nodeName, ((NodeCredentialsFingerprintFacet) f).getNodeName())) {
-                                start = Math.min(start, f.getTimestamp());
-                                iterator.remove();
+                            // For all the node-tracking credentials, check to see if we can remove
+                            // older instances of these credential fingerprints, or from nodes which no longer exist
+                            if (f instanceof NodeCredentialsFingerprintFacet) {
+                                // Remove older instances
+                                if (StringUtils.equals(nodeName, ((NodeCredentialsFingerprintFacet) f).getNodeName())) {
+                                    start = Math.min(start, f.getTimestamp());
+                                    iterator.remove();
+                                // Remove unneeded instances
+                                } else if (!jenkinsNodeNames.contains(((NodeCredentialsFingerprintFacet) f).getNodeName())) {
+                                    iterator.remove();
+                                }
                             }
                         }
-                        // add in the new one
-                        facets.add(new NodeCredentialsFingerprintFacet(node, fingerprint, start, timestamp));
+                        // add in the new one if it is a valid current node
+                        if (jenkinsNodeNames.contains(node.getNodeName())) {
+                            facets.add(new NodeCredentialsFingerprintFacet(node, fingerprint, start, timestamp));
+                        }
                     } finally {
                         change.commit();
                     }

@@ -32,7 +32,12 @@ import hudson.model.Descriptor;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
+import hudson.model.Node;
+import hudson.slaves.NodeProperty;
 import hudson.model.User;
+import hudson.slaves.DumbSlave;
+import hudson.slaves.JNLPLauncher;
+import hudson.slaves.RetentionStrategy;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
@@ -254,6 +259,49 @@ public class CredentialsProviderTest {
         assertEquals(legacyCredentials.getScope(), r.getScope());
         assertEquals(legacyCredentials.getUsername(), r.getUsername());
         assertEquals(legacyCredentials.getPassword(), r.getPassword());
+    }
+
+    @Test
+    public void testNodeCredentialFingerprintsAreRemovedForNonExistantNodes() throws Exception {
+        // Create dummy credentials to use
+        DummyCredentials globalCred = new DummyCredentials(CredentialsScope.GLOBAL, "globalCred", "pwd");
+        // Find how many times this credential has been currently tracked
+        int initialFingerprintSize = CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size();
+
+        // Create a DumbSlave, this time don't add it to the model,
+        // it should not be recorded
+        DumbSlave nonAddedSlave = new DumbSlave("non-added-slave",
+                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                new JNLPLauncher(),
+                RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
+
+
+        CredentialsProvider.track(nonAddedSlave, globalCred);
+        assertEquals(initialFingerprintSize, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
+
+        // Create a DumbSlave to use, and add it to the Jenkins model, this
+        // one should be recorded
+        DumbSlave addedSlave = new DumbSlave("added-slave",
+                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                new JNLPLauncher(),
+                RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
+
+        Jenkins.getInstance().addNode(addedSlave);
+        CredentialsProvider.track(addedSlave, globalCred);
+        assertEquals(initialFingerprintSize+1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
+        // Track the usage of the credential for a second time, this should
+        // not increase the number of fingerprints further
+        CredentialsProvider.track(addedSlave, globalCred);
+        assertEquals(initialFingerprintSize+1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
+        // Remove the added slave from Jenkins, and track the non-added slave
+        // to flush any mapped credentials for nodes that no longer exist.
+        Jenkins.getInstance().removeNode(addedSlave);
+        CredentialsProvider.track(nonAddedSlave, globalCred);
+        assertEquals(initialFingerprintSize, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
     }
 
 }

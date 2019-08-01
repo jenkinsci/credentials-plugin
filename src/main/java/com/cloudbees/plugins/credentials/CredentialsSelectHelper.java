@@ -776,8 +776,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         public abstract ModelObject getContext(String token);
 
         /**
-         * Returns a human readable descripton of the type of context objects that this resolver resolves.
-         * @return a human readable descripton of the type of context objects that this resolver resolves.
+         * Returns a human readable description of the type of context objects that this resolver resolves.
+         * @return a human readable description of the type of context objects that this resolver resolves.
          * @throws AbstractMethodError if somebody compiled against pre-2.1.1 implementations. Use
          * {@link CredentialsSelectHelper.ContextResolver#displayName(CredentialsSelectHelper.ContextResolver)}
          * if you would prefer not to have to catch them.
@@ -787,10 +787,10 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         public abstract String getDisplayName();
 
         /**
-         * Returns a human readable descripton of the type of context objects that the specified resolver resolves.
+         * Returns a human readable description of the type of context objects that the specified resolver resolves.
          *
          * @param resolver the context resolver to get the display name of.
-         * @return a human readable descripton of the type of context objects that the specified resolver resolves.
+         * @return a human readable description of the type of context objects that the specified resolver resolves.
          * @since 2.1.1
          */
         public static String displayName(ContextResolver resolver) {

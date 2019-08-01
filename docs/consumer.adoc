@@ -340,7 +340,7 @@ Do not make any assumptions about the format of a `IdCredentials.getId()` other 
 
 .Historical evolution of the API
 ****
-Prior to the introduction of the `StandardCredentials` interface, the assuption was that each credentials type would have its own unique identifier, e.g. a `UsernamePasswordCredentials` would have the username, etc.
+Prior to the introduction of the `StandardCredentials` interface, the assumption was that each credentials type would have its own unique identifier, e.g. a `UsernamePasswordCredentials` would have the username, etc.
 
 This breaks down because the same username may have different passwords for different services, hence the introduction of a separate ID.
 
