@@ -104,7 +104,7 @@ public class DomainTest {
         store.addCredentials(domainFoo, systemCred);
         store.addCredentials(domainBar, systemCred1);
     
-        // Search creadentials with specific domain restrictions
+        // Search credentials with specific domain restrictions
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).size());
         assertEquals(systemCred.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).get(0).getUsername());
         assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).size());

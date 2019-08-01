@@ -76,7 +76,7 @@ public class FingerprintTest {
     }
 
     @Test
-    public void parameterizedBuildUseageTracked() throws Exception {
+    public void parameterizedBuildUsageTracked() throws Exception {
         UsernamePasswordCredentialsImpl credentials =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "secret-id", "test credentials", "bob",
                         "secret");

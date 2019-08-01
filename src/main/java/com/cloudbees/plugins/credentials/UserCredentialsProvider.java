@@ -667,7 +667,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
                 UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
                 if (property == null) {
                     synchronized (emptyProperties) {
-                        // need to recheck as UserCredentialsProperty#save() may have added while we awaited the lock
+                        // need to recheck as UserCredentialsProperty#save() may have added while we waited for the lock
                         property = user.getProperty(UserCredentialsProperty.class);
                         if (property == null) {
                             property = emptyProperties.get(user);

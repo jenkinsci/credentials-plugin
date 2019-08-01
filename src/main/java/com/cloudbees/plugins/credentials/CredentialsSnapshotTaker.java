@@ -6,7 +6,7 @@ import hudson.ExtensionPoint;
  * Some credential types can store some of the credential details in a file outside of Jenkins. Taking a snapshot
  * of the credential ensures that all the details are captured within the credential. For example
  * {@link com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl} can use different keystores implementations
- * to hold the certificiate. Calling {@link #snapshot(Credentials)} resolve the actual source into
+ * to hold the certificate. Calling {@link #snapshot(Credentials)} resolve the actual source into
  * a source like {@link com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl.UploadedKeyStoreSource}
  * which is self contained.
  *
