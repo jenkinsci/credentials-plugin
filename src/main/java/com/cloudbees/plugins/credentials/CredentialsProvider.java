@@ -23,6 +23,8 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.builds.CredentialsParameterBinding;
+import com.cloudbees.plugins.credentials.builds.CredentialsParameterBinder;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.fingerprints.ItemCredentialsFingerprintFacet;
@@ -878,20 +880,18 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         boolean isParameter = false;
         boolean isDefaultValue = false;
         String inputUserId = null;
-        final CredentialsParametersAction action = CredentialsParametersAction.forRun(run);
-        if (action != null) {
-            final CredentialsParametersAction.AuthenticatedCredentials credentials = id.startsWith("${") && id.endsWith("}") ?
-                    // denotes explicitly that this is a parameterized credential
-                    action.findCredentialsByParameterName(id.substring(2, id.length() - 1)) :
-                    // otherwise, we can check to see if there is a matching credential parameter name that shadows an
-                    // existing global credential id
-                    action.findCredentialsByParameterName(id);
-            if (credentials != null) {
-                isParameter = true;
-                inputUserId = credentials.getUserId();
-                isDefaultValue = credentials.getParameterValue().isDefaultValue();
-                id = Util.fixNull(credentials.getParameterValue().getValue());
-            }
+        final CredentialsParameterBinder binder = CredentialsParameterBinder.getOrCreate(run);
+        final CredentialsParameterBinding binding = id.startsWith("${") && id.endsWith("}") ?
+                // denotes explicitly that this is a parameterized credential
+                binder.forParameterName(id.substring(2, id.length() - 1)) :
+                // otherwise, we can check to see if there is a matching credential parameter name that shadows an
+                // existing global credential id
+                binder.forParameterName(id);
+        if (binding != null) {
+            isParameter = true;
+            inputUserId = binding.getUserId();
+            isDefaultValue = binding.isDefaultValue();
+            id = Util.fixNull(binding.getCredentialsId());
         }
         // non parameters or default parameter values can only come from the job's context
         if (!isParameter || isDefaultValue) {

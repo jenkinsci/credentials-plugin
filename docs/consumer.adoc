@@ -488,14 +488,7 @@ Plugins acting on a build can do the following:
 
 [source,java]
 ----
-CredentialsParametersAction action = run.getAction(CredentialsParametersAction.class);
-if (action == null) {
-  action = new CredentialsParametersAction();
-}
-action.add(userId, parameterValue); // <1>
-action.addFromParameterValues(userId, parameterValues); // <2>
-run.replaceAction(action); // <3>
+BuildCredentialsResolver resolver = BuildCredentialsResolver.forRun(build);
+resolver.bindCredentialsParameter(userId, parameterValue); // <1>
 ----
 <1> The `userId` is only required if the parameter value references user credentials.
-<2> Convenience method to add `CredentialsParameterValue`s from some collection of `ParameterValue`s:
-<3> Add or update the action.
