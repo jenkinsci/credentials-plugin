@@ -1521,7 +1521,10 @@ The list of available credentials will depend on a number of factors:
 
 [WARNING]
 ====
-Credentials parameters can only access user credentials if the corresponding user is the one who chooses them during a build.
+Builds can only resolve user credentials if their owner provides them as a credentials parameter value.
+The triggering user has access to provide their own user credentials as build parameters.
+Credentials parameters can also be attached to a build by a plugin with an optional user ID which simulates the same.
+These credentials parameters are scoped to their submitting users only for that build.
 
 Downstream jobs will be passed the credentials ID but will not be passed access to the user's per-user credentials store.
 This restriction is to prevent a malicious actor adding a hidden job as a downstream job and thereby gaining access to the per-user credentials store.
