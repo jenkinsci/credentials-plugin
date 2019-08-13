@@ -24,7 +24,6 @@
 package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.BaseCredentials;
-import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;

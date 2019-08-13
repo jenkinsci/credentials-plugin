@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
