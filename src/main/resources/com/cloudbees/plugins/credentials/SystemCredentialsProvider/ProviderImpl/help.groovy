@@ -24,36 +24,36 @@
 package com.cloudbees.plugins.credentials.SystemCredentialsProvider.ProviderImpl
 
 import com.cloudbees.plugins.credentials.CredentialsProvider
-import hudson.security.ACL;
+import hudson.security.ACL
 
 div() {
-    text(_("Provides credentials from the root of Jenkins. "));
-    text(_("Credentials will be available to: "));
+    text(_("Provides credentials from the root of Jenkins. "))
+    text(_("Credentials will be available to: "))
     ul() {
         li() {
             text(_("Authentication: "))
             code() {
-                text(ACL.SYSTEM.name);
+                text(ACL.SYSTEM.name)
             }
         }
-        def p = CredentialsProvider.USE_ITEM;
+        def p = CredentialsProvider.USE_ITEM
         while (p!=null && !p.enabled) {
             p = p.impliedBy
-        };
+        }
         if (p != null) {
             li() {
                 text(_("Users with permission: "))
                 code() {
-                    text(p.group.title);
-                    text("/");
-                    text(p.name);
+                    text(p.group.title)
+                    text("/")
+                    text(p.name)
                 }
             }
         }
     }
-    text(_("Credentials will be available in: "));
+    text(_("Credentials will be available in: "))
     ul(){
-        li(_("Global scoped credentials be available to all items within Jenkins"));
-        li(_("System scoped credentials restricted to system level operations such as connecting build agents"));
+        li(_("Global scoped credentials be available to all items within Jenkins"))
+        li(_("System scoped credentials restricted to system level operations such as connecting build agents"))
     }
 }
