@@ -79,7 +79,7 @@ public class CredentialsProviderTest {
         assertFalse("null auth -> ACL.SYSTEM",
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, (Authentication) null).isEmpty());
 
-        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Jenkins.getInstance()).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Jenkins.get()).isEmpty());
         assertFalse("null item -> Root",
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null).isEmpty());
         assertFalse("null item -> Root",
@@ -97,7 +97,7 @@ public class CredentialsProviderTest {
         assertFalse("null auth -> ACL.SYSTEM",
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, (Authentication) null).isEmpty());
 
-        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Jenkins.getInstance()).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Jenkins.get()).isEmpty());
         assertFalse("null item -> Root",
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null).isEmpty());
         assertFalse("null item -> Root",
@@ -114,7 +114,7 @@ public class CredentialsProviderTest {
     public void testNoCredentialsUntilWeAddSomeViaStore() throws Exception {
         FreeStyleProject project = r.createFreeStyleProject();
         assertTrue(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
         store.addCredentials(Domain.global(), new DummyCredentials(CredentialsScope.SYSTEM, "foo", "bar"));
         assertFalse(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
         assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class).isEmpty());
@@ -124,7 +124,7 @@ public class CredentialsProviderTest {
         assertFalse("null auth -> ACL.SYSTEM",
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, (Authentication) null).isEmpty());
 
-        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Jenkins.getInstance()).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Jenkins.get()).isEmpty());
         assertFalse("null item -> Root",
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null).isEmpty());
         assertFalse("null item -> Root",
@@ -141,7 +141,7 @@ public class CredentialsProviderTest {
         assertFalse("null auth -> ACL.SYSTEM",
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, (Authentication) null).isEmpty());
 
-        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Jenkins.getInstance()).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials(DummyCredentials.class, Jenkins.get()).isEmpty());
         assertFalse("null item -> Root",
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, (Item) null).isEmpty());
         assertFalse("null item -> Root",
@@ -196,7 +196,7 @@ public class CredentialsProviderTest {
         DummyCredentials globalCred = new DummyCredentials(CredentialsScope.GLOBAL, "globalCred", "pwd");
         DummyCredentials modCredential = new DummyCredentials(CredentialsScope.GLOBAL, "modCredential", "pwd");
 
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
         
         // Add credentials
         store.addCredentials(Domain.global(), systemCred);
@@ -287,7 +287,7 @@ public class CredentialsProviderTest {
                 new JNLPLauncher(),
                 RetentionStrategy.INSTANCE, Collections.<NodeProperty<?>>emptyList());
 
-        Jenkins.getInstance().addNode(addedSlave);
+        Jenkins.get().addNode(addedSlave);
         CredentialsProvider.track(addedSlave, globalCred);
         assertEquals(initialFingerprintSize+1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
 
@@ -298,7 +298,7 @@ public class CredentialsProviderTest {
 
         // Remove the added slave from Jenkins, and track the non-added slave
         // to flush any mapped credentials for nodes that no longer exist.
-        Jenkins.getInstance().removeNode(addedSlave);
+        Jenkins.get().removeNode(addedSlave);
         CredentialsProvider.track(nonAddedSlave, globalCred);
         assertEquals(initialFingerprintSize, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
 

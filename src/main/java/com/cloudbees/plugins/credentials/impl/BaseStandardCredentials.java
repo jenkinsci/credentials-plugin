@@ -190,12 +190,12 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             for (ContextResolver r : ExtensionList.lookup(ContextResolver.class)) {
                 String token = r.getToken(context);
                 if (token != null) {
-                    return Jenkins.getActiveInstance().getRootUrlFromRequest() + "/" + getDescriptorUrl()
+                    return Jenkins.get().getRootUrlFromRequest() + "/" + getDescriptorUrl()
                             + "/checkId?provider=" + r.getClass().getName() + "&token="
                             + URLEncoder.encode(token, "UTF-8");
                 }
             }
-            return Jenkins.getActiveInstance().getRootUrlFromRequest() + "/" + getDescriptorUrl()
+            return Jenkins.get().getRootUrlFromRequest() + "/" + getDescriptorUrl()
                     + "/checkId?provider=null&token=null";
         }
 
@@ -221,12 +221,10 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             }
             if (!(context instanceof Jenkins)) {
                 // CredentialsProvider.lookupStores(User) does not return SystemCredentialsProvider.
-                Jenkins j = Jenkins.getInstance();
-                if (j != null) {
-                    problem = checkForDuplicates(value, context, j);
-                    if (problem != null) {
-                        return problem;
-                    }
+                Jenkins j = Jenkins.get();
+                problem = checkForDuplicates(value, context, j);
+                if (problem != null) {
+                    return problem;
                 }
             }
             return FormValidation.ok();

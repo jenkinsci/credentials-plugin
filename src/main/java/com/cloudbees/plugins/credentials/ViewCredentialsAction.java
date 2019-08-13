@@ -263,7 +263,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         List<TableEntry> result = new ArrayList<TableEntry>();
         Item item = context instanceof Item ? (Item) context : null;
         ItemGroup group = context instanceof ItemGroup ? (ItemGroup) context
-                : context instanceof User ? Jenkins.getActiveInstance() : null;
+                : context instanceof User ? Jenkins.get() : null;
         Set<String> ids = new HashSet<String>();
         for (CredentialsStore p : CredentialsProvider.lookupStores(context)) {
             if (p.hasPermission(CredentialsProvider.VIEW)) {
@@ -362,8 +362,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         } else if (context instanceof User) {
             n = Messages.CredentialsStoreAction_UserDisplayName(((User) context).getDisplayName());
         } else {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            n = Jenkins.getActiveInstance().getFullDisplayName();
+            n = Jenkins.get().getFullDisplayName();
         }
         return n;
     }
@@ -375,7 +374,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public ACL getACL() {
         final AccessControlled accessControlled =
-                context instanceof AccessControlled ? (AccessControlled) context : Jenkins.getActiveInstance();
+                context instanceof AccessControlled ? (AccessControlled) context : Jenkins.get();
         return new ACL() {
             @Override
             public boolean hasPermission(@Nonnull Authentication a, @Nonnull Permission permission) {
@@ -474,7 +473,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
          * Our constructor.
          */
         public RootActionImpl() {
-            super(Jenkins.getActiveInstance());
+            super(Jenkins.get());
         }
     }
 
@@ -555,7 +554,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
          * @throws IOException if there was an issue with formatting this using the markup formatter.
          */
         public String getDescription() throws IOException {
-            return credentials instanceof StandardCredentials ? Jenkins.getActiveInstance().getMarkupFormatter()
+            return credentials instanceof StandardCredentials ? Jenkins.get().getMarkupFormatter()
                     .translate(((StandardCredentials) credentials).getDescription()) : null;
         }
 

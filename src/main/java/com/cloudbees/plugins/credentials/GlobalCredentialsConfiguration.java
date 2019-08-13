@@ -134,7 +134,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
     @SuppressWarnings("unused") // stapler web method binding
     public synchronized HttpResponse doConfigure(@NonNull StaplerRequest req) throws IOException, ServletException,
             FormException {
-        Jenkins jenkins = Jenkins.getActiveInstance();
+        Jenkins jenkins = Jenkins.get();
         jenkins.checkPermission(Jenkins.ADMINISTER);
         // logically this change starts from Jenkins
         BulkChange bc = new BulkChange(jenkins);
@@ -159,7 +159,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
      */
     private boolean configure(StaplerRequest req, JSONObject json) throws FormException {
         // for compatibility reasons, the actual value is stored in Jenkins
-        Jenkins j = Jenkins.getActiveInstance();
+        Jenkins j = Jenkins.get();
         j.checkPermission(Jenkins.ADMINISTER);
 
         // persist all the provider configs
@@ -197,7 +197,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
     @SuppressWarnings("unchecked")
     @Override
     public Descriptor<GlobalCredentialsConfiguration> getDescriptor() {
-        return Jenkins.getActiveInstance().getDescriptorOrDie(getClass());
+        return Jenkins.get().getDescriptorOrDie(getClass());
     }
 
     /**

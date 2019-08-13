@@ -71,7 +71,7 @@ public class DomainRestrictedCredentialsTest {
 
         Collection<Credentials> matchingCredentials =
                 CredentialsProvider.lookupCredentials(Credentials.class,
-                        Jenkins.getInstance(), ACL.SYSTEM);
+                        Jenkins.get(), ACL.SYSTEM);
 
         assertThat(matchingCredentials, hasItems(trueCredentials));
         assertThat(matchingCredentials, not(hasItems(falseCredentials)));

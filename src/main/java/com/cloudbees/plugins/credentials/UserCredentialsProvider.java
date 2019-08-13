@@ -392,7 +392,6 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @NonNull
         private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
             if (user.equals(User.current())) {
                 List<Credentials> list = getDomainCredentialsMap().get(domain);
                 if (list == null || list.isEmpty()) {
@@ -557,8 +556,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
             @SuppressWarnings("unused") // used by stapler
             public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>>
             getSpecificationDescriptors() {
-                // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-                return Jenkins.getActiveInstance().getDescriptorList(DomainSpecification.class);
+                return Jenkins.get().getDescriptorList(DomainSpecification.class);
             }
         }
     }

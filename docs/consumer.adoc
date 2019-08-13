@@ -117,7 +117,7 @@ public ListBoxModel doFillCredentialsIdItems(
         ) {
   StandardListBoxModel result = new StandardListBoxModel();
   if (item == null) {
-    if (!Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+    if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
       return result.includeCurrentValue(credentialsId); // <2>
     }
   } else {
@@ -155,7 +155,7 @@ public FormValidation doCheckCredentialsId(
 ... // <2>
 ) {
   if (item == null) {
-    if (!Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+    if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
       return FormValidation.ok(); // <3>
     }
   } else {
@@ -315,7 +315,7 @@ This drop down list would typically be displayed from one of the _Manage Jenkins
 ----
 CredentialsProvider.listCredentials(
     StandardUsernameCredentials.class, // <1>
-    Jenkins.getInstance(), // <2>
+    Jenkins.get(), // <2>
     ACL.SYSTEM, // <2>
     URIRequirementBuilder.fromUri(scmUrl),
     AuthenticationTokens.matcher(MySCMAuthentication.class) // <1>
@@ -324,7 +324,7 @@ CredentialsProvider.listCredentials(
 <1> For this SCM, management of post commit hooks requires authentication that has specified a username, so even though there are other authentication mechanisms supported by `AuthenticationTokens.matcher(...)` we limit at the type level as that reduces the response that needs to be filtered.
 The alternative would have been a matcher that combined `CredentialsMatchers.instanceOf(StandardUsernameCredentials.class)` but this reduces the ability of an external credentials provider to filter the query on the remote side.
 <2> We are doing this operation outside of the context of a single job, rather this is being performed on behalf of the entire Jenkins instance.
-Thus we should be performing this as `ACL.SYSTEM` and in the context of `Jenkins.getInstance()`.
+Thus we should be performing this as `ACL.SYSTEM` and in the context of `Jenkins.get()`.
 This has the additional benefit that the admin can restrict the high permission hook management credentials to `CredentialsScope.SYSTEM` which will prevent access by jobs.
 
 === Persist a reference to a specific credential instance

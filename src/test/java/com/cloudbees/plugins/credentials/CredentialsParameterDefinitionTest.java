@@ -55,7 +55,7 @@ public class CredentialsParameterDefinitionTest {
     @Test public void defaultValue() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
 
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
         store.addCredentials(Domain.global(),
                 new UsernamePasswordCredentialsImpl(
                         CredentialsScope.GLOBAL, "id", "description", "username", "password"));

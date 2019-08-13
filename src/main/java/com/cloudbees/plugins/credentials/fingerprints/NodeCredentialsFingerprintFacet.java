@@ -90,7 +90,7 @@ public class NodeCredentialsFingerprintFacet extends AbstractCredentialsFingerpr
      */
     @CheckForNull
     public Node getNode() {
-        return nodeName.isEmpty() ? Jenkins.getActiveInstance() : Jenkins.getActiveInstance().getNode(nodeName);
+        return nodeName.isEmpty() ? Jenkins.get() : Jenkins.get().getNode(nodeName);
     }
 
     /**

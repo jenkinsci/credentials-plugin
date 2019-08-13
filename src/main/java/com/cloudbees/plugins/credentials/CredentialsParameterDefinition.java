@@ -165,8 +165,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
 
         public StandardListBoxModel doFillDefaultValueItems(@AncestorInPath Item context,
                                                             @QueryParameter(required = true) String credentialType) {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            Jenkins jenkins = Jenkins.getActiveInstance();
+            Jenkins jenkins = Jenkins.get();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
             final List<DomainRequirement> domainRequirements = Collections.<DomainRequirement>emptyList();
@@ -182,8 +181,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
                                                      @QueryParameter(required = true) String credentialType,
                                                      @QueryParameter String value,
                                                      @QueryParameter boolean required) {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            Jenkins jenkins = Jenkins.getActiveInstance();
+            Jenkins jenkins = Jenkins.get();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Authentication authentication = Jenkins.getAuthentication();
             final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf(context);
