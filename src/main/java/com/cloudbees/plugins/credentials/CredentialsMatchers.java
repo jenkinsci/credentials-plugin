@@ -629,7 +629,7 @@ public class CredentialsMatchers {
      */
     private static class CQLSyntaxError extends RuntimeException {
         /**
-         * The eror node's text.
+         * The error node's text.
          */
         private final String text;
         /**

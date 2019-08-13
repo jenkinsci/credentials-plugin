@@ -317,10 +317,10 @@ public class CLICommandsTest {
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
         UsernamePasswordCredentialsImpl global =
-                new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "global-cred-id", "Globla Credentials", "john",
+                new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "global-cred-id", "Global Credentials", "john",
                         "john");
         UsernamePasswordCredentialsImpl globalDomainSystemScope =
-                new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "global-cred-id-system", "Globla Credentials", "john",
+                new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM, "global-cred-id-system", "Global Credentials", "john",
                         "john");
         CLICommandInvoker invoker = new CLICommandInvoker(r, new ListCredentialsAsXmlCommand());
         CLICommandInvoker.Result result = invoker.invokeWithArgs("system::system::jenkins");

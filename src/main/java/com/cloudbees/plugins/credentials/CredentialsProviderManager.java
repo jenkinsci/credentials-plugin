@@ -438,7 +438,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
             if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                 if (!json.has("restrictions")) {
                     // JENKINS-36090 stapler "helpfully" does not submit the restrictions if there are none
-                    // and hence you can never delete the laste one
+                    // and hence you can never delete the last one
                     json.put("restrictions", new JSONArray());
                 }
                 req.bindJSON(this, json);

@@ -272,7 +272,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
              * @return the full list of available providers without any filtering.
              */
             @SuppressWarnings("unused")
-            @Restricted(NoExternalUse.class) // slapler EL binding
+            @Restricted(NoExternalUse.class) // stapler EL binding
             public List<CredentialsProvider> getProviderDescriptors() {
                 return ExtensionList.lookup(CredentialsProvider.class);
             }
@@ -388,7 +388,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
              * @return the full list of available providers without any filtering.
              */
             @SuppressWarnings("unused")
-            @Restricted(NoExternalUse.class) // slapler EL binding
+            @Restricted(NoExternalUse.class) // stapler EL binding
             public List<CredentialsProvider> getProviderDescriptors() {
                 return ExtensionList.lookup(CredentialsProvider.class);
             }
