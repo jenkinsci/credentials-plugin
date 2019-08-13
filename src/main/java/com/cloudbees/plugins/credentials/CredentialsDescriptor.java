@@ -419,7 +419,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                                     }
                                 }
                             }
-                            Jenkins jenkins = Jenkins.getActiveInstance();
+                            Jenkins jenkins = Jenkins.get();
                             while (!pathSegments.isEmpty()) {
                                 String fullName = StringUtils.join(pathSegments, "/");
                                 Item item = jenkins.getItemByFullName(fullName);

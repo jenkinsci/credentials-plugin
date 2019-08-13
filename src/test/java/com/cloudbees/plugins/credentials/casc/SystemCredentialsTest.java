@@ -69,7 +69,7 @@ public class SystemCredentialsTest {
 
     @Test
     public void export_system_credentials() throws Exception {
-        CredentialsRootConfigurator root = Jenkins.getInstance()
+        CredentialsRootConfigurator root = Jenkins.get()
             .getExtensionList(CredentialsRootConfigurator.class).get(0);
 
         ConfiguratorRegistry registry = ConfiguratorRegistry.get();

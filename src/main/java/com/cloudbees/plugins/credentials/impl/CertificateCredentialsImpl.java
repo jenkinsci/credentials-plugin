@@ -411,9 +411,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         private Object readResolve() {
-            if (!Jenkins.getActiveInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
+            if (!Jenkins.get().hasPermission(Jenkins.RUN_SCRIPTS)) {
                 LOGGER.warning("SECURITY-1322: Permission failure migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource for a Certificate. An administrator may need to perform the migration.");
-                Jenkins.getActiveInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+                Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
             }
 
             LOGGER.log(Level.INFO, "SECURITY-1322: Migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource. The containing item may need to be saved to complete the migration.");

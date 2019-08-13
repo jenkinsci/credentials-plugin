@@ -180,8 +180,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
      * @return the configuration file that {@link CredentialsProviderManager} uses to store its credentials.
      */
     public static XmlFile getConfigFile() {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return new XmlFile(Jenkins.XSTREAM2, new File(Jenkins.getActiveInstance().getRootDir(), "credentials-configuration.xml"));
+        return new XmlFile(Jenkins.XSTREAM2, new File(Jenkins.get().getRootDir(), "credentials-configuration.xml"));
     }
 
     /**
@@ -190,8 +189,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
      * @param p the permission to check.
      */
     private void checkPermission(Permission p) {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        Jenkins.getActiveInstance().checkPermission(p);
+        Jenkins.get().checkPermission(p);
     }
 
     /**
@@ -222,7 +220,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
         if (providerFilter == null) {
             providerFilter = new CredentialsProviderFilter.None();
         }
-        if (Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+        if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
             if (!providerFilter.equals(this.providerFilter)) {
                 this.providerFilter = providerFilter;
                 try {
@@ -253,7 +251,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
         if (typeFilter == null) {
             typeFilter = new CredentialsTypeFilter.None();
         }
-        if (Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+        if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
             if (!typeFilter.equals(this.typeFilter)) {
                 this.typeFilter = typeFilter;
                 try {
@@ -283,7 +281,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
      * @param restrictions the new list of {@link CredentialsProviderTypeRestriction} instances.
      */
     public void setRestrictions(List<CredentialsProviderTypeRestriction> restrictions) {
-        if (Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+        if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
             if (restrictions != null) {
                 // ensure they are sorted grouped so that it is easy to infer
                 Collections.sort(restrictions, new Comparator<CredentialsProviderTypeRestriction>() {
@@ -437,7 +435,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
-            if (Jenkins.getActiveInstance().hasPermission(Jenkins.ADMINISTER)) {
+            if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                 if (!json.has("restrictions")) {
                     // JENKINS-36090 stapler "helpfully" does not submit the restrictions if there are none
                     // and hence you can never delete the laste one

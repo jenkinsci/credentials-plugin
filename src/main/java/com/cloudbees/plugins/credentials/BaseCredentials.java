@@ -73,7 +73,6 @@ public class BaseCredentials implements Credentials {
     @NonNull
     @SuppressWarnings("unchecked")
     public CredentialsDescriptor getDescriptor() {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return (CredentialsDescriptor) Jenkins.getActiveInstance().getDescriptorOrDie(getClass());
+        return (CredentialsDescriptor) Jenkins.get().getDescriptorOrDie(getClass());
     }
 }

@@ -91,7 +91,7 @@ public class ItemCredentialsFingerprintFacet extends AbstractCredentialsFingerpr
      */
     @CheckForNull
     public Item getItem() {
-        return Jenkins.getActiveInstance().getItemByFullName(itemFullName);
+        return Jenkins.get().getItemByFullName(itemFullName);
     }
 
     /**
