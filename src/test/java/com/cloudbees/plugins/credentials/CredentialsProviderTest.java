@@ -262,7 +262,7 @@ public class CredentialsProviderTest {
     }
 
     @Test
-    public void testNodeCredentialFingerprintsAreRemovedForNonExistantNodes() throws Exception {
+    public void testNodeCredentialFingerprintsAreRemovedForNonExistentNodes() throws Exception {
         // Create dummy credentials to use
         DummyCredentials globalCred = new DummyCredentials(CredentialsScope.GLOBAL, "globalCred", "pwd");
         // Find how many times this credential has been currently tracked

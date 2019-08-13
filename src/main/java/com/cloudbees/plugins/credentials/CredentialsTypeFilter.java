@@ -271,7 +271,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
              * @return the full list of available types without any filtering.
              */
             @SuppressWarnings("unused")
-            @Restricted(NoExternalUse.class) // slapler EL binding
+            @Restricted(NoExternalUse.class) // stapler EL binding
             public List<CredentialsDescriptor> getTypeDescriptors() {
                 return ExtensionList.lookup(CredentialsDescriptor.class);
             }
@@ -387,7 +387,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
              * @return the full list of available types without any filtering.
              */
             @SuppressWarnings("unused")
-            @Restricted(NoExternalUse.class) // slapler EL binding
+            @Restricted(NoExternalUse.class) // stapler EL binding
             public List<CredentialsDescriptor> getTypeDescriptors() {
                 return ExtensionList.lookup(CredentialsDescriptor.class);
             }

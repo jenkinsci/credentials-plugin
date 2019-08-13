@@ -410,7 +410,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 try {
                     for (C c : provider.getCredentials(type, itemGroup, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
-                            // if IdCredentials, only add if we havent added already
+                            // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
                             result.add(c);
                         }
@@ -547,7 +547,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 try {
                     for (C c: provider.getCredentials(type, item, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
-                            // if IdCredentials, only add if we havent added already
+                            // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
                             result.add(c);
                         }
@@ -773,7 +773,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * credential that implements multiple distinct credential types at the same time, e.g. a credential that is
      * simultaneously a TLS certificate and a SSH key pair and a GPG key pair all at the same time... unless the
      * author of that credential type also provides a {@link CredentialsSnapshotTaker} that can handle such a
-     * tripple play.
+     * triple play.
      *
      * @param credential the credential.
      * @param <C>        the type of credential.
@@ -1139,7 +1139,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link Authentication} for items in the specified {@link ItemGroup} and are appropriate for the
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
-     * is being stored external from Jenkins and the non-secret information can be accessed with lesser tracability
+     * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
      * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against if {@link CredentialsMatchers#describe(CredentialsMatcher)} returns
@@ -1215,7 +1215,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link Authentication} for the specified {@link Item} and are appropriate for the
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
-     * is being stored external from Jenkins and the non-secret information can be accessed with lesser tracability
+     * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
      * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against.

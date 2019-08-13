@@ -444,7 +444,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         /**
          * Helper method to check the specified permission.
          *
-         * @param p the permission to checl.
+         * @param p the permission to check.
          */
         private void checkPermission(Permission p) {
             if (user.equals(User.current())) {
