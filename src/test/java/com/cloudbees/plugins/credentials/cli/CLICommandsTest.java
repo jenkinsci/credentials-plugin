@@ -88,14 +88,14 @@ public class CLICommandsTest {
         CLICommand cmd = new CreateCredentialsDomainByXmlCommand();
         CLICommandInvoker invoker = new CLICommandInvoker(r, cmd);
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
-                (Matcher) not(hasItem(hasProperty("name", is("smokes")))));
+                not(hasItem(hasProperty("name", is("smokes")))));
         assertThat(invoker.withStdin(asStream(
                 "<com.cloudbees.plugins.credentials.domains.Domain>\n"
                         + "  <name>smokes</name>\n"
                         + "</com.cloudbees.plugins.credentials.domains.Domain>"))
                 .invokeWithArgs("system::system::jenkins"), succeededSilently());
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
-                (Matcher) hasItem(hasProperty("name", is("smokes"))));
+                hasItem(hasProperty("name", is("smokes"))));
         cmd = new CreateCredentialsByXmlCommand();
         invoker = new CLICommandInvoker(r, cmd);
         assertThat(invoker.withStdin(asStream(
@@ -132,7 +132,7 @@ public class CLICommandsTest {
         CLICommand cmd = new CreateCredentialsDomainByXmlCommand();
         CLICommandInvoker invoker = new CLICommandInvoker(r, cmd);
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
-                (Matcher) not(hasItem(hasProperty("name", is("smokes")))));
+                not(hasItem(hasProperty("name", is("smokes")))));
         assumeThat(invoker.withStdin(asStream(
                 "<com.cloudbees.plugins.credentials.domains.Domain>\n"
                         + "  <name>smokes</name>\n"
@@ -347,15 +347,15 @@ public class CLICommandsTest {
         CLICommandInvoker invoker = new CLICommandInvoker(r, new ImportCredentialsAsXmlCommand());
 
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
-                (Matcher) not(hasItem(hasProperty("name", is("smokes")))));
+                not(hasItem(hasProperty("name", is("smokes")))));
 
         invoker.withStdin(input).invokeWithArgs("system::system::jenkins");
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
-                (Matcher) hasItem(hasProperty("name", is("smokes"))));
+                hasItem(hasProperty("name", is("smokes"))));
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(Domain.global()),
-                (Matcher) hasItem(hasProperty("id", is("global-cred-id"))));
+                hasItem(hasProperty("id", is("global-cred-id"))));
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(new Domain("smokes", null, null)),
-                (Matcher) hasItem(hasProperty("id", is("smokes-id"))));
+                hasItem(hasProperty("id", is("smokes-id"))));
 
     }
 
