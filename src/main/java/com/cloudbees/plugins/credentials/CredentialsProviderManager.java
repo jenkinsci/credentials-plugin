@@ -300,7 +300,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
                         if (index2 == -1) {
                             return -1;
                         }
-                        return index1 < index2 ? -1 : (index1 == index2 ? 0 : 1);
+                        return Integer.compare(index1, index2);
                     }
                 });
             }
