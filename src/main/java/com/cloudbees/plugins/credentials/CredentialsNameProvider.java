@@ -91,11 +91,7 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
             try {
                 CredentialsNameProvider nameProvider = nameWith.value().newInstance();
                 return new Result(nameProvider.getName(credentials), nameWith.priority());
-            } catch (ClassCastException e) {
-                // ignore
-            } catch (InstantiationException e) {
-                // ignore
-            } catch (IllegalAccessException e) {
+            } catch (ClassCastException | InstantiationException | IllegalAccessException e) {
                 // ignore
             }
         }

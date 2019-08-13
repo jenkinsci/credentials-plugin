@@ -177,11 +177,7 @@ public class ContextMenuIconUtils {
         try {
             Method getIconByClassSpec = IconSet.class.getMethod("getIconByClassSpec", Object.class);
             return (Icon) getIconByClassSpec.invoke(IconSet.icons, spec);
-        } catch (NoSuchMethodException e) {
-            // ignore
-        } catch (IllegalAccessException e) {
-            // ignore
-        } catch (InvocationTargetException e) {
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             // ignore
         }
         return IconSet.icons.getIconByClassSpec(spec);
@@ -227,9 +223,7 @@ public class ContextMenuIconUtils {
             if (icon == null) {
                 icon = IconSet.icons.getIconByUrl(action.getIconFileName());
             }
-        } catch (InvocationTargetException e) {
-            icon = null;
-        } catch (IllegalAccessException e) {
+        } catch (InvocationTargetException | IllegalAccessException e) {
             icon = null;
         }
         return icon;
@@ -259,9 +253,7 @@ public class ContextMenuIconUtils {
                 }
             }
             return null;
-        } catch (NoSuchFieldException e) {
-            // ignore we'll use a JellyContext
-        } catch (IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             // ignore we'll use a JellyContext
         }
         JellyContext ctx = new JellyContext();

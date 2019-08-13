@@ -899,9 +899,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             } catch (NoSuchMethodException e) {
                 // old Jenkins pre SECURITY-243
                 return User.get(token, false, Collections.emptyMap());
-            } catch (InvocationTargetException e) {
-                return null;
-            } catch (IllegalAccessException e) {
+            } catch (InvocationTargetException | IllegalAccessException e) {
                 return null;
             }
         }

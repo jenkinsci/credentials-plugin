@@ -112,9 +112,7 @@ public class BeanPropertyMatcher<T extends Serializable> implements CredentialsM
                     try {
                         Object actual = readMethod.invoke(item);
                         return Objects.equals(expected, actual);
-                    } catch (IllegalAccessException e) {
-                        return false; // if we cannot access it then it's not a match
-                    } catch (InvocationTargetException e) {
+                    } catch (IllegalAccessException | InvocationTargetException e) {
                         return false; // if we cannot access it then it's not a match
                     }
                 }

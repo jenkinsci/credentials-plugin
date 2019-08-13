@@ -545,9 +545,7 @@ public abstract class CredentialsStoreAction
             try {
                 XMLUtils.safeTransform(new StreamSource(req.getReader()), new StreamResult(out));
                 out.close();
-            } catch (TransformerException e) {
-                throw new IOException("Failed to parse credential", e);
-            } catch (SAXException e) {
+            } catch (TransformerException | SAXException e) {
                 throw new IOException("Failed to parse credential", e);
             }
 
@@ -810,9 +808,7 @@ public abstract class CredentialsStoreAction
                 try {
                     XMLUtils.safeTransform(new StreamSource(req.getReader()), new StreamResult(out));
                     out.close();
-                } catch (TransformerException e) {
-                    throw new IOException("Failed to parse credential", e);
-                } catch (SAXException e) {
+                } catch (TransformerException | SAXException e) {
                     throw new IOException("Failed to parse credential", e);
                 }
 
@@ -1007,9 +1003,7 @@ public abstract class CredentialsStoreAction
             try {
                 XMLUtils.safeTransform(source, new StreamResult(out));
                 out.close();
-            } catch (TransformerException e) {
-                throw new IOException("Failed to parse credential", e);
-            } catch (SAXException e) {
+            } catch (TransformerException | SAXException e) {
                 throw new IOException("Failed to parse credential", e);
             }
 

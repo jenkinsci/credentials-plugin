@@ -99,9 +99,7 @@ public abstract class BaseCredentialsCLICommand extends CLICommand {
         try {
             XMLUtils.safeTransform(source, new StreamResult(out));
             out.close();
-        } catch (TransformerException e) {
-            throw new IOException("Failed to parse", e);
-        } catch (SAXException e) {
+        } catch (TransformerException | SAXException e) {
             throw new IOException("Failed to parse", e);
         }
         return new XppDriver().createReader(new StringReader(out.toString()));

@@ -135,10 +135,7 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
                 }
                 LOGGER.log(Level.SEVERE, "Resolver {0} for type {1} resolves to {2} which is not assignable to {1}",
                         new Object[]{resolver.getClass(), clazz, resolver.getToClass()});
-            } catch (InstantiationException e) {
-                LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
-                return null;
-            } catch (IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException e) {
                 LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
                 return null;
             }
