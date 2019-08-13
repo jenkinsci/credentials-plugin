@@ -390,7 +390,7 @@ class AntPathMatcher {
         String[] patternParts = StringUtils.split(pattern, this.pathSeparator);
         String[] pathParts = StringUtils.split(path, this.pathSeparator);
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         // Add any path parts that have a wildcarded pattern part.
         int puts = 0;
