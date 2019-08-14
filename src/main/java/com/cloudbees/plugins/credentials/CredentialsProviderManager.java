@@ -42,6 +42,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.GlobalConfiguration;
@@ -299,11 +300,11 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
                         if (index2 == -1) {
                             return -1;
                         }
-                        return index1 < index2 ? -1 : (index1 == index2 ? 0 : 1);
+                        return Integer.compare(index1, index2);
                     }
                 });
             }
-            if (restrictions == null ? this.restrictions != null : !restrictions.equals(this.restrictions)) {
+            if (!Objects.equals(restrictions, this.restrictions)) {
                 this.restrictions = restrictions;
                 this.restrictionGroups = null;
                 try {

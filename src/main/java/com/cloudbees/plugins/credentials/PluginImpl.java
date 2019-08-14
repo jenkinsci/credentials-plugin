@@ -24,7 +24,6 @@
 package com.cloudbees.plugins.credentials;
 
 import hudson.Plugin;
-import java.util.Arrays;
 import org.jenkins.ui.icon.Icon;
 import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconType;

@@ -24,34 +24,34 @@
 package com.cloudbees.plugins.credentials.UserCredentialsProvider
 
 import com.cloudbees.plugins.credentials.CredentialsProvider
-import hudson.security.ACL;
+import hudson.security.ACL
 
 div() {
-    text(_("Provides each user with a personal credential store. "));
-    text(_("Credentials will be available to: "));
+    text(_("Provides each user with a personal credential store. "))
+    text(_("Credentials will be available to: "))
     ul() {
         li() {
             text(_("Immediate operations performed by the user who defined the credentials"))
         }
-        def p = CredentialsProvider.USE_OWN;
+        def p = CredentialsProvider.USE_OWN
         while (p != null && !p.enabled) {
             p = p.impliedBy
-        };
+        }
         if (p != null) {
             li() {
                 text(_("Jobs with credentials parameters when directly triggered by a user with the permission: "))
                 code() {
-                    text(p.group.title);
-                    text("/");
-                    text(p.name);
+                    text(p.group.title)
+                    text("/")
+                    text(p.name)
                 }
             }
             li() {
                 text(_("Jobs running as the user and the user has the permission: "))
                 code() {
-                    text(p.group.title);
-                    text("/");
-                    text(p.name);
+                    text(p.group.title)
+                    text("/")
+                    text(p.name)
                 }
             }
         }

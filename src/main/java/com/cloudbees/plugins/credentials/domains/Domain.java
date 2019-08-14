@@ -34,6 +34,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -224,11 +226,7 @@ public class Domain implements Serializable {
 
         Domain domain = (Domain) o;
 
-        if (name != null ? !name.equals(domain.name) : domain.name != null) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(name, domain.name);
     }
 
     /**

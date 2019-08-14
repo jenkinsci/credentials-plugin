@@ -223,7 +223,7 @@ public class CredentialsProviderTest {
 
     @Test
     public void testHaveDummyCredentialsType() throws Exception {
-        assertTrue(!CredentialsProvider.allCredentialsDescriptors().isEmpty());
+        assertFalse(CredentialsProvider.allCredentialsDescriptors().isEmpty());
         DummyCredentials.DescriptorImpl descriptor = null;
         for (Descriptor<Credentials> d : CredentialsProvider.allCredentialsDescriptors()) {
             if (d instanceof DummyCredentials.DescriptorImpl) {

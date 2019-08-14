@@ -102,7 +102,7 @@ public class FingerprintTest {
                         false
                 )));
 
-        j.assertBuildStatusSuccess((Future) job.scheduleBuild2(0,
+        j.assertBuildStatusSuccess(job.scheduleBuild2(0,
                 new ParametersAction(new CredentialsParameterValue("SECRET", "secret-id", "The secret", true))));
 
         fingerprint = CredentialsProvider.getFingerprintOf(credentials);
@@ -116,7 +116,7 @@ public class FingerprintTest {
         // need to have the job do something otherwise the parameter will be unused
         job.getBuildersList().add(new CaptureEnvironmentBuilder());
 
-        j.assertBuildStatusSuccess((Future) job.scheduleBuild2(0,
+        j.assertBuildStatusSuccess(job.scheduleBuild2(0,
                 new ParametersAction(new CredentialsParameterValue("SECRET", "secret-id", "The secret", true))));
 
         fingerprint = CredentialsProvider.getFingerprintOf(credentials);

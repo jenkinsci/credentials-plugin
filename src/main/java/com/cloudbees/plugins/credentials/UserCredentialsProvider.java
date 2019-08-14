@@ -43,7 +43,6 @@ import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
-import hudson.util.CopyOnWriteMap;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.net.URI;

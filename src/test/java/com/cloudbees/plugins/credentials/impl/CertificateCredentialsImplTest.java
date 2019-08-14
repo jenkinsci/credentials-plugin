@@ -108,7 +108,7 @@ public class CertificateCredentialsImplTest {
         CertificateCredentialsImpl.FileOnMasterKeyStoreSource storeSource = new CertificateCredentialsImpl.FileOnMasterKeyStoreSource(p12.getAbsolutePath());
         CertificateCredentialsImpl credentials = new CertificateCredentialsImpl(null, "abc123", null, "password", storeSource);
         CredentialsStore folderStore = getFolderStore(folder);
-        Domain domain = new Domain("test", "test", Collections.EMPTY_LIST);
+        Domain domain = new Domain("test", "test", Collections.emptyList());
         folderStore.addDomain(domain, credentials);
         folderStore.save();
         folder.doReload();
@@ -157,7 +157,7 @@ public class CertificateCredentialsImplTest {
 
         assertThat(result, succeeded());
 
-        Domain domain = new Domain("test", "test", Collections.EMPTY_LIST);
+        Domain domain = new Domain("test", "test", Collections.emptyList());
 
         // check the data is correctly updated in memory
         CredentialsStore folderStore = getFolderStore(folder);
