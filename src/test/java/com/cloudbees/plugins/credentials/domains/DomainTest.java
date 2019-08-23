@@ -87,7 +87,7 @@ public class DomainTest {
         DummyCredentials systemCred1 = new DummyCredentials(CredentialsScope.SYSTEM, "systemCred1", "pwd");
         DummyCredentials systemCredMod = new DummyCredentials(CredentialsScope.SYSTEM, "systemCredMod", "pwd");
 
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.getInstance()).iterator().next();
+        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
         
         // Add domains with credentials
         store.addDomain(domainFoo, Collections.<Credentials>emptyList());

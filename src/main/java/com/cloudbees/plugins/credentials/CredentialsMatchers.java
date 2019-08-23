@@ -603,11 +603,7 @@ public class CredentialsMatchers {
                     Class<?> enumClazz = Class.forName(enumClass);
                     Field field = enumClazz.getDeclaredField(enumConst);
                     literal = (Serializable) field.get(null);
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                } catch (NoSuchFieldException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
+                } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
                     e.printStackTrace();
                 }
             }
@@ -629,7 +625,7 @@ public class CredentialsMatchers {
      */
     private static class CQLSyntaxError extends RuntimeException {
         /**
-         * The eror node's text.
+         * The error node's text.
          */
         private final String text;
         /**

@@ -88,7 +88,7 @@ public class SystemCredentialsProviderTest {
 
     @Test
     public void smokes() throws Exception {
-        assertEquals(true, !CredentialsProvider.allCredentialsDescriptors().isEmpty());
+        assertFalse(CredentialsProvider.allCredentialsDescriptors().isEmpty());
         assertNotNull(SystemCredentialsProvider.getInstance().getDescriptor());
         assertNotNull(SystemCredentialsProvider.getInstance().getCredentials());
     }

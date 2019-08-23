@@ -159,10 +159,10 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                     hasPermission = ((AccessControlled) current).hasPermission(CredentialsProvider.USE_OWN);
                     break;
                 } else if (current instanceof ComputerSet) {
-                    current = Jenkins.getActiveInstance();
+                    current = Jenkins.get();
                 } else {
                     // fall back to Jenkins as the ultimate parent of everything else
-                    current = Jenkins.getActiveInstance();
+                    current = Jenkins.get();
                 }
             }
             if (hasPermission) {
@@ -671,7 +671,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         public String getUrl() {
             return String.format(
                     "%sdescriptor/%s/resolver/%s/provider/%s/context/%s",
-                    Jenkins.getActiveInstance().getRootUrlFromRequest(),
+                    Jenkins.get().getRootUrlFromRequest(),
                     CredentialsSelectHelper.class.getName(),
                     Util.rawEncode(resolver.getClass().getName()),
                     Util.rawEncode(provider.getClass().getName()),
@@ -824,7 +824,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          */
         @Override
         public ModelObject getContext(String token) {
-            return "jenkins".equals(token) ? Jenkins.getActiveInstance() : null;
+            return "jenkins".equals(token) ? Jenkins.get() : null;
         }
 
         /**
@@ -858,7 +858,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          */
         @Override
         public ModelObject getContext(String token) {
-            return Jenkins.getActiveInstance().getItemByFullName(token);
+            return Jenkins.get().getItemByFullName(token);
         }
 
         /**
@@ -899,9 +899,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             } catch (NoSuchMethodException e) {
                 // old Jenkins pre SECURITY-243
                 return User.get(token, false, Collections.emptyMap());
-            } catch (InvocationTargetException e) {
-                return null;
-            } catch (IllegalAccessException e) {
+            } catch (InvocationTargetException | IllegalAccessException e) {
                 return null;
             }
         }

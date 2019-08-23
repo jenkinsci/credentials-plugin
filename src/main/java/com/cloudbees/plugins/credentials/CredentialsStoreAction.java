@@ -450,8 +450,7 @@ public abstract class CredentialsStoreAction
         } else if (context instanceof User) {
             n = Messages.CredentialsStoreAction_UserDisplayName(((User) context).getDisplayName());
         } else {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            n = Jenkins.getActiveInstance().getFullDisplayName();
+            n = Jenkins.get().getFullDisplayName();
         }
         if (n.length() == 0) {
             return getDisplayName();
@@ -507,8 +506,7 @@ public abstract class CredentialsStoreAction
      * @return {@link DomainWrapper.DescriptorImpl}.
      */
     public DomainWrapper.DescriptorImpl getDomainDescriptor() {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return Jenkins.getActiveInstance().getDescriptorByType(DomainWrapper.DescriptorImpl.class);
+        return Jenkins.get().getDescriptorByType(DomainWrapper.DescriptorImpl.class);
     }
 
     /**
@@ -518,8 +516,7 @@ public abstract class CredentialsStoreAction
      */
     @SuppressWarnings("unused") // used by stapler
     public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>> getSpecificationDescriptors() {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return Jenkins.getActiveInstance().getDescriptorList(DomainSpecification.class);
+        return Jenkins.get().getDescriptorList(DomainSpecification.class);
     }
 
     /**
@@ -548,9 +545,7 @@ public abstract class CredentialsStoreAction
             try {
                 XMLUtils.safeTransform(new StreamSource(req.getReader()), new StreamResult(out));
                 out.close();
-            } catch (TransformerException e) {
-                throw new IOException("Failed to parse credential", e);
-            } catch (SAXException e) {
+            } catch (TransformerException | SAXException e) {
                 throw new IOException("Failed to parse credential", e);
             }
 
@@ -739,8 +734,7 @@ public abstract class CredentialsStoreAction
          * @return the {@link CredentialsWrapper.DescriptorImpl} singleton.
          */
         public CredentialsWrapper.DescriptorImpl getCredentialDescriptor() {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            return Jenkins.getActiveInstance().getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
+            return Jenkins.get().getDescriptorByType(CredentialsWrapper.DescriptorImpl.class);
         }
 
         /**
@@ -814,9 +808,7 @@ public abstract class CredentialsStoreAction
                 try {
                     XMLUtils.safeTransform(new StreamSource(req.getReader()), new StreamResult(out));
                     out.close();
-                } catch (TransformerException e) {
-                    throw new IOException("Failed to parse credential", e);
-                } catch (SAXException e) {
+                } catch (TransformerException | SAXException e) {
                     throw new IOException("Failed to parse credential", e);
                 }
 
@@ -1011,9 +1003,7 @@ public abstract class CredentialsStoreAction
             try {
                 XMLUtils.safeTransform(source, new StreamResult(out));
                 out.close();
-            } catch (TransformerException e) {
-                throw new IOException("Failed to parse credential", e);
-            } catch (SAXException e) {
+            } catch (TransformerException | SAXException e) {
                 throw new IOException("Failed to parse credential", e);
             }
 
@@ -1325,8 +1315,7 @@ public abstract class CredentialsStoreAction
             if (getStore().getDomains().size() <= 1) {
                 return HttpResponses.status(400);
             }
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            Jenkins jenkins = Jenkins.getActiveInstance();
+            Jenkins jenkins = Jenkins.get();
             getStore().checkPermission(DELETE);
             final String splitKey = domain.getParent().getUrlName() + "/";
             int split = destination.lastIndexOf(splitKey);

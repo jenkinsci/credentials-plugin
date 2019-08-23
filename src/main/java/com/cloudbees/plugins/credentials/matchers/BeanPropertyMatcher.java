@@ -34,6 +34,8 @@ import java.beans.PropertyDescriptor;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Objects;
+
 import org.apache.commons.lang.StringEscapeUtils;
 
 /**
@@ -109,10 +111,8 @@ public class BeanPropertyMatcher<T extends Serializable> implements CredentialsM
                     }
                     try {
                         Object actual = readMethod.invoke(item);
-                        return expected == null ? actual == null : expected.equals(actual);
-                    } catch (IllegalAccessException e) {
-                        return false; // if we cannot access it then it's not a match
-                    } catch (InvocationTargetException e) {
+                        return Objects.equals(expected, actual);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
                         return false; // if we cannot access it then it's not a match
                     }
                 }
@@ -150,7 +150,7 @@ public class BeanPropertyMatcher<T extends Serializable> implements CredentialsM
         if (!name.equals(that.name)) {
             return false;
         }
-        return expected != null ? expected.equals(that.expected) : that.expected == null;
+        return Objects.equals(expected, that.expected);
 
     }
 

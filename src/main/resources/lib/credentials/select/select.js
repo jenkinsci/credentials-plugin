@@ -116,7 +116,7 @@ window.credentials.refreshAll = function () {
         }
         h();
     });
-}
+};
 window.credentials.addSubmit = function (e) {
     var id;
     var containerId = "container" + (iota++);

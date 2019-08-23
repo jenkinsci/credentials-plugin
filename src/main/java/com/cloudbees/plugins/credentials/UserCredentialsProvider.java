@@ -43,7 +43,6 @@ import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
-import hudson.util.CopyOnWriteMap;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.net.URI;
@@ -392,7 +391,6 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @NonNull
         private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
             if (user.equals(User.current())) {
                 List<Credentials> list = getDomainCredentialsMap().get(domain);
                 if (list == null || list.isEmpty()) {
@@ -445,7 +443,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         /**
          * Helper method to check the specified permission.
          *
-         * @param p the permission to checl.
+         * @param p the permission to check.
          */
         private void checkPermission(Permission p) {
             if (user.equals(User.current())) {
@@ -557,8 +555,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
             @SuppressWarnings("unused") // used by stapler
             public DescriptorExtensionList<DomainSpecification, Descriptor<DomainSpecification>>
             getSpecificationDescriptors() {
-                // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-                return Jenkins.getActiveInstance().getDescriptorList(DomainSpecification.class);
+                return Jenkins.get().getDescriptorList(DomainSpecification.class);
             }
         }
     }

@@ -223,13 +223,12 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @return all the registered {@link com.cloudbees.plugins.credentials.Credentials} descriptors.
      */
     public static DescriptorExtensionList<Credentials, CredentialsDescriptor> allCredentialsDescriptors() {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return Jenkins.getActiveInstance().getDescriptorList(Credentials.class);
+        return Jenkins.get().getDescriptorList(Credentials.class);
     }
 
     /**
      * Returns all credentials which are available to the {@link ACL#SYSTEM} {@link Authentication}
-     * within the {@link jenkins.model.Jenkins#getInstance()}.
+     * within the {@link Jenkins#get()}.
      *
      * @param type the type of credentials to get.
      * @param <C>  the credentials type.
@@ -248,7 +247,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
     /**
      * Returns all credentials which are available to the specified {@link Authentication}
-     * within the {@link jenkins.model.Jenkins#getInstance()}.
+     * within the {@link Jenkins#get()}.
      *
      * @param type           the type of credentials to get.
      * @param authentication the authentication.
@@ -264,7 +263,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     @SuppressWarnings("unused") // API entry point for consumers
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable Authentication authentication) {
-        return lookupCredentials(type, Jenkins.getInstance(), authentication);
+        return lookupCredentials(type, Jenkins.get(), authentication);
     }
 
     /**
@@ -284,7 +283,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable Item item) {
         return item == null
-                ? lookupCredentials(type, Jenkins.getInstance(), ACL.SYSTEM)
+                ? lookupCredentials(type, Jenkins.get(), ACL.SYSTEM)
                 : lookupCredentials(type, item, ACL.SYSTEM);
     }
 
@@ -390,8 +389,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                     @Nullable List<DomainRequirement>
                                                                             domainRequirements) {
         type.getClass(); // throw NPE if null
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        Jenkins jenkins = Jenkins.getActiveInstance();
+        Jenkins jenkins = Jenkins.get();
         itemGroup = itemGroup == null ? jenkins : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
@@ -412,7 +410,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 try {
                     for (C c : provider.getCredentials(type, itemGroup, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
-                            // if IdCredentials, only add if we havent added already
+                            // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
                             result.add(c);
                         }
@@ -448,8 +446,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                                  domainRequirements,
                                                                          @Nullable CredentialsMatcher matcher) {
         type.getClass(); // throw NPE if null
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        Jenkins jenkins = Jenkins.getActiveInstance();
+        Jenkins jenkins = Jenkins.get();
         itemGroup = itemGroup == null ? jenkins : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements =
@@ -526,7 +523,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                             domainRequirements) {
         type.getClass(); // throw NPE if null
         if (item == null) {
-            return lookupCredentials(type, Jenkins.getInstance(), authentication, domainRequirements);
+            return lookupCredentials(type, Jenkins.get(), authentication, domainRequirements);
         }
         if (item instanceof ItemGroup) {
             return lookupCredentials(type, (ItemGroup)item, authentication, domainRequirements);
@@ -550,7 +547,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 try {
                     for (C c: provider.getCredentials(type, item, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
-                            // if IdCredentials, only add if we havent added already
+                            // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
                             result.add(c);
                         }
@@ -589,7 +586,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                          @Nullable CredentialsMatcher matcher) {
         type.getClass(); // throw NPE if null
         if (item == null) {
-            return listCredentials(type, Jenkins.getInstance(), authentication, domainRequirements, matcher);
+            return listCredentials(type, Jenkins.get(), authentication, domainRequirements, matcher);
         }
         if (item instanceof ItemGroup) {
             return listCredentials(type, (ItemGroup) item, authentication, domainRequirements, matcher);
@@ -712,7 +709,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                 current = ((Item) current).getParent();
                                 iterator = providers.iterator();
                             } else if (current instanceof User) {
-                                Jenkins jenkins = Jenkins.getActiveInstance();
+                                Jenkins jenkins = Jenkins.get();
                                 Authentication a;
                                 if (jenkins.hasPermission(USE_ITEM) && current == User.current()) {
                                     // this is the fast path for the 99% of cases
@@ -734,17 +731,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                 // escape
                                 current = null;
                             } else if (current instanceof ComputerSet) {
-                                current = Jenkins.getActiveInstance();
+                                current = Jenkins.get();
                                 iterator = providers.iterator();
                             } else if (current instanceof Computer) {
-                                current = Jenkins.getActiveInstance();
+                                current = Jenkins.get();
                                 iterator = providers.iterator();
                             } else if (current instanceof Node) {
-                                current = Jenkins.getActiveInstance();
+                                current = Jenkins.get();
                                 iterator = providers.iterator();
                             } else {
                                 // fall back to Jenkins as the ultimate parent of everything else
-                                current = Jenkins.getActiveInstance();
+                                current = Jenkins.get();
                                 iterator = providers.iterator();
                             }
                         }
@@ -776,7 +773,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * credential that implements multiple distinct credential types at the same time, e.g. a credential that is
      * simultaneously a TLS certificate and a SSH key pair and a GPG key pair all at the same time... unless the
      * author of that credential type also provides a {@link CredentialsSnapshotTaker} that can handle such a
-     * tripple play.
+     * triple play.
      *
      * @param credential the credential.
      * @param <C>        the type of credential.
@@ -1111,8 +1108,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * for items in the specified {@link ItemGroup}
      *
      * @param type           the type of credentials to return.
-     * @param itemGroup      the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
-     * @param authentication the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param itemGroup      the item group (if {@code null} assume {@link Jenkins#get()}.
+     * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param <C>            the credentials type.
      * @return the list of credentials.
      */
@@ -1127,8 +1124,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * .plugins.credentials.domains.DomainRequirement}s.
      *
      * @param type               the type of credentials to return.
-     * @param itemGroup          the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
-     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param itemGroup          the item group (if {@code null} assume {@link Jenkins#get()}.
+     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param domainRequirements the credential domains to match (if the {@link CredentialsProvider} does not support
      *                           {@link DomainRequirement}s then it should
      *                           assume the match is true).
@@ -1149,7 +1146,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link Authentication} for items in the specified {@link ItemGroup} and are appropriate for the
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
-     * is being stored external from Jenkins and the non-secret information can be accessed with lesser tracability
+     * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
      * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against if {@link CredentialsMatchers#describe(CredentialsMatcher)} returns
@@ -1157,7 +1154,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param <C>                the credentials type.
      * @param type               the type of credentials to return.
-     * @param itemGroup          the item group (if {@code null} assume {@link hudson.model.Hudson#getInstance()}.
+     * @param itemGroup          the item group (if {@code null} assume {@link Jenkins#get()}.
      * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param domainRequirements the credential domain to match.
      * @param matcher            the additional filtering to apply to the credentials
@@ -1187,7 +1184,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param type           the type of credentials to return.
      * @param item           the item.
-     * @param authentication the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param <C>            the credentials type.
      * @return the list of credentials.
      */
@@ -1205,7 +1202,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @param type               the type of credentials to return.
      * @param item               the item.
-     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param domainRequirements the credential domain to match.
      * @param <C>                the credentials type.
      * @return the list of credentials.
@@ -1225,14 +1222,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link Authentication} for the specified {@link Item} and are appropriate for the
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
-     * is being stored external from Jenkins and the non-secret information can be accessed with lesser tracability
+     * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
      * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against.
      *
      * @param type               the type of credentials to return.
      * @param item               the item.
-     * @param authentication     the authentication (if {@code null} assume {@link hudson.security.ACL#SYSTEM}.
+     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param domainRequirements the credential domain to match.
      * @param matcher            the additional filtering to apply to the credentials
      * @param <C>                the credentials type.
@@ -1383,7 +1380,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             } finally {
                 IOUtils.closeQuietly(out);
             }
-            return Jenkins.getActiveInstance().getFingerprintMap().get(Util.toHexString(md5.digest()));
+            return Jenkins.get().getFingerprintMap().get(Util.toHexString(md5.digest()));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("JLS mandates MD5 as a supported digest algorithm");
         }
@@ -1409,7 +1406,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             } finally {
                 IOUtils.closeQuietly(out);
             }
-            return Jenkins.getActiveInstance().getFingerprintMap().getOrCreate(null, pseudoFilename, md5.digest());
+            return Jenkins.get().getFingerprintMap().getOrCreate(null, pseudoFilename, md5.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("JLS mandates MD5 as a supported digest algorithm");
         }
@@ -1524,8 +1521,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         // TODO (JENKINS-51694): This breaks tracking for cloud agents. We should
         // track those agents against the cloud instead of the node itself.
         Set<String> jenkinsNodeNames = new HashSet<>();
-        // TODO: Switch to Jenkins.get() once 2.98+ is the baseline
-        for (Node n: Jenkins.getActiveInstance().getNodes()) {
+        for (Node n: Jenkins.get().getNodes()) {
             jenkinsNodeNames.add(n.getNodeName());
         }
         for (Credentials c : credentials) {
@@ -1659,7 +1655,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static void saveAll() throws IOException {
         LOGGER.entering(CredentialsProvider.class.getName(), "saveAll");
         try {
-            final Jenkins jenkins = Jenkins.getActiveInstance();
+            Jenkins jenkins = Jenkins.get();
             jenkins.checkPermission(Jenkins.ADMINISTER);
             LOGGER.log(Level.INFO, "Forced save credentials stores: Requested by {0}",
                     StringUtils.defaultIfBlank(Jenkins.getAuthentication().getName(), "anonymous"));

@@ -156,17 +156,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             }
             try {
                 keyStore.load(new ByteArrayInputStream(keyStoreSource.getKeyStoreBytes()), toCharArray(password));
-            } catch (CertificateException e) {
-                LogRecord lr = new LogRecord(Level.WARNING, "Credentials ID {0}: Could not load keystore from {1}");
-                lr.setParameters(new Object[]{getId(), keyStoreSource});
-                lr.setThrown(e);
-                LOGGER.log(lr);
-            } catch (NoSuchAlgorithmException e) {
-                LogRecord lr = new LogRecord(Level.WARNING, "Credentials ID {0}: Could not load keystore from {1}");
-                lr.setParameters(new Object[]{getId(), keyStoreSource});
-                lr.setThrown(e);
-                LOGGER.log(lr);
-            } catch (IOException e) {
+            } catch (CertificateException | NoSuchAlgorithmException | IOException e) {
                 LogRecord lr = new LogRecord(Level.WARNING, "Credentials ID {0}: Could not load keystore from {1}");
                 lr.setParameters(new Object[]{getId(), keyStoreSource});
                 lr.setThrown(e);
@@ -336,13 +326,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 return FormValidation.ok(StringUtils
                         .defaultIfEmpty(StandardCertificateCredentials.NameProvider.getSubjectDN(keyStore),
                                 buf.toString()));
-            } catch (KeyStoreException e) {
-                return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
-            } catch (CertificateException e) {
-                return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
-            } catch (NoSuchAlgorithmException e) {
-                return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
-            } catch (IOException e) {
+            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException e) {
                 return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
             } finally {
                 if (passwordChars != null) {
@@ -411,9 +395,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         private Object readResolve() {
-            if (!Jenkins.getActiveInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
+            if (!Jenkins.get().hasPermission(Jenkins.RUN_SCRIPTS)) {
                 LOGGER.warning("SECURITY-1322: Permission failure migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource for a Certificate. An administrator may need to perform the migration.");
-                Jenkins.getActiveInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+                Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
             }
 
             LOGGER.log(Level.INFO, "SECURITY-1322: Migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource. The containing item may need to be saved to complete the migration.");
@@ -698,13 +682,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             Method m = XStream2.class.getMethod("addCriticalField", Class.class, String.class);
             m.invoke(Items.XSTREAM2, CertificateCredentialsImpl.class, "keyStoreSource");
         }
-        catch (IllegalAccessException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-        catch (InvocationTargetException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-        catch (NoSuchMethodException e) {
+        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new ExceptionInInitializerError(e);
         }
     }

@@ -419,7 +419,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                                     }
                                 }
                             }
-                            Jenkins jenkins = Jenkins.getActiveInstance();
+                            Jenkins jenkins = Jenkins.get();
                             while (!pathSegments.isEmpty()) {
                                 String fullName = StringUtils.join(pathSegments, "/");
                                 Item item = jenkins.getItemByFullName(fullName);
@@ -496,9 +496,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                     }
 
                 }
-            } catch (AssertionError e) {
-                // ignore, we did the best we could
-            } catch (UnsupportedEncodingException e) {
+            } catch (AssertionError | UnsupportedEncodingException e) {
                 // ignore, we did the best we could
             }
         }
@@ -542,9 +540,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                     }
 
                 }
-            } catch (AssertionError e) {
-                // ignore, we did the best we could
-            } catch (UnsupportedEncodingException e) {
+            } catch (AssertionError | UnsupportedEncodingException e) {
                 // ignore, we did the best we could
             }
         }
@@ -601,9 +597,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                     }
 
                 }
-            } catch (AssertionError e) {
-                // ignore, we did the best we could
-            } catch (UnsupportedEncodingException e) {
+            } catch (AssertionError | UnsupportedEncodingException e) {
                 // ignore, we did the best we could
             }
             return checkUrl;

@@ -80,7 +80,7 @@ import org.apache.commons.lang.StringUtils;
  * </p>
  * <pre>
  * public ListBoxModel doFillCredentialsIdItems(&#64;QueryParam String value) {
- *     if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) { // or whatever permission is appropriate for
+ *     if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) { // or whatever permission is appropriate for
  *     this page
  *         // Important! Otherwise you expose credentials metadata to random web requests.
  *         return new StandardUsernameListBoxModel().includeCurrentValue(value);
@@ -99,7 +99,7 @@ import org.apache.commons.lang.StringUtils;
  * <dt>System-level settings
  * <dd>
  * If your model is a singleton in the whole Jenkins instance, things that belong to the root {@link Jenkins}
- * (such as slaves), or do not have any ancestors serving as the context, then use {@link Jenkins#getInstance} as the
+ * (such as slaves), or do not have any ancestors serving as the context, then use {@link Jenkins#get} as the
  * context.
  * <dt>Job-level settings
  * <dd>

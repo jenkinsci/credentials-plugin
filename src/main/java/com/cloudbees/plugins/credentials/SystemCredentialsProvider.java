@@ -132,8 +132,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      * @return the configuration file that this {@link CredentialsProvider} uses to store its credentials.
      */
     public static XmlFile getConfigFile() {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        return new XmlFile(Jenkins.XSTREAM2, new File(Jenkins.getActiveInstance().getRootDir(), "credentials.xml"));
+        return new XmlFile(Jenkins.XSTREAM2, new File(Jenkins.get().getRootDir(), "credentials.xml"));
     }
 
     /**
@@ -194,8 +193,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      * @param p the permission to check.
      */
     private void checkPermission(Permission p) {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        Jenkins.getActiveInstance().checkPermission(p);
+        Jenkins.get().checkPermission(p);
     }
 
     /**
@@ -295,8 +293,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      */
     @NonNull
     private synchronized List<Credentials> getCredentials(@NonNull Domain domain) {
-        // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-        if (Jenkins.getActiveInstance().hasPermission(CredentialsProvider.VIEW)) {
+        if (Jenkins.get().hasPermission(CredentialsProvider.VIEW)) {
             List<Credentials> list = getDomainCredentialsMap().get(domain);
             if (list == null || list.isEmpty()) {
                 return Collections.emptyList();
@@ -418,7 +415,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          */
         @Override
         public CredentialsStore getStore(@CheckForNull ModelObject object) {
-            if (object == Jenkins.getInstance()) {
+            if (object == Jenkins.get()) {
                 return SystemCredentialsProvider.getInstance().getStore();
             }
             return null;
@@ -444,7 +441,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
                                                               @Nullable Authentication authentication,
                                                               @NonNull List<DomainRequirement> domainRequirements) {
             if (ACL.SYSTEM.equals(authentication)) {
-                CredentialsMatcher matcher = Jenkins.getInstance() == itemGroup ? always() : not(withScope(SYSTEM));
+                CredentialsMatcher matcher = Jenkins.get() == itemGroup ? always() : not(withScope(SYSTEM));
                 return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
                         .getDomainCredentialsMap(), type, domainRequirements, matcher);
             }
@@ -506,8 +503,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         @NonNull
         @Override
         public ModelObject getContext() {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            return Jenkins.getActiveInstance();
+            return Jenkins.get();
         }
 
         /**
@@ -520,8 +516,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         }
 
         public ACL getACL() {
-            // TODO switch to Jenkins.getInstance() once 2.0+ is the baseline
-            return Jenkins.getActiveInstance().getACL();
+            return Jenkins.get().getACL();
         }
 
         /**
