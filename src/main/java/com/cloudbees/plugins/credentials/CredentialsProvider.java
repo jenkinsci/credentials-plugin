@@ -80,6 +80,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -868,22 +869,26 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static <C extends IdCredentials> C findCredentialById(@NonNull String id, @NonNull Class<C> type,
                                                                  @NonNull Run<?, ?> run,
                                                                  @Nullable List<DomainRequirement> domainRequirements) {
-        id.getClass(); // throw NPE if null;
-        type.getClass(); // throw NPE if null;
-        run.getClass(); // throw NPE if null;
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(run);
 
         // first we need to find out if this id is pre-selected or a parameter
         id = id.trim();
         boolean isParameter = false;
         boolean isDefaultValue = false;
         String inputUserId = null;
+        final String parameterName;
+        if (id.startsWith("${") && id.endsWith("}")) {
+            // denotes explicitly that this is a parameterized credential
+            parameterName = id.substring(2, id.length() - 1);
+        } else {
+            // otherwise, we can check to see if there is a matching credential parameter name that shadows an
+            // existing global credential id
+            parameterName = id;
+        }
         final CredentialsParameterBinder binder = CredentialsParameterBinder.getOrCreate(run);
-        final CredentialsParameterBinding binding = id.startsWith("${") && id.endsWith("}") ?
-                // denotes explicitly that this is a parameterized credential
-                binder.forParameterName(id.substring(2, id.length() - 1)) :
-                // otherwise, we can check to see if there is a matching credential parameter name that shadows an
-                // existing global credential id
-                binder.forParameterName(id);
+        final CredentialsParameterBinding binding = binder.forParameterName(parameterName);
         if (binding != null) {
             isParameter = true;
             inputUserId = binding.getUserId();
@@ -896,13 +901,12 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // if a different strategy is in play it doesn't make sense to consider the run-time authentication
             // as you would have no way to configure it
             Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf(run.getParent());
-            List<C> candidates = new ArrayList<C>();
             // we want the credentials available to the user the build is running as
-            candidates.addAll(
+            List<C> candidates = new ArrayList<>(
                     CredentialsProvider.lookupCredentials(type, run.getParent(), runAuth, domainRequirements)
             );
             // if that user can use the item's credentials, add those in too
-            if (runAuth != ACL.SYSTEM && run.getACL().hasPermission(runAuth, CredentialsProvider.USE_ITEM)) {
+            if (runAuth != ACL.SYSTEM && run.hasPermission(runAuth, CredentialsProvider.USE_ITEM)) {
                 candidates.addAll(
                         CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM, domainRequirements)
                 );
@@ -912,21 +916,23 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         // this is a parameter and not the default value, we need to determine who triggered the build
         final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
         final Authentication a = triggeredBy == null ? Jenkins.ANONYMOUS : triggeredBy.getKey().impersonate();
-        List<C> candidates = new ArrayList<C>();
-        if (triggeredBy != null && run == triggeredBy.getValue()
-                && run.getACL().hasPermission(a, CredentialsProvider.USE_OWN)) {
+        List<C> candidates = new ArrayList<>();
+        if (triggeredBy != null && run == triggeredBy.getValue() && run.hasPermission(a, CredentialsProvider.USE_OWN)) {
             // the user triggered this job directly and they are allowed to supply their own credentials, so
             // add those into the list. We do not want to follow the chain for the user's authentication
             // though, as there is no way to limit how far the passed-through parameters can be used
             candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), a, domainRequirements));
         }
         if (inputUserId != null) {
-            final Authentication inputAuth = User.getOrCreateByIdOrFullName(inputUserId).impersonate();
-            if (run.hasPermission(inputAuth, CredentialsProvider.USE_OWN)) {
-                candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), inputAuth, domainRequirements));
+            final User inputUser = User.getById(inputUserId, false);
+            if (inputUser != null) {
+                final Authentication inputAuth = inputUser.impersonate();
+                if (run.hasPermission(inputAuth, CredentialsProvider.USE_OWN)) {
+                    candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), inputAuth, domainRequirements));
+                }
             }
         }
-        if (run.getACL().hasPermission(a, CredentialsProvider.USE_ITEM)) {
+        if (run.hasPermission(a, CredentialsProvider.USE_ITEM)) {
             // the triggering user is allowed to use the item's credentials, so add those into the list
             // we use the default authentication of the job as those are the only ones that can be configured
             // if a different strategy is in play it doesn't make sense to consider the run-time authentication
@@ -937,7 +943,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     CredentialsProvider.lookupCredentials(type, run.getParent(), runAuth, domainRequirements)
             );
             // if that user can use the item's credentials, add those in too
-            if (runAuth != ACL.SYSTEM && run.getACL().hasPermission(runAuth, CredentialsProvider.USE_ITEM)) {
+            if (runAuth != ACL.SYSTEM && run.hasPermission(runAuth, CredentialsProvider.USE_ITEM)) {
                 candidates.addAll(
                         CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM, domainRequirements)
                 );
