@@ -261,19 +261,15 @@ Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, functi
   x.onchange();
 });
 Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0, function (e) {
-    e.querySelector("input[name='includeUser']").addEventListener('click', function (evt) {
+    e.querySelector("input[name='includeUser']").onclick = function (evt) {
         var caution = e.querySelector('span.user-credentials-caution');
-        if (this.checked) {
-            caution.classList.remove('hidden');
-        } else {
-            caution.classList.add('hidden');
-        }
-    });
+        caution.hidden = !this.checked;
+    };
     // simpler version of f:helpLink using inline help text
-    e.querySelector('a.help-btn').addEventListener('click', function (evt) {
-        this.remove();
-        e.querySelector('p.help').style.display = 'block';
-    });
+    e.querySelector('a.help-btn').onclick = function (evt) {
+        var help = e.querySelector('.help-content');
+        help.hidden = !help.hidden;
+    };
 });
 window.setTimeout(function() {
     // HACK: can be removed once base version of Jenkins has fix of https://issues.jenkins-ci.org/browse/JENKINS-26578
