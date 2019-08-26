@@ -477,3 +477,22 @@ IssueTrackerAuthentication auth = AuthenticationTokens.convert(
   )
 );
 ----
+
+=== Binding user supplied credentials parameters to builds
+
+A running build can be supplied with credentials parameter values.
+Typically, these values are provided by using a parameterized job and supplying those parameters when triggering the build.
+Additional credentials parameters may be specified by adding or updating a build's `CredentialsParameterBinder` build action.
+Each parameter value can be associated to a user who supplied the credentials which allows for multiple sources of credentials to contribute to a build throughout its lifecycle.
+Plugins acting on a build can do the following:
+
+[source,java]
+----
+import com.cloudbees.plugins.credentials.builds.CredentialsParameterBinder;
+
+CredentialsParameterBinder binder = CredentialsParameterBinder.getOrCreate(build);
+binder.bindCredentialsParameter(userId, parameterValue); // <1>
+binder.unbindCredentialsParameter(parameterName); // <2>
+----
+<1> The `userId` is only required if the parameter value references user credentials.
+<2> Credentials parameters can optionally be unbound from a build to limit the scope of the credentials.

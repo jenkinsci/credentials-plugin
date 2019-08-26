@@ -147,7 +147,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
                     continue;
                 }
                 if (credentialType.equals(descriptor.clazz.getName())) {
-                    return (Class<? extends StandardCredentials>) descriptor.clazz;
+                    return descriptor.clazz.asSubclass(StandardCredentials.class);
                 }
             }
             return StandardCredentials.class;
@@ -167,7 +167,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             Jenkins jenkins = Jenkins.get();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
-            final List<DomainRequirement> domainRequirements = Collections.<DomainRequirement>emptyList();
+            final List<DomainRequirement> domainRequirements = Collections.emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
             result.includeEmptyValue();
             if (acl.hasPermission(CredentialsProvider.USE_ITEM)) {
@@ -179,19 +179,20 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         public StandardListBoxModel doFillValueItems(@AncestorInPath Item context,
                                                      @QueryParameter(required = true) String credentialType,
                                                      @QueryParameter String value,
-                                                     @QueryParameter boolean required) {
+                                                     @QueryParameter boolean required,
+                                                     @QueryParameter boolean includeUser) {
             Jenkins jenkins = Jenkins.get();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
             final Authentication authentication = Jenkins.getAuthentication();
             final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf(context);
             final boolean isSystem = ACL.SYSTEM.equals(authentication);
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
-            final List<DomainRequirement> domainRequirements = Collections.<DomainRequirement>emptyList();
+            final List<DomainRequirement> domainRequirements = Collections.emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
             if (!required) {
                 result.includeEmptyValue();
             }
-            if (!isSystem && acl.hasPermission(CredentialsProvider.USE_OWN)) {
+            if (!isSystem && acl.hasPermission(CredentialsProvider.USE_OWN) && includeUser) {
                 result.includeAs(authentication, context, typeClass, domainRequirements);
             }
             if (acl.hasPermission(CredentialsProvider.USE_ITEM) || isSystem || itemAuthentication
