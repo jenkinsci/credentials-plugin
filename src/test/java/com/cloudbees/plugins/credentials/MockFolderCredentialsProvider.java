@@ -175,7 +175,6 @@ import org.jvnet.hudson.test.MockFolder;
          *
          * @since 3.10
          */
-        @SuppressWarnings("deprecation")
         @NonNull
         public synchronized Map<Domain, List<Credentials>> getDomainCredentialsMap() {
             return domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);

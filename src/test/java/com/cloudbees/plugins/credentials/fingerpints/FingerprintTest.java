@@ -40,7 +40,6 @@ import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import java.util.Collections;
-import java.util.concurrent.Future;
 import jenkins.model.Jenkins;
 import org.junit.Before;
 import org.junit.Rule;
