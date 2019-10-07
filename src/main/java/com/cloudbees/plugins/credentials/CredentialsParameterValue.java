@@ -14,6 +14,7 @@ import hudson.model.Run;
 import hudson.model.User;
 import hudson.model.queue.WorkUnit;
 import hudson.security.ACL;
+import hudson.security.ACLContext;
 import hudson.util.VariableResolver;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,8 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
@@ -173,17 +172,14 @@ public class CredentialsParameterValue extends ParameterValue {
         if (run == null) {
             throw new IllegalStateException("Should only be called from value.jelly");
         }
-            SecurityContext oldContext = ACL.impersonate(ACL.SYSTEM);
-            try {
-                for (CredentialsStore store : CredentialsProvider.lookupStores(run.getParent())) {
-                    String url = url(store);
-                    if (url != null) {
-                        return url;
-                    }
+        try (ACLContext ctx = ACL.as(ACL.SYSTEM)) {
+            for (CredentialsStore store : CredentialsProvider.lookupStores(run.getParent())) {
+                String url = url(store);
+                if (url != null) {
+                    return url;
                 }
-            } finally {
-                SecurityContextHolder.setContext(oldContext);
             }
+        }
         for (CredentialsStore store: CredentialsProvider.lookupStores(User.current())) {
             String url = url(store);
             if (url != null) {

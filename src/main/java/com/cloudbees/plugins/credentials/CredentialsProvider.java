@@ -55,6 +55,7 @@ import hudson.model.Run;
 import hudson.model.User;
 import hudson.model.queue.Tasks;
 import hudson.security.ACL;
+import hudson.security.ACLContext;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
@@ -89,8 +90,6 @@ import jenkins.model.Jenkins;
 import jenkins.util.Timer;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.GrantedAuthority;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
 import org.acegisecurity.providers.UsernamePasswordAuthenticationToken;
 import org.acegisecurity.userdetails.UsernameNotFoundException;
 import org.apache.commons.io.IOUtils;
@@ -1668,8 +1667,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             Timer.get().execute(new Runnable() {
             @Override
             public void run() {
-                SecurityContext ctx = ACL.impersonate(ACL.SYSTEM);
-                try {
+                try (ACLContext ctx = ACL.as(ACL.SYSTEM)) {
                     if (jenkins.getInitLevel().compareTo(InitMilestone.JOB_LOADED) < 0) {
                         LOGGER.log(Level.INFO, "Forced save credentials stores: Initialization has not completed");
                         while (jenkins.getInitLevel().compareTo(InitMilestone.JOB_LOADED) < 0) {
@@ -1740,7 +1738,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     }
                 } finally {
                     LOGGER.log(Level.INFO, "Forced save credentials stores: Completed");
-                    SecurityContextHolder.setContext(ctx);
                 }
             }
         });

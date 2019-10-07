@@ -171,7 +171,6 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      * @return all the credentials.
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
     @NonNull
     public synchronized Map<Domain, List<Credentials>> getDomainCredentialsMap() {
         return domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);

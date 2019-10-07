@@ -121,7 +121,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      */
     @NonNull
     public List<CredentialsStore> getParentStores() {
-        List<CredentialsStore> result = new ArrayList<CredentialsStore>();
+        List<CredentialsStore> result = new ArrayList<>();
         for (CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
             if (context != s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
                 result.add(s);
@@ -137,7 +137,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      */
     @NonNull
     public List<CredentialsStore> getLocalStores() {
-        List<CredentialsStore> result = new ArrayList<CredentialsStore>();
+        List<CredentialsStore> result = new ArrayList<>();
         for (CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
             if (context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
                 result.add(s);
@@ -154,7 +154,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @NonNull
     @SuppressWarnings("unused") // Jelly EL
     public List<CredentialsStoreAction> getStoreActions() {
-        List<CredentialsStoreAction> result = new ArrayList<CredentialsStoreAction>();
+        List<CredentialsStoreAction> result = new ArrayList<>();
         for (final CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
             if (context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
                 CredentialsStoreAction action = s.getStoreAction();
@@ -176,7 +176,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @SuppressWarnings("unused") // Stapler XML/JSON API
     @Exported(name = "stores")
     public Map<String,CredentialsStoreAction> getStoreActionsMap() {
-        Map<String,CredentialsStoreAction> result = new TreeMap<String, CredentialsStoreAction>();
+        Map<String,CredentialsStoreAction> result = new TreeMap<>();
         for (CredentialsStoreAction a: getStoreActions()) {
             result.put(a.getUrlName(), a);
         }
@@ -260,11 +260,8 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      * @return the credential entries.
      */
     public List<TableEntry> getTableEntries() {
-        List<TableEntry> result = new ArrayList<TableEntry>();
-        Item item = context instanceof Item ? (Item) context : null;
-        ItemGroup group = context instanceof ItemGroup ? (ItemGroup) context
-                : context instanceof User ? Jenkins.get() : null;
-        Set<String> ids = new HashSet<String>();
+        List<TableEntry> result = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
         for (CredentialsStore p : CredentialsProvider.lookupStores(context)) {
             if (p.hasPermission(CredentialsProvider.VIEW)) {
                 for (Domain domain : p.getDomains()) {
