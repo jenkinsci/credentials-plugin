@@ -29,6 +29,7 @@ import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
@@ -362,6 +363,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         @NonNull
         @Override
+        @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "Deprecated mechanism. Maintained only for migrating existing data without user input.")
         public byte[] getKeyStoreBytes() {
             try {
                 InputStream inputStream = new FileInputStream(new File(keyStoreFile));
@@ -380,6 +382,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          * {@inheritDoc}
          */
         @Override
+        @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "Deprecated mechanism. Maintained only for migrating existing data without user input.")
         public long getKeyStoreLastModified() {
             return new File(keyStoreFile).lastModified();
         }
