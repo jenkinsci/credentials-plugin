@@ -41,7 +41,7 @@
   <description>
     This plugin allows you to store credentials in Jenkins.
   </description>
-  <url>https://wiki.jenkins.io/display/JENKINS/Credentials+Plugin</url>
+  <url>https://github.com/jenkinsci/credentials-plugin/blob/master/docs/README.adoc</url>
   <licenses>
     <license>
       <name>The MIT license</name>
