@@ -27,6 +27,7 @@ You under the Apache License, Version 2.0.
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl.KeyStoreSource;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -367,6 +368,9 @@ public class SecretBytes implements Serializable {
             }
             if (value instanceof KeyStoreSource) {
                 return SecretBytes.fromBytes(((KeyStoreSource) value).getKeyStoreBytes());
+            }
+            if (value instanceof CertificateCredentialsImpl) {
+                return SecretBytes.fromBytes(((CertificateCredentialsImpl) value).getKeyStoreSource().getKeyStoreBytes());
             }
             throw new IllegalClassException(SecretBytes.class, value.getClass());
         }
