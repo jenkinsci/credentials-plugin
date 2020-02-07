@@ -43,6 +43,11 @@ To install:
 	mvn release:prepare release:perform -B
 
 
+### Plugin changelog
+
+	[CHANGELOG](CHANGELOG.md)
+
+
 ## License
 
 	(The MIT License)
