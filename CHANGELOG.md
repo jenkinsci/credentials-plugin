@@ -6,11 +6,11 @@
      [PR-128](https://github.com/jenkinsci/credentials-plugin/pull/128)
     ).
 -   Various code cleanups (
-     [PR-133 - JCasC test harness](https://github.com/jenkinsci/credentials-plugin/pull/133).
-     [PR-132 - Use latest parent pom](https://github.com/jenkinsci/credentials-plugin/pull/132).
-     [PR-131 - Minor documentation grammar fix](https://github.com/jenkinsci/credentials-plugin/pull/131)
-     [PR-130 - Test with configuration as code plugin 1.34](https://github.com/jenkinsci/credentials-plugin/pull/132).
-     [PR-127 - Use try with resources and ACL.as, other cleanups](https://github.com/jenkinsci/credentials-plugin/pull/127)
+     [PR-133](https://github.com/jenkinsci/credentials-plugin/pull/133) - JCasC test harness,
+     [PR-132](https://github.com/jenkinsci/credentials-plugin/pull/132) - Use latest parent pom,
+     [PR-131](https://github.com/jenkinsci/credentials-plugin/pull/131) - Minor documentation grammar fix,
+     [PR-130](https://github.com/jenkinsci/credentials-plugin/pull/132) - Test with configuration as code plugin 1.34,
+     [PR-127](https://github.com/jenkinsci/credentials-plugin/pull/127) - Use try with resources and ACL.as, other cleanups
     ).
 
 ### Version 2.3.0 (August 26th, 2019)
@@ -18,8 +18,8 @@
 -   Allow credentials parameters to shadow credentials with the same id in credentials lookup
     ([JENKINS-58170](https://issues.jenkins-ci.org/browse/JENKINS-58170)).
 -   Various code cleanups (
-     [PR-125 - Use Java 8 syntax more widely, other cleanup](https://github.com/jenkinsci/credentials-plugin/pull/125).
-     [PR-124 - Documentation updates](https://github.com/jenkinsci/credentials-plugin/pull/124).
+     [PR-125](https://github.com/jenkinsci/credentials-plugin/pull/125) - Use Java 8 syntax more widely, other cleanup,
+     [PR-124](https://github.com/jenkinsci/credentials-plugin/pull/124) - Documentation updates
     ).
 
 ### Version 2.2.1 (August 1st, 2019)
