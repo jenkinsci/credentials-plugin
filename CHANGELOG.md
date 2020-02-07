@@ -233,7 +233,7 @@
 
 -   The fix in 2.0.5 introduced a javascript error for configuring
     existing jobs that have already got the Add button. This has been
-    fixed. ** **
+    fixed.
 
 ### Version 2.0.5 (May 24, 2016)
 
@@ -284,7 +284,7 @@
     well as any masked credentials from parent scopes) as well as all
     the credentials stores contributing to the current scope. All the
     links are now context menu links.
--   The Manage Jenkins » Configure Credentials screen has been reworked
+-   The Manage Jenkins Â» Configure Credentials screen has been reworked
     to actually allow for managing the credentials providers and types.
     It is now possible to restrict the credential types available per
     credential store as well as globally disable individual credential
