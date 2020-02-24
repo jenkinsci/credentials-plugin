@@ -304,4 +304,28 @@ public class CredentialsProviderTest {
 
     }
 
+    @Test
+    public void trackingOfFingerprintDependsOnConfiguration() throws Exception {
+        // Create dummy credentials to use
+        DummyCredentials globalCred = new DummyCredentials(CredentialsScope.GLOBAL, "globalCred", "pwd");
+        FreeStyleProject p1 = r.createFreeStyleProject();
+        FreeStyleProject p2 = r.createFreeStyleProject();
+
+        // Find how many times this credential has been currently tracked
+        int initialFingerprintJobSize = CredentialsProvider.getOrCreateFingerprintOf(globalCred).getJobs().size();
+
+        CredentialsProvider.track(p1, globalCred);
+        assertEquals(initialFingerprintJobSize + 1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
+        CredentialsProviderManager manager = CredentialsProviderManager.getInstance();
+        manager.setFingerprintEnabled(false);
+        CredentialsProvider.track(p2, globalCred);
+        // no effect
+        assertEquals(initialFingerprintJobSize + 1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+
+        manager.setFingerprintEnabled(true);
+
+        CredentialsProvider.track(p2, globalCred);
+        assertEquals(initialFingerprintJobSize + 2, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
+    }
 }

@@ -1276,10 +1276,18 @@ public abstract class CredentialsStoreAction
         @Exported(visibility = 1)
         public Fingerprint getFingerprint() throws IOException {
             if (fingerprint == null) {
-                // idempotent write
-                fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+                if (CredentialsProviderManager.isFingerprintEnabledOrDefault()) {
+                    // idempotent write
+                    fingerprint = CredentialsProvider.getFingerprintOf(credentials);
+                }
             }
             return fingerprint;
+        }
+
+        @SuppressWarnings("unused") // jelly EL helper
+        @Restricted(NoExternalUse.class)
+        public boolean isFingerprintEnabled() {
+            return CredentialsProviderManager.isFingerprintEnabledOrDefault();
         }
 
         /**
