@@ -32,6 +32,7 @@ import com.cloudbees.plugins.credentials.fingerprints.NodeCredentialsFingerprint
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.BulkChange;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionList;
@@ -87,6 +88,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.FingerprintFacet;
 import jenkins.model.Jenkins;
+import jenkins.util.SystemProperties;
 import jenkins.util.Timer;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.GrantedAuthority;
@@ -98,6 +100,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -209,6 +212,20 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static final Permission MANAGE_DOMAINS = new Permission(GROUP, "ManageDomains",
             Messages._CredentialsProvider_ManageDomainsPermissionDescription(), Permission.CONFIGURE, true, SCOPES);
 
+    /**
+     * The system property name corresponding to {@link #FINGERPRINT_ENABLED}.
+     */
+    public static final String FINGERPRINT_ENABLED_NAME = CredentialsProvider.class.getSimpleName() + ".fingerprintEnabled";
+    
+    /**
+     * Control if the fingerprints must be used or not. 
+     * By default they are activated and thus allow the tracking of credentials usage.
+     * In case of performance troubles in some weird situation, you can disable the behavior by setting it to {@code false}.
+     */
+    @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "Accessible via System Groovy Scripts")
+    @Restricted(NoExternalUse.class)
+    public static /* not final */ boolean FINGERPRINT_ENABLED = SystemProperties.getBoolean(FINGERPRINT_ENABLED_NAME, true);
+    
     /**
      * Default constructor.
      */
@@ -1462,7 +1479,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     public static <C extends Credentials> List<C> trackAll(@NonNull Run build, @NonNull List<C> credentials) {
-        if (CredentialsProviderManager.isFingerprintEnabledOrDefault()) {
+        if (CredentialsProvider.FINGERPRINT_ENABLED) {
             for (Credentials c : credentials) {
                 if (c != null) {
                     try {
@@ -1473,7 +1490,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         } else {
-            LOGGER.log(Level.FINEST, "TrackAll, Run variant, called but fingerprints disabled in the global configuration.");
+            LOGGER.log(Level.FINEST, "TrackAll method (Run variant) called but fingerprints disabled by {0}", FINGERPRINT_ENABLED_NAME);
         }
         return credentials;
     }
@@ -1523,7 +1540,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     public static <C extends Credentials> List<C> trackAll(@NonNull Node node, @NonNull List<C> credentials) {
-        if (CredentialsProviderManager.isFingerprintEnabledOrDefault()) {
+        if (CredentialsProvider.FINGERPRINT_ENABLED) {
             long timestamp = System.currentTimeMillis();
             String nodeName = node.getNodeName();
             // Create a list of all current node names. The credential will only be
@@ -1571,7 +1588,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         } else {
-            LOGGER.log(Level.FINEST, "TrackAll, Node variant, called but fingerprints disabled in the global configuration.");
+            LOGGER.log(Level.FINEST, "TrackAll method (Node variant) called but fingerprints disabled by {0}", FINGERPRINT_ENABLED_NAME);
         }
         return credentials;
     }
@@ -1624,7 +1641,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     public static <C extends Credentials> List<C> trackAll(@NonNull Item item, @NonNull List<C> credentials) {
-        if (CredentialsProviderManager.isFingerprintEnabledOrDefault()) {
+        if (CredentialsProvider.FINGERPRINT_ENABLED) {
             long timestamp = System.currentTimeMillis();
             String fullName = item.getFullName();
             for (Credentials c : credentials) {
@@ -1655,7 +1672,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         } else {
-            LOGGER.log(Level.FINEST, "TrackAll, Item variant, called but fingerprints disabled in the global configuration.");
+            LOGGER.log(Level.FINEST, "TrackAll method (Item variant) called but fingerprints disabled by {0}", FINGERPRINT_ENABLED_NAME);
         }
         return credentials;
     }

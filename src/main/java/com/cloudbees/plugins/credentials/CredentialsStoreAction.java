@@ -1276,7 +1276,7 @@ public abstract class CredentialsStoreAction
         @Exported(visibility = 1)
         public Fingerprint getFingerprint() throws IOException {
             if (fingerprint == null) {
-                if (CredentialsProviderManager.isFingerprintEnabledOrDefault()) {
+                if (CredentialsProvider.FINGERPRINT_ENABLED) {
                     // idempotent write
                     fingerprint = CredentialsProvider.getFingerprintOf(credentials);
                 }
@@ -1287,7 +1287,7 @@ public abstract class CredentialsStoreAction
         @SuppressWarnings("unused") // jelly EL helper
         @Restricted(NoExternalUse.class)
         public boolean isFingerprintEnabled() {
-            return CredentialsProviderManager.isFingerprintEnabledOrDefault();
+            return CredentialsProvider.FINGERPRINT_ENABLED;
         }
 
         /**

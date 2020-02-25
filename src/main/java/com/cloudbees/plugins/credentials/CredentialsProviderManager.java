@@ -82,14 +82,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
      * Any additional restrictions to apply.
      */
     private List<CredentialsProviderTypeRestriction> restrictions;
-    /**
-     * Determine if the fingerprint of credentials must be processed when the "trackAll" methods 
-     * from {@link CredentialsProvider} are called
-     * Default value: true
-     *
-     * @since TODO
-     */
-    private boolean fingerprintEnabled = true;
     
     /**
      * A cache of {@link #restrictions} grouped by {@link CredentialsProviderTypeRestriction#getDescriptor()}.
@@ -144,17 +136,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
             throw new IllegalStateException("CredentialsProviderManager is not registered with Jenkins");
         }
         return instance;
-    }
-
-    /**
-     * Helper method to know if the fingerprints are processed
-     *
-     * @return if the fingerprints are processed
-     * @since TODO
-     */
-    public static boolean isFingerprintEnabledOrDefault() {
-        CredentialsProviderManager instance = getInstance();
-        return instance == null || instance.isFingerprintEnabled();
     }
 
     /**
@@ -337,20 +318,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
     }
 
     /**
-     * @since TODO
-     */
-    public boolean isFingerprintEnabled() {
-        return fingerprintEnabled;
-    }
-
-    /**
-     * @since TODO
-     */
-    public void setFingerprintEnabled(boolean fingerprintEnabled) {
-        this.fingerprintEnabled = fingerprintEnabled;
-    }
-
-    /**
      * A repopulation-safe access for the {@link #restrictionGroups}
      *
      * @return the {@link #restrictionGroups} or {@code null} if empty.
@@ -462,33 +429,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
             CredentialsProviderManager manager = getInstance();
             if (manager != null) {
                 manager.setRestrictions(restrictions);
-            }
-        }
-
-        /**
-         * A Jelly EL short-cut for {@link CredentialsProviderManager#isFingerprintEnabled()}.
-         *
-         * @return if the fingerprints are computed or not.
-         */
-        @SuppressWarnings("unused") // jelly EL helper
-        @Restricted(NoExternalUse.class)
-        public boolean isFingerprintEnabled() {
-            CredentialsProviderManager manager = getInstance();
-            return manager == null ? true : manager.isFingerprintEnabled();
-        }
-
-        /**
-         * A Jelly form-binding short-cut for
-         * {@link CredentialsProviderManager#setFingerprintEnabled(boolean)}.
-         *
-         * @param fingerprintEnable if the fingerprints must be computed or not
-         */
-        @SuppressWarnings("unused") // jelly form binding
-        @Restricted(NoExternalUse.class)
-        public void setFingerprintEnabled(boolean fingerprintEnable) {
-            CredentialsProviderManager manager = getInstance();
-            if (manager != null) {
-                manager.setFingerprintEnabled(fingerprintEnable);
             }
         }
 
