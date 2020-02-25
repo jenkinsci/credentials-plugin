@@ -82,7 +82,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
      * Any additional restrictions to apply.
      */
     private List<CredentialsProviderTypeRestriction> restrictions;
-    
     /**
      * A cache of {@link #restrictions} grouped by {@link CredentialsProviderTypeRestriction#getDescriptor()}.
      */
