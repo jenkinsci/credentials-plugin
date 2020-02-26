@@ -224,7 +224,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "Accessible via System Groovy Scripts")
     @Restricted(NoExternalUse.class)
-    public static /* not final */ boolean FINGERPRINT_ENABLED = SystemProperties.getBoolean(FINGERPRINT_ENABLED_NAME, true);
+    public static /* not final */ boolean FINGERPRINT_ENABLED = Boolean.parseBoolean(System.getProperty(FINGERPRINT_ENABLED_NAME, "true"));
     
     /**
      * Default constructor.
