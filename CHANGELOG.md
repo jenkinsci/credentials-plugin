@@ -1,5 +1,12 @@
 # Version History
 
+### Version 2.3.3 (February 27th, 2020)
+- Use pass-through conversion for SecretBytes to avoid JCasC errors ([PR-135](https://github.com/jenkinsci/credentials-plugin/pull/135)).
+
+### Version 2.3.2 (February 27th, 2020)
+- Show credentials id in DomainWrapper view ([PR-120](https://github.com/jenkinsci/credentials-plugin/pull/120)).
+- Migrate changelog to repository ([PR-134](https://github.com/jenkinsci/credentials-plugin/pull/134)).
+
 ### Version 2.3.1 (August 26th, 2019)
 
 -   Use GitHub for documentation root instead of wiki (
