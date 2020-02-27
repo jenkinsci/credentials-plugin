@@ -364,6 +364,9 @@ public class SecretBytes implements Serializable {
             if (value instanceof String) {
                 return SecretBytes.fromString((String) value);
             }
+            if (value instanceof SecretBytes) {
+                return (SecretBytes) value;
+            }
             throw new IllegalClassException(SecretBytes.class, value.getClass());
         }
     }
