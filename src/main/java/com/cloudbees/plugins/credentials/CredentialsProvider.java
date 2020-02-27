@@ -215,7 +215,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     /**
      * The system property name corresponding to {@link #FINGERPRINT_ENABLED}.
      */
-    public static final String FINGERPRINT_ENABLED_NAME = CredentialsProvider.class.getSimpleName() + ".fingerprintEnabled";
+    private static final String FINGERPRINT_ENABLED_NAME = CredentialsProvider.class.getSimpleName() + ".fingerprintEnabled";
     
     /**
      * Control if the fingerprints must be used or not. 
@@ -224,7 +224,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "Accessible via System Groovy Scripts")
     @Restricted(NoExternalUse.class)
-    public static /* not final */ boolean FINGERPRINT_ENABLED = Boolean.parseBoolean(System.getProperty(FINGERPRINT_ENABLED_NAME, "true"));
+    /* package-protected */ static /* not final */ boolean FINGERPRINT_ENABLED = Boolean.parseBoolean(System.getProperty(FINGERPRINT_ENABLED_NAME, "true"));
     
     /**
      * Default constructor.
