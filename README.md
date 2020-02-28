@@ -1,7 +1,5 @@
 # Jenkins Credentials Plugin
 
-Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin](http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin)
-
 ## Documentation
 
 [![Documentation](docs/images/manual.png)](docs/)
@@ -43,9 +41,9 @@ To install:
 	mvn release:prepare release:perform -B
 
 
-### Plugin changelog
+### Plugin [changelog](CHANGELOG.md)
 
-	[CHANGELOG](CHANGELOG.md)
+[CHANGELOG](CHANGELOG.md)
 
 
 ## License
