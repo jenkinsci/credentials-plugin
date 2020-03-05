@@ -107,6 +107,10 @@ public class GlobalCredentialsConfiguration extends ManagementLink
         return "configureCredentials";
     }
 
+    public String getCategory() {
+        return "SECURITY";
+    }
+
 // TODO uncomment once ContextMenu is IconSpec aware
 //    /**
 //     * {@inheritDoc}
