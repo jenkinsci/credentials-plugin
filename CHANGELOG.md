@@ -1,5 +1,8 @@
 # Version History
 
+### Version 2.3.4 (March 18th, 2020)
+- Add category to system settings for modern Jenkins releases.
+
 ### Version 2.3.3 (February 27th, 2020)
 - Use pass-through conversion for SecretBytes to avoid JCasC errors ([PR-135](https://github.com/jenkinsci/credentials-plugin/pull/135)).
 
