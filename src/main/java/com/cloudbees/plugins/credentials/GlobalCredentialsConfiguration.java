@@ -107,7 +107,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
         return "configureCredentials";
     }
 
-    public String getCategory() {
+    public String getCategoryName() {
         return "SECURITY";
     }
 
