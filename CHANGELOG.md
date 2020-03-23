@@ -1,5 +1,8 @@
 # Version History
 
+### Version 2.3.5 (March 23rd, 2020)
+- Add system property `com.cloudbees.plugins.credentials.CredentialsProvider.fingerprintEnabled` which can be set to `false` to disable credentials tracking using fingerprints.
+
 ### Version 2.3.4 (March 18th, 2020)
 - Add category to system settings for modern Jenkins releases.
 
