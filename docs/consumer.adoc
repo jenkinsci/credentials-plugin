@@ -167,7 +167,7 @@ public FormValidation doCheckCredentialsId(
   if (StringUtils.isBlank(value)) { // <4>
     return FormValidation.ok(); // <4>
   }
-  if (value.startWith("${") && value.endsWith("}")) { // <5>
+  if (value.startsWith("${") && value.endsWith("}")) { // <5>
     return FormValidation.warning("Cannot validate expression based credentials");
   }
   if (CredentialsProvider.listCredentials( // <6>
