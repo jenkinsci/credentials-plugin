@@ -88,7 +88,7 @@ public class CredentialsRootConfigurator extends BaseConfigurator<GlobalCredenti
                 .getter(t -> SystemCredentialsProvider.getInstance())
                 .setter(noop());
         set.add(system);
-        for(CredentialsProvider provider : CredentialsProvider.all()) {
+        for (CredentialsProvider provider : CredentialsProvider.all()) {
             Symbol s = provider.getClass().getAnnotation(Symbol.class);
             String name;
             if (s != null) {

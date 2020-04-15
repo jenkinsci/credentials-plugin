@@ -4,13 +4,11 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.HostnameRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
+import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.model.ItemGroup;
 import hudson.security.ACL;
@@ -19,21 +17,18 @@ import io.jenkins.plugins.casc.BaseConfigurator;
 import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorException;
-import io.jenkins.plugins.casc.impl.attributes.MultivaluedAttribute;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.model.CNode;
 import io.jenkins.plugins.casc.model.Mapping;
 import org.acegisecurity.Authentication;
 import org.jenkinsci.Symbol;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.TestExtension;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -42,6 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.jvnet.hudson.test.JenkinsMatchers.hasPlainText;
 
 public class CredentialsProviderTest {
 
@@ -63,9 +59,9 @@ public class CredentialsProviderTest {
                 UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM,
                 Collections.singletonList(new HostnameRequirement("api.test.com"))
         );
-        Assert.assertThat(ups, hasSize(1));
+        assertThat(ups, hasSize(1));
         final UsernamePasswordCredentials up = ups.get(0);
-        Assert.assertThat(up.getPassword().getPlainText(), equalTo("password"));
+        assertThat(up.getPassword(), hasPlainText("password"));
     }
 
     @Test
@@ -73,7 +69,6 @@ public class CredentialsProviderTest {
     public void export_credentials_provider_extension_credentials() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ConfigurationAsCode.get().export(out);
-        System.out.println(out.toString());
         assertThat(out.toString(), containsString("username: \"user1\""));
         assertThat(out.toString(), containsString("id: \"sudo_password\""));
     }
@@ -92,6 +87,9 @@ public class CredentialsProviderTest {
         @NonNull
         @Override
         public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication) {
+            if (!type.equals(DummyCredentials.class)) {
+                return Collections.emptyList();
+            }
             List<C> l = new ArrayList<>();
             l.add((C) theCredential);
             return l;
