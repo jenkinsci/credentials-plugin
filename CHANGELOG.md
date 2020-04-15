@@ -1,5 +1,8 @@
 # Version History
 
+### Version 2.3.6 (April 15th, 2020)
+- JCasC support for `CredentialsProvider` extensions ([JENKINS-61900](https://issues.jenkins-ci.org/browse/JENKINS-61900)).
+
 ### Version 2.3.5 (March 23rd, 2020)
 - Add system property `com.cloudbees.plugins.credentials.CredentialsProvider.fingerprintEnabled` which can be set to `false` to disable credentials tracking using fingerprints.
 
@@ -7,7 +10,7 @@
 - Add category to system settings for modern Jenkins releases.
 
 ### Version 2.3.3 (February 27th, 2020)
-- Use pass-through conversion for SecretBytes to avoid JCasC errors ([PR-135](https://github.com/jenkinsci/credentials-plugin/pull/135)).
+- Use pass-through conversion for `SecretBytes` to avoid JCasC errors ([PR-135](https://github.com/jenkinsci/credentials-plugin/pull/135)).
 
 ### Version 2.3.2 (February 27th, 2020)
 - Show credentials id in DomainWrapper view ([PR-120](https://github.com/jenkinsci/credentials-plugin/pull/120)).
