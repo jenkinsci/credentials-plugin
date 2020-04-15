@@ -35,6 +35,7 @@ import io.jenkins.plugins.casc.Attribute;
 import io.jenkins.plugins.casc.BaseConfigurator;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.RootElementConfigurator;
+import io.jenkins.plugins.casc.impl.attributes.DescribableAttribute;
 import io.jenkins.plugins.casc.model.CNode;
 import io.jenkins.plugins.casc.model.Mapping;
 import org.jenkinsci.Symbol;
@@ -89,14 +90,8 @@ public class CredentialsRootConfigurator extends BaseConfigurator<GlobalCredenti
                 .setter(noop());
         set.add(system);
         for (CredentialsProvider provider : CredentialsProvider.all()) {
-            Symbol s = provider.getClass().getAnnotation(Symbol.class);
-            String name;
-            if (s != null) {
-                name = s.value()[0]; // preferred
-            } else {
-                name = provider.getClass().getSimpleName(); // not so preferred
-            }
-            set.add(new Attribute<GlobalCredentialsConfiguration, CredentialsProvider>(name, provider.getClass())
+            String symbol = DescribableAttribute.getPreferredSymbol(provider.getDescriptor(), CredentialsProvider.class, provider.getClass());
+            set.add(new Attribute<GlobalCredentialsConfiguration, CredentialsProvider>(symbol, provider.getClass())
                     .getter(t -> provider)
                     .setter(noop()));
         }
