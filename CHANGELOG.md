@@ -1,5 +1,8 @@
 # Version History
 
+### Version 2.3.7 (April 16th, 2019)
+- JCasC support for `GlobalCredentialsConfiguration` ([JENKINS-61880](https://issues.jenkins-ci.org/browse/JENKINS-61880))
+
 ### Version 2.3.6 (April 15th, 2020)
 - JCasC support for `CredentialsProvider` extensions ([JENKINS-61900](https://issues.jenkins-ci.org/browse/JENKINS-61900)).
 
