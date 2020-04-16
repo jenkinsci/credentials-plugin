@@ -42,6 +42,7 @@ import javax.servlet.ServletException;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.HttpResponse;
@@ -221,6 +222,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
      * Security related configurations.
      */
     @Extension
+    @Symbol("globalCredentialsConfiguration")
     public static class Category extends GlobalConfigurationCategory {
         /**
          * {@inheritDoc}
