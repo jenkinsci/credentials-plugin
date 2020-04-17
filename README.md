@@ -1,5 +1,8 @@
 # Jenkins Credentials Plugin
 
+![credentials version](https://img.shields.io/jenkins/plugin/v/credentials?label=credentials)
+![credentials installs](https://img.shields.io/jenkins/plugin/i/credentials)
+
 ## Documentation
 
 [![Documentation](docs/images/manual.png)](docs/)
