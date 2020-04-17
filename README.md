@@ -2,6 +2,7 @@
 
 ![credentials version](https://img.shields.io/jenkins/plugin/v/credentials?label=credentials)
 ![credentials installs](https://img.shields.io/jenkins/plugin/i/credentials)
+[![MIT license](https://img.shields.io/github/license/jenkinsci/credentials-plugin)](https://github.com/jenkinsci/credentials-plugin/blob/master/LICENSE.txt)
 
 ## Documentation
 
