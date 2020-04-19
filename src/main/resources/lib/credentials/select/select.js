@@ -266,7 +266,7 @@ Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0,
         caution.hidden = !this.checked;
     };
     // simpler version of f:helpLink using inline help text
-    e.querySelector('a.help-btn').onclick = function (evt) {
+    e.querySelector('span.help-btn').onclick = function (evt) {
         var help = e.querySelector('.help-content');
         help.hidden = !help.hidden;
     };
