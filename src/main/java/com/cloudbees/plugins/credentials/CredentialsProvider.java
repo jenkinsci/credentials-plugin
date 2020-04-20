@@ -1327,14 +1327,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 2.0
      */
     public final List<CredentialsDescriptor> getCredentialsDescriptors() {
-        List<CredentialsDescriptor> result =
-                DescriptorVisibilityFilter.apply(this, ExtensionList.lookup(CredentialsDescriptor.class));
-        if (!(result instanceof ArrayList)) {
-            // should never happen, but let's be defensive in case the DescriptorVisibilityFilter contract changes
-            result = new ArrayList<>(result);
-        }
-        result.removeIf(d -> !_isApplicable(d));
-        return result;
+        return DescriptorVisibilityFilter.apply(this, ExtensionList.lookup(CredentialsDescriptor.class))
+                .stream()
+                .filter(this::_isApplicable)
+                .collect(Collectors.toList());
     }
 
     /**
