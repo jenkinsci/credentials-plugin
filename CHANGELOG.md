@@ -3,7 +3,7 @@
 ### Version 2.3.8 (TBD)
 - Use standard help icon ([PR-146](https://github.com/jenkinsci/credentials-plugin/pull/146)).
 
-### Version 2.3.7 (April 16th, 2019)
+### Version 2.3.7 (April 16th, 2020)
 - JCasC support for `GlobalCredentialsConfiguration` ([JENKINS-61880](https://issues.jenkins-ci.org/browse/JENKINS-61880))
 
 ### Version 2.3.6 (April 15th, 2020)
