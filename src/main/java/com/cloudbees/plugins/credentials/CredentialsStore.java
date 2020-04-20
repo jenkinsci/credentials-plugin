@@ -45,12 +45,11 @@ import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
@@ -428,11 +427,9 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
         List<CredentialsDescriptor> result =
                 DescriptorVisibilityFilter.apply(this, ExtensionList.lookup(CredentialsDescriptor.class));
         if (provider != null && provider.isEnabled()) {
-            if (!(result instanceof ArrayList)) {
-                // should never happen, but let's be defensive in case the DescriptorVisibilityFilter contract changes
-                result = new ArrayList<>(result);
-            }
-            result.removeIf(d -> !_isApplicable(d) || !provider._isApplicable(d) || !d.isApplicable(provider));
+            result = result.stream()
+                    .filter(d -> _isApplicable(d) && provider._isApplicable(d) && d.isApplicable(provider))
+                    .collect(Collectors.toList());
         }
         return result;
     }
