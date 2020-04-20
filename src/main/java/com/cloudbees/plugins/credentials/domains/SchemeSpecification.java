@@ -55,7 +55,7 @@ public class SchemeSpecification extends DomainSpecification {
     @DataBoundConstructor
     @SuppressWarnings("unused")// by stapler
     public SchemeSpecification(@CheckForNull String schemes) {
-        this.schemes = new LinkedHashSet<String>();
+        this.schemes = new LinkedHashSet<>();
         schemes = Util.fixEmptyAndTrim(schemes);
         if (schemes != null) {
             for (String scheme : schemes.split("[,\\n ]")) {

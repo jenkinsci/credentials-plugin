@@ -12,10 +12,7 @@ public class XmlMatchers {
                 .withAttributeFilter(new Predicate<Attr>() {
                     @Override
                     public boolean test(Attr attr) {
-                        if (attr.getName().startsWith("_")) {
-                            return false;
-                        }
-                        return true;
+                        return !attr.getName().startsWith("_");
                     }
                 });
     }

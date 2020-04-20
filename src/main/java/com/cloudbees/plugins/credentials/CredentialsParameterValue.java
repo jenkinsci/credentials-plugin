@@ -101,7 +101,7 @@ public class CredentialsParameterValue extends ParameterValue {
                 authentication = workUnit.context.item.authenticate();
             }
         }
-        List<C> candidates = new ArrayList<C>();
+        List<C> candidates = new ArrayList<>();
         final boolean isSystem = ACL.SYSTEM.equals(authentication);
         if (!isSystem && run.getParent().getACL()
                 .hasPermission(CredentialsProvider.USE_OWN)) {
@@ -126,14 +126,14 @@ public class CredentialsParameterValue extends ParameterValue {
         }
         StandardCredentials c = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(), ACL.SYSTEM,
-                        Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(value));
+                        Collections.emptyList()), CredentialsMatchers.withId(value));
         if (c != null) {
             return CredentialsNameProvider.name(c);
         }
         c = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(),
                         Jenkins.getAuthentication(),
-                        Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(value));
+                        Collections.emptyList()), CredentialsMatchers.withId(value));
         if (c != null) {
             return CredentialsNameProvider.name(c);
         }
@@ -150,14 +150,14 @@ public class CredentialsParameterValue extends ParameterValue {
         }
         StandardCredentials c = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(), ACL.SYSTEM,
-                        Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(value));
+                        Collections.emptyList()), CredentialsMatchers.withId(value));
         if (c != null) {
             return c.getDescriptor().getIconClassName();
         }
         c = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(),
                         Jenkins.getAuthentication(),
-                        Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(value));
+                        Collections.emptyList()), CredentialsMatchers.withId(value));
         if (c != null) {
             return c.getDescriptor().getIconClassName();
         }

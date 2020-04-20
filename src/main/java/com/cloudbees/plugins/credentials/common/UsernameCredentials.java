@@ -49,7 +49,7 @@ public interface UsernameCredentials extends Credentials {
      *
      * @since 1.7
      */
-    public static class NameProvider extends CredentialsNameProvider<UsernameCredentials> {
+    class NameProvider extends CredentialsNameProvider<UsernameCredentials> {
 
         /**
          * {@inheritDoc}

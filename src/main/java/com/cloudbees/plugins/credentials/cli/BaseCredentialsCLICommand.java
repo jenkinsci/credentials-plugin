@@ -53,7 +53,7 @@ import org.xml.sax.SAXException;
 public abstract class BaseCredentialsCLICommand extends CLICommand {
     protected static Credentials getCredentialsById(CredentialsStore store, Domain domain, String id) {
         List<Credentials> credentialsList = store.getCredentials(domain);
-        Set<String> ids = new HashSet<String>(credentialsList.size());
+        Set<String> ids = new HashSet<>(credentialsList.size());
         Credentials existing = null;
         int index = 0;
         for (Credentials c : credentialsList) {

@@ -60,7 +60,7 @@ import org.kohsuke.stapler.StaplerRequest;
 public abstract class CredentialsDescriptor extends Descriptor<Credentials> implements IconSpec {
 
     private transient final Map<String, FormValidation.CheckMethod>
-            enhancedCheckMethods = new ConcurrentHashMap<String, FormValidation.CheckMethod>();
+            enhancedCheckMethods = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
@@ -381,7 +381,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                     //
                     //                   I AM A SAD PANDA
 
-                    List<String> pathSegments = new ArrayList<String>(Arrays.asList(StringUtils.split(path, "/")));
+                    List<String> pathSegments = new ArrayList<>(Arrays.asList(StringUtils.split(path, "/")));
                     // strip out any leading junk
                     while (!pathSegments.isEmpty() && StringUtils.isBlank(pathSegments.get(0))) {
                         pathSegments.remove(0);

@@ -284,11 +284,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * @throws NoSuchMethodException if something is seriously wrong.
      */
     private boolean isOverridden(String name, Class... args) throws NoSuchMethodException {
-        if (getClass().getMethod(name, args).getDeclaringClass() != CredentialsStore.class) {
-            return true;
-        } else {
-            return false;
-        }
+        return getClass().getMethod(name, args).getDeclaringClass() != CredentialsStore.class;
     }
 
     /**
@@ -434,14 +430,9 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
         if (provider != null && provider.isEnabled()) {
             if (!(result instanceof ArrayList)) {
                 // should never happen, but let's be defensive in case the DescriptorVisibilityFilter contract changes
-                result = new ArrayList<CredentialsDescriptor>(result);
+                result = new ArrayList<>(result);
             }
-            for (Iterator<CredentialsDescriptor> iterator = result.iterator(); iterator.hasNext(); ) {
-                CredentialsDescriptor d = iterator.next();
-                if (!_isApplicable(d) || !provider._isApplicable(d) || !d.isApplicable(provider)) {
-                    iterator.remove();
-                }
-            }
+            result.removeIf(d -> !_isApplicable(d) || !provider._isApplicable(d) || !d.isApplicable(provider));
         }
         return result;
     }
@@ -538,7 +529,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
         if (context instanceof Item) {
             return ((Item) context).getFullDisplayName();
         } else if (context instanceof Jenkins) {
-            return ((Jenkins) context).getDisplayName();
+            return context.getDisplayName();
         } else if (context instanceof ItemGroup) {
             return ((ItemGroup) context).getFullDisplayName();
         } else if (context instanceof User) {

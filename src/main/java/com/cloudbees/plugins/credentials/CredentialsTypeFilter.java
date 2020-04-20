@@ -120,10 +120,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
             if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            return true;
+            return o != null && getClass() == o.getClass();
 
         }
 
@@ -185,7 +182,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @DataBoundConstructor
         public Includes(@CheckForNull List<String> classNames) {
-            this.classNames = new LinkedHashSet<String>(Util.fixNull(classNames));
+            this.classNames = new LinkedHashSet<>(Util.fixNull(classNames));
         }
 
         /**
@@ -203,7 +200,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @NonNull
         public List<String> getClassNames() {
-            List<String> result = new ArrayList<String>();
+            List<String> result = new ArrayList<>();
             for (CredentialsDescriptor type : ExtensionList.lookup(CredentialsDescriptor.class)) {
                 if (classNames.contains(type.getClass().getName())) {
                     result.add(type.getClass().getName());
@@ -301,7 +298,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @DataBoundConstructor
         public Excludes(@CheckForNull List<String> classNames) {
-            this.classNames = new LinkedHashSet<String>(Util.fixNull(classNames));
+            this.classNames = new LinkedHashSet<>(Util.fixNull(classNames));
         }
 
         /**
@@ -319,7 +316,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @NonNull
         public List<String> getClassNames() {
-            List<String> result = new ArrayList<String>();
+            List<String> result = new ArrayList<>();
             for (CredentialsDescriptor type : ExtensionList.lookup(CredentialsDescriptor.class)) {
                 if (classNames.contains(type.getClass().getName())) {
                     result.add(type.getClass().getName());

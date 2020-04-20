@@ -16,7 +16,7 @@ public class ConfidentialStoreRule extends ExternalResource {
     @Override
     protected void before() throws Throwable {
         tmp.create();
-        ConfidentialStore.TEST = new ThreadLocal<ConfidentialStore>();
+        ConfidentialStore.TEST = new ThreadLocal<>();
         ConfidentialStore.TEST.set(new DefaultConfidentialStore(tmp.getRoot()));
     }
 

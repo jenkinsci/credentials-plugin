@@ -73,8 +73,8 @@ public class Domain implements Serializable {
         this.name = Util.fixEmptyAndTrim(name);
         this.description = Util.fixEmptyAndTrim(description);
         this.specifications = specifications == null
-                ? new ArrayList<DomainSpecification>()
-                : new ArrayList<DomainSpecification>(specifications);
+                ? new ArrayList<>()
+                : new ArrayList<>(specifications);
     }
 
     /**
@@ -233,6 +233,6 @@ public class Domain implements Serializable {
      * Lazy singleton thread-safe initialization.
      */
     private static final class ResourceHolder {
-        private static final Domain GLOBAL = new Domain(null, null, Collections.<DomainSpecification>emptyList());
+        private static final Domain GLOBAL = new Domain(null, null, Collections.emptyList());
     }
 }

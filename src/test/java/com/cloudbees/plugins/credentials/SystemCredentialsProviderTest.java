@@ -129,7 +129,7 @@ public class SystemCredentialsProviderTest {
         strategy.grant(Computer.BUILD).everywhere().to("bob");
 
         r.jenkins.setAuthorizationStrategy(strategy);
-        HashMap<String, Authentication> jobsToUsers = new HashMap<String, Authentication>();
+        HashMap<String, Authentication> jobsToUsers = new HashMap<>();
         jobsToUsers.put(prj.getFullName(), User.get("bob").impersonate());
         MockQueueItemAuthenticator authenticator = new MockQueueItemAuthenticator(jobsToUsers);
 
@@ -154,7 +154,7 @@ public class SystemCredentialsProviderTest {
         strategy.grant(Computer.BUILD).everywhere().to("bob");
 
         r.jenkins.setAuthorizationStrategy(strategy);
-        HashMap<String, Authentication> jobsToUsers = new HashMap<String, Authentication>();
+        HashMap<String, Authentication> jobsToUsers = new HashMap<>();
         jobsToUsers.put(prj.getFullName(), User.get("bob").impersonate());
         MockQueueItemAuthenticator authenticator = new MockQueueItemAuthenticator(jobsToUsers);
 

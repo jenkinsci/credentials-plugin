@@ -51,7 +51,7 @@ public class URIRequirementBuilder {
      * @param requirements the list of requirements.
      */
     private URIRequirementBuilder(@NonNull List<DomainRequirement> requirements) {
-        this.requirements = new ArrayList<DomainRequirement>(requirements);
+        this.requirements = new ArrayList<>(requirements);
     }
 
     /**
@@ -61,7 +61,7 @@ public class URIRequirementBuilder {
      */
     @NonNull
     public static URIRequirementBuilder create() {
-        return new URIRequirementBuilder(Collections.<DomainRequirement>emptyList());
+        return new URIRequirementBuilder(Collections.emptyList());
     }
 
     /**
@@ -113,12 +113,7 @@ public class URIRequirementBuilder {
      */
     @NonNull
     public URIRequirementBuilder withoutScheme() {
-        for (Iterator<DomainRequirement> iterator = requirements.iterator(); iterator.hasNext(); ) {
-            DomainRequirement r = iterator.next();
-            if (r instanceof SchemeRequirement) {
-                iterator.remove();
-            }
-        }
+        requirements.removeIf(r -> r instanceof SchemeRequirement);
         return this;
     }
 
@@ -130,12 +125,7 @@ public class URIRequirementBuilder {
      */
     @NonNull
     public URIRequirementBuilder withoutPath() {
-        for (Iterator<DomainRequirement> iterator = requirements.iterator(); iterator.hasNext(); ) {
-            DomainRequirement r = iterator.next();
-            if (r instanceof PathRequirement) {
-                iterator.remove();
-            }
-        }
+        requirements.removeIf(r -> r instanceof PathRequirement);
         return this;
     }
 
@@ -146,12 +136,7 @@ public class URIRequirementBuilder {
      */
     @NonNull
     public URIRequirementBuilder withoutHostname() {
-        for (Iterator<DomainRequirement> iterator = requirements.iterator(); iterator.hasNext(); ) {
-            DomainRequirement r = iterator.next();
-            if (r instanceof HostnameRequirement) {
-                iterator.remove();
-            }
-        }
+        requirements.removeIf(r -> r instanceof HostnameRequirement);
         return this;
     }
 
@@ -162,12 +147,7 @@ public class URIRequirementBuilder {
      */
     @NonNull
     public URIRequirementBuilder withoutHostnamePort() {
-        for (Iterator<DomainRequirement> iterator = requirements.iterator(); iterator.hasNext(); ) {
-            DomainRequirement r = iterator.next();
-            if (r instanceof HostnamePortRequirement) {
-                iterator.remove();
-            }
-        }
+        requirements.removeIf(r -> r instanceof HostnamePortRequirement);
         return this;
     }
 
@@ -240,6 +220,6 @@ public class URIRequirementBuilder {
      */
     @NonNull
     public List<DomainRequirement> build() {
-        return new ArrayList<DomainRequirement>(requirements);
+        return new ArrayList<>(requirements);
     }
 }

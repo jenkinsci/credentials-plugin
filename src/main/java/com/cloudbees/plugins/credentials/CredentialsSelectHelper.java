@@ -133,8 +133,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      */
     @Restricted(NoExternalUse.class)
     public List<StoreItem> getStoreItems(ModelObject context, boolean includeUser) {
-        Set<String> urls = new HashSet<String>();
-        List<StoreItem> result = new ArrayList<StoreItem>();
+        Set<String> urls = new HashSet<>();
+        List<StoreItem> result = new ArrayList<>();
         if (context == null) {
             StaplerRequest request = Stapler.getCurrentRequest();
             if (request != null) {
@@ -325,7 +325,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      * @since 2.1.1
      */
     public static Map<String, ContextResolver> getResolversByName() {
-        Map<String, ContextResolver> resolverByName = new TreeMap<String, ContextResolver>();
+        Map<String, ContextResolver> resolverByName = new TreeMap<>();
         for (ContextResolver r : ExtensionList.lookup(ContextResolver.class)) {
             resolverByName.put(r.getClass().getName(), r);
             String shortName = r.getClass().getSimpleName();
@@ -335,12 +335,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 resolverByName.put(shortName, resolverByName.containsKey(shortName) ? ContextResolver.NONE : r);
             }
         }
-        for (Iterator<ContextResolver> iterator = resolverByName.values().iterator(); iterator.hasNext(); ) {
-            ContextResolver r = iterator.next();
-            if (r == ContextResolver.NONE) {
-                iterator.remove();
-            }
-        }
+        resolverByName.values().removeIf(r -> r == ContextResolver.NONE);
         return resolverByName;
     }
 
@@ -352,7 +347,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      * @since 2.1.1
      */
     public static Map<String, CredentialsProvider> getProvidersByName() {
-        Map<String, CredentialsProvider> providerByName = new TreeMap<String, CredentialsProvider>();
+        Map<String, CredentialsProvider> providerByName = new TreeMap<>();
         for (CredentialsProvider r : ExtensionList.lookup(CredentialsProvider.class)) {
             providerByName.put(r.getClass().getName(), r);
             Class<?> clazz = r.getClass();
@@ -366,12 +361,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 providerByName.put(simpleName, providerByName.containsKey(simpleName) ? CredentialsProvider.NONE : r);
             }
         }
-        for (Iterator<CredentialsProvider> iterator = providerByName.values().iterator(); iterator.hasNext(); ) {
-            CredentialsProvider p = iterator.next();
-            if (p == CredentialsProvider.NONE) {
-                iterator.remove();
-            }
-        }
+        providerByName.values().removeIf(p -> p == CredentialsProvider.NONE);
         return providerByName;
     }
 

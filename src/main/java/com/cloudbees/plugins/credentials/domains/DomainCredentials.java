@@ -64,7 +64,7 @@ public class DomainCredentials {
     @DataBoundConstructor
     public DomainCredentials(Domain domain, List<Credentials> credentials) {
         this.domain = domain == null ? Domain.global() : domain.resolve();
-        this.credentials = credentials == null ? new ArrayList<Credentials>() : new ArrayList<Credentials>(credentials);
+        this.credentials = credentials == null ? new ArrayList<>() : new ArrayList<>(credentials);
     }
 
     /**
@@ -76,19 +76,19 @@ public class DomainCredentials {
      */
     @NonNull
     public static Map<Domain, List<Credentials>> asMap(@CheckForNull Collection<DomainCredentials> collection) {
-        Map<Domain, List<Credentials>> map = new LinkedHashMap<Domain, List<Credentials>>();
+        Map<Domain, List<Credentials>> map = new LinkedHashMap<>();
         if (collection != null) {
             for (DomainCredentials item : collection) {
                 List<Credentials> existing = map.get(item.getDomain());
                 if (existing == null) {
-                    map.put(item.getDomain(), new CopyOnWriteArrayList<Credentials>(item.getCredentials()));
+                    map.put(item.getDomain(), new CopyOnWriteArrayList<>(item.getCredentials()));
                 } else {
                     // allow combining for malformed requests
                     existing.addAll(item.getCredentials());
                 }
             }
         }
-        return new CopyOnWriteMap.Hash<Domain, List<Credentials>>(map);
+        return new CopyOnWriteMap.Hash<>(map);
     }
 
     /**
@@ -100,7 +100,7 @@ public class DomainCredentials {
      */
     @NonNull
     public static List<DomainCredentials> asList(Map<Domain, List<Credentials>> map) {
-        List<DomainCredentials> result = new ArrayList<DomainCredentials>();
+        List<DomainCredentials> result = new ArrayList<>();
         if (map != null) {
             for (Map.Entry<Domain, List<Credentials>> entry : map.entrySet()) {
                 result.add(new DomainCredentials(entry.getKey(), entry.getValue()));
@@ -132,19 +132,19 @@ public class DomainCredentials {
                 return map;
             }
         }
-        Map<Domain, List<Credentials>> tmp = new LinkedHashMap<Domain, List<Credentials>>();
+        Map<Domain, List<Credentials>> tmp = new LinkedHashMap<>();
         if (map != null) {
             for (Map.Entry<Domain, List<Credentials>> entry : map.entrySet()) {
                 tmp.put(entry.getKey() == null
                                 ? Domain.global()
                                 : entry.getKey().resolve(),
-                        new CopyOnWriteArrayList<Credentials>(
+                        new CopyOnWriteArrayList<>(
                                 entry.getValue() == null
-                                        ? Collections.<Credentials>emptyList()
+                                        ? Collections.emptyList()
                                         : entry.getValue()));
             }
         }
-        return new CopyOnWriteMap.Hash<Domain, List<Credentials>>(tmp);
+        return new CopyOnWriteMap.Hash<>(tmp);
     }
 
     /**
@@ -157,13 +157,13 @@ public class DomainCredentials {
     public static Map<Domain, List<Credentials>> migrateListToMap(@CheckForNull Map<Domain, List<Credentials>> map,
                                                                   @CheckForNull List<Credentials> list) {
         if (map == null) {
-            map = new CopyOnWriteMap.Hash<Domain, List<Credentials>>();
+            map = new CopyOnWriteMap.Hash<>();
         }
         if (!map.containsKey(Domain.global())) {
             if (list == null) {
-                map.put(Domain.global(), new CopyOnWriteArrayList<Credentials>());
+                map.put(Domain.global(), new CopyOnWriteArrayList<>());
             } else {
-                map.put(Domain.global(), new CopyOnWriteArrayList<Credentials>(list));
+                map.put(Domain.global(), new CopyOnWriteArrayList<>(list));
             }
         }
         return map;
@@ -185,7 +185,7 @@ public class DomainCredentials {
             @NonNull Class<C> type,
             @NonNull List<DomainRequirement> domainRequirements,
             @NonNull CredentialsMatcher credentialsMatcher) {
-        List<C> result = new ArrayList<C>();
+        List<C> result = new ArrayList<>();
         for (Map.Entry<Domain, List<Credentials>> entry : domainCredentialsMap.entrySet()) {
             if (entry.getKey().test(domainRequirements)) {
                 for (Credentials credential : entry.getValue()) {
@@ -218,7 +218,7 @@ public class DomainCredentials {
     public static List<DomainCredentials> fixList(@CheckForNull List<DomainCredentials> list) {
         Map<Domain, List<Credentials>> map = asMap(list);
         if (!map.containsKey(Domain.global())) {
-            map.put(Domain.global(), new CopyOnWriteArrayList<Credentials>());
+            map.put(Domain.global(), new CopyOnWriteArrayList<>());
         }
         return asList(map);
     }

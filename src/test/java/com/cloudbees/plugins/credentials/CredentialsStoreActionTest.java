@@ -1,7 +1,6 @@
 package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.WebResponse;
 import hudson.ExtensionList;
@@ -10,6 +9,7 @@ import hudson.model.Items;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,13 +45,13 @@ public class CredentialsStoreActionTest {
 
     @Test
     public void smokes() throws Exception {
-        List<Domain> domainList = new ArrayList<Domain>(systemStore.getDomains());
+        List<Domain> domainList = new ArrayList<>(systemStore.getDomains());
         domainList.remove(Domain.global());
         for (Domain d : domainList) {
             systemStore.removeDomain(d);
         }
 
-        List<Credentials> credentialsList = new ArrayList<Credentials>(systemStore.getCredentials(Domain.global()));
+        List<Credentials> credentialsList = new ArrayList<>(systemStore.getCredentials(Domain.global()));
         for (Credentials c : credentialsList) {
             systemStore.removeCredentials(Domain.global(), c);
         }
@@ -80,7 +80,7 @@ public class CredentialsStoreActionTest {
         String credentialId = "test-id-" + entropy.nextInt();
         String credentialDescription = "test-account-" + entropy.nextInt();
         String credentialUsername = "test-user-" + entropy.nextInt();
-        systemStore.addDomain(new Domain(domainName, domainDescription, Collections.<DomainSpecification>emptyList()),
+        systemStore.addDomain(new Domain(domainName, domainDescription, Collections.emptyList()),
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId,
                         credentialDescription, credentialUsername, "test-secret"));
         response = wc.goTo("credentials/store/system/api/xml?depth=5", "application/xml").getWebResponse();
@@ -283,7 +283,7 @@ public class CredentialsStoreActionTest {
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/xml;charset=utf-8");
         con.setDoOutput(true);
-        con.getOutputStream().write(xml.getBytes("UTF-8"));
+        con.getOutputStream().write(xml.getBytes(StandardCharsets.UTF_8));
         return con;
     }
 
@@ -297,7 +297,7 @@ public class CredentialsStoreActionTest {
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/xml;charset=utf-8");
         con.setDoOutput(true);
-        con.getOutputStream().write(xml.getBytes("UTF-8"));
+        con.getOutputStream().write(xml.getBytes(StandardCharsets.UTF_8));
         return con;
     }
 
@@ -309,7 +309,7 @@ public class CredentialsStoreActionTest {
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/xml;charset=utf-8");
         con.setDoOutput(true);
-        con.getOutputStream().write(xml.getBytes("UTF-8"));
+        con.getOutputStream().write(xml.getBytes(StandardCharsets.UTF_8));
         return con;
     }
 
@@ -322,7 +322,7 @@ public class CredentialsStoreActionTest {
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/xml;charset=utf-8");
         con.setDoOutput(true);
-        con.getOutputStream().write(xml.getBytes("UTF-8"));
+        con.getOutputStream().write(xml.getBytes(StandardCharsets.UTF_8));
         return con;
     }
 

@@ -56,8 +56,7 @@ public class AllOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
      * @param matchers the matchers to match.
      */
     public AllOfMatcher(@CheckForNull List<CredentialsMatcher> matchers) {
-        this.matchers = new ArrayList<CredentialsMatcher>(
-                matchers == null ? Collections.<CredentialsMatcher>emptyList() : matchers);
+        this.matchers = new ArrayList<>(matchers == null ? Collections.emptyList() : matchers);
     }
 
     /**

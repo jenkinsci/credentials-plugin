@@ -64,7 +64,7 @@ import hudson.security.SecurityRealm;
 import hudson.util.ListBoxModel;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -341,7 +341,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable ItemGroup itemGroup,
                                                                     @Nullable Authentication authentication) {
-        return lookupCredentials(type, itemGroup, authentication, Collections.<DomainRequirement>emptyList());
+        return lookupCredentials(type, itemGroup, authentication, Collections.emptyList());
     }
 
     /**
@@ -362,7 +362,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable Item item,
                                                                     @Nullable Authentication authentication) {
-        return lookupCredentials(type, item, authentication, Collections.<DomainRequirement>emptyList());
+        return lookupCredentials(type, item, authentication, Collections.emptyList());
     }
 
     /**
@@ -410,7 +410,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         itemGroup = itemGroup == null ? jenkins : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
-                == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+                == null ? Collections.emptyList() : domainRequirements;
         CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
         if (resolver != null) {
             LOGGER.log(Level.FINE, "Resolving legacy credentials of type {0} with resolver {1}",
@@ -420,8 +420,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             LOGGER.log(Level.FINE, "Original credentials for resolving: {0}", originals);
             return resolver.resolve(originals);
         }
-        List<C> result = new ArrayList<C>();
-        Set<String> ids = new HashSet<String>();
+        List<C> result = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
@@ -438,7 +438,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         }
-        Collections.sort(result, new CredentialsNameComparator());
+        result.sort(new CredentialsNameComparator());
         return result;
     }
 
@@ -467,7 +467,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         itemGroup = itemGroup == null ? jenkins : itemGroup;
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements =
-                domainRequirements == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+                domainRequirements == null ? Collections.emptyList() : domainRequirements;
         matcher = matcher == null ? CredentialsMatchers.always() : matcher;
         CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
         if (resolver != null && IdCredentials.class.isAssignableFrom(resolver.getFromClass())) {
@@ -477,7 +477,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     matcher);
         }
         ListBoxModel result = new ListBoxModel();
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
@@ -494,7 +494,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         }
-        Collections.sort(result, new ListBoxModelOptionComparator());
+        result.sort(new ListBoxModelOptionComparator());
         return result;
     }
 
@@ -547,7 +547,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         }
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
-                == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+                == null ? Collections.emptyList() : domainRequirements;
         CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
         if (resolver != null) {
             LOGGER.log(Level.FINE, "Resolving legacy credentials of type {0} with resolver {1}",
@@ -557,8 +557,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             LOGGER.log(Level.FINE, "Original credentials for resolving: {0}", originals);
             return resolver.resolve(originals);
         }
-        List<C> result = new ArrayList<C>();
-        Set<String> ids = new HashSet<String>();
+        List<C> result = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
@@ -576,7 +576,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             }
         }
 
-        Collections.sort(result, new CredentialsNameComparator());
+        result.sort(new CredentialsNameComparator());
         return result;
     }
 
@@ -610,7 +610,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         }
         authentication = authentication == null ? ACL.SYSTEM : authentication;
         domainRequirements = domainRequirements
-                == null ? Collections.<DomainRequirement>emptyList() : domainRequirements;
+                == null ? Collections.emptyList() : domainRequirements;
         CredentialsResolver<Credentials, C> resolver = CredentialsResolver.getResolver(type);
         if (resolver != null && IdCredentials.class.isAssignableFrom(resolver.getFromClass())) {
             LOGGER.log(Level.FINE, "Listing legacy credentials of type {0} identified by resolver {1}",
@@ -619,7 +619,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     domainRequirements, matcher);
         }
         ListBoxModel result = new ListBoxModel();
-        Set<String> ids = new HashSet<String>();
+        Set<String> ids = new HashSet<>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
@@ -636,7 +636,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         }
-        Collections.sort(result, new ListBoxModelOptionComparator());
+        result.sort(new ListBoxModelOptionComparator());
         return result;
     }
 
@@ -659,7 +659,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                     if (scopes != null) {
                         // if multiple providers for the same object, then combine scopes
                         if (result == null) {
-                            result = new LinkedHashSet<CredentialsScope>();
+                            result = new LinkedHashSet<>();
                         }
                         result.addAll(scopes);
                     }
@@ -982,7 +982,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         Cause.UserIdCause cause = run.getCause(Cause.UserIdCause.class);
         if (cause != null) {
             User u = User.get(cause.getUserId(), false, Collections.emptyMap());
-            return u == null ? null : new AbstractMap.SimpleImmutableEntry<User, Run<?, ?>>(u, run);
+            return u == null ? null : new AbstractMap.SimpleImmutableEntry<>(u, run);
         }
         Cause.UpstreamCause c = run.getCause(Cause.UpstreamCause.class);
         run = (c != null) ? c.getUpstreamRun() : null;
@@ -990,7 +990,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             cause = run.getCause(Cause.UserIdCause.class);
             if (cause != null) {
                 User u = User.get(cause.getUserId(), false, Collections.emptyMap());
-                return u == null ? null : new AbstractMap.SimpleImmutableEntry<User, Run<?, ?>>(u, run);
+                return u == null ? null : new AbstractMap.SimpleImmutableEntry<>(u, run);
             }
             c = run.getCause(Cause.UpstreamCause.class);
 
@@ -1016,13 +1016,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     public static List<CredentialsProvider> enabled() {
         List<CredentialsProvider> providers =
-                new ArrayList<CredentialsProvider>(ExtensionList.lookup(CredentialsProvider.class));
-        for (Iterator<CredentialsProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
-            CredentialsProvider p = iterator.next();
-            if (!p.isEnabled()) {
-                iterator.remove();
-            }
-        }
+                new ArrayList<>(ExtensionList.lookup(CredentialsProvider.class));
+        providers.removeIf(p -> !p.isEnabled());
         return providers;
     }
 
@@ -1035,13 +1030,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     public static List<CredentialsProvider> enabled(Object context) {
         List<CredentialsProvider> providers =
-                new ArrayList<CredentialsProvider>(ExtensionList.lookup(CredentialsProvider.class));
-        for (Iterator<CredentialsProvider> iterator = providers.iterator(); iterator.hasNext(); ) {
-            CredentialsProvider p = iterator.next();
-            if (!p.isEnabled(context)) {
-                iterator.remove();
-            }
-        }
+                new ArrayList<>(ExtensionList.lookup(CredentialsProvider.class));
+        providers.removeIf(p -> !p.isEnabled(context));
         return providers;
     }
 
@@ -1349,14 +1339,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 DescriptorVisibilityFilter.apply(this, ExtensionList.lookup(CredentialsDescriptor.class));
         if (!(result instanceof ArrayList)) {
             // should never happen, but let's be defensive in case the DescriptorVisibilityFilter contract changes
-            result = new ArrayList<CredentialsDescriptor>(result);
+            result = new ArrayList<>(result);
         }
-        for (Iterator<CredentialsDescriptor> iterator = result.iterator(); iterator.hasNext(); ) {
-            CredentialsDescriptor d = iterator.next();
-            if (!_isApplicable(d)) {
-                iterator.remove();
-            }
-        }
+        result.removeIf(d -> !_isApplicable(d));
         return result;
     }
 
@@ -1398,7 +1383,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             MessageDigest md5 = MessageDigest.getInstance("MD5");
             DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
             try {
-                FINGERPRINT_XML.toXML(c, new OutputStreamWriter(out, Charset.forName("UTF-8")));
+                FINGERPRINT_XML.toXML(c, new OutputStreamWriter(out, StandardCharsets.UTF_8));
             } finally {
                 IOUtils.closeQuietly(out);
             }
@@ -1424,7 +1409,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             MessageDigest md5 = MessageDigest.getInstance("MD5");
             DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
             try {
-                FINGERPRINT_XML.toXML(c, new OutputStreamWriter(out, Charset.forName("UTF-8")));
+                FINGERPRINT_XML.toXML(c, new OutputStreamWriter(out, StandardCharsets.UTF_8));
             } finally {
                 IOUtils.closeQuietly(out);
             }

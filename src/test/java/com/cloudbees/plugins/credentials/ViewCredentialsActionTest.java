@@ -28,13 +28,13 @@ public class ViewCredentialsActionTest {
 
         CredentialsStore systemStore = system.getStore(j.getInstance());
 
-        List<Domain> domainList = new ArrayList<Domain>(systemStore.getDomains());
+        List<Domain> domainList = new ArrayList<>(systemStore.getDomains());
         domainList.remove(Domain.global());
         for (Domain d: domainList) {
             systemStore.removeDomain(d);
         }
 
-        List<Credentials> credentialsList = new ArrayList<Credentials>(systemStore.getCredentials(Domain.global()));
+        List<Credentials> credentialsList = new ArrayList<>(systemStore.getCredentials(Domain.global()));
         for (Credentials c: credentialsList) {
             systemStore.removeCredentials(Domain.global(), c);
         }
@@ -67,7 +67,7 @@ public class ViewCredentialsActionTest {
         String credentialId = "test-id-" + entropy.nextInt();
         String credentialDescription = "test-account-" + entropy.nextInt();
         String credentialUsername = "test-user-" + entropy.nextInt();
-        systemStore.addDomain(new Domain(domainName, domainDescription, Collections.<DomainSpecification>emptyList()),
+        systemStore.addDomain(new Domain(domainName, domainDescription, Collections.emptyList()),
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialId,
                         credentialDescription, credentialUsername, "test-secret"));
         response = wc.goTo("credentials/api/xml?depth=5", "application/xml").getWebResponse();

@@ -467,7 +467,7 @@ public abstract class CredentialsStoreAction
     @Exported
     @NonNull
     public Map<String, DomainWrapper> getDomains() {
-        Map<String, DomainWrapper> result = new TreeMap<String, DomainWrapper>();
+        Map<String, DomainWrapper> result = new TreeMap<>();
         for (Domain d : getStore().getDomains()) {
             String name;
             if (d.isGlobal()) {
@@ -744,7 +744,7 @@ public abstract class CredentialsStoreAction
          */
         @NonNull
         public Map<String, CredentialsWrapper> getCredentials() {
-            Map<String, CredentialsWrapper> result = new LinkedHashMap<String, CredentialsWrapper>();
+            Map<String, CredentialsWrapper> result = new LinkedHashMap<>();
             int index = 0;
             for (Credentials c : getStore().getCredentials(domain)) {
                 String id;
@@ -771,7 +771,7 @@ public abstract class CredentialsStoreAction
         @NonNull
         @Exported(name = "credentials", visibility = 1)
         public List<CredentialsWrapper> getCredentialsList() {
-            return new ArrayList<CredentialsWrapper>(getCredentials().values());
+            return new ArrayList<>(getCredentials().values());
         }
 
         /**

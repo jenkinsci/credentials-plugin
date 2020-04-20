@@ -189,7 +189,7 @@ public class CredentialsMatchers {
      */
     public static <T extends Serializable> CredentialsMatcher withProperty(@NonNull String name,
                                                                            @CheckForNull T expected) {
-        return new BeanPropertyMatcher<T>(name, expected);
+        return new BeanPropertyMatcher<>(name, expected);
     }
 
     /**
@@ -261,7 +261,7 @@ public class CredentialsMatchers {
     @NonNull
     public static <C extends Credentials> Collection<C> filter(@NonNull Collection<C> credentials,
                                                                @NonNull CredentialsMatcher matcher) {
-        Collection<C> result = credentials instanceof Set ? new LinkedHashSet<C>() : new ArrayList<C>();
+        Collection<C> result = credentials instanceof Set ? new LinkedHashSet<>() : new ArrayList<>();
         for (C credential : credentials) {
             if (credential != null && matcher.matches(credential)) {
                 result.add(credential);
@@ -281,7 +281,7 @@ public class CredentialsMatchers {
     @NonNull
     public static <C extends Credentials> Set<C> filter(@NonNull Set<C> credentials,
                                                         @NonNull CredentialsMatcher matcher) {
-        Set<C> result = new LinkedHashSet<C>();
+        Set<C> result = new LinkedHashSet<>();
         for (C credential : credentials) {
             if (credential != null && matcher.matches(credential)) {
                 result.add(credential);
@@ -301,7 +301,7 @@ public class CredentialsMatchers {
     @NonNull
     public static <C extends Credentials> List<C> filter(@NonNull List<C> credentials,
                                                          @NonNull CredentialsMatcher matcher) {
-        List<C> result = new ArrayList<C>();
+        List<C> result = new ArrayList<>();
         for (C credential : credentials) {
             if (credential != null && matcher.matches(credential)) {
                 result.add(credential);
@@ -321,7 +321,7 @@ public class CredentialsMatchers {
     @NonNull
     public static <C extends Credentials> Iterable<C> filter(@NonNull Iterable<C> credentials,
                                                              @NonNull CredentialsMatcher matcher) {
-        List<C> result = new ArrayList<C>();
+        List<C> result = new ArrayList<>();
         for (C credential : credentials) {
             if (credential != null && matcher.matches(credential)) {
                 result.add(credential);
@@ -342,7 +342,7 @@ public class CredentialsMatchers {
     @NonNull
     public static <C extends Credentials, V> Map<C, V> filterKeys(@NonNull Map<C, V> credentialMap,
                                                                   @NonNull CredentialsMatcher matcher) {
-        Map<C, V> result = new LinkedHashMap<C, V>();
+        Map<C, V> result = new LinkedHashMap<>();
         for (Map.Entry<C, V> credential : credentialMap.entrySet()) {
             if (credential.getKey() != null && matcher.matches(credential.getKey())) {
                 result.put(credential.getKey(), credential.getValue());
@@ -363,7 +363,7 @@ public class CredentialsMatchers {
     @NonNull
     public static <C extends Credentials, K> Map<K, C> filterValues(@NonNull Map<K, C> credentialMap,
                                                                     @NonNull CredentialsMatcher matcher) {
-        Map<K, C> result = new LinkedHashMap<K, C>();
+        Map<K, C> result = new LinkedHashMap<>();
         for (Map.Entry<K, C> credential : credentialMap.entrySet()) {
             if (credential.getValue() != null && matcher.matches(credential.getValue())) {
                 result.put(credential.getKey(), credential.getValue());
@@ -504,7 +504,7 @@ public class CredentialsMatchers {
         /**
          * The stack of expressions.
          */
-        private Stack<CredentialsMatcher> expression = new Stack<CredentialsMatcher>();
+        private Stack<CredentialsMatcher> expression = new Stack<>();
 
         /**
          * Returns the {@link CredentialsMatcher}.
@@ -546,7 +546,7 @@ public class CredentialsMatchers {
          */
         @Override
         public void exitPropertyTest(CQLParser.PropertyTestContext ctx) {
-            primary = new BeanPropertyMatcher<Serializable>(ctx.Identifier().getText(), literal);
+            primary = new BeanPropertyMatcher<>(ctx.Identifier().getText(), literal);
         }
 
         /**

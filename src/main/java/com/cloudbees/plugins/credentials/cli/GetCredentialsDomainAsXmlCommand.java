@@ -29,6 +29,8 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.Extension;
 import hudson.model.Items;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+
 import org.kohsuke.args4j.Argument;
 
 /**
@@ -64,7 +66,7 @@ public class GetCredentialsDomainAsXmlCommand extends BaseCredentialsCLICommand 
             return 2;
         }
 
-        Items.XSTREAM2.toXML(domain, new OutputStreamWriter(stdout, "UTF-8"));
+        Items.XSTREAM2.toXML(domain, new OutputStreamWriter(stdout, StandardCharsets.UTF_8));
         return 0;
     }
 

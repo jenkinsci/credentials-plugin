@@ -30,7 +30,6 @@ import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.domains.HostnameSpecification;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.cli.CLICommand;
@@ -39,7 +38,7 @@ import hudson.model.Items;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import jenkins.model.Jenkins;
@@ -72,7 +71,7 @@ public class CLICommandsTest {
     @Before
     public void clearCredentials() {
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(
-                Collections.singletonMap(Domain.global(), Collections.<Credentials>emptyList()));
+                Collections.singletonMap(Domain.global(), Collections.emptyList()));
         for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.get())) {
             if (s.getProvider() instanceof SystemCredentialsProvider.ProviderImpl) {
                 store = s;
@@ -170,7 +169,7 @@ public class CLICommandsTest {
     @Test
     public void readSmokes() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
-                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", null)));
+                Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
@@ -204,7 +203,7 @@ public class CLICommandsTest {
     @Test
     public void listSmokes() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
-                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", null)));
+                Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
@@ -248,14 +247,14 @@ public class CLICommandsTest {
     @Test
     public void updateSmokes() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
-                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", null)));
+                Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
         store.addDomain(smokes, smokey);
         CLICommandInvoker invoker = new CLICommandInvoker(r, new UpdateCredentialsDomainByXmlCommand());
         Domain replacement = new Domain("smokes", "smoke test domain updated",
-                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", "update.example.com")));
+                Collections.singletonList(new HostnameSpecification("smokes.example.com", "update.example.com")));
         assertThat(invoker.withStdin(asStream(Items.XSTREAM2.toXML(replacement)))
                 .invokeWithArgs("system::system::jenkins", "smokes"), succeededSilently());
         Domain updated = store.getDomainByName("smokes");
@@ -292,7 +291,7 @@ public class CLICommandsTest {
     @Test
     public void deleteSmokes() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
-                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", null)));
+                Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
@@ -310,7 +309,7 @@ public class CLICommandsTest {
     @Test
     public void listCredentialsAsXML() throws IOException {
         Domain smokes = new Domain("smokes", "smoke test domain",
-                Collections.<DomainSpecification>singletonList(new HostnameSpecification("smokes.example.com", null)));
+                Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "smokes-id", "smoke testing", "smoke",
                         "smoke text");
@@ -360,6 +359,6 @@ public class CLICommandsTest {
 
 
     private static ByteArrayInputStream asStream(String text) {
-        return new ByteArrayInputStream(text.getBytes(Charset.forName("UTF-8")));
+        return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
     }
 }

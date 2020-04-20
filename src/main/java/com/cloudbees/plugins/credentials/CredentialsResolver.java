@@ -189,7 +189,7 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      */
     @NonNull
     public final List<T> resolve(@CheckForNull Collection<? extends F> originals) {
-        List<T> result = new ArrayList<T>();
+        List<T> result = new ArrayList<>();
         if (originals != null) {
             for (F original : originals) {
                 if (original != null) {

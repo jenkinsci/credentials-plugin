@@ -93,7 +93,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
      */
     @GuardedBy("self")
     private static final WeakHashMap<User, UserCredentialsProperty> emptyProperties =
-            new WeakHashMap<User, UserCredentialsProperty>();
+            new WeakHashMap<>();
 
 
     /**
@@ -125,7 +125,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
     @Override
     public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
                                                           @Nullable Authentication authentication) {
-        return getCredentials(type, itemGroup, authentication, Collections.<DomainRequirement>emptyList());
+        return getCredentials(type, itemGroup, authentication, Collections.emptyList());
     }
 
     /**
@@ -178,7 +178,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
                 }
             }
         }
-        return new ArrayList<C>();
+        return new ArrayList<>();
     }
 
     /**
@@ -254,7 +254,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         public <C extends Credentials> List<C> getCredentials(Class<C> type) {
             checkPermission(CredentialsProvider.VIEW);
-            List<C> result = new ArrayList<C>();
+            List<C> result = new ArrayList<>();
             for (Credentials credential : getCredentials()) {
                 if (type.isInstance(credential)) {
                     result.add(type.cast(credential));
@@ -332,7 +332,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
                 }
                 return modified;
             } else {
-                domainCredentialsMap.put(domain, new ArrayList<Credentials>(credentials));
+                domainCredentialsMap.put(domain, new ArrayList<>(credentials));
                 save();
                 return true;
             }
@@ -396,7 +396,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
                 if (list == null || list.isEmpty()) {
                     return Collections.emptyList();
                 }
-                return Collections.unmodifiableList(new ArrayList<Credentials>(list));
+                return Collections.unmodifiableList(new ArrayList<>(list));
             }
             return Collections.emptyList();
         }
@@ -718,7 +718,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @Override
         @Exported
         public List<Domain> getDomains() {
-            return Collections.unmodifiableList(new ArrayList<Domain>(
+            return Collections.unmodifiableList(new ArrayList<>(
                     getInstance().getDomainCredentialsMap().keySet()
             ));
         }

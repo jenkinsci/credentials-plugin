@@ -91,13 +91,13 @@ public class CredentialsUnavailableExceptionTest {
 
         systemStore = system.getStore(r.getInstance());
 
-        List<Domain> domainList = new ArrayList<Domain>(systemStore.getDomains());
+        List<Domain> domainList = new ArrayList<>(systemStore.getDomains());
         domainList.remove(Domain.global());
         for (Domain d : domainList) {
             systemStore.removeDomain(d);
         }
 
-        List<Credentials> credentialsList = new ArrayList<Credentials>(systemStore.getCredentials(Domain.global()));
+        List<Credentials> credentialsList = new ArrayList<>(systemStore.getCredentials(Domain.global()));
         for (Credentials c : credentialsList) {
             systemStore.removeCredentials(Domain.global(), c);
         }
@@ -251,7 +251,7 @@ public class CredentialsUnavailableExceptionTest {
             StandardUsernamePasswordCredentials credentials = CredentialsMatchers.firstOrNull(
                     CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, project,
                             CredentialsProvider.getDefaultAuthenticationOf(project),
-                            Collections.<DomainRequirement>emptyList()), CredentialsMatchers.withId(id));
+                            Collections.emptyList()), CredentialsMatchers.withId(id));
             if (credentials == null) {
                 throw new IOException(String.format("Could not find credentials with id '%s'", id));
             } else {

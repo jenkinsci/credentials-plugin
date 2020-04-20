@@ -150,4 +150,4 @@ public class CredentialsNameComparator implements Comparator<Credentials>, Seria
         sb.append('}');
         return sb.toString();
     }
-};
+}
