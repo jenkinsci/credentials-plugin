@@ -40,13 +40,9 @@ import hudson.security.AccessControlled;
 import hudson.security.Permission;
 import hudson.util.FormApply;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -882,16 +878,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          */
         @Override
         public ModelObject getContext(String token) {
-            // TODO invoke User.getById directly once Jenkins 2.3+
-            try {
-                Method getById = User.class.getMethod("getById", String.class, boolean.class);
-                return (ModelObject) getById.invoke(null, token, false);
-            } catch (NoSuchMethodException e) {
-                // old Jenkins pre SECURITY-243
-                return User.get(token, false, Collections.emptyMap());
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                return null;
-            }
+            return User.getById(token, false);
         }
 
         /**

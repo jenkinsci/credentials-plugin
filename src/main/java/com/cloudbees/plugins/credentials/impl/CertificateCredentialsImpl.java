@@ -45,8 +45,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -59,7 +57,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
 
-import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.codec.binary.Base64;
@@ -676,14 +673,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     }
 
     static {
-        try {
-            // the critical field allow the permission check to make the XML read to fail completely in case of violation
-            // TODO: Remove reflection once baseline is updated past 2.85.
-            Method m = XStream2.class.getMethod("addCriticalField", Class.class, String.class);
-            m.invoke(Items.XSTREAM2, CertificateCredentialsImpl.class, "keyStoreSource");
-        }
-        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        // the critical field allow the permission check to make the XML read to fail completely in case of violation
+        Items.XSTREAM2.addCriticalField(CertificateCredentialsImpl.class, "keyStoreSource");
     }
 }
