@@ -215,12 +215,12 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      */
     @Restricted(NoExternalUse.class)
     public WrappedContextResolver getResolver(String className) {
-        for (ContextResolver r : ExtensionList.lookup(ContextResolver.class)) {
-            if (r.getClass().getName().equals(className)) {
-                return new WrappedContextResolver(r);
-            }
-        }
-        return null;
+        return ExtensionList.lookup(ContextResolver.class)
+                .stream()
+                .filter(r -> r.getClass().getName().equals(className))
+                .findFirst()
+                .map(WrappedContextResolver::new)
+                .orElse(null);
     }
 
     /**

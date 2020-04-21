@@ -234,12 +234,11 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      */
     @CheckForNull
     public Domain getDomainByName(@CheckForNull String name) {
-        for (Domain d : getDomains()) {
-            if (StringUtils.equals(name, d.getName())) {
-                return d;
-            }
-        }
-        return null;
+        return getDomains()
+                .stream()
+                .filter(d -> StringUtils.equals(name, d.getName()))
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -391,10 +390,11 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * @since 2.0
      */
     public final boolean isApplicable(Descriptor<?> descriptor) {
-        for (DescriptorVisibilityFilter filter : DescriptorVisibilityFilter.all()) {
-            if (!filter.filter(this, descriptor)) {
-                return false;
-            }
+        boolean allFiltersMatch = DescriptorVisibilityFilter.all()
+                .stream()
+                .allMatch(filter -> filter.filter(this, descriptor));
+        if (!allFiltersMatch) {
+            return false;
         }
         CredentialsProvider provider = getProvider();
         return _isApplicable(descriptor) && (provider == null || provider.isApplicable(descriptor));
