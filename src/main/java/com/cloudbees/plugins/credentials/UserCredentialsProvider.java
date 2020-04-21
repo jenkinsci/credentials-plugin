@@ -178,7 +178,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
                 }
             }
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     /**
