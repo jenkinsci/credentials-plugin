@@ -67,7 +67,7 @@ public class CredentialsParameterDefinitionTest {
                 new UsernamePasswordCredentialsImpl(
                         CredentialsScope.GLOBAL, "id", "description", "username", "password"));
 
-        List<ParameterDefinition> params = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> params = new ArrayList<>();
         params.add(new CredentialsParameterDefinition("name", "description", "id", "type", true));
 
         ParametersDefinitionProperty prop = new ParametersDefinitionProperty(params);

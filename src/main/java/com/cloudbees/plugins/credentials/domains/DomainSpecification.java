@@ -51,7 +51,7 @@ public abstract class DomainSpecification extends AbstractDescribableImpl<Domain
      *
      * @since 1.5
      */
-    public static enum Result {
+    public enum Result {
 
         /**
          * The specification does not know this kind of scope, keep checking other specifications for this scope.

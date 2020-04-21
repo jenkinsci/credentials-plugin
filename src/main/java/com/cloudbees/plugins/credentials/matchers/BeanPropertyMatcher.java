@@ -82,7 +82,7 @@ public class BeanPropertyMatcher<T extends Serializable> implements CredentialsM
             return String.format("(%s == \"%s\")", name, StringEscapeUtils.escapeJava((String) expected));
         }
         if (expected instanceof Character) {
-            return String.format("(%s == \'%s\')", name, StringEscapeUtils.escapeJava(expected.toString()));
+            return String.format("(%s == '%s')", name, StringEscapeUtils.escapeJava(expected.toString()));
         }
         if (expected instanceof Number) {
             return String.format("(%s == %s)", name, expected);
@@ -159,10 +159,8 @@ public class BeanPropertyMatcher<T extends Serializable> implements CredentialsM
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("BeanPropertyMatcher{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", expected=").append(expected);
-        sb.append('}');
-        return sb.toString();
+        return "BeanPropertyMatcher{" + "name='" + name + '\'' +
+                ", expected=" + expected +
+                '}';
     }
 }

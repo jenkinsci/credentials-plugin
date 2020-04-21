@@ -95,7 +95,7 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
                 // ignore
             }
         }
-        List<Class<?>> supertypes = new ArrayList<Class<?>>();
+        List<Class<?>> supertypes = new ArrayList<>();
         Class<?> supe = clazz.getSuperclass();
         if (supe != null) {
             supertypes.add(supe);

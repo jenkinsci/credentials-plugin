@@ -54,7 +54,7 @@ import org.jvnet.hudson.test.MockFolder;
  */
 @Extension public class MockFolderCredentialsProvider extends CredentialsProvider {
 
-    private static final Map<MockFolder,FolderCredentialsProperty> properties = new java.util.WeakHashMap<MockFolder,FolderCredentialsProperty>();
+    private static final Map<MockFolder,FolderCredentialsProperty> properties = new java.util.WeakHashMap<>();
     private static synchronized FolderCredentialsProperty getProperty(MockFolder folder) {
         FolderCredentialsProperty property = properties.get(folder);
         if (property == null) {
@@ -65,7 +65,7 @@ import org.jvnet.hudson.test.MockFolder;
     }
 
     private static final Set<CredentialsScope> SCOPES =
-            Collections.<CredentialsScope>singleton(CredentialsScope.GLOBAL);
+            Collections.singleton(CredentialsScope.GLOBAL);
 
     @Override
     public Set<CredentialsScope> getScopes(ModelObject object) {
@@ -79,7 +79,7 @@ import org.jvnet.hudson.test.MockFolder;
     @Override
     public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
                                                           @Nullable Authentication authentication) {
-        return getCredentials(type, itemGroup, authentication, Collections.<DomainRequirement>emptyList());
+        return getCredentials(type, itemGroup, authentication, Collections.emptyList());
     }
 
     @NonNull
@@ -90,11 +90,11 @@ import org.jvnet.hudson.test.MockFolder;
         if (authentication == null) {
             authentication = ACL.SYSTEM;
         }
-        List<C> result = new ArrayList<C>();
+        List<C> result = new ArrayList<>();
         if (ACL.SYSTEM.equals(authentication)) {
             while (itemGroup != null) {
                 if (itemGroup instanceof MockFolder) {
-                    final MockFolder folder = MockFolder.class.cast(itemGroup);
+                    final MockFolder folder = (MockFolder) itemGroup;
                     FolderCredentialsProperty property = getProperty(folder);
                     result.addAll(DomainCredentials.getCredentials(
                             property.getDomainCredentialsMap(),
@@ -103,7 +103,7 @@ import org.jvnet.hudson.test.MockFolder;
                             CredentialsMatchers.always()));
                 }
                 if (itemGroup instanceof Item) {
-                    itemGroup = Item.class.cast(itemGroup).getParent();
+                    itemGroup = ((Item) itemGroup).getParent();
                 } else {
                     break;
                 }
@@ -115,7 +115,7 @@ import org.jvnet.hudson.test.MockFolder;
     @Override
     public CredentialsStore getStore(@CheckForNull ModelObject object) {
         if (object instanceof MockFolder) {
-            final MockFolder folder = MockFolder.class.cast(object);
+            final MockFolder folder = (MockFolder) object;
             return getProperty(folder).getStore();
         }
         return null;
@@ -139,7 +139,7 @@ import org.jvnet.hudson.test.MockFolder;
          * @since 3.10
          */
         private Map<Domain, List<Credentials>> domainCredentialsMap =
-                new CopyOnWriteMap.Hash<Domain, List<Credentials>>();
+                new CopyOnWriteMap.Hash<>();
 
         /**
          * Our store.
@@ -151,7 +151,7 @@ import org.jvnet.hudson.test.MockFolder;
         }
 
         public <C extends Credentials> List<C> getCredentials(Class<C> type) {
-            List<C> result = new ArrayList<C>();
+            List<C> result = new ArrayList<>();
             for (Credentials credential : getCredentials()) {
                 if (type.isInstance(credential)) {
                     result.add(type.cast(credential));
@@ -248,7 +248,7 @@ import org.jvnet.hudson.test.MockFolder;
                 }
                 return modified;
             } else {
-                domainCredentialsMap.put(domain, new ArrayList<Credentials>(credentials));
+                domainCredentialsMap.put(domain, new ArrayList<>(credentials));
                 checkedSave(CredentialsProvider.MANAGE_DOMAINS);
                 return true;
             }
@@ -312,7 +312,7 @@ import org.jvnet.hudson.test.MockFolder;
                 if (list == null || list.isEmpty()) {
                     return Collections.emptyList();
                 }
-                return Collections.unmodifiableList(new ArrayList<Credentials>(list));
+                return Collections.unmodifiableList(new ArrayList<>(list));
             }
             return Collections.emptyList();
         }
@@ -375,7 +375,7 @@ import org.jvnet.hudson.test.MockFolder;
             @NonNull
             @Override
             public List<Domain> getDomains() {
-                return Collections.unmodifiableList(new ArrayList<Domain>(
+                return Collections.unmodifiableList(new ArrayList<>(
                         getDomainCredentialsMap().keySet()
                 ));
             }

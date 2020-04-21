@@ -40,7 +40,7 @@ public interface UsernamePasswordCredentials extends UsernameCredentials, Passwo
      *
      * @since 1.7
      */
-    public static class NameProvider extends CredentialsNameProvider<UsernamePasswordCredentials> {
+    class NameProvider extends CredentialsNameProvider<UsernamePasswordCredentials> {
 
         /**
          * {@inheritDoc}

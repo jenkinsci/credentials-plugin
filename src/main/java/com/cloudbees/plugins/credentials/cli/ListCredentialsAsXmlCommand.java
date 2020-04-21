@@ -9,6 +9,7 @@ import hudson.Extension;
 import org.kohsuke.args4j.Argument;
 
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class ListCredentialsAsXmlCommand extends BaseCredentialsCLICommand {
         for (Domain domain : domains) {
             existing.add(new DomainCredentials(domain, store.getCredentials(domain)));
         }
-        CredentialsStoreAction.SECRETS_REDACTED.toXML(existing, new OutputStreamWriter(stdout, "UTF-8"));
+        CredentialsStoreAction.SECRETS_REDACTED.toXML(existing, new OutputStreamWriter(stdout, StandardCharsets.UTF_8));
         return 0;
     }
 

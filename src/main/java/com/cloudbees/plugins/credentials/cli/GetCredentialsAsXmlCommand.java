@@ -30,6 +30,8 @@ import com.cloudbees.plugins.credentials.CredentialsStoreAction;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.Extension;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+
 import org.kohsuke.args4j.Argument;
 
 /**
@@ -73,7 +75,7 @@ public class GetCredentialsAsXmlCommand extends BaseCredentialsCLICommand {
             return 3;
         }
 
-        CredentialsStoreAction.SECRETS_REDACTED.toXML(existing, new OutputStreamWriter(stdout, "UTF-8"));
+        CredentialsStoreAction.SECRETS_REDACTED.toXML(existing, new OutputStreamWriter(stdout, StandardCharsets.UTF_8));
         return 0;
     }
 

@@ -67,6 +67,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -85,7 +86,6 @@ import jenkins.model.ModelObjectWithChildren;
 import jenkins.model.ModelObjectWithContextMenu;
 import net.sf.json.JSONObject;
 import org.acegisecurity.AccessDeniedException;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
@@ -199,7 +199,7 @@ public abstract class CredentialsStoreAction
                         SecretBytes s = (SecretBytes) source;
                         digest.update(s.toString().getBytes(StandardCharsets.US_ASCII));
                     }
-                    writer.setValue(Base64.encodeBase64String(digest.digest()));
+                    writer.setValue(Base64.getEncoder().encodeToString(digest.digest()));
                 } catch (NoSuchAlgorithmException e) {
                     // will never happen as JLS mandates SHA-256, but if it does we just don't provide a hash
                 }
@@ -467,7 +467,7 @@ public abstract class CredentialsStoreAction
     @Exported
     @NonNull
     public Map<String, DomainWrapper> getDomains() {
-        Map<String, DomainWrapper> result = new TreeMap<String, DomainWrapper>();
+        Map<String, DomainWrapper> result = new TreeMap<>();
         for (Domain d : getStore().getDomains()) {
             String name;
             if (d.isGlobal()) {
@@ -744,7 +744,7 @@ public abstract class CredentialsStoreAction
          */
         @NonNull
         public Map<String, CredentialsWrapper> getCredentials() {
-            Map<String, CredentialsWrapper> result = new LinkedHashMap<String, CredentialsWrapper>();
+            Map<String, CredentialsWrapper> result = new LinkedHashMap<>();
             int index = 0;
             for (Credentials c : getStore().getCredentials(domain)) {
                 String id;
@@ -771,7 +771,7 @@ public abstract class CredentialsStoreAction
         @NonNull
         @Exported(name = "credentials", visibility = 1)
         public List<CredentialsWrapper> getCredentialsList() {
-            return new ArrayList<CredentialsWrapper>(getCredentials().values());
+            return new ArrayList<>(getCredentials().values());
         }
 
         /**
@@ -1510,9 +1510,7 @@ public abstract class CredentialsStoreAction
             try {
                 XMLUtils.safeTransform(source, new StreamResult(out));
                 out.close();
-            } catch (TransformerException e) {
-                throw new IOException("Failed to parse credential", e);
-            } catch (SAXException e) {
+            } catch (TransformerException | SAXException e) {
                 throw new IOException("Failed to parse credential", e);
             }
 

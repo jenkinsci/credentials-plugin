@@ -41,7 +41,7 @@ public interface StandardUsernamePasswordCredentials extends StandardUsernameCre
      *
      * @since 1.7.2
      */
-    public static class NameProvider extends CredentialsNameProvider<StandardUsernameCredentials> {
+    class NameProvider extends CredentialsNameProvider<StandardUsernameCredentials> {
 
         /**
          * {@inheritDoc}

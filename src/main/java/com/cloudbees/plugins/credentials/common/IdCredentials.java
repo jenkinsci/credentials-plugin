@@ -53,7 +53,7 @@ public interface IdCredentials extends Credentials {
      *
      * @since 1.6
      */
-    public static final class Helpers {
+    final class Helpers {
         /**
          * Standard {@link #equals(Object)} implementation.
          *
@@ -71,11 +71,7 @@ public interface IdCredentials extends Credentials {
 
             IdCredentials that = (IdCredentials) o;
 
-            if (!self.getId().equals(that.getId())) {
-                return false;
-            }
-
-            return true;
+            return self.getId().equals(that.getId());
         }
 
         /**

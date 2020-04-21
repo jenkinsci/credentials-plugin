@@ -27,6 +27,8 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.util.Objects;
+
 /**
  * Inverts a matcher.
  *
@@ -51,7 +53,7 @@ public class NotMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
      * @param matcher the matcher to invert the match of.
      */
     public NotMatcher(@NonNull CredentialsMatcher matcher) {
-        matcher.getClass(); // throw NPE if null
+        Objects.requireNonNull(matcher);
         this.matcher = matcher;
     }
 
@@ -102,9 +104,7 @@ public class NotMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("NotMatcher{");
-        sb.append("matcher=").append(matcher);
-        sb.append('}');
-        return sb.toString();
+        return "NotMatcher{" + "matcher=" + matcher +
+                '}';
     }
 }

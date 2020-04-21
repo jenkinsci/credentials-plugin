@@ -29,6 +29,8 @@ import com.cloudbees.plugins.credentials.common.UsernameCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang.StringEscapeUtils;
 
+import java.util.Objects;
+
 /**
  * Matches credentials that are {@link UsernameCredentials} and have the specified {@link
  * UsernameCredentials#getUsername()}
@@ -54,7 +56,7 @@ public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.C
      * @param username the username to match.
      */
     public UsernameMatcher(@NonNull String username) {
-        username.getClass(); // throw NPE if null
+        Objects.requireNonNull(username);
         this.username = username;
     }
 
@@ -104,9 +106,7 @@ public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.C
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("UsernameMatcher{");
-        sb.append("username='").append(username).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "UsernameMatcher{" + "username='" + username + '\'' +
+                '}';
     }
 }

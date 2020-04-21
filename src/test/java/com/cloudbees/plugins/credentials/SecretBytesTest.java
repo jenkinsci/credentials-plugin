@@ -108,7 +108,7 @@ public class SecretBytesTest {
         String xml = Jenkins.XSTREAM.toXML(s);
         assertThat(xml, not(containsString(Base64.encodeBase64String("Mr.Jenkins".getBytes()))));
         Object o = Jenkins.XSTREAM.fromXML(xml);
-        assertThat(o, is((Object)s));
+        assertThat(o, is(s));
     }
 
     public static class Foo {

@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -58,7 +59,7 @@ public class ScopeMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
      * @param scope the scope to match.
      */
     public ScopeMatcher(@NonNull CredentialsScope scope) {
-        scope.getClass(); // throw NPE if null
+        Objects.requireNonNull(scope);
         this.scopes = Collections.singleton(scope);
     }
 
@@ -151,9 +152,7 @@ public class ScopeMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ScopeMatcher{");
-        sb.append("scopes=").append(scopes);
-        sb.append('}');
-        return sb.toString();
+        return "ScopeMatcher{" + "scopes=" + scopes +
+                '}';
     }
 }

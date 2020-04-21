@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import jenkins.model.Jenkins;
 import org.apache.commons.jelly.JellyContext;
 import org.apache.commons.lang.StringUtils;
@@ -60,7 +61,7 @@ import org.kohsuke.stapler.StaplerRequest;
 public abstract class CredentialsDescriptor extends Descriptor<Credentials> implements IconSpec {
 
     private transient final Map<String, FormValidation.CheckMethod>
-            enhancedCheckMethods = new ConcurrentHashMap<String, FormValidation.CheckMethod>();
+            enhancedCheckMethods = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
@@ -92,14 +93,13 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
     @Restricted(NoExternalUse.class)
     @RestrictedSince("2.1.5")
     public ListBoxModel doFillScopeItems(@ContextInPath ModelObject context) {
-        ListBoxModel m = new ListBoxModel();
         Set<CredentialsScope> scopes = CredentialsProvider.lookupScopes(context);
         if (scopes != null) {
-            for (CredentialsScope scope : scopes) {
-                m.add(scope.getDisplayName(), scope.toString());
-            }
+            return scopes.stream()
+                    .map(scope -> new ListBoxModel.Option(scope.getDisplayName(), scope.toString()))
+                    .collect(Collectors.toCollection(ListBoxModel::new));
         }
-        return m;
+        return new ListBoxModel();
     }
 
     /**
@@ -292,13 +292,12 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      */
     @CheckForNull
     public static ModelObject lookupContext(String provider, String token) {
-        for (CredentialsSelectHelper.ContextResolver r : ExtensionList
-                .lookup(CredentialsSelectHelper.ContextResolver.class)) {
-            if (r.getClass().getName().equals(provider)) {
-                return r.getContext(token);
-            }
-        }
-        return null;
+        return ExtensionList.lookup(CredentialsSelectHelper.ContextResolver.class)
+                .stream()
+                .filter(r -> r.getClass().getName().equals(provider))
+                .findFirst()
+                .map(r -> r.getContext(token))
+                .orElse(null);
     }
 
     /**
@@ -381,7 +380,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                     //
                     //                   I AM A SAD PANDA
 
-                    List<String> pathSegments = new ArrayList<String>(Arrays.asList(StringUtils.split(path, "/")));
+                    List<String> pathSegments = new ArrayList<>(Arrays.asList(StringUtils.split(path, "/")));
                     // strip out any leading junk
                     while (!pathSegments.isEmpty() && StringUtils.isBlank(pathSegments.get(0))) {
                         pathSegments.remove(0);

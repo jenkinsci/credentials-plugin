@@ -29,6 +29,8 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang.StringEscapeUtils;
 
+import java.util.Objects;
+
 /**
  * Matches credentials that are {@link IdCredentials} and have the specified {@link IdCredentials#getId()}.
  *
@@ -53,7 +55,7 @@ public class IdMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
      * @param id the id to match.
      */
     public IdMatcher(@NonNull String id) {
-        id.getClass(); // throw NPE if null
+        Objects.requireNonNull(id);
         this.id = id;
     }
 
@@ -103,9 +105,7 @@ public class IdMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("IdMatcher{");
-        sb.append("id='").append(id).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "IdMatcher{" + "id='" + id + '\'' +
+                '}';
     }
 }

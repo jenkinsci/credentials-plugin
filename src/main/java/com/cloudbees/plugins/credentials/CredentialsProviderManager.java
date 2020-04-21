@@ -272,7 +272,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
     @NonNull
     public List<CredentialsProviderTypeRestriction> getRestrictions() {
         return restrictions == null
-                ? Collections.<CredentialsProviderTypeRestriction>emptyList()
+                ? Collections.emptyList()
                 : Collections.unmodifiableList(restrictions);
     }
 
@@ -285,7 +285,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
         if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
             if (restrictions != null) {
                 // ensure they are sorted grouped so that it is easy to infer
-                Collections.sort(restrictions, new Comparator<CredentialsProviderTypeRestriction>() {
+                restrictions.sort(new Comparator<CredentialsProviderTypeRestriction>() {
                     final ExtensionList<CredentialsProviderTypeRestrictionDescriptor> list =
                             ExtensionList.lookup(CredentialsProviderTypeRestrictionDescriptor.class);
 
@@ -325,14 +325,9 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
     private Map<CredentialsProviderTypeRestrictionDescriptor, List<CredentialsProviderTypeRestriction>> restrictions() {
         if (restrictionGroups == null && restrictions != null) {
             Map<CredentialsProviderTypeRestrictionDescriptor, List<CredentialsProviderTypeRestriction>>
-                    restrictionGroups = new HashMap<CredentialsProviderTypeRestrictionDescriptor,
-                    List<CredentialsProviderTypeRestriction>>();
+                    restrictionGroups = new HashMap<>();
             for (CredentialsProviderTypeRestriction restriction : restrictions) {
-                List<CredentialsProviderTypeRestriction> group = restrictionGroups.get(restriction.getDescriptor());
-                if (group == null) {
-                    restrictionGroups.put(restriction.getDescriptor(),
-                            group = new ArrayList<CredentialsProviderTypeRestriction>(1));
-                }
+                List<CredentialsProviderTypeRestriction> group = restrictionGroups.computeIfAbsent(restriction.getDescriptor(), k -> new ArrayList<>(1));
                 group.add(restriction);
             }
             this.restrictionGroups = restrictionGroups; // idempotent
@@ -412,7 +407,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
         public List<CredentialsProviderTypeRestriction> getRestrictions() {
             CredentialsProviderManager manager = getInstance();
             return manager == null
-                    ? Collections.<CredentialsProviderTypeRestriction>emptyList()
+                    ? Collections.emptyList()
                     : manager.getRestrictions();
         }
 

@@ -30,6 +30,7 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.util.ListBoxModel;
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -176,11 +177,9 @@ public abstract class CredentialsProviderTypeRestriction
          */
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Includes{");
-            sb.append("provider='").append(provider).append('\'');
-            sb.append(", type='").append(type).append('\'');
-            sb.append('}');
-            return sb.toString();
+            return "Includes{" + "provider='" + provider + '\'' +
+                    ", type='" + type + '\'' +
+                    '}';
         }
 
         /**
@@ -242,11 +241,10 @@ public abstract class CredentialsProviderTypeRestriction
             @SuppressWarnings("unused") // stapler form completion
             @Restricted(NoExternalUse.class)
             public ListBoxModel doFillProviderItems() {
-                ListBoxModel result = new ListBoxModel();
-                for (CredentialsProvider p : ExtensionList.lookup(CredentialsProvider.class)) {
-                    result.add(p.getDisplayName(), p.getClass().getName());
-                }
-                return result;
+                return ExtensionList.lookup(CredentialsProvider.class)
+                        .stream()
+                        .map(p -> new ListBoxModel.Option(p.getDisplayName(), p.getClass().getName()))
+                        .collect(Collectors.toCollection(ListBoxModel::new));
             }
 
             /**
@@ -257,11 +255,10 @@ public abstract class CredentialsProviderTypeRestriction
             @SuppressWarnings("unused") // stapler form completion
             @Restricted(NoExternalUse.class)
             public ListBoxModel doFillTypeItems() {
-                ListBoxModel result = new ListBoxModel();
-                for (CredentialsDescriptor d : ExtensionList.lookup(CredentialsDescriptor.class)) {
-                    result.add(d.getDisplayName(), d.getClass().getName());
-                }
-                return result;
+                return ExtensionList.lookup(CredentialsDescriptor.class)
+                        .stream()
+                        .map(d -> new ListBoxModel.Option(d.getDisplayName(), d.getClass().getName()))
+                        .collect(Collectors.toCollection(ListBoxModel::new));
             }
         }
     }
@@ -351,11 +348,9 @@ public abstract class CredentialsProviderTypeRestriction
          */
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Excludes{");
-            sb.append("provider='").append(provider).append('\'');
-            sb.append(", type='").append(type).append('\'');
-            sb.append('}');
-            return sb.toString();
+            return "Excludes{" + "provider='" + provider + '\'' +
+                    ", type='" + type + '\'' +
+                    '}';
         }
 
         /**
@@ -382,12 +377,7 @@ public abstract class CredentialsProviderTypeRestriction
             public boolean filter(List<CredentialsProviderTypeRestriction> restrictions, CredentialsProvider provider,
                                   CredentialsDescriptor type) {
                 // excludes is must not match any
-                for (CredentialsProviderTypeRestriction r : restrictions) {
-                    if (!r.filter(provider, type)) {
-                        return false;
-                    }
-                }
-                return true;
+                return restrictions.stream().allMatch(r -> r.filter(provider, type));
             }
 
             /**
@@ -406,11 +396,10 @@ public abstract class CredentialsProviderTypeRestriction
             @SuppressWarnings("unused") // stapler form completion
             @Restricted(NoExternalUse.class)
             public ListBoxModel doFillProviderItems() {
-                ListBoxModel result = new ListBoxModel();
-                for (CredentialsProvider p : ExtensionList.lookup(CredentialsProvider.class)) {
-                    result.add(p.getDisplayName(), p.getClass().getName());
-                }
-                return result;
+                return ExtensionList.lookup(CredentialsProvider.class)
+                        .stream()
+                        .map(p -> new ListBoxModel.Option(p.getDisplayName(), p.getClass().getName()))
+                        .collect(Collectors.toCollection(ListBoxModel::new));
             }
 
             /**
@@ -421,11 +410,10 @@ public abstract class CredentialsProviderTypeRestriction
             @SuppressWarnings("unused") // stapler form completion
             @Restricted(NoExternalUse.class)
             public ListBoxModel doFillTypeItems() {
-                ListBoxModel result = new ListBoxModel();
-                for (CredentialsDescriptor d : ExtensionList.lookup(CredentialsDescriptor.class)) {
-                    result.add(d.getDisplayName(), d.getClass().getName());
-                }
-                return result;
+                return ExtensionList.lookup(CredentialsDescriptor.class)
+                        .stream()
+                        .map(d -> new ListBoxModel.Option(d.getDisplayName(), d.getClass().getName()))
+                        .collect(Collectors.toCollection(ListBoxModel::new));
             }
         }
     }

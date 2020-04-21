@@ -48,13 +48,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.model.TransientActionFactory;
-import org.acegisecurity.AccessDeniedException;
 import org.acegisecurity.Authentication;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
@@ -121,13 +124,9 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      */
     @NonNull
     public List<CredentialsStore> getParentStores() {
-        List<CredentialsStore> result = new ArrayList<>();
-        for (CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
-            if (context != s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
-                result.add(s);
-            }
-        }
-        return result;
+        return streamStores()
+                .filter(s -> context != s.getContext() && s.hasPermission(CredentialsProvider.VIEW))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -137,13 +136,9 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      */
     @NonNull
     public List<CredentialsStore> getLocalStores() {
-        List<CredentialsStore> result = new ArrayList<>();
-        for (CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
-            if (context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
-                result.add(s);
-            }
-        }
-        return result;
+        return streamStores()
+                .filter(s -> context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -154,16 +149,15 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @NonNull
     @SuppressWarnings("unused") // Jelly EL
     public List<CredentialsStoreAction> getStoreActions() {
-        List<CredentialsStoreAction> result = new ArrayList<>();
-        for (final CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
-            if (context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW)) {
-                CredentialsStoreAction action = s.getStoreAction();
-                if (action != null) {
-                    result.add(action);
-                }
-            }
-        }
-        return result;
+        return streamStores()
+                .filter(s -> context == s.getContext() && s.hasPermission(CredentialsProvider.VIEW))
+                .map(CredentialsStore::getStoreAction)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private Stream<CredentialsStore> streamStores() {
+        return StreamSupport.stream(CredentialsProvider.lookupStores(getContext()).spliterator(), false);
     }
 
     /**
@@ -192,15 +186,13 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @CheckForNull
     @SuppressWarnings("unused") // Stapler binding
     public CredentialsStoreAction getStore(String name) {
-        for (final CredentialsStore s : CredentialsProvider.lookupStores(getContext())) {
-            if (context == s.getContext()) { // local stores only
-                CredentialsStoreAction action = s.getStoreAction();
-                if (action != null && name.equals(action.getUrlName())) {
-                    return s.hasPermission(CredentialsProvider.VIEW) ? action : null;
-                }
-            }
-        }
-        return null;
+        return streamStores()
+                .filter(s -> context == s.getContext() && s.getStoreAction() != null &&
+                        name.equals(s.getStoreAction().getUrlName()))
+                .findFirst()
+                .filter(s -> s.hasPermission(CredentialsProvider.VIEW))
+                .map(CredentialsStore::getStoreAction)
+                .orElse(null);
     }
 
     /**
@@ -375,7 +367,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         return new ACL() {
             @Override
             public boolean hasPermission(@Nonnull Authentication a, @Nonnull Permission permission) {
-                if (accessControlled.getACL().hasPermission(a, permission)) {
+                if (accessControlled.hasPermission(a, permission)) {
                     for (CredentialsStore s : getLocalStores()) {
                         if (s.hasPermission(a, permission)) {
                             return true;
@@ -385,22 +377,6 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
                 return false;
             }
         };
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void checkPermission(@Nonnull Permission permission) throws AccessDeniedException {
-        getACL().checkPermission(permission);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean hasPermission(@Nonnull Permission permission) {
-        return getACL().hasPermission(permission);
     }
 
     /**

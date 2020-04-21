@@ -40,13 +40,9 @@ import hudson.security.AccessControlled;
 import hudson.security.Permission;
 import hudson.util.FormApply;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -133,8 +129,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      */
     @Restricted(NoExternalUse.class)
     public List<StoreItem> getStoreItems(ModelObject context, boolean includeUser) {
-        Set<String> urls = new HashSet<String>();
-        List<StoreItem> result = new ArrayList<StoreItem>();
+        Set<String> urls = new HashSet<>();
+        List<StoreItem> result = new ArrayList<>();
         if (context == null) {
             StaplerRequest request = Stapler.getCurrentRequest();
             if (request != null) {
@@ -219,12 +215,12 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      */
     @Restricted(NoExternalUse.class)
     public WrappedContextResolver getResolver(String className) {
-        for (ContextResolver r : ExtensionList.lookup(ContextResolver.class)) {
-            if (r.getClass().getName().equals(className)) {
-                return new WrappedContextResolver(r);
-            }
-        }
-        return null;
+        return ExtensionList.lookup(ContextResolver.class)
+                .stream()
+                .filter(r -> r.getClass().getName().equals(className))
+                .findFirst()
+                .map(WrappedContextResolver::new)
+                .orElse(null);
     }
 
     /**
@@ -325,7 +321,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      * @since 2.1.1
      */
     public static Map<String, ContextResolver> getResolversByName() {
-        Map<String, ContextResolver> resolverByName = new TreeMap<String, ContextResolver>();
+        Map<String, ContextResolver> resolverByName = new TreeMap<>();
         for (ContextResolver r : ExtensionList.lookup(ContextResolver.class)) {
             resolverByName.put(r.getClass().getName(), r);
             String shortName = r.getClass().getSimpleName();
@@ -335,12 +331,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 resolverByName.put(shortName, resolverByName.containsKey(shortName) ? ContextResolver.NONE : r);
             }
         }
-        for (Iterator<ContextResolver> iterator = resolverByName.values().iterator(); iterator.hasNext(); ) {
-            ContextResolver r = iterator.next();
-            if (r == ContextResolver.NONE) {
-                iterator.remove();
-            }
-        }
+        resolverByName.values().removeIf(r -> r == ContextResolver.NONE);
         return resolverByName;
     }
 
@@ -352,7 +343,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      * @since 2.1.1
      */
     public static Map<String, CredentialsProvider> getProvidersByName() {
-        Map<String, CredentialsProvider> providerByName = new TreeMap<String, CredentialsProvider>();
+        Map<String, CredentialsProvider> providerByName = new TreeMap<>();
         for (CredentialsProvider r : ExtensionList.lookup(CredentialsProvider.class)) {
             providerByName.put(r.getClass().getName(), r);
             Class<?> clazz = r.getClass();
@@ -366,12 +357,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 providerByName.put(simpleName, providerByName.containsKey(simpleName) ? CredentialsProvider.NONE : r);
             }
         }
-        for (Iterator<CredentialsProvider> iterator = providerByName.values().iterator(); iterator.hasNext(); ) {
-            CredentialsProvider p = iterator.next();
-            if (p == CredentialsProvider.NONE) {
-                iterator.remove();
-            }
-        }
+        providerByName.values().removeIf(p -> p == CredentialsProvider.NONE);
         return providerByName;
     }
 
@@ -892,16 +878,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          */
         @Override
         public ModelObject getContext(String token) {
-            // TODO invoke User.getById directly once Jenkins 2.3+
-            try {
-                Method getById = User.class.getMethod("getById", String.class, boolean.class);
-                return (ModelObject) getById.invoke(null, token, false);
-            } catch (NoSuchMethodException e) {
-                // old Jenkins pre SECURITY-243
-                return User.get(token, false, Collections.emptyMap());
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                return null;
-            }
+            return User.getById(token, false);
         }
 
         /**

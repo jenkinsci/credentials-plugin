@@ -66,7 +66,7 @@ public class ListCredentialsCommand extends BaseCredentialsCLICommand {
         List<Domain> domains = store.getDomains();
         for (Domain domain : domains) {
             List<Credentials> credentials = store.getCredentials(domain);
-            Map<String, String> nameById = new LinkedHashMap<String, String>(credentials.size());
+            Map<String, String> nameById = new LinkedHashMap<>(credentials.size());
             int maxIdLen = "# of Credentials".length(), maxNameLen = 0;
             int index = 0;
             for (Credentials c : credentials) {

@@ -144,10 +144,8 @@ public class CredentialsNameComparator implements Comparator<Credentials>, Seria
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CredentialsNameComparator{");
-        sb.append("locale=").append(locale);
-        sb.append(", ignoreCase=").append(ignoreCase);
-        sb.append('}');
-        return sb.toString();
+        return "CredentialsNameComparator{" + "locale=" + locale +
+                ", ignoreCase=" + ignoreCase +
+                '}';
     }
-};
+}

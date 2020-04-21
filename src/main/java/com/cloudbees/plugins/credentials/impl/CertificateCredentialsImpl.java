@@ -45,24 +45,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
-
-import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
@@ -122,7 +119,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                                       @CheckForNull String password,
                                       @NonNull KeyStoreSource keyStoreSource) {
         super(scope, id, description);
-        keyStoreSource.getClass();
+        Objects.requireNonNull(keyStoreSource);
         this.password = Secret.fromString(password);
         this.keyStoreSource = keyStoreSource;
     }
@@ -527,7 +524,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             @NonNull
             public static byte[] toByteArray(@Nullable Secret secret) {
                 if (secret != null) {
-                    byte[] decoded = Base64.decodeBase64(secret.getPlainText());
+                    byte[] decoded = Base64.getDecoder().decode(secret.getPlainText());
                     if (null != decoded) {
                         return decoded;
                     }
@@ -548,7 +545,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             public static Secret toSecret(@Nullable byte[] contents) {
                 return contents == null || contents.length == 0
                         ? null
-                        : Secret.fromString(Base64.encodeBase64String(contents));
+                        : Secret.fromString(Base64.getEncoder().encodeToString(contents));
             }
 
             /**
@@ -676,14 +673,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     }
 
     static {
-        try {
-            // the critical field allow the permission check to make the XML read to fail completely in case of violation
-            // TODO: Remove reflection once baseline is updated past 2.85.
-            Method m = XStream2.class.getMethod("addCriticalField", Class.class, String.class);
-            m.invoke(Items.XSTREAM2, CertificateCredentialsImpl.class, "keyStoreSource");
-        }
-        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        // the critical field allow the permission check to make the XML read to fail completely in case of violation
+        Items.XSTREAM2.addCriticalField(CertificateCredentialsImpl.class, "keyStoreSource");
     }
 }

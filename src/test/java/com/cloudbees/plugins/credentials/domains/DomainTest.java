@@ -55,7 +55,7 @@ public class DomainTest {
     @Test
     public void smokes() throws Exception {
         Domain instance =
-                new Domain("test federation", "the instance under test", Arrays.<DomainSpecification>asList(
+                new Domain("test federation", "the instance under test", Arrays.asList(
                         new SchemeSpecification("http, https, svn, git, pop3, imap, spdy"),
                         new HostnameSpecification("*.jenkins-ci.org", null)));
 
@@ -66,7 +66,7 @@ public class DomainTest {
     @Test
     public void pathRequirements() throws Exception {
         Domain instance =
-                new Domain("test federation", "the instance under test", Arrays.<DomainSpecification>asList(
+                new Domain("test federation", "the instance under test", Arrays.asList(
                         new SchemeSpecification("https"),
                         new HostnameSpecification("*.jenkins-ci.org", null),
                         new PathSpecification("/download/**/jenkins.war", null, false)));
@@ -90,8 +90,8 @@ public class DomainTest {
         CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
         
         // Add domains with credentials
-        store.addDomain(domainFoo, Collections.<Credentials>emptyList());
-        store.addDomain(domainBar, Collections.<Credentials>emptyList());
+        store.addDomain(domainFoo, Collections.emptyList());
+        store.addDomain(domainBar, Collections.emptyList());
         
         // Domain requirements for credential queries
         List<DomainRequirement> reqFoo = Arrays.asList(new DomainRequirement[] { new HostnameRequirement("foo.com") });

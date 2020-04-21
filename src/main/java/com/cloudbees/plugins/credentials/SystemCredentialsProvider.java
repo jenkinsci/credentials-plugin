@@ -43,6 +43,7 @@ import hudson.model.ModelObject;
 import hudson.model.Saveable;
 import hudson.model.listeners.SaveableListener;
 import hudson.security.ACL;
+import hudson.security.ACLContext;
 import hudson.security.Permission;
 import hudson.util.CopyOnWriteMap;
 import java.io.File;
@@ -87,14 +88,14 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      * @deprecated migrate to {@link #domainCredentialsMap}.
      */
     @Deprecated
-    private transient List<Credentials> credentials = new CopyOnWriteArrayList<Credentials>();
+    private transient List<Credentials> credentials = new CopyOnWriteArrayList<>();
 
     /**
      * Our credentials.
      *
      * @since 1.5
      */
-    private Map<Domain, List<Credentials>> domainCredentialsMap = new CopyOnWriteMap.Hash<Domain, List<Credentials>>();
+    private Map<Domain, List<Credentials>> domainCredentialsMap = new CopyOnWriteMap.Hash<>();
 
     /**
      * Our backing store.
@@ -204,12 +205,8 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      */
     private void checkedSave(Permission p) throws IOException {
         checkPermission(p);
-        Authentication old = SecurityContextHolder.getContext().getAuthentication();
-        SecurityContextHolder.getContext().setAuthentication(ACL.SYSTEM);
-        try {
+        try (ACLContext ignored = ACL.as(ACL.SYSTEM)) {
             save();
-        } finally {
-            SecurityContextHolder.getContext().setAuthentication(old);
         }
     }
 
@@ -234,7 +231,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
             }
             return modified;
         } else {
-            domainCredentialsMap.put(domain, new ArrayList<Credentials>(credentials));
+            domainCredentialsMap.put(domain, new ArrayList<>(credentials));
             checkedSave(CredentialsProvider.MANAGE_DOMAINS);
             return true;
         }
@@ -297,7 +294,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
             if (list == null || list.isEmpty()) {
                 return Collections.emptyList();
             }
-            return Collections.unmodifiableList(new ArrayList<Credentials>(list));
+            return Collections.unmodifiableList(new ArrayList<>(list));
         }
         return Collections.emptyList();
     }
@@ -396,7 +393,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          * The scopes that are relevant to the store.
          */
         private static final Set<CredentialsScope> SCOPES =
-                Collections.unmodifiableSet(new LinkedHashSet<CredentialsScope>(Arrays.asList(GLOBAL, SYSTEM)));
+                Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(GLOBAL, SYSTEM)));
 
         /**
          * {@inheritDoc}
@@ -428,7 +425,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
                                                               @Nullable ItemGroup itemGroup,
                                                               @Nullable Authentication authentication) {
-            return getCredentials(type, itemGroup, authentication, Collections.<DomainRequirement>emptyList());
+            return getCredentials(type, itemGroup, authentication, Collections.emptyList());
         }
 
         /**
@@ -444,7 +441,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
                 return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
                         .getDomainCredentialsMap(), type, domainRequirements, matcher);
             }
-            return new ArrayList<C>();
+            return new ArrayList<>();
         }
 
         /**
@@ -454,7 +451,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         @Override
         public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @NonNull Item item,
                                                               @Nullable Authentication authentication) {
-            return getCredentials(type, item, authentication, Collections.<DomainRequirement>emptyList());
+            return getCredentials(type, item, authentication, Collections.emptyList());
         }
 
         /**
@@ -469,7 +466,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
                 return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
                         .getDomainCredentialsMap(), type, domainRequirements, not(withScope(SYSTEM)));
             }
-            return new ArrayList<C>();
+            return new ArrayList<>();
         }
 
         @Override
@@ -525,7 +522,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         @Override
         @Exported
         public List<Domain> getDomains() {
-            return Collections.unmodifiableList(new ArrayList<Domain>(
+            return Collections.unmodifiableList(new ArrayList<>(
                     SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet()
             ));
         }

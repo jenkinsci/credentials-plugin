@@ -52,7 +52,7 @@ public interface StandardCredentials extends IdCredentials {
      *
      * @since 1.7
      */
-    public static class NameProvider extends CredentialsNameProvider<StandardCredentials> {
+    class NameProvider extends CredentialsNameProvider<StandardCredentials> {
 
         /**
          * {@inheritDoc}

@@ -294,7 +294,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@Nullable Item context, @NonNull Class<? extends C> type) {
-        return include(context, type, Collections.<DomainRequirement>emptyList());
+        return include(context, type, Collections.emptyList());
     }
 
     /**
@@ -309,7 +309,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull ItemGroup context,
                                                            @NonNull Class<? extends C> type) {
-        return include(context, type, Collections.<DomainRequirement>emptyList());
+        return include(context, type, Collections.emptyList());
     }
 
     /**
@@ -326,7 +326,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
                                                              @Nullable Item context,
                                                              @NonNull Class<? extends C> type) {
-        return includeAs(authentication, context, type, Collections.<DomainRequirement>emptyList());
+        return includeAs(authentication, context, type, Collections.emptyList());
     }
 
     /**
@@ -343,7 +343,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
                                                              @NonNull ItemGroup context,
                                                              @NonNull Class<? extends C> type) {
-        return includeAs(authentication, context, type, Collections.<DomainRequirement>emptyList());
+        return includeAs(authentication, context, type, Collections.emptyList());
     }
 
     /**
@@ -537,7 +537,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @since 2.1.0
      */
     public boolean addMissing(@NonNull Collection<? extends Option> c) {
-        Set<String> existing = new HashSet<String>();
+        Set<String> existing = new HashSet<>();
         for (Option o: this) {
             existing.add(o.value);
         }

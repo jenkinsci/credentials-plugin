@@ -31,10 +31,10 @@ import hudson.ExtensionPoint;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -120,10 +120,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
             if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            return true;
+            return o != null && getClass() == o.getClass();
 
         }
 
@@ -140,9 +137,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("None{");
-            sb.append('}');
-            return sb.toString();
+            return "None{}";
         }
 
         /**
@@ -186,7 +181,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @DataBoundConstructor
         public Includes(@CheckForNull List<String> classNames) {
-            this.classNames = new LinkedHashSet<String>(Util.fixNull(classNames));
+            this.classNames = new LinkedHashSet<>(Util.fixNull(classNames));
         }
 
         /**
@@ -204,13 +199,11 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @NonNull
         public List<String> getClassNames() {
-            List<String> result = new ArrayList<String>();
-            for (CredentialsDescriptor type : ExtensionList.lookup(CredentialsDescriptor.class)) {
-                if (classNames.contains(type.getClass().getName())) {
-                    result.add(type.getClass().getName());
-                }
-            }
-            return result;
+            return ExtensionList.lookup(CredentialsDescriptor.class)
+                    .stream()
+                    .map(type -> type.getClass().getName())
+                    .filter(classNames::contains)
+                    .collect(Collectors.toList());
         }
 
         /**
@@ -244,10 +237,8 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Includes{");
-            sb.append("classes=").append(getClassNames());
-            sb.append('}');
-            return sb.toString();
+            return "Includes{" + "classes=" + getClassNames() +
+                    '}';
         }
 
         /**
@@ -302,7 +293,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @DataBoundConstructor
         public Excludes(@CheckForNull List<String> classNames) {
-            this.classNames = new LinkedHashSet<String>(Util.fixNull(classNames));
+            this.classNames = new LinkedHashSet<>(Util.fixNull(classNames));
         }
 
         /**
@@ -320,13 +311,11 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @NonNull
         public List<String> getClassNames() {
-            List<String> result = new ArrayList<String>();
-            for (CredentialsProvider provider : ExtensionList.lookup(CredentialsProvider.class)) {
-                if (classNames.contains(provider.getClass().getName())) {
-                    result.add(provider.getClass().getName());
-                }
-            }
-            return result;
+            return ExtensionList.lookup(CredentialsProvider.class)
+                    .stream()
+                    .map(provider -> provider.getClass().getName())
+                    .filter(classNames::contains)
+                    .collect(Collectors.toList());
         }
 
         /**
@@ -360,10 +349,8 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Excludes{");
-            sb.append("classes=").append(getClassNames());
-            sb.append('}');
-            return sb.toString();
+            return "Excludes{" + "classes=" + getClassNames() +
+                    '}';
         }
 
         /**

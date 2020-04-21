@@ -45,12 +45,11 @@ import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
@@ -235,12 +234,11 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      */
     @CheckForNull
     public Domain getDomainByName(@CheckForNull String name) {
-        for (Domain d : getDomains()) {
-            if (StringUtils.equals(name, d.getName())) {
-                return d;
-            }
-        }
-        return null;
+        return getDomains()
+                .stream()
+                .filter(d -> StringUtils.equals(name, d.getName()))
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -284,11 +282,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * @throws NoSuchMethodException if something is seriously wrong.
      */
     private boolean isOverridden(String name, Class... args) throws NoSuchMethodException {
-        if (getClass().getMethod(name, args).getDeclaringClass() != CredentialsStore.class) {
-            return true;
-        } else {
-            return false;
-        }
+        return getClass().getMethod(name, args).getDeclaringClass() != CredentialsStore.class;
     }
 
     /**
@@ -396,10 +390,11 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * @since 2.0
      */
     public final boolean isApplicable(Descriptor<?> descriptor) {
-        for (DescriptorVisibilityFilter filter : DescriptorVisibilityFilter.all()) {
-            if (!filter.filter(this, descriptor)) {
-                return false;
-            }
+        boolean allFiltersMatch = DescriptorVisibilityFilter.all()
+                .stream()
+                .allMatch(filter -> filter.filter(this, descriptor));
+        if (!allFiltersMatch) {
+            return false;
         }
         CredentialsProvider provider = getProvider();
         return _isApplicable(descriptor) && (provider == null || provider.isApplicable(descriptor));
@@ -432,16 +427,9 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
         List<CredentialsDescriptor> result =
                 DescriptorVisibilityFilter.apply(this, ExtensionList.lookup(CredentialsDescriptor.class));
         if (provider != null && provider.isEnabled()) {
-            if (!(result instanceof ArrayList)) {
-                // should never happen, but let's be defensive in case the DescriptorVisibilityFilter contract changes
-                result = new ArrayList<CredentialsDescriptor>(result);
-            }
-            for (Iterator<CredentialsDescriptor> iterator = result.iterator(); iterator.hasNext(); ) {
-                CredentialsDescriptor d = iterator.next();
-                if (!_isApplicable(d) || !provider._isApplicable(d) || !d.isApplicable(provider)) {
-                    iterator.remove();
-                }
-            }
+            result = result.stream()
+                    .filter(d -> _isApplicable(d) && provider._isApplicable(d) && d.isApplicable(provider))
+                    .collect(Collectors.toList());
         }
         return result;
     }
@@ -538,7 +526,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
         if (context instanceof Item) {
             return ((Item) context).getFullDisplayName();
         } else if (context instanceof Jenkins) {
-            return ((Jenkins) context).getDisplayName();
+            return context.getDisplayName();
         } else if (context instanceof ItemGroup) {
             return ((ItemGroup) context).getFullDisplayName();
         } else if (context instanceof User) {

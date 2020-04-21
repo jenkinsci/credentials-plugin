@@ -30,6 +30,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jvnet.tiger_types.Types;
@@ -76,10 +77,8 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      */
     @SuppressWarnings("unused") // API entry point
     protected CredentialsResolver(@NonNull Class<F> fromClass, @NonNull Class<T> toClass) {
-        fromClass.getClass(); // throw NPE if null
-        toClass.getClass(); // throw NPE if null
-        this.fromClass = fromClass;
-        this.toClass = toClass;
+        this.fromClass = Objects.requireNonNull(fromClass);
+        this.toClass = Objects.requireNonNull(toClass);
     }
 
     /**
@@ -91,8 +90,7 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      */
     @SuppressWarnings("unused") // API entry point
     protected CredentialsResolver(@NonNull Class<F> fromClass) {
-        fromClass.getClass(); // throw NPE if null
-        this.fromClass = fromClass;
+        this.fromClass = Objects.requireNonNull(fromClass);
         @SuppressWarnings("unchecked")
         final Class<T> toClass = (Class<T>) getClass().getEnclosingClass();
         if (toClass == null) {
@@ -171,7 +169,7 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      */
     @NonNull
     public T resolve(@NonNull F original) {
-        original.getClass(); // throw NPE if null
+        Objects.requireNonNull(original);
         if (toClass.isInstance(original)) {
             return toClass.cast(original);
         }
@@ -189,7 +187,7 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
      */
     @NonNull
     public final List<T> resolve(@CheckForNull Collection<? extends F> originals) {
-        List<T> result = new ArrayList<T>();
+        List<T> result = new ArrayList<>();
         if (originals != null) {
             for (F original : originals) {
                 if (original != null) {
