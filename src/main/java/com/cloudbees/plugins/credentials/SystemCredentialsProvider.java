@@ -43,6 +43,7 @@ import hudson.model.ModelObject;
 import hudson.model.Saveable;
 import hudson.model.listeners.SaveableListener;
 import hudson.security.ACL;
+import hudson.security.ACLContext;
 import hudson.security.Permission;
 import hudson.util.CopyOnWriteMap;
 import java.io.File;
@@ -204,12 +205,8 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      */
     private void checkedSave(Permission p) throws IOException {
         checkPermission(p);
-        Authentication old = SecurityContextHolder.getContext().getAuthentication();
-        SecurityContextHolder.getContext().setAuthentication(ACL.SYSTEM);
-        try {
+        try (ACLContext ignored = ACL.as(ACL.SYSTEM)) {
             save();
-        } finally {
-            SecurityContextHolder.getContext().setAuthentication(old);
         }
     }
 

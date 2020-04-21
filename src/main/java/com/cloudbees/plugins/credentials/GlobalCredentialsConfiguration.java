@@ -68,11 +68,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
     /**
      * Our filter.
      */
-    public static final Predicate<GlobalConfigurationCategory> FILTER = new Predicate<GlobalConfigurationCategory>() {
-        public boolean apply(GlobalConfigurationCategory input) {
-            return input instanceof Category;
-        }
-    };
+    public static final Predicate<GlobalConfigurationCategory> FILTER = Category.class::isInstance;
 
     /**
      * {@inheritDoc}

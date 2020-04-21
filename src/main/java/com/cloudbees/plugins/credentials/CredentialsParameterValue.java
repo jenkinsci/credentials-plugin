@@ -71,11 +71,7 @@ public class CredentialsParameterValue extends ParameterValue {
     @Override
     public VariableResolver<String> createVariableResolver(AbstractBuild<?, ?> build) {
         CredentialsProvider.track(build, lookupCredentials(StandardCredentials.class, build));
-        return new VariableResolver<String>() {
-            public String resolve(String name) {
-                return CredentialsParameterValue.this.name.equals(name) ? value : null;
-            }
-        };
+        return name -> CredentialsParameterValue.this.name.equals(name) ? value : null;
     }
 
     /**
@@ -103,12 +99,11 @@ public class CredentialsParameterValue extends ParameterValue {
         }
         List<C> candidates = new ArrayList<>();
         final boolean isSystem = ACL.SYSTEM.equals(authentication);
-        if (!isSystem && run.getParent().getACL()
-                .hasPermission(CredentialsProvider.USE_OWN)) {
+        if (!isSystem && run.getParent().hasPermission(CredentialsProvider.USE_OWN)) {
             candidates.addAll(CredentialsProvider
                     .lookupCredentials(type, run.getParent(), authentication, domainRequirements));
         }
-        if (run.getParent().getACL().hasPermission(CredentialsProvider.USE_ITEM) || isSystem
+        if (run.getParent().hasPermission(CredentialsProvider.USE_ITEM) || isSystem
                 || isDefaultValue) {
             candidates.addAll(
                     CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM, domainRequirements));

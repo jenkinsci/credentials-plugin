@@ -56,6 +56,7 @@ import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
@@ -92,8 +93,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
      * The empty properties that have not been saved yet.
      */
     @GuardedBy("self")
-    private static final WeakHashMap<User, UserCredentialsProperty> emptyProperties =
-            new WeakHashMap<>();
+    private static final WeakHashMap<User, UserCredentialsProperty> emptyProperties = new WeakHashMap<>();
 
 
     /**
@@ -254,13 +254,11 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         public <C extends Credentials> List<C> getCredentials(Class<C> type) {
             checkPermission(CredentialsProvider.VIEW);
-            List<C> result = new ArrayList<>();
-            for (Credentials credential : getCredentials()) {
-                if (type.isInstance(credential)) {
-                    result.add(type.cast(credential));
-                }
-            }
-            return result;
+            return getCredentials()
+                    .stream()
+                    .filter(type::isInstance)
+                    .map(type::cast)
+                    .collect(Collectors.toList());
         }
 
         /**
