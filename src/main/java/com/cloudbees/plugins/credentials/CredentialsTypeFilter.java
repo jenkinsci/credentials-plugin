@@ -199,13 +199,11 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @NonNull
         public List<String> getClassNames() {
-            List<String> result = new ArrayList<>();
-            for (CredentialsDescriptor type : ExtensionList.lookup(CredentialsDescriptor.class)) {
-                if (classNames.contains(type.getClass().getName())) {
-                    result.add(type.getClass().getName());
-                }
-            }
-            return result;
+            return ExtensionList.lookup(CredentialsDescriptor.class)
+                    .stream()
+                    .map(type -> type.getClass().getName())
+                    .filter(classNames::contains)
+                    .collect(Collectors.toList());
         }
 
         /**
@@ -316,6 +314,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
             return ExtensionList.lookup(CredentialsDescriptor.class)
                     .stream()
                     .map(type -> type.getClass().getName())
+                    .filter(classNames::contains)
                     .collect(Collectors.toList());
         }
 
