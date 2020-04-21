@@ -33,6 +33,7 @@ import java.security.KeyStoreException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
+import java.util.Objects;
 
 /**
  * Credentials that have an ID, description, keystore and password, for example client certificates for SSL.
@@ -57,7 +58,7 @@ public interface StandardCertificateCredentials extends StandardCredentials, Cer
          */
         @CheckForNull
         public static String getSubjectDN(@NonNull KeyStore keyStore) {
-            keyStore.getClass(); // throw NPE if null
+            Objects.requireNonNull(keyStore);
             try {
                 for (Enumeration<String> enumeration = keyStore.aliases(); enumeration.hasMoreElements(); ) {
                     String alias = enumeration.nextElement();

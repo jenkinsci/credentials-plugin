@@ -63,12 +63,7 @@ public class AnyOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
      * {@inheritDoc}
      */
     public boolean matches(@NonNull Credentials item) {
-        for (CredentialsMatcher matcher : matchers) {
-            if (matcher.matches(item)) {
-                return true;
-            }
-        }
-        return false;
+        return matchers.stream().anyMatch(matcher -> matcher.matches(item));
     }
 
     /**
@@ -129,9 +124,7 @@ public class AnyOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL 
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("AnyMatcher{");
-        sb.append("matchers=").append(matchers);
-        sb.append('}');
-        return sb.toString();
+        return "AnyMatcher{" + "matchers=" + matchers +
+                '}';
     }
 }

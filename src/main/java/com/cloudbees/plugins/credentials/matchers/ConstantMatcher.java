@@ -99,9 +99,7 @@ public class ConstantMatcher implements CredentialsMatcher, CredentialsMatcher.C
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ConstantMatcher{");
-        sb.append("match=").append(match);
-        sb.append('}');
-        return sb.toString();
+        return "ConstantMatcher{" + "match=" + match +
+                '}';
     }
 }

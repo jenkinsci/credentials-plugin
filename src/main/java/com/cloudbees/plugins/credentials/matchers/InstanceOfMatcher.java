@@ -27,6 +27,8 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.util.Objects;
+
 /**
  * Matches credentials that implement a specific type.
  *
@@ -51,7 +53,7 @@ public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher
      * @param clazz the type that credentials must implement.
      */
     public InstanceOfMatcher(@NonNull Class clazz) {
-        clazz.getClass(); // throw NPE if null
+        Objects.requireNonNull(clazz);
         this.clazz = clazz;
     }
 
@@ -101,9 +103,7 @@ public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher
      */
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("InstanceOfMatcher{");
-        sb.append("clazz=").append(clazz);
-        sb.append('}');
-        return sb.toString();
+        return "InstanceOfMatcher{" + "clazz=" + clazz +
+                '}';
     }
 }
