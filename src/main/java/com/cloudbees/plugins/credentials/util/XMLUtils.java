@@ -71,6 +71,7 @@ public class XMLUtils {
         }
     }
 
+    @SuppressWarnings("lgtm[java/xxe]") // intentional fallback method
     private static void _transform(Source source, Result out) throws TransformerException {
         TransformerFactory factory = TransformerFactory.newInstance();
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
