@@ -7,9 +7,11 @@ import hudson.security.Permission;
 
 /**
  * {@link ManagementLink} to expose a link to the manage credentials configuration screen.
- *
+ * 
+ * @since TODO
  */
 @Extension(ordinal = Integer.MAX_VALUE - 211)
+@Restricted(NoExternalUse.class)
 public class ManageCredentialsConfiguration extends ManagementLink {
 
     public String getCategoryName() {
