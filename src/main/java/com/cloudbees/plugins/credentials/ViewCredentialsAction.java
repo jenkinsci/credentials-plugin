@@ -223,11 +223,14 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      * @return {@code true} if the action should be visible.
      */
     public boolean isVisible() {
-        if (context instanceof AccessControlled
-                && !((AccessControlled) context).hasPermission(CredentialsProvider.VIEW)) {
-            // must have permission
-            return false;
+        if (context instanceof AccessControlled) {
+            AccessControlled accessControlled = (AccessControlled) this.context;
+            if (accessControlled.hasPermission(Jenkins.ADMINISTER) || !accessControlled.hasPermission(CredentialsProvider.VIEW)) {
+                // must have permission, Administrator's view credentials from 'Manage Jenkins'
+                return false;
+            }
         }
+        
         for (CredentialsProvider p : CredentialsProvider.enabled(context)) {
             if (p.hasCredentialsDescriptors()) {
                 // at least one provider must have the potential for at least one type
