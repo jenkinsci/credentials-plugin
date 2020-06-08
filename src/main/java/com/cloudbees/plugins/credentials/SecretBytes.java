@@ -300,7 +300,7 @@ public class SecretBytes implements Serializable {
             byte[] decoded;
             try {
                 decoded = Base64.decodeBase64(data.substring(1, len - 1));
-            } catch (StringIndexOutOfBoundsException e) {
+            } catch (StringIndexOutOfBoundsException | IllegalArgumentException e) {
                 // invalid Base64
                 return false;
             }
