@@ -56,7 +56,7 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  * @see GlobalCredentialsConfiguration.Category
  * @since 2.0
  */
-@Extension(ordinal = Integer.MAX_VALUE - 211)
+@Extension(ordinal = Integer.MAX_VALUE - 212)
 public class GlobalCredentialsConfiguration extends ManagementLink
         implements Describable<GlobalCredentialsConfiguration> // TODO once context menu is Icon spec aware //, IconSpec
         {
