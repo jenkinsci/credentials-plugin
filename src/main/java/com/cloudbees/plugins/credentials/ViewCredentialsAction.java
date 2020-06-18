@@ -225,12 +225,12 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     public boolean isVisible() {
         if (context instanceof AccessControlled) {
             AccessControlled accessControlled = (AccessControlled) this.context;
-            if (accessControlled.hasPermission(Jenkins.ADMINISTER) || !accessControlled.hasPermission(CredentialsProvider.VIEW)) {
-                // must have permission, Administrator's view credentials from 'Manage Jenkins'
+            if (isVisibleForAdministrator(accessControlled) || !accessControlled.hasPermission(CredentialsProvider.VIEW)) {
+                // must have permission
                 return false;
             }
         }
-        
+
         for (CredentialsProvider p : CredentialsProvider.enabled(context)) {
             if (p.hasCredentialsDescriptors()) {
                 // at least one provider must have the potential for at least one type
@@ -238,6 +238,16 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             }
         }
         return false;
+    }
+
+    /**
+     * Administrator's view credentials from 'Manage Jenkins', except when it's a folder.
+     * @param accessControlled an access controlled object.
+     * @return whether the action should be visible or not if the user is an administrator.
+     */
+    private boolean isVisibleForAdministrator(AccessControlled accessControlled) {
+        return accessControlled.hasPermission(Jenkins.ADMINISTER) &&
+                !accessControlled.getClass().getName().equals("com.cloudbees.hudson.plugins.folder.Folder");
     }
 
     /**
