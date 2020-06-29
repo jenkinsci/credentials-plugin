@@ -241,13 +241,12 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     }
 
     /**
-     * Administrator's view credentials from 'Manage Jenkins', except when it's a folder.
+     * Administrator's view credentials from 'Manage Jenkins'.
      * @param accessControlled an access controlled object.
      * @return whether the action should be visible or not if the user is an administrator.
      */
     private boolean isVisibleForAdministrator(AccessControlled accessControlled) {
-        return accessControlled.hasPermission(Jenkins.ADMINISTER) &&
-                !accessControlled.getClass().getName().equals("com.cloudbees.hudson.plugins.folder.Folder");
+        return accessControlled instanceof Jenkins && accessControlled.hasPermission(Jenkins.ADMINISTER);
     }
 
     /**
