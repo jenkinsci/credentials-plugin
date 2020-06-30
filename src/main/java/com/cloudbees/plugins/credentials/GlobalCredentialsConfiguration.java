@@ -165,7 +165,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
 
         // persist all the provider configs
         boolean result = true;
-        for (Descriptor<?> d : Functions.getSortedDescriptorsForGlobalConfigByDescriptor(Category.class::isInstance)) {
+        for (Descriptor<?> d : Functions.getSortedDescriptorsForGlobalConfigByDescriptor(d -> d.getCategory() instanceof Category)) {
             result &= configureDescriptor(req, json, d);
         }
 
