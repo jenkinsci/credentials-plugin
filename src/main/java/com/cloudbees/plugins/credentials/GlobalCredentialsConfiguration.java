@@ -68,6 +68,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
     /**
      * Our filter.
      */
+    @Deprecated
     public static final Predicate<GlobalConfigurationCategory> FILTER = Category.class::isInstance;
 
     /**
@@ -164,7 +165,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
 
         // persist all the provider configs
         boolean result = true;
-        for (Descriptor<?> d : Functions.getSortedDescriptorsForGlobalConfig(FILTER)) {
+        for (Descriptor<?> d : Functions.getSortedDescriptorsForGlobalConfigByDescriptor(Category.class::isInstance)) {
             result &= configureDescriptor(req, json, d);
         }
 
