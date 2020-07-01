@@ -23,7 +23,6 @@
  */
 package com.cloudbees.plugins.credentials;
 
-import com.google.common.base.Predicate;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.BulkChange;
 import hudson.Extension;
@@ -36,6 +35,7 @@ import hudson.model.ManagementLink;
 import hudson.security.GlobalSecurityConfiguration;
 import hudson.util.FormApply;
 import java.io.IOException;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -68,8 +68,8 @@ public class GlobalCredentialsConfiguration extends ManagementLink
     /**
      * Our filter.
      */
-    @Deprecated
-    public static final Predicate<GlobalConfigurationCategory> FILTER = Category.class::isInstance;
+    @SuppressWarnings("rawtypes")
+    public static final Predicate<Descriptor> FILTER = d -> d.getCategory() instanceof Category;
 
     /**
      * {@inheritDoc}
@@ -165,7 +165,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
 
         // persist all the provider configs
         boolean result = true;
-        for (Descriptor<?> d : Functions.getSortedDescriptorsForGlobalConfigByDescriptor(Category.class::isInstance)) {
+        for (Descriptor<?> d : Functions.getSortedDescriptorsForGlobalConfigByDescriptor(FILTER)) {
             result &= configureDescriptor(req, json, d);
         }
 
