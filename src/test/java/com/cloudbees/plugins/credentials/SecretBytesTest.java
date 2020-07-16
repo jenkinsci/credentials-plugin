@@ -32,10 +32,10 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 
 public class SecretBytesTest {
     @Rule
@@ -81,16 +81,17 @@ public class SecretBytesTest {
         byte[] data = text.getBytes();
         String valid = SecretBytes.fromBytes(data).toString();
         assertThat(SecretBytes.isSecretBytes(valid), is(true));
-        assertThat(SecretBytes.isSecretBytes(valid.substring(0, 20)+valid.substring(22)), is(false));
+        String broken = valid.substring(0, 20) + valid.substring(22);
+        assertThat(SecretBytes.isSecretBytes(broken), is(false));
         String invalid =
                 "Fu".equals(valid.substring(20,22))
                         ? valid.substring(0, 20) + "fU" + valid.substring(22)
                         : valid.substring(0, 20) + "Fu" + valid.substring(22);
         if (SecretBytes.isSecretBytes(invalid)) {
             assertThat(new String(SecretBytes.fromString(invalid).getPlainData()), not(is(text)));
-        } else {
-            assertThat(SecretBytes.isSecretBytes(invalid), is(false));
         }
+        assertThat(new String(SecretBytes.fromString(valid).getPlainData()), is(text));
+        assertThat(new String(SecretBytes.fromString(broken).getPlainData()), not(is(text)));
     }
 
     @Test
