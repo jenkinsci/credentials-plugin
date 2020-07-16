@@ -127,7 +127,7 @@ public ListBoxModel doFillCredentialsIdItems(
     }
   }
   return result
-    .includeEmptySelection() // <3>
+    .includeEmptyValue() // <3>
     .includeMatchingAs(...) // <4>
     .includeCurrentValue(credentialsId); // <5>
 }
