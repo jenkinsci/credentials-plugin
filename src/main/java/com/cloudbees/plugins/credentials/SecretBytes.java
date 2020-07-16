@@ -281,7 +281,7 @@ public class SecretBytes implements Serializable {
                 }
             }
             s = new SecretBytes(false, Base64.decodeBase64(data));
-        } catch (StringIndexOutOfBoundsException e) {
+        } catch (StringIndexOutOfBoundsException | IllegalArgumentException e) {
             // wasn't valid Base64
             s = new SecretBytes(false, new byte[0]);
         }
