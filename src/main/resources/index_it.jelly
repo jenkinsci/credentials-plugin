@@ -1,0 +1,5 @@
+<?jelly escape-by-default='true'?>
+<div>
+Questo componente aggiuntivo consente di salvare delle credenziali all'interno
+di Jenkins.
+</div>
