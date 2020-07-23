@@ -6,6 +6,7 @@ work*/
 *.ipr
 *.iws
 .idea/
+appmap/
 
 # eclipse project file
 .settings
@@ -14,3 +15,5 @@ work*/
 build/
 
 /nb-configuration.xml
+
+/upload-appmaps
