@@ -1,0 +1,26 @@
+dist: bionic
+
+language: java
+
+
+branches:
+  only:
+  - master
+
+before_install: >
+  export APPLAND_CLI_DOWNLOAD_URL="$(curl -s https://api.github.com/repos/applandinc/appland-cli/releases/latest \
+    | jq -r '.assets[] | select(.name | contains("Linux")).browser_download_url')" \
+  && curl -sSL "${APPLAND_CLI_DOWNLOAD_URL}" \
+      | sudo tar xz --directory /usr/local/bin appland \
+      && touch ~/.appland
+
+  export APPMAP_JAR_DOWNLOAD_URL="$(curl -s https://api.github.com/repos/applandinc/appmap-java/releases/latest \
+    | jq -r '.assets[] | select(.name | contains("java11")).browser_download_url')" \
+  && curl -o appmap-java11.jar -sSL "${APPMAP_JAR_DOWNLOAD_URL}" 
+    
+         
+script:
+  - mvn -DargLine="-javaagent:appmap-java11.jar" test
+
+after_script:
+- env DEBUG=true ./bin/upload-appmaps
