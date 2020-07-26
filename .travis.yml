@@ -1,5 +1,12 @@
+# Turn on validation, so we can use import:
 version: ~> 1.0
 
+branches:
+  only:
+  - master
+  - appland
+  - /appland-v.*/
+  
 jdk:
 - openjdk8
 import: land-of-apps/land-of-apps/travis-java.yml
