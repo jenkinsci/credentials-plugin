@@ -402,7 +402,7 @@ Credentials providers can be configured using the Providers option
 .Restricting the available credentials providers to a subset of those installed.
 image::images/global-config-credentials-providers.png[scaledwidth="90%"]
 
-For example if you want to prevent user's from being able to store credentials in the per-user credentials store you have two options:
+For example if you want to prevent users from being able to store credentials in the per-user credentials store you have two options:
 
 * Configure an _Excludes selected_ that targets the per-user credentials provider.
 +
@@ -1384,12 +1384,12 @@ create-credentials-by-xml folder::item::/example-folder testing < credential.xml
 
 ===== Retrieving credentials
 
-The `get-credentials-as-xml` Jenkins CLI command is the command used to remove credentials.
+The `get-credentials-as-xml` Jenkins CLI command is the command used to retrieve credentials.
 
-.The Jenkins CLI command for removing credentials from a credentials store.
+.The Jenkins CLI command for retrieving credentials from a credentials store.
 image::images/get-credentials-as-xml.png[scaledwidth="90%"]
 
-.Example of removing the `deploy-key` credential from the `testing` domain of the `/example-folder` folder.
+.Example of retrieving the `deploy-key` credential from the `testing` domain of the `/example-folder` folder.
 [source,bash]
 ----
 $ java -jar jenkins-cli.jar -s https://jenkins.example.com/ \
