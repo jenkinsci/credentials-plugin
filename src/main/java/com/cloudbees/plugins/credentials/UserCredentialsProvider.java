@@ -41,6 +41,7 @@ import hudson.model.User;
 import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
+import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
 import java.io.IOException;
@@ -53,8 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -62,9 +62,6 @@ import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import net.sf.json.JSONObject;
 import org.acegisecurity.Authentication;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
-import org.acegisecurity.providers.anonymous.AnonymousAuthenticationToken;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
@@ -143,37 +140,20 @@ public class UserCredentialsProvider extends CredentialsProvider {
             authentication = ACL.SYSTEM;
         }
         if (!ACL.SYSTEM.equals(authentication)) {
-            User user;
-            try {
-                if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
-                    user = null;
-                } else if (authentication == Jenkins.getAuthentication()) {
-                    user = User.current();
-                } else {
-                    user = User.get(authentication.getName());
-                }
-            } catch (NullPointerException e) {
-                LogRecord lr = new LogRecord(Level.FINE,
-                        "Could not find user for specified authentication. User credentials lookup aborted");
-                lr.setThrown(e);
-                lr.setParameters(new Object[]{authentication});
-                LOGGER.log(lr);
-                user = null;
-            }
+            User user = User.get(authentication);
             if (user != null) {
                 UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
                 if (property != null) {
                     // we need to impersonate if the requesting authentication is not the current authentication.
                     boolean needImpersonation = !user.equals(User.current());
-                    SecurityContext old = needImpersonation ? ACL.impersonate(user.impersonate()) : null;
-                    try {
-                        return DomainCredentials
+                    Supplier<List<C>> credentials = () -> DomainCredentials
                                 .getCredentials(property.getDomainCredentialsMap(), type, domainRequirements, always());
-                    } finally {
-                        if (needImpersonation) {
-                            // restore the current authentication if we impersonated.
-                            SecurityContextHolder.setContext(old);
+                    if (needImpersonation) {
+                        try (ACLContext ac = ACL.as(user)) {
+                            return credentials.get();
                         }
+                    } else {
+                        return credentials.get();
                     }
                 }
             }
