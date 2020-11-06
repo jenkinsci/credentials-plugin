@@ -1433,6 +1433,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
+    @SafeVarargs
     @NonNull
     public static <C extends Credentials> List<C> trackAll(@NonNull Run build, C... credentials) {
         if (credentials != null) {
@@ -1494,6 +1495,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
+    @SafeVarargs
     @NonNull
     public static <C extends Credentials> List<C> trackAll(@NonNull Node node, C... credentials) {
         if (credentials != null) {
@@ -1594,6 +1596,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @return the supplied credentials for method chaining.
      * @since 2.1.1
      */
+    @SafeVarargs
     @NonNull
     public static <C extends Credentials> List<C> trackAll(@NonNull Item item, C... credentials) {
         if (credentials != null) {
