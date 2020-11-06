@@ -1,6 +1,7 @@
 == Feature Flags
 
 The following system properties are available for toggling or specifying particular features to turn on or off.
+Like any system properties, they should be considered experimental and subject to removal without notice.
 
 * `com.cloudbees.plugins.credentials.UseOwnPermission` - Enables the Credentials/UseOwn permission type which allows a
 user to provide their own user-scoped credentials to a build. When this feature flag is not specified, this permission
