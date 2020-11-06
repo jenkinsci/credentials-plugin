@@ -22,6 +22,11 @@ System-scoped credentials are only visible in the root Jenkins context (typicall
 User-scoped credentials are only visible to a context running as that user (such as a user-provided credentials parameter to a build).
 Global-scoped credentials are visible to their associated contexts and any children contexts; this is the default credential scope.
 
+[IMPORTANT]
+====
+Global scoped credentials in the Jenkins Credentials Provider (system credentials) are accessible to any job in the system!
+====
+
 Credentials _stores_ are the underlying storage mechanism for secrets, and credentials _providers_ combine them with the functionality to manage secrets in a context for a certain set of scopes.
 For example, the Jenkins Credentials Provider uses a system-wide credentials store at the root context and supports both system and global scoped credentials.
 Folder plugins provide a Folder Credentials Provider to anchor credentials storage in a folder along with the advanced authorization strategies possible there.
@@ -29,11 +34,6 @@ User-scoped credentials are primarily accessed through the User Credentials Prov
 
 Credentials _types_ include things like username/password, secret text, SSH key, API token, etc.
 Finally, credentials _domains_ provide a way to help organize credentials by domain name, URI, protocol, and other requirements which can make it much easier to identify the appropriate credentials to use from the UI.
-
-[IMPORTANT]
-====
-Global scoped system credentials are accessible to any job in the system!
-====
 
 === What plugins do I need to be secure?
 
