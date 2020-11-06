@@ -1,0 +1,54 @@
+== FAQs
+
+This document provides a quick reference for frequently questioned concepts and features in Credentials.
+
+=== Where do credentials get stored?
+
+By default, Jenkins uses an internal credentials store where credentials secret data are encrypted at rest in the Jenkins controller file system.
+This security model does not prevent anyone with read access to the controller file system from reading and decrypting those secrets.
+For more sensitive secrets, it is highly recommended to install and use an external credentials provider plugin which delegates the secure storage of secrets to a proper key management system.
+Various cloud providers have secrets management and HSMs available for this purpose, and open source software such as Vault or Conjur provide more generic secrets management for multiple platforms.
+
+=== How should I organize my credentials?
+
+It's important to understand the access model of credentials in order to organize them most appropriately.
+Credentials are accessed through a combination of scopes and contexts, which are further categorized into types and domains.
+The _context_ of a credential is the path in Jenkins where the credentials are accessed.
+Contexts include the root Jenkins context, jobs, users, agents, views, folders, and generally any other item type.
+The _scope_ of a credential can be _global, system,_ or _user,_ which determines the visibility of a credential to a context.
+System-scoped credentials are only visible in the root Jenkins context (typically useful for things like agent SSH keys).
+User-scoped credentials are only visible to a context running as that user (such as a user-provided credentials parameter to a build).
+Global-scoped credentials are visible to their associated contexts and any children contexts; this is the default credential scope.
+Credentials _stores_ are the underlying storage mechanism for secrets, and credentials _providers_ combine them with the functionality to manage secrets in a context for a certain set of scopes.
+For example, the Jenkins Credentials Provider uses a system-wide credentials store at the root context and supports both system and global scoped credentials.
+Folder plugins provide a Folder Credentials Provider to anchor credentials storage in a folder along with the advanced authorization strategies possible there.
+User-scoped credentials are primarily accessed through the User Credentials Provider which stores secrets with the user profile in Jenkins.
+Credentials _types_ include things like username/password, secret text, SSH key, API token, etc.
+Finally, credentials _domains_ provide a way to help organize credentials by domain name, URI, protocol, and other requirements which can make it much easier to identify the appropriate credentials to use from the UI.
+
+[IMPORTANT]
+====
+Global scoped system credentials are accessible to any job in the system!
+====
+
+=== What plugins do I need to be secure?
+
+First, ensure that you are following the https://www.jenkins.io/doc/book/system-administration/security/[Jenkins security best practices].
+In particular, you'll need to use a non-trivial authorization strategy such as https://plugins.jenkins.io/matrix-auth/[matrix], https://plugins.jenkins.io/role-strategy/[role-based], or https://plugins.jenkins.io/folder-auth/[folder-based]; the trivial authorization strategies would defeat the purpose of securing your secrets!
+Next, you'll need the https://plugins.jenkins.io/authorize-project/[Authorize Project] plugin so that more fine-grained permission controls are available to configure to jobs so that credentials accessible to one job aren't necessarily accessible to every other job.
+The https://plugins.jenkins.io/ownership/[Job and Node ownership] plugin extends many of the mentioned authorization strategies to allow for further configuration.
+Additional hardening can be applied via the https://plugins.jenkins.io/job-restrictions/[Job Restrictions] plugin.
+
+When working with especially sensitive secrets, use of a hardware security module (HSM) is recommended for physical storage and protection of secret and private keys.
+Cloud providers typically have HSMs as a service, and secrets management software typically offers HSM integration as an enterprise feature.
+Credentials provider plugins provide integration points with this plugin to allow for externally managed secrets to be accessible via the same UI and API as Jenkins-managed secrets.
+
+=== How do I use credentials in automated environments?
+
+Credentials plugin exports numerous REST APIs and CLI commands for the various features exposed through the UI.
+These APIs and commands are documented in the link:user.adoc#rest-api[user documentation].
+
+=== How do I use credentials with configuration as code?
+
+JCasC provides numerous integration points for bootstrapping credentials providers to avoid storing plaintext credentials in configuration repositories.
+These are documented in detail in the https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/docs/features/secrets.adoc[JCasC Handling Secrets] docs.
