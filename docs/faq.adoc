@@ -7,7 +7,17 @@ This document provides a quick reference for frequently questioned concepts and 
 By default, Jenkins uses an internal credentials store where credentials secret data are encrypted at rest in the Jenkins controller file system.
 This security model does not prevent anyone with read access to the controller file system from reading and decrypting those secrets.
 For more sensitive secrets, it is highly recommended to install and use an external credentials provider plugin which delegates the secure storage of secrets to a proper key management system.
-Various cloud providers (including https://plugins.jenkins.io/aws-secrets-manager-credentials-provider/[AWS], https://plugins.jenkins.io/azure-keyvault/[Azure], and https://plugins.jenkins.io/gcp-secrets-manager-credentials-provider/[GCP]) have secrets management and HSMs available for this purpose, and open source software such as https://plugins.jenkins.io/kubernetes-credentials-provider/[Kubernetes], https://plugins.jenkins.io/hashicorp-vault-plugin/[Vault], or https://plugins.jenkins.io/conjur-credentials/[Conjur] provide more generic secrets management for multiple platforms.
+There are several solutions available for storing and securing secrets, many of which integrate with hardware security modules (HSMs) for additional physical security of secrets.
+Examples of common external credentials stores for cloud providers or self-hosted environments include:
+
+. https://plugins.jenkins.io/aws-secrets-manager-credentials-provider/[AWS]
+. https://plugins.jenkins.io/azure-keyvault/[Azure]
+. https://plugins.jenkins.io/conjur-credentials/[Conjur]
+. https://plugins.jenkins.io/gcp-secrets-manager-credentials-provider/[GCP]
+. https://plugins.jenkins.io/kubernetes-credentials-provider/[Kubernetes]
+. https://plugins.jenkins.io/hashicorp-vault-plugin/[Vault]
+
+A full listing (including some developer-level details) of https://www.jenkins.io/doc/developer/extensions/credentials/[plugins that provide credentials extensions] is available in the developer documentation.
 
 === How should I organize my credentials?
 
