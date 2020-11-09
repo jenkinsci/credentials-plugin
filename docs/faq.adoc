@@ -10,12 +10,12 @@ For more sensitive secrets, it is highly recommended to install and use an exter
 There are several solutions available for storing and securing secrets, many of which integrate with hardware security modules (HSMs) for additional physical security of secrets.
 Examples of common external credentials stores for cloud providers or self-hosted environments include:
 
-. https://plugins.jenkins.io/aws-secrets-manager-credentials-provider/[AWS]
-. https://plugins.jenkins.io/azure-keyvault/[Azure]
-. https://plugins.jenkins.io/conjur-credentials/[Conjur]
-. https://plugins.jenkins.io/gcp-secrets-manager-credentials-provider/[GCP]
-. https://plugins.jenkins.io/kubernetes-credentials-provider/[Kubernetes]
-. https://plugins.jenkins.io/hashicorp-vault-plugin/[Vault]
+- https://plugins.jenkins.io/aws-secrets-manager-credentials-provider/[AWS]
+- https://plugins.jenkins.io/azure-keyvault/[Azure]
+- https://plugins.jenkins.io/conjur-credentials/[Conjur]
+- https://plugins.jenkins.io/gcp-secrets-manager-credentials-provider/[GCP]
+- https://plugins.jenkins.io/kubernetes-credentials-provider/[Kubernetes]
+- https://plugins.jenkins.io/hashicorp-vault-plugin/[Vault]
 
 A full listing (including some developer-level details) of https://www.jenkins.io/doc/developer/extensions/credentials/[plugins that provide credentials extensions] is available in the developer documentation.
 
