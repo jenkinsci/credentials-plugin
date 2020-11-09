@@ -1,4 +1,4 @@
-== FAQs
+== FAQ
 
 This document provides a quick reference for frequently questioned concepts and features in Credentials.
 
