@@ -19,12 +19,11 @@ Examples of common external credentials stores for cloud providers or self-hoste
 
 A full listing (including some developer-level details) of https://www.jenkins.io/doc/developer/extensions/credentials/[plugins that provide credentials extensions] is available in the developer documentation.
 
-=== How should I organize my credentials?
+=== How do credentials get accessed?
 
-It's important to understand the access model of credentials in order to organize them most appropriately.
 Credentials are accessed through a combination of scopes and contexts, which are further categorized into types and domains.
 
-The _context_ of a credential is the path in Jenkins where the credentials are accessed.
+The _context_ of a credential is the path in Jenkins (i.e., the URL) where the credentials are accessed.
 Contexts include the root Jenkins context, jobs, users, agents, views, folders, and generally any other kind of model object.
 
 The _scope_ of a credential can be _global, system,_ or _user,_ which determines the visibility of a credential to a context.
@@ -37,18 +36,20 @@ Global-scoped credentials are visible to their associated contexts and any child
 Global-scoped credentials in the Jenkins Credentials Provider (system credentials) are accessible to any job in the system!
 ====
 
-Credentials _stores_ are the underlying storage mechanism for secrets, and credentials _providers_ combine them with the functionality to manage secrets in a context for a certain set of scopes.
+The _domain_ of a credential is a property of credentials that allows them to be grouped together more logically in the UI.
+This does *not* provide any security feature itself and is strictly enforced through the UI.
+
+=== How should I organize my credentials?
+
+Different credentials _providers_ give different means of organizing and exposing credentials.
 For example, the Jenkins Credentials Provider uses a system-wide credentials store at the root context and supports both system and global scoped credentials.
 Folder plugins provide a Folder Credentials Provider to anchor credentials storage in a folder along with the advanced authorization strategies possible there.
 User-scoped credentials are primarily accessed through the User Credentials Provider which stores secrets with the user profile in Jenkins.
 
-Credentials _types_ include things like username/password, secret text, SSH key, etc.
-Finally, credentials _domains_ provide a way to help organize credentials by domain name, URI, protocol, and other requirements which can make it much easier to identify the appropriate credentials to use from the UI.
-(Domains are _not_ enforced at usage time, only for purposes of the UI.)
-
 Credentials should be organized to minimize granting access.
-Common conventions include splitting up credentials by team or product into separate folders.
+This can make use of both logical organization into team or product folders as well as fine grained ACLs to grant access to credentials per principal.
 Deployment credentials can be added to a user's profile to be used interactively in a deployment job to further isolate credentials access.
+Enabling the _Credentials/UseOwn_ or _Credentials/UseItem_ permissions (link:fflags.adoc[feature flags documentation]) allows for further refinement of permissions (e.g., to allow some users to run a build, but only allow certain users to use its folder's or triggering user's deployment credentials).
 
 === What plugins do I need to be secure?
 
