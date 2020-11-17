@@ -2,7 +2,8 @@
 
 image::images/directions.png[]
 
-There are three guides:
+FAQ::
+If you are using Jenkins and want to know the answers to common questions about using and securing Credentials API plugin, you should read link:faq.adoc[the FAQ].
 
 User guide::
 If you are using Jenkins and want to understand how to manage credentials using the Credentials API plugin, you should read link:user.adoc[the user guide].
@@ -20,3 +21,6 @@ If you are writing a plugin for Jenkins and you need to:
 
 +
 Then link:implementation.adoc[the implementation guide] is for you.
+
+Feature flags::
+If you are a Jenkins administrator and wish to customize the runtime behavior of the Credentials API, you should read link:fflags.adoc[the feature flags documentation].

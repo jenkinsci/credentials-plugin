@@ -1,0 +1,23 @@
+== Feature Flags
+
+The following system properties are available for toggling or specifying particular features to turn on or off.
+Like any https://www.jenkins.io/doc/book/managing/system-properties/[Jenkins features controlled with system properties], they should be considered experimental and subject to removal without notice.
+
+* `com.cloudbees.plugins.credentials.UseOwnPermission`
+  - Setting this property to `true` enables the _Credentials/UseOwn_ permission.
+    When this flag is `false` or unspecified, then _Job/Build_ is used instead for the same purpose.
+    Primarily useful when using project-based security authorization strategies or authenticated builds, this permission allows an immediate action to access user-scoped credentials from the user's private credentials store.
+    Immediate actions include invoking a build with parameters, tagging a build in SCM, providing credentials to a pipeline input step, and other user interaction.
+    Using this permission can help limit which users are allowed to provide their own credentials as input to an action which can be particularly handy when combined with the https://plugins.jenkins.io/authorize-project/[Authorize Project] plugin where builds may be run as the user who triggered the build.
+    This allows separation of the permission to build a job from the permission to provide user-scoped credentials.
+
+* `com.cloudbees.plugins.credentials.UseItemPermission`
+  - Setting this property to `true` enables the _Credentials/UseItem_ permission.
+    When this flag is `false` or unspecified, then _Job/Configure_ is used instead for the same purpose.
+    Primarily useful when using project-based security authorization strategies or authenticated builds, this permission allows an immediate action to access credentials within the scope of the item.
+    Immediate actions include invoking a build with parameters, tagging a build in SCM, providing credentials to a pipeline input step, and other user interaction.
+    This allows separation of the permission to configure a job from permission to use credentials that the job would normally have access to.
+
+* `com.cloudbees.plugins.credentials.CredentialsProvider.fingerprintEnabled`
+  - Overrides the default behavior that credentials tracking is handled by Jenkins fingerprints.
+    This flag is enabled by default and can be disabled by setting the property to `false`.
