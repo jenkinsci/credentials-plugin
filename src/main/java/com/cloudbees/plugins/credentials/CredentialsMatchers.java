@@ -54,8 +54,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
@@ -430,7 +430,7 @@ public class CredentialsMatchers {
             return always();
         }
 
-        CQLLexer lexer = new CQLLexer(new ANTLRInputStream(cql));
+        CQLLexer lexer = new CQLLexer(CharStreams.fromString(cql));
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 
