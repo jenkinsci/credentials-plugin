@@ -5,8 +5,8 @@ import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import com.cloudbees.plugins.credentials.matchers.CQLSyntaxException;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 public class CredentialsMatchersTest {
 
@@ -71,11 +71,6 @@ public class CredentialsMatchersTest {
     @Test(expected = CQLSyntaxException.class)
     public void parseInvalidMultiline() throws Exception {
         CredentialsMatchers.parse("id == \"id-1\"\n|| \"id-2\"\n&& instanceof Boolean");
-    }
-
-    @Test(expected = CQLSyntaxException.class)
-    public void parseInvalid3() throws Exception {
-        CredentialsMatchers.parse("id == 4foo");
     }
 
     @Test
