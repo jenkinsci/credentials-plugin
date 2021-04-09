@@ -27,6 +27,7 @@ import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
+import com.cloudbees.plugins.credentials.impl.DummyIdCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyLegacyCredentials;
 import hudson.model.Descriptor;
 import hudson.model.FreeStyleProject;
@@ -39,12 +40,14 @@ import hudson.slaves.DumbSlave;
 import hudson.slaves.JNLPLauncher;
 import hudson.slaves.RetentionStrategy;
 import hudson.security.ACL;
+import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.io.ByteArrayInputStream;
@@ -55,6 +58,9 @@ import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -334,5 +340,31 @@ public class CredentialsProviderTest {
             // and this test is failing at the middle
             CredentialsProvider.FINGERPRINT_ENABLED = true;
         }
+    }
+
+    @Test
+    @Issue("JENKINS-65333")
+    public void insertionOrderLookupCredentials() {
+        assertThat(CredentialsProvider.lookupCredentials(Credentials.class, (Item) null, ACL.SYSTEM, Collections.emptyList()), hasSize(0));
+        SystemCredentialsProvider.getInstance().getCredentials().add(new DummyIdCredentials("1", CredentialsScope.SYSTEM, "beta", "bar", "description 1"));
+        SystemCredentialsProvider.getInstance().getCredentials().add(new DummyIdCredentials("2", CredentialsScope.SYSTEM, "alpha", "bar", "description 2"));
+        List<DummyIdCredentials> credentials = CredentialsProvider.lookupCredentials(DummyIdCredentials.class, (Item) null, ACL.SYSTEM, Collections.emptyList());
+        assertThat(credentials, hasSize(2));
+        // Insertion order
+        assertThat(credentials.get(0).getUsername(), is("beta"));
+        assertThat(credentials.get(1).getUsername(), is("alpha"));
+    }
+
+    @Test
+    @Issue("JENKINS-65333")
+    public void credentialsSortedByNameInUI() {
+        assertThat(CredentialsProvider.lookupCredentials(Credentials.class, (Item) null, ACL.SYSTEM, Collections.emptyList()), hasSize(0));
+        SystemCredentialsProvider.getInstance().getCredentials().add(new DummyIdCredentials("1", CredentialsScope.SYSTEM, "beta", "bar", "description 1"));
+        SystemCredentialsProvider.getInstance().getCredentials().add(new DummyIdCredentials("2", CredentialsScope.SYSTEM, "alpha", "bar", "description 2"));
+        ListBoxModel options = CredentialsProvider.listCredentials(DummyIdCredentials.class, (Item) null, ACL.SYSTEM, Collections.emptyList(), CredentialsMatchers.always());
+        // Options are sorted by name
+        assertThat(options, hasSize(2));
+        assertThat(options.get(0).value, is("2"));
+        assertThat(options.get(1).value, is("1"));
     }
 }
