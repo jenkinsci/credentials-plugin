@@ -438,7 +438,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         }
-        result.sort(new CredentialsNameComparator());
         return result;
     }
 
@@ -575,8 +574,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 }
             }
         }
-
-        result.sort(new CredentialsNameComparator());
         return result;
     }
 
@@ -1180,6 +1177,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         return getCredentials(type, itemGroup, authentication, domainRequirements)
                 .stream()
                 .filter(matcher::matches)
+                .sorted(new CredentialsNameComparator())
                 .map(c -> new ListBoxModel.Option(CredentialsNameProvider.name(c), c.getId()))
                 .collect(Collectors.toCollection(ListBoxModel::new));
     }
@@ -1255,6 +1253,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         return getCredentials(type, item, authentication, domainRequirements)
                 .stream()
                 .filter(matcher::matches)
+                .sorted(new CredentialsNameComparator())
                 .map(c -> new ListBoxModel.Option(CredentialsNameProvider.name(c), c.getId()))
                 .collect(Collectors.toCollection(ListBoxModel::new));
     }
