@@ -33,8 +33,8 @@ import java.util.Set;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
- * A {@link DomainSpecification} that matches {@link SchemeRequirement}s where the URI scheme is on a whitelist
- * of schemes.
+ * A {@link DomainSpecification} that matches {@link SchemeRequirement}s where the URI scheme is on a list
+ * of allowed schemes.
  *
  * @see <a href="http://tools.ietf.org/rfc/rfc3986.txt">RFC-3986 Section 3.1</a>
  * @since 1.5

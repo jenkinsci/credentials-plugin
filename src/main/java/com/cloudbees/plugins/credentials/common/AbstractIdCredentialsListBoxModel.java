@@ -99,7 +99,7 @@ import org.apache.commons.lang.StringUtils;
  * <dt>System-level settings
  * <dd>
  * If your model is a singleton in the whole Jenkins instance, things that belong to the root {@link Jenkins}
- * (such as slaves), or do not have any ancestors serving as the context, then use {@link Jenkins#get} as the
+ * (such as agents), or do not have any ancestors serving as the context, then use {@link Jenkins#get} as the
  * context.
  * <dt>Job-level settings
  * <dd>

@@ -36,7 +36,7 @@ public enum CredentialsScope implements Serializable {
 
     /**
      * This credential is only available to the object on which the credential is associated. Typically you would
-     * use SYSTEM scoped credentials for things like email auth, slave connection, etc, i.e. where the
+     * use SYSTEM scoped credentials for things like email auth, agent connection, etc, i.e. where the
      * Jenkins instance itself is using the credential.
      */
     SYSTEM {

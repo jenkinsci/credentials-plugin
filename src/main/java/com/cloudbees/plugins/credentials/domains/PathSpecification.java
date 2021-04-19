@@ -33,8 +33,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.springframework.util.AntPathMatcher;
 
 /**
- * A {@link DomainSpecification} that matches {@link PathRequirement}s where the URI path is on a whitelist
- * of paths.
+ * A {@link DomainSpecification} that matches {@link PathRequirement}s where the URI path is on a list
+ * of allowed paths.
  *
  * @see <a href="http://tools.ietf.org/rfc/rfc3986.txt">RFC-3986 Section 3.1</a>
  * @since 1.12
