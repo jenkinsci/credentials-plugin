@@ -177,7 +177,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
         /**
          * Our constructor.
          *
-         * @param classNames the list of included class names.
+         * @param classNames the list of allowed class names.
          */
         @DataBoundConstructor
         public Includes(@CheckForNull List<String> classNames) {
