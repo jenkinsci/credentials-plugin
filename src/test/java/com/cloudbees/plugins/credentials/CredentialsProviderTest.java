@@ -277,7 +277,7 @@ public class CredentialsProviderTest {
         // Create a DumbSlave, this time don't add it to the model,
         // it should not be recorded
         DumbSlave nonAddedSlave = new DumbSlave("non-added-slave",
-                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+                "dummy", "/home/test/agent", "1", Node.Mode.NORMAL, "remote",
                 new JNLPLauncher(),
                 RetentionStrategy.INSTANCE, Collections.emptyList());
 
@@ -288,8 +288,8 @@ public class CredentialsProviderTest {
 
         // Create a DumbSlave to use, and add it to the Jenkins model, this
         // one should be recorded
-        DumbSlave addedSlave = new DumbSlave("added-slave",
-                "dummy", "/home/test/slave", "1", Node.Mode.NORMAL, "remote",
+        DumbSlave addedSlave = new DumbSlave("added-agent",
+                "dummy", "/home/test/agent", "1", Node.Mode.NORMAL, "remote",
                 new JNLPLauncher(),
                 RetentionStrategy.INSTANCE, Collections.emptyList());
 
@@ -302,7 +302,7 @@ public class CredentialsProviderTest {
         CredentialsProvider.track(addedSlave, globalCred);
         assertEquals(initialFingerprintSize+1, CredentialsProvider.getOrCreateFingerprintOf(globalCred).getFacets().size());
 
-        // Remove the added slave from Jenkins, and track the non-added slave
+        // Remove the added agent from Jenkins, and track the non-added agent
         // to flush any mapped credentials for nodes that no longer exist.
         Jenkins.get().removeNode(addedSlave);
         CredentialsProvider.track(nonAddedSlave, globalCred);

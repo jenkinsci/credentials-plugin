@@ -91,7 +91,7 @@ public abstract class CredentialsProviderTypeRestriction
     public abstract String toString();
 
     /**
-     * A whitelist of types for each provider. If you specify any {@link Includes} for any specific
+     * A list of included types for each provider. If you specify any {@link Includes} for any specific
      * {@link #getProvider()} then at least one {@link Includes} for that {@link #getProvider()} must match for a
      * {@link #getType()} to be permitted.
      *
@@ -264,7 +264,7 @@ public abstract class CredentialsProviderTypeRestriction
     }
 
     /**
-     * A blacklist of types for each provider.
+     * A list of excluded types for each provider.
      *
      * @since 2.0
      */

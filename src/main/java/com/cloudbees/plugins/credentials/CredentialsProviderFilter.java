@@ -159,7 +159,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
     }
 
     /**
-     * A filter that implements a whitelist policy, "if you are not on the list you can't come in".
+     * A filter that implements a allowlist policy, "if you are not on the list you can't come in".
      *
      * @since 2.0
      */
@@ -177,7 +177,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
         /**
          * Our constructor.
          *
-         * @param classNames the whitelist of class names.
+         * @param classNames the list of included class names.
          */
         @DataBoundConstructor
         public Includes(@CheckForNull List<String> classNames) {
@@ -193,9 +193,9 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
         }
 
         /**
-         * Returns the whitelist of allowed {@link Class#getName()}.
+         * Returns the list of allowed {@link Class#getName()}.
          *
-         * @return the whitelist of allowed {@link Class#getName()}.
+         * @return the list of allowed {@link Class#getName()}.
          */
         @NonNull
         public List<String> getClassNames() {
@@ -271,7 +271,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
     }
 
     /**
-     * A filter that implements a blacklist policy, "if you are not on the list you can come in".
+     * A filter that implements a denylist policy, "if you are not on the list you can come in".
      *
      * @since 2.0
      */
@@ -289,7 +289,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
         /**
          * Our constructor.
          *
-         * @param classNames the blacklist of class names.
+         * @param classNames the excluded list of class names.
          */
         @DataBoundConstructor
         public Excludes(@CheckForNull List<String> classNames) {
@@ -305,9 +305,9 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
         }
 
         /**
-         * Returns the blacklist of banned {@link Class#getName()}.
+         * Returns the list of banned {@link Class#getName()}.
          *
-         * @return the blacklist of banned {@link Class#getName()}.
+         * @return the list of banned {@link Class#getName()}.
          */
         @NonNull
         public List<String> getClassNames() {

@@ -346,7 +346,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         private static final Logger LOGGER = Logger.getLogger(FileOnMasterKeyStoreSource.class.getName());
 
         /**
-         * The path of the file on the master.
+         * The path of the file on the controller.
          */
         private final String keyStoreFile;
 

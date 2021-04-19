@@ -52,7 +52,7 @@ While the Credentials API plugin provides a default _internal_ credentials store
 If you are using the _internal_ credentials store to store *high value* credentials then you will need to lock down your Jenkins configuration:
 
 * Apply all of the recommendations from the  https://wiki.jenkins.io/display/JENKINS/Securing+Jenkins[Securing Jenkins] wiki page.
-* No builds on the master (ideally zero executors)
+* No builds on the controller (ideally zero executors)
 * Probably use the https://plugins.jenkins.io/authorize-project[Authorize Project plugin] to control effective permission of running builds.
 * etc.
 
@@ -66,9 +66,9 @@ While the above security recommendations are generally valid for any situation w
 * the _internal_ store is encrypted using a key that is also stored in `JENKINS_HOME`
 * the JVM running Jenkins must have access to these files
 
-It becomes critical to secure the filesystem of the Jenkins master process.
+It becomes critical to secure the filesystem of the Jenkins controller process.
 
-With an _external_ credentials store, access to the Jenkins master filesystem will not generically compromise credentials.
+With an _external_ credentials store, access to the Jenkins controller filesystem will not generically compromise credentials.
 In the event of a breach, the last-accessed tracking facilities of an enterprise-grade external store will enable identification of _at risk_ credentials in need of rotation.
 ====
 
@@ -119,7 +119,7 @@ Jenkins is a multithreaded application.
 Each execution thread has an associated authentication.
 There are three classes of authentication that a thread can be associated with:
 
-* `ACL.SYSTEM` this is the super-user authentication of the Jenkins master process itself.
+* `ACL.SYSTEM` this is the super-user authentication of the Jenkins controller process itself.
 Also known as `SYSTEM`.
 Any actions performed by Jenkins itself will start in a thread using this authentication.
 * A user authentication, this type of authentication is assigned to any web/CLI requests by a logged in user.
@@ -429,10 +429,10 @@ The two options:
 Are logically equivalent.
 The difference between these two options is in how they react as new plugins are installed.
 
-_Only selected_ is essentially a whitelist strategy.
+_Only selected_ is essentially a allowlist strategy.
 When new plugins are installed the configuration will not automatically select any new options to be enabled.
 
-_Exclude selected_ is essentially a blacklist strategy.
+_Exclude selected_ is essentially a denylist strategy.
 When new plugins are installed the configuration will not automatically select any new options to be disabled.
 ====
 
