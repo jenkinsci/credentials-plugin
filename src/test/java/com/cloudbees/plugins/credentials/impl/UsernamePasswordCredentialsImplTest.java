@@ -25,17 +25,27 @@
 package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
+import java.util.logging.Level;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.LoggerRule;
 
 public class UsernamePasswordCredentialsImplTest {
     
     @Rule public JenkinsRule r = new JenkinsRule(); // needed for Secret.fromString to work
+    @Rule public LoggerRule logging = new LoggerRule().record(CredentialsNameProvider.class, Level.FINE);
     
     @Test public void displayName() {
-        assertEquals("bob/****** (Bob’s laptop)", CredentialsNameProvider.name(new UsernamePasswordCredentialsImpl(null, "abc123", "Bob’s laptop", "bob", "s3cr3t")));
+        UsernamePasswordCredentialsImpl creds = new UsernamePasswordCredentialsImpl(null, "abc123", "Bob’s laptop", "bob", "s3cr3t");
+        assertEquals("bob/****** (Bob’s laptop)", CredentialsNameProvider.name(creds));
+        creds.setUsernameSecret(true);
+        assertEquals("Bob’s laptop", CredentialsNameProvider.name(creds));
+        creds = new UsernamePasswordCredentialsImpl(null, "abc123", null, "bob", "s3cr3t");
+        assertEquals("bob/******", CredentialsNameProvider.name(creds));
+        creds.setUsernameSecret(true);
+        assertEquals("abc123", CredentialsNameProvider.name(creds));
     }
 
 }

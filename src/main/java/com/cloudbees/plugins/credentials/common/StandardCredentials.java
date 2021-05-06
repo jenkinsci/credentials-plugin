@@ -61,6 +61,7 @@ public interface StandardCredentials extends IdCredentials {
         @Override
         public String getName(@NonNull StandardCredentials c) {
             String description = Util.fixEmptyAndTrim(c.getDescription());
+            // TODO perhaps omit id (return description) if it is just a UUID
             return c.getId() + (description != null ? " (" + description + ")" : "");
         }
     }

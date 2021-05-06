@@ -90,7 +90,11 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
         if (nameWith != null) {
             try {
                 CredentialsNameProvider nameProvider = nameWith.value().newInstance();
-                return new Result(nameProvider.getName(credentials), nameWith.priority());
+                String name = nameProvider.getName(credentials);
+                if (!name.isEmpty()) {
+                    LOGGER.fine(() -> "named `" + name + "` from " + nameProvider);
+                    return new Result(name, nameWith.priority());
+                }
             } catch (ClassCastException | InstantiationException | IllegalAccessException e) {
                 // ignore
             }

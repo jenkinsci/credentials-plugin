@@ -66,7 +66,7 @@ public interface UsernameCredentials extends Credentials {
         @NonNull
         @Override
         public String getName(@NonNull UsernameCredentials credentials) {
-            return credentials.isUsernameSecret() ? credentials.getUsername() : "";
+            return credentials.isUsernameSecret() ? "" : credentials.getUsername();
         }
     }
 }
