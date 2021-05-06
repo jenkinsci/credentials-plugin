@@ -56,7 +56,7 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
     private final Secret password;
 
     @Nullable
-    private Boolean usernameSecret;
+    private Boolean usernameSecret = false;
 
     /**
      * Constructor.
