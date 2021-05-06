@@ -56,6 +56,11 @@ public class DummyIdCredentials extends BaseStandardCredentials implements Usern
         return password;
     }
 
+    @Override
+    public boolean isUsernameSecret() {
+        return false;
+    }
+
     @Extension
     public static class DescriptorImpl extends CredentialsDescriptor {
 
