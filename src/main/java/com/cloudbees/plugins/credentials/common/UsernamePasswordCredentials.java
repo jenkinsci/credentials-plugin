@@ -48,7 +48,7 @@ public interface UsernamePasswordCredentials extends UsernameCredentials, Passwo
         @NonNull
         @Override
         public String getName(@NonNull UsernamePasswordCredentials credentials) {
-            return credentials.getUsername() + "/******";
+            return credentials.isUsernameSecret() ? "******" : credentials.getUsername() + "/******";
         }
     }
 }
