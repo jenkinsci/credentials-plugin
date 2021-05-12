@@ -34,7 +34,7 @@
   </parent>
 
   <artifactId>credentials</artifactId>
-  <version>2.4.0.1</version>
+  <version>${revision}${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>Credentials Plugin</name>
@@ -61,11 +61,11 @@
     <connection>scm:git:git://github.com/jenkinsci/credentials-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/credentials-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/credentials-plugin</url>
-    <tag>credentials-2.4.0.1</tag>
+    <tag>${scmTag}</tag>
   </scm>
 
   <properties>
-    <revision>2.4.0.1</revision>
+    <revision>2.4.0.2</revision>
     <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.222.4</jenkins.version>
     <java.level>8</java.level>
