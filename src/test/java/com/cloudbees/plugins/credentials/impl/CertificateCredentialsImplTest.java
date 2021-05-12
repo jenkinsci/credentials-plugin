@@ -209,7 +209,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
-    @Issue("SECURITY-2349")
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_uploadedFileValid() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), VALID_PASSWORD);
         assertThat(content, containsString("ok"));
@@ -217,6 +217,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_uploadedFileValid_encryptedPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), Secret.fromString(VALID_PASSWORD).getEncryptedValue());
         assertThat(content, containsString("ok"));
@@ -224,6 +225,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_uploadedFileValid_butMissingPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), "");
         assertThat(content, containsString("warning"));
@@ -231,6 +233,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_uploadedFileValid_butInvalidPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), INVALID_PASSWORD);
         assertThat(content, containsString("warning"));
@@ -238,6 +241,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_uploadedFileInvalid() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getInvalidP12_base64(), VALID_PASSWORD);
         assertThat(content, containsString("warning"));
@@ -245,6 +249,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_keyStoreBlank() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", "", VALID_PASSWORD);
         assertThat(content, containsString("error"));
@@ -252,12 +257,14 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_keyStoreDefault() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(CertificateCredentialsImpl.UploadedKeyStoreSource.DescriptorImpl.DEFAULT_VALUE, "", VALID_PASSWORD);
         assertThat(content, not(allOf(containsString("warning"), containsString("error"))));
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_keyStoreInvalidSecret() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", "", VALID_PASSWORD);
         assertThat(content, containsString("error"));
@@ -265,6 +272,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_keyStoreValid() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(getValidP12_secretBytes(), "", VALID_PASSWORD);
         assertThat(content, containsString("ok"));
@@ -272,6 +280,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_keyStoreValid_encryptedPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(getValidP12_secretBytes(), "", Secret.fromString(VALID_PASSWORD).getEncryptedValue());
         assertThat(content, containsString("ok"));
@@ -279,6 +288,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_keyStoreValid_butMissingPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(getValidP12_secretBytes(), "", "");
         assertThat(content, containsString("warning"));
@@ -286,6 +296,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_keyStoreInvalid() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(getInvalidP12_secretBytes(), "", VALID_PASSWORD);
         assertThat(content, containsString("warning"));
@@ -293,6 +304,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
+    @Issue("JENKINS-63761")
     public void fullSubmitOfUploadedKeystore() throws Exception {
         String certificateDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.class).getDisplayName();
         
