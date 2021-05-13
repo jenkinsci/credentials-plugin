@@ -65,7 +65,7 @@
   </scm>
 
   <properties>
-    <revision>2.4</revision>
+    <revision>2.5</revision>
     <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.222.4</jenkins.version>
     <java.level>8</java.level>
@@ -90,7 +90,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.222.x</artifactId>
-        <version>29</version>
+        <version>807.v6d348e44c987</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -113,7 +113,6 @@
       <artifactId>configuration-as-code</artifactId>
       <optional>true</optional>
     </dependency>
-
 
     <!-- test dependencies -->
     <dependency>
@@ -210,7 +209,7 @@
       <properties>
         <asciidoctor.maven.plugin.version>2.1.0</asciidoctor.maven.plugin.version>
         <asciidoctorj.pdf.version>1.5.4</asciidoctorj.pdf.version>
-        <asciidoctorj.version>2.5.0</asciidoctorj.version>
+        <asciidoctorj.version>2.5.1</asciidoctorj.version>
         <jruby.version>9.2.17.0</jruby.version>
       </properties>
       <build>

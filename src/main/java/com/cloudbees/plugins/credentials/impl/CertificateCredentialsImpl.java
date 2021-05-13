@@ -35,7 +35,6 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
 import hudson.util.FormValidation;
-import hudson.util.HttpResponses;
 import hudson.util.IOUtils;
 import hudson.util.Secret;
 import java.io.ByteArrayInputStream;
@@ -45,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -68,6 +68,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 public class CertificateCredentialsImpl extends BaseStandardCredentials implements StandardCertificateCredentials {
 
@@ -445,10 +446,29 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          * Our constructor.
          *
          * @param uploadedKeystore the keystore content.
+         * @deprecated
+         */
+        @SuppressWarnings("unused") // by stapler
+        @Deprecated
+        public UploadedKeyStoreSource(SecretBytes uploadedKeystore) {
+            this.uploadedKeystoreBytes = uploadedKeystore;
+        }
+
+        /**
+         * Constructor able to receive file directly
+         * 
+         * @param uploadedCertFile the keystore content from the file upload
+         * @param uploadedKeystore the keystore encrypted data, in case the file is not uploaded (e.g. update of the password / description)
          */
         @SuppressWarnings("unused") // by stapler
         @DataBoundConstructor
-        public UploadedKeyStoreSource(SecretBytes uploadedKeystore) {
+        public UploadedKeyStoreSource(FileItem uploadedCertFile, SecretBytes uploadedKeystore) {
+            if (uploadedCertFile != null) {
+                byte[] fileBytes = uploadedCertFile.get();
+                if (fileBytes.length != 0) {
+                    uploadedKeystore = SecretBytes.fromBytes(fileBytes);
+                }
+            }
             this.uploadedKeystoreBytes = uploadedKeystore;
         }
 
@@ -513,6 +533,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         @Extension
         public static class DescriptorImpl extends KeyStoreSourceDescriptor {
+            public static final String DEFAULT_VALUE = UploadedKeyStoreSource.class.getName() + ".default-value";
 
             /**
              * Decode the {@link Base64} keystore wrapped in a {@link Secret}.
@@ -565,12 +586,24 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              */
             @SuppressWarnings("unused") // stapler form validation
             @Restricted(NoExternalUse.class)
+            @RequirePOST
             public FormValidation doCheckUploadedKeystore(@QueryParameter String value,
+                                                          @QueryParameter String uploadedCertFile,
                                                           @QueryParameter String password) {
+                // Priority for the file, to cover the (re-)upload cases
+                if (StringUtils.isNotEmpty(uploadedCertFile)) {
+                    byte[] uploadedCertFileBytes = Base64.getDecoder().decode(uploadedCertFile.getBytes(StandardCharsets.UTF_8));
+                    return validateCertificateKeystore("PKCS12", uploadedCertFileBytes, password);
+                }
+
                 if (StringUtils.isBlank(value)) {
                     return FormValidation.error(Messages.CertificateCredentialsImpl_NoCertificateUploaded());
                 }
+                if (DEFAULT_VALUE.equals(value)) {
+                    return FormValidation.ok();
+                }
 
+                // If no file, we rely on the previous value, stored as SecretBytes in an hidden input
                 SecretBytes secretBytes = SecretBytes.fromString(value);
                 byte[] keystoreBytes = secretBytes.getPlainData();
                 if (keystoreBytes == null || keystoreBytes.length == 0) {
@@ -596,7 +629,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
         /**
          * Stapler binding object to handle a pop-up window for file upload.
+         * 
+         * @deprecated since 2.4. This is no longer required/supported due to the inlining of the file input.
+         * Deprecated for removal soon.
          */
+        @Deprecated
         public static class Upload {
 
             /**
@@ -656,18 +693,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              */
             @NonNull
             public HttpResponse doUpload(@NonNull StaplerRequest req) throws ServletException, IOException {
-                FileItem file = req.getFileItem("certificate.file");
-                if (file == null) {
-                    throw new ServletException("no file upload");
-                }
-                // Here is the trick, if we have a successful upload we replace ourselves in the stapler view
-                // with an instance that has the uploaded content and request stapler to render the "complete"
-                // view for that instance. The "complete" view can then do the injection and close itself so that
-                // the user experience is the pop-up then click upload and finally we inject back in the content to
-                // the form.
-                SecretBytes uploadedKeystore = SecretBytes.fromBytes(file.get());
-                return HttpResponses.forwardToView(
-                        new Upload(getDivId(), uploadedKeystore), "complete");
+                return FormValidation.ok("This endpoint is no longer required/supported due to the inlining of the file input. " +
+                        "If you came to this endpoint due to another plugin, you will have to update that plugin to be compatible with Credentials Plugin 2.4+. " +
+                        "It will be deleted soon.");
             }
         }
     }
