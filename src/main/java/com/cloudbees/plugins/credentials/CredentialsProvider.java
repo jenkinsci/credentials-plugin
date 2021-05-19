@@ -971,7 +971,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @return the trigger of the supplied run or {@code null} if this could not be determined.
      */
     @CheckForNull
-    private static Map.Entry<User, Run<?, ?>> triggeredBy(Run<?, ?> run) {
+    public static Map.Entry<User, Run<?, ?>> triggeredBy(Run<?, ?> run) {
         Cause.UserIdCause cause = run.getCause(Cause.UserIdCause.class);
         if (cause != null) {
             User u = User.get(cause.getUserId(), false, Collections.emptyMap());
