@@ -970,6 +970,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param run the {@link Run} to find the trigger of.
      * @return the trigger of the supplied run or {@code null} if this could not be determined.
      */
+    @Restricted(NoExternalUse.class)
     @CheckForNull
     public static Map.Entry<User, Run<?, ?>> triggeredBy(Run<?, ?> run) {
         Cause.UserIdCause cause = run.getCause(Cause.UserIdCause.class);
@@ -1784,4 +1785,3 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         }
     }
 }
-
