@@ -27,10 +27,12 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.Util;
 import hudson.util.Secret;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 /**
  * Concrete implementation of {@link StandardUsernamePasswordCredentials}.
@@ -53,6 +55,9 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
     @NonNull
     private final Secret password;
 
+    @Nullable
+    private Boolean usernameSecret = false;
+
     /**
      * Constructor.
      *
@@ -72,6 +77,13 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
         this.password = Secret.fromString(password);
     }
 
+    private Object readResolve() {
+        if (usernameSecret == null) {
+            usernameSecret = true;
+        }
+        return this;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -86,6 +98,16 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
     @NonNull
     public String getUsername() {
         return username;
+    }
+
+    @Override
+    public boolean isUsernameSecret() {
+        return usernameSecret;
+    }
+
+    @DataBoundSetter
+    public void setUsernameSecret(boolean usernameSecret) {
+        this.usernameSecret = usernameSecret;
     }
 
     /**

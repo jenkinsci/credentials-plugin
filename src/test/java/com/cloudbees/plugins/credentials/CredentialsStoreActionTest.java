@@ -170,6 +170,7 @@ public class CredentialsStoreActionTest {
                         + "  <id>smokey-id</id>\n"
                         + "  <description>created from xml</description>\n"
                         + "  <username>example-com-deployer</username>\n"
+                        + "  <usernameSecret>false</usernameSecret>\n"
                         + "  <password>super-secret</password>\n"
                         + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
         assertThat(con.getResponseCode(), is(200));
@@ -193,6 +194,7 @@ public class CredentialsStoreActionTest {
                         + "  <description>created from xml</description>\n"
                         + "  <username>example-com-deployer</username>\n"
                         + "  <password><secret-redacted/></password>\n"
+                        + "  <usernameSecret>false</usernameSecret>\n"
                         + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>").ignoreWhitespace().ignoreComments());
 
         // update credentials
@@ -202,6 +204,7 @@ public class CredentialsStoreActionTest {
                         + "  <id>smokey-id</id>\n"
                         + "  <description>updated by xml</description>\n"
                         + "  <username>example-org-deployer</username>\n"
+                        + "  <usernameSecret>false</usernameSecret>\n"
                         + "  <password>super-duper-secret</password>\n"
                         + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
         assertThat(con.getResponseCode(), is(200));

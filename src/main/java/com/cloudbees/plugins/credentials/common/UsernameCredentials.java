@@ -45,6 +45,15 @@ public interface UsernameCredentials extends Credentials {
     String getUsername();
 
     /**
+     * Whether {@link #getUsername} should be considered a secret for purposes of behaviors like masking in build logs.
+     * @return true by default
+     * @since 2.4
+     */
+    default boolean isUsernameSecret() {
+        return true;
+    }
+
+    /**
      * Our name provider.
      *
      * @since 1.7
@@ -57,7 +66,7 @@ public interface UsernameCredentials extends Credentials {
         @NonNull
         @Override
         public String getName(@NonNull UsernameCredentials credentials) {
-            return credentials.getUsername();
+            return credentials.isUsernameSecret() ? "" : credentials.getUsername();
         }
     }
 }

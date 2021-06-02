@@ -49,6 +49,9 @@ public interface StandardUsernamePasswordCredentials extends StandardUsernameCre
         @NonNull
         @Override
         public String getName(@NonNull StandardUsernameCredentials c) {
+            if (c.isUsernameSecret()) {
+                return c.getDescription();
+            }
             String description = Util.fixEmptyAndTrim(c.getDescription());
             return c.getUsername() + "/******" + (description != null ? " (" + description + ")" : "");
         }
