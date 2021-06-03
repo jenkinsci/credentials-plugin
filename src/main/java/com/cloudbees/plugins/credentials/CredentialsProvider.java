@@ -1365,6 +1365,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 2.1.1
      */
     @CheckForNull
+    @SuppressFBWarnings(value = "WEAK_MESSAGE_DIGEST_MD5", justification = "Used for tracking, not security.")
     public static Fingerprint getFingerprintOf(@NonNull Credentials c) throws IOException {
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
@@ -1389,6 +1390,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 2.1.1
      */
     @NonNull
+    @SuppressFBWarnings(value = "WEAK_MESSAGE_DIGEST_MD5", justification = "Used for tracking, not security.")
     public static Fingerprint getOrCreateFingerprintOf(@NonNull Credentials c) throws IOException {
         String pseudoFilename = String.format("Credential id=%s name=%s",
                 c instanceof IdCredentials ? ((IdCredentials) c).getId() : "unknown", CredentialsNameProvider.name(c));

@@ -32,6 +32,7 @@ You under the Apache License, Version 2.0.
  */
 package com.cloudbees.plugins.credentials;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.util.Secret;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -147,6 +148,7 @@ public class CredentialsConfidentialKey extends ConfidentialKey {
 
     // copied from https://github.com/codehaus-plexus/plexus-cipher/blob/6ab0e38df80beed9ab3227ffab938b21dcdf5505/src
     // /main/java/org/sonatype/plexus/components/cipher/PBECipher.java
+    @SuppressFBWarnings(value = "STATIC_IV", justification = "The IV is securely generated for each encrypted message. For decrypted messages it is pulled off the salt.")
     private Cipher createCipher(final byte[] pwdAsBytes, byte[] salt, final int mode)
             throws GeneralSecurityException {
         MessageDigest _digester = MessageDigest.getInstance(DIGEST_ALG);
