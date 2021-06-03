@@ -25,11 +25,12 @@
 package com.cloudbees.plugins.credentials.builds;
 
 import com.cloudbees.plugins.credentials.CredentialsParameterValue;
-import hudson.model.Cause;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import hudson.model.InvisibleAction;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.Run;
+import hudson.model.User;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
@@ -60,8 +61,8 @@ public final class CredentialsParameterBinder extends InvisibleAction {
             resolver = new CredentialsParameterBinder();
             final ParametersAction action = run.getAction(ParametersAction.class);
             if (action != null) {
-                final Cause.UserIdCause cause = run.getCause(Cause.UserIdCause.class);
-                final String userId = cause == null ? null : cause.getUserId();
+                Map.Entry<User, Run<?, ?>> triggeredBy = CredentialsProvider.triggeredBy(run);
+                final String userId = triggeredBy == null ? null : triggeredBy.getKey().getId();
                 for (final ParameterValue parameterValue : action) {
                     if (parameterValue instanceof CredentialsParameterValue) {
                         resolver.bindCredentialsParameter(userId, (CredentialsParameterValue) parameterValue);
