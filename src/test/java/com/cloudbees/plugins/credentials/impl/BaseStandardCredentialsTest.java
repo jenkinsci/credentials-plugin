@@ -29,6 +29,7 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.ACL;
@@ -41,11 +42,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockFolder;
+import org.xml.sax.SAXException;
 
 import static hudson.util.FormValidation.Kind.ERROR;
 import static hudson.util.FormValidation.Kind.OK;
 import static hudson.util.FormValidation.Kind.WARNING;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class BaseStandardCredentialsTest {
@@ -137,6 +142,17 @@ public class BaseStandardCredentialsTest {
         });
 
         // TODO could test the case that alice has Item.READ but not CredentialsProvider.VIEW on a folder, and mocks a web request passing that folder as context
+    }
+
+    @Test
+    public void noIDValidationMessageOnCredentialsUpdate() throws IOException, SAXException {
+        // create credentials with ID test
+        CredentialsStore store = lookupStore(r.jenkins);
+        addCreds(store, CredentialsScope.GLOBAL, "test");
+        // check there is no validation message about a duplicated ID when updating
+        JenkinsRule.WebClient webClient = r.createWebClient();
+        HtmlPage htmlPage = webClient.goTo("credentials/store/system/domain/_/credential/test/update");
+        assertThat(htmlPage.asText(), not(containsString("This ID is already in use")));
     }
     
     private static CredentialsStore lookupStore(ModelObject object) {
