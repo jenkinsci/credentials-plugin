@@ -62,6 +62,7 @@ import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -198,6 +199,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
      * Our descriptor.
      */
     @Extension(ordinal = -1)
+    @Symbol("certificate")
     public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
 
         /**
