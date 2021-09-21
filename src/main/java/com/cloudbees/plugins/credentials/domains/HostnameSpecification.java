@@ -70,7 +70,7 @@ public class HostnameSpecification extends DomainSpecification {
      */
     @DataBoundConstructor
     @SuppressWarnings("unused")// by stapler
-    public HostnameSpecification(String includes, String excludes) {
+    public HostnameSpecification(@CheckForNull String includes, @CheckForNull String excludes) {
         this.includes = includes;
         this.excludes = excludes;
     }
@@ -156,6 +156,7 @@ public class HostnameSpecification extends DomainSpecification {
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.HostnameSpecification_DisplayName();

@@ -141,7 +141,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
      * {@inheritDoc}
      */
     @Override
-    public boolean filter(Object context, Descriptor descriptor) {
+    public boolean filter(Object context, @NonNull Descriptor descriptor) {
         Map<CredentialsProviderTypeRestrictionDescriptor, List<CredentialsProviderTypeRestriction>> restrictions =
                 restrictions();
         if (restrictions != null && descriptor instanceof CredentialsDescriptor) {
@@ -446,6 +446,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public GlobalConfigurationCategory getCategory() {
             return GlobalConfigurationCategory.get(GlobalCredentialsConfiguration.Category.class);

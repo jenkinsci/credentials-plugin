@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyIdCredentials;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -197,6 +198,7 @@ public class SystemCredentialsProviderTest {
                 return true;
             }
 
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Probe credentials exist";

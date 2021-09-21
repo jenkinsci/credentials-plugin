@@ -203,6 +203,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.CertificateCredentialsImpl_DisplayName();
@@ -450,7 +451,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         @SuppressWarnings("unused") // by stapler
         @Deprecated
-        public UploadedKeyStoreSource(SecretBytes uploadedKeystore) {
+        public UploadedKeyStoreSource(@CheckForNull SecretBytes uploadedKeystore) {
             this.uploadedKeystoreBytes = uploadedKeystore;
         }
 
@@ -462,7 +463,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         @SuppressWarnings("unused") // by stapler
         @DataBoundConstructor
-        public UploadedKeyStoreSource(FileItem uploadedCertFile, SecretBytes uploadedKeystore) {
+        public UploadedKeyStoreSource(FileItem uploadedCertFile, @CheckForNull SecretBytes uploadedKeystore) {
             if (uploadedCertFile != null) {
                 byte[] fileBytes = uploadedCertFile.get();
                 if (fileBytes.length != 0) {
@@ -572,6 +573,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.CertificateCredentialsImpl_UploadedKeyStoreSourceDisplayName();
@@ -678,6 +680,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              *
              * @return the content.
              */
+            @CheckForNull
             @SuppressWarnings("unused") // used by Jelly EL
             public SecretBytes getUploadedKeystore() {
                 return uploadedKeystore;

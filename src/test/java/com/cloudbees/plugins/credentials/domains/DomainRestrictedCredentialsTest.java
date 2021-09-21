@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.BaseCredentials;
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
 import org.junit.Rule;
@@ -52,7 +53,7 @@ public class DomainRestrictedCredentialsTest {
             this.answer = answer;
         }
 
-        public boolean matches(List<DomainRequirement> requirements) {
+        public boolean matches(@NonNull List<DomainRequirement> requirements) {
             return answer;
         }
 

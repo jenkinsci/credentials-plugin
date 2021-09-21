@@ -179,12 +179,13 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
     /**
      * {@inheritDoc}
      */
+    @NonNull
     public ACL getACL() {
         // we really want people to implement this one, but in case of legacy implementations we need to provide
         // an effective ACL implementation.
         return new ACL() {
             @Override
-            public boolean hasPermission(Authentication a, Permission permission) {
+            public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
                 return CredentialsStore.this.hasPermission(a, permission);
             }
         };

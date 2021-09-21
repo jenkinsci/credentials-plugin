@@ -1052,6 +1052,7 @@ public abstract class CredentialsStoreAction
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Domain";
@@ -1562,6 +1563,7 @@ public abstract class CredentialsStoreAction
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Credential";

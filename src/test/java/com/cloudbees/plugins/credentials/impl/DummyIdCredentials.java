@@ -47,6 +47,7 @@ public class DummyIdCredentials extends BaseStandardCredentials implements Usern
         this.password = Secret.fromString(password);
     }
 
+    @NonNull
     public String getUsername() {
         return username;
     }
@@ -68,6 +69,7 @@ public class DummyIdCredentials extends BaseStandardCredentials implements Usern
             super();
         }
 
+        @NonNull
         @Override
         public String getDisplayName() {
             return "Dummy Id Credentials";

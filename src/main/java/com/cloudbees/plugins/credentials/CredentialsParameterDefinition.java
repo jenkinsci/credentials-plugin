@@ -3,6 +3,7 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Item;
 import hudson.model.ParameterDefinition;
@@ -116,6 +117,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.CredentialsParameterDefinition_DisplayName();

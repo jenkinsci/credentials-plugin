@@ -369,6 +369,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return "";
@@ -383,6 +384,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.SystemCredentialsProvider_ProviderImpl_DisplayName();
@@ -510,6 +512,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
             return getACL().hasPermission(a, permission);
         }
 
+        @NonNull
         public ACL getACL() {
             return Jenkins.get().getACL();
         }

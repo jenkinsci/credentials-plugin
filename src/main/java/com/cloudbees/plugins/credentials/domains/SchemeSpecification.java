@@ -131,6 +131,7 @@ public class SchemeSpecification extends DomainSpecification {
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.SchemeSpecification_DisplayName();

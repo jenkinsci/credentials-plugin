@@ -151,6 +151,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.CredentialsProviderFilter_None_DisplayName();
@@ -252,6 +253,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.CredentialsProviderFilter_Includes_DisplayName();
@@ -364,6 +366,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.CredentialsProviderFilter_Excludes_DisplayName();

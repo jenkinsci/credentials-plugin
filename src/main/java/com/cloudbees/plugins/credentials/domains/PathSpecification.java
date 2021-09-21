@@ -73,7 +73,7 @@ public class PathSpecification extends DomainSpecification {
      */
     @DataBoundConstructor
     @SuppressWarnings("unused")// by stapler
-    public PathSpecification(String includes, String excludes, boolean caseSensitive) {
+    public PathSpecification(@CheckForNull String includes, @CheckForNull String excludes, boolean caseSensitive) {
         this.includes = includes;
         this.excludes = excludes;
         this.caseSensitive = caseSensitive;
@@ -174,6 +174,7 @@ public class PathSpecification extends DomainSpecification {
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.PathSpecification_DisplayName();

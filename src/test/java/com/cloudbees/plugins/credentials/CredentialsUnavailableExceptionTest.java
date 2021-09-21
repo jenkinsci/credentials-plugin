@@ -277,6 +277,7 @@ public class CredentialsUnavailableExceptionTest {
                 super(RepositoryBrowser.class);
             }
 
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Password SCM";
@@ -310,6 +311,7 @@ public class CredentialsUnavailableExceptionTest {
         @TestExtension
         public static class DescriptorImpl extends Descriptor<Builder> {
 
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Password buildstep";
@@ -348,6 +350,7 @@ public class CredentialsUnavailableExceptionTest {
         @TestExtension
         public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
 
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Username and unavailable password";

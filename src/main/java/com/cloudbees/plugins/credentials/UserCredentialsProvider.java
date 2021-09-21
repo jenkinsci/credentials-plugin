@@ -506,6 +506,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.UserCredentialsProvider_DisplayName();
@@ -678,6 +679,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public ACL getACL() {
             return new ACL() {

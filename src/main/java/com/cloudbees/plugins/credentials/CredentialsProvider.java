@@ -1064,6 +1064,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     /**
      * {@inheritDoc}
      */
+    @NonNull
     @Override
     public String getDisplayName() {
         return StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(getClass().getSimpleName()), ' ');
