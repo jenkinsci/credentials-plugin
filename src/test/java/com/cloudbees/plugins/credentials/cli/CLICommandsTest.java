@@ -340,7 +340,7 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void importCredentialsAsXML() throws IOException {
+    public void importCredentialsAsXML() {
         InputStream input = this.getClass().getResourceAsStream("credentials-input.xml");
         CLICommandInvoker invoker = new CLICommandInvoker(r, new ImportCredentialsAsXmlCommand());
 

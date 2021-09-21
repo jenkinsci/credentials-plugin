@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.is;
 public class CredentialsMatchersTest {
 
     @Test
-    public void describe() throws Exception {
+    public void describe() {
         assertThat(CredentialsMatchers.describe(CredentialsMatchers.always()), is("true"));
         assertThat(CredentialsMatchers.describe(CredentialsMatchers.never()), is("false"));
         assertThat(CredentialsMatchers.describe(CredentialsMatchers.withId("target=\"foo\"")), is("(id == \"target=\\\"foo\\\"\")"));
@@ -28,7 +28,7 @@ public class CredentialsMatchersTest {
     }
 
     @Test
-    public void parse() throws Exception {
+    public void parse() {
         CredentialsMatcher matcher = CredentialsMatchers.allOf(
                 CredentialsMatchers.anyOf(
                         CredentialsMatchers.instanceOf(UsernameCredentials.class),
@@ -46,12 +46,12 @@ public class CredentialsMatchersTest {
     }
 
     @Test
-    public void parseTrue() throws Exception {
+    public void parseTrue() {
         assertThat(CredentialsMatchers.parse(CredentialsMatchers.describe(CredentialsMatchers.always())), is(CredentialsMatchers.always()));
     }
 
     @Test
-    public void parsePropertyTest() throws Exception {
+    public void parsePropertyTest() {
         CredentialsMatcher parsedMatcher =
                 CredentialsMatchers.parse(CredentialsMatchers.describe(CredentialsMatchers.withUsername("b\tob")));
         assertThat(parsedMatcher.matches(new MyBaseStandardCredentials("b\tob")), is(true));
@@ -59,27 +59,27 @@ public class CredentialsMatchersTest {
     }
 
     @Test(expected = CQLSyntaxException.class)
-    public void parseInvalid() throws Exception {
+    public void parseInvalid() {
         CredentialsMatchers.parse("\"bob\" == username");
     }
 
     @Test(expected = CQLSyntaxException.class)
-    public void parseInvalid2() throws Exception {
+    public void parseInvalid2() {
         CredentialsMatchers.parse("id == \"id-1\" || \"id-2\"");
     }
 
     @Test(expected = CQLSyntaxException.class)
-    public void parseInvalidMultiline() throws Exception {
+    public void parseInvalidMultiline() {
         CredentialsMatchers.parse("id == \"id-1\"\n|| \"id-2\"\n&& instanceof Boolean");
     }
 
     @Test
-    public void parseEmpty() throws Exception {
+    public void parseEmpty() {
         assertThat(CredentialsMatchers.parse(""), is(CredentialsMatchers.always()));
     }
 
     @Test
-    public void parseNegativePropertyTest() throws Exception {
+    public void parseNegativePropertyTest() {
         CredentialsMatcher parsedMatcher =
                 CredentialsMatchers.parse(CredentialsMatchers.describe(CredentialsMatchers.not(CredentialsMatchers.withUsername("b\tob"))));
         assertThat(parsedMatcher.matches(new MyBaseStandardCredentials("b\tob")), is(false));
@@ -87,7 +87,7 @@ public class CredentialsMatchersTest {
     }
 
     @Test
-    public void beanMatcher() throws Exception {
+    public void beanMatcher() {
         CredentialsMatcher instance = CredentialsMatchers.withProperty("username", "bob");
         assertThat(CredentialsMatchers.describe(instance), is("(username == \"bob\")"));
         assertThat(instance.matches(new MyBaseStandardCredentials("bob")), is(true));

@@ -37,7 +37,7 @@ import hudson.model.Result;
 import hudson.model.User;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
-import java.io.IOException;
+
 import java.util.HashMap;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.Authentication;
@@ -86,7 +86,7 @@ public class SystemCredentialsProviderTest {
     }
 
     @Test
-    public void smokes() throws Exception {
+    public void smokes() {
         assertFalse(CredentialsProvider.allCredentialsDescriptors().isEmpty());
         assertNotNull(SystemCredentialsProvider.getInstance().getDescriptor());
         assertNotNull(SystemCredentialsProvider.getInstance().getCredentials());
@@ -177,8 +177,7 @@ public class SystemCredentialsProviderTest {
         }
 
         @Override
-        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
-                throws InterruptedException, IOException {
+        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
             IdCredentials credentials = CredentialsProvider.findCredentialById(id, IdCredentials.class, build);
             if (credentials == null) {
                 listener.getLogger().printf("Could not find any credentials with id %s%n", id);

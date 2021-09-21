@@ -397,7 +397,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     // In the general case we would implement ModelObjectWithChildren as the child actions could be viewed as children
     // but in this case we expose them in the sidebar, so they are more correctly part of the context menu.
     @Override
-    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) throws Exception {
+    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
         ContextMenu menu = new ContextMenu();
         for (CredentialsStoreAction action : getStoreActions()) {
             ContextMenuIconUtils.addMenuItem(

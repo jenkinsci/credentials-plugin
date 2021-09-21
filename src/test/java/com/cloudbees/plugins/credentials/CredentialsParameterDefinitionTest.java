@@ -47,7 +47,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -78,8 +77,7 @@ public class CredentialsParameterDefinitionTest {
 
     public static class ParamCheckBuilder extends Builder {
         @Override
-        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
-                throws InterruptedException, IOException {
+        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
             ParametersAction pa = build.getAction(ParametersAction.class);
             ParameterValue pv = pa.getParameter("name");
             assertTrue(pv instanceof CredentialsParameterValue);

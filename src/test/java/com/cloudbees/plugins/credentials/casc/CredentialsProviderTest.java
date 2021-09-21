@@ -6,7 +6,6 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.HostnameRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
-import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.ExtensionList;
@@ -16,7 +15,6 @@ import io.jenkins.plugins.casc.Attribute;
 import io.jenkins.plugins.casc.BaseConfigurator;
 import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.ConfigurationContext;
-import io.jenkins.plugins.casc.ConfiguratorException;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.model.CNode;
@@ -114,7 +112,7 @@ public class CredentialsProviderTest {
         }
 
         @Override
-        protected TestCredentialsProvider instance(Mapping mapping, ConfigurationContext configurationContext) throws ConfiguratorException {
+        protected TestCredentialsProvider instance(Mapping mapping, ConfigurationContext configurationContext) {
             return ExtensionList.lookupSingleton(TestCredentialsProvider.class);
         }
 

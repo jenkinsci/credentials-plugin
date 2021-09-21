@@ -38,7 +38,7 @@ public class CredentialsStoreActionTest {
     private CredentialsStore systemStore;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         system = ExtensionList.lookup(CredentialsProvider.class).get(SystemCredentialsProvider.ProviderImpl.class);
         systemStore = system.getStore(j.getInstance());
     }

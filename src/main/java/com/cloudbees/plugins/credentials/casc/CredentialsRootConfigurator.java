@@ -38,7 +38,6 @@ import io.jenkins.plugins.casc.RootElementConfigurator;
 import io.jenkins.plugins.casc.impl.attributes.DescribableAttribute;
 import io.jenkins.plugins.casc.model.CNode;
 import io.jenkins.plugins.casc.model.Mapping;
-import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 

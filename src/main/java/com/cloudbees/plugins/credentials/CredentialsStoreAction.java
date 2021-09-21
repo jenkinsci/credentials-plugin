@@ -336,7 +336,7 @@ public abstract class CredentialsStoreAction
      * {@inheritDoc}
      */
     @Override
-    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) throws Exception {
+    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
         return getContextMenu("");
     }
 
@@ -345,7 +345,7 @@ public abstract class CredentialsStoreAction
      */
     @Override
     public ContextMenu doChildrenContextMenu(StaplerRequest request,
-                                             StaplerResponse response) throws Exception {
+                                             StaplerResponse response) {
         return getChildrenContextMenu("");
     }
 
@@ -934,8 +934,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response)
-                throws Exception {
+        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
             return getContextMenu("");
         }
 
@@ -944,7 +943,7 @@ public abstract class CredentialsStoreAction
          */
         @Override
         public ContextMenu doChildrenContextMenu(StaplerRequest request,
-                                                 StaplerResponse response) throws Exception {
+                                                 StaplerResponse response) {
             return getChildrenContextMenu("");
         }
 
@@ -1449,8 +1448,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response)
-                throws Exception {
+        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
             return getContextMenu("");
         }
 

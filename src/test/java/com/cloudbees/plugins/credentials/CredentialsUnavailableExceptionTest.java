@@ -25,7 +25,6 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -69,7 +68,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
-import org.xml.sax.SAXException;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -207,8 +205,7 @@ public class CredentialsUnavailableExceptionTest {
         @Override
         public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
                              @Nonnull TaskListener listener, @javax.annotation.CheckForNull File changelogFile,
-                             @javax.annotation.CheckForNull SCMRevisionState baseline)
-                throws IOException, InterruptedException {
+                             @javax.annotation.CheckForNull SCMRevisionState baseline) {
             StandardUsernamePasswordCredentials credentials =
                     CredentialsProvider.findCredentialById(this.id, StandardUsernamePasswordCredentials.class, build);
             if (credentials == null) {
@@ -223,8 +220,7 @@ public class CredentialsUnavailableExceptionTest {
 
         @Override
         public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?, ?> build, @Nullable FilePath workspace,
-                                                       @Nullable Launcher launcher, @Nonnull TaskListener listener)
-                throws IOException, InterruptedException {
+                                                       @Nullable Launcher launcher, @Nonnull TaskListener listener) {
             return new SCMRevisionState() {
                 @Override
                 public String getIconFileName() {
@@ -247,7 +243,7 @@ public class CredentialsUnavailableExceptionTest {
         public PollingResult compareRemoteRevisionWith(@Nonnull Job<?, ?> project, @Nullable Launcher launcher,
                                                        @Nullable FilePath workspace, @Nonnull TaskListener listener,
                                                        @Nonnull SCMRevisionState baseline)
-                throws IOException, InterruptedException {
+                throws IOException {
             StandardUsernamePasswordCredentials credentials = CredentialsMatchers.firstOrNull(
                     CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, project,
                             CredentialsProvider.getDefaultAuthenticationOf(project),
@@ -268,8 +264,7 @@ public class CredentialsUnavailableExceptionTest {
             return new ChangeLogParser() {
                 @Override
                 public ChangeLogSet<? extends ChangeLogSet.Entry> parse(Run build, RepositoryBrowser<?> browser,
-                                                                        File changelogFile)
-                        throws IOException, SAXException {
+                                                                        File changelogFile) {
                     return ChangeLogSet.createEmpty(build);
                 }
             };
@@ -298,8 +293,7 @@ public class CredentialsUnavailableExceptionTest {
         }
 
         @Override
-        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
-                throws InterruptedException, IOException {
+        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
             StandardUsernamePasswordCredentials credentials =
                     CredentialsProvider.findCredentialById(this.id, StandardUsernamePasswordCredentials.class, build);
             if (credentials == null) {

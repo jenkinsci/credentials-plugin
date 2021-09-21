@@ -45,7 +45,6 @@ import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
 import java.io.IOException;
-import java.io.ObjectStreamException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -218,7 +217,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * @since 1.5
          */
         @SuppressWarnings("deprecation")
-        private Object readResolve() throws ObjectStreamException {
+        private Object readResolve() {
             if (domainCredentialsMap == null) {
                 return new UserCredentialsProperty(credentials);
             }
@@ -469,7 +468,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * {@inheritDoc}
          */
         @Override
-        public UserProperty reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
+        public UserProperty reconfigure(StaplerRequest req, JSONObject form) {
             return this;
         }
 

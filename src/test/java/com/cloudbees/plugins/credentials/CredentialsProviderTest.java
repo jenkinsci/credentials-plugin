@@ -25,7 +25,6 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyIdCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyLegacyCredentials;
@@ -34,7 +33,6 @@ import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Node;
-import hudson.slaves.NodeProperty;
 import hudson.model.User;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.JNLPLauncher;
@@ -228,7 +226,7 @@ public class CredentialsProviderTest {
     }
 
     @Test
-    public void testHaveDummyCredentialsType() throws Exception {
+    public void testHaveDummyCredentialsType() {
         assertFalse(CredentialsProvider.allCredentialsDescriptors().isEmpty());
         DummyCredentials.DescriptorImpl descriptor = null;
         for (Descriptor<Credentials> d : CredentialsProvider.allCredentialsDescriptors()) {

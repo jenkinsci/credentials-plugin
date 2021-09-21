@@ -60,7 +60,7 @@ public class DomainRestrictedCredentialsTest {
     }
 
     @Test
-    public void testGetRestrictedCredentials() throws Exception {
+    public void testGetRestrictedCredentials() {
         Credentials trueCredentials = new TestRestrictedCredentials(true);
         Credentials falseCredentials = new TestRestrictedCredentials(false);
 

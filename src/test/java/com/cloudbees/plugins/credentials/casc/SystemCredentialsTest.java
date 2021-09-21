@@ -57,7 +57,7 @@ public class SystemCredentialsTest {
     public static JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
 
     @Test
-    public void import_system_credentials() throws Exception {
+    public void import_system_credentials() {
         List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentials(
             UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM,
             Collections.singletonList(new HostnameRequirement("api.test.com"))

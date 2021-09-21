@@ -61,7 +61,7 @@ public class FingerprintTest {
     private CredentialsStore store = null;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(
                 Collections.singletonMap(Domain.global(), Collections.emptyList()));
         for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.get())) {

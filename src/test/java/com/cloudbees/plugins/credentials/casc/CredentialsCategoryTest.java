@@ -1,7 +1,6 @@
 package com.cloudbees.plugins.credentials.casc;
 
 import com.cloudbees.plugins.credentials.GlobalCredentialsConfiguration;
-import hudson.Extension;
 import hudson.ExtensionList;
 import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
@@ -14,7 +13,6 @@ import org.junit.Test;
 import org.jvnet.hudson.test.TestExtension;
 
 import javax.annotation.Nonnull;
-
 import java.io.ByteArrayOutputStream;
 
 import static org.hamcrest.CoreMatchers.containsString;

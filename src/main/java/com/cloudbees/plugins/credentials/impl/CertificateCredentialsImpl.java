@@ -57,7 +57,7 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import javax.servlet.ServletException;
+
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.fileupload.FileItem;
@@ -362,7 +362,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @Override
         public byte[] getKeyStoreBytes() {
             try {
-                InputStream inputStream = new FileInputStream(new File(keyStoreFile));
+                InputStream inputStream = new FileInputStream(keyStoreFile);
                 try {
                     return IOUtils.toByteArray(inputStream);
                 } finally {
@@ -688,11 +688,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              *
              * @param req the request.
              * @return the response.
-             * @throws ServletException if something goes wrong.
-             * @throws IOException      if something goes wrong.
              */
             @NonNull
-            public HttpResponse doUpload(@NonNull StaplerRequest req) throws ServletException, IOException {
+            public HttpResponse doUpload(@NonNull StaplerRequest req) {
                 return FormValidation.ok("This endpoint is no longer required/supported due to the inlining of the file input. " +
                         "If you came to this endpoint due to another plugin, you will have to update that plugin to be compatible with Credentials Plugin 2.4+. " +
                         "It will be deleted soon.");
