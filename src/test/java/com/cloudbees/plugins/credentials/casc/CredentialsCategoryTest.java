@@ -1,6 +1,7 @@
 package com.cloudbees.plugins.credentials.casc;
 
 import com.cloudbees.plugins.credentials.GlobalCredentialsConfiguration;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionList;
 import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
@@ -12,7 +13,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.TestExtension;
 
-import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -41,13 +41,13 @@ public class CredentialsCategoryTest {
 
         private String config;
 
-        @Nonnull
+        @NonNull
         @Override
         public GlobalConfigurationCategory getCategory() {
             return GlobalConfigurationCategory.get(GlobalCredentialsConfiguration.Category.class);
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public String getDisplayName() {
             return "Test Global Configuration";

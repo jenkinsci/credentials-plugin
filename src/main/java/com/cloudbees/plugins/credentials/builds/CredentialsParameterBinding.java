@@ -25,11 +25,10 @@
 package com.cloudbees.plugins.credentials.builds;
 
 import com.cloudbees.plugins.credentials.CredentialsParameterValue;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
-
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 
 /**
  * Associates a user ID to a {@link CredentialsParameterValue}. This is effectively a flattened tuple of that.
@@ -39,7 +38,7 @@ import javax.annotation.Nonnull;
 @Restricted(NoExternalUse.class)
 public class CredentialsParameterBinding {
 
-    static CredentialsParameterBinding fromParameter(@CheckForNull final String userId, @Nonnull final CredentialsParameterValue parameterValue) {
+    static CredentialsParameterBinding fromParameter(@CheckForNull final String userId, @NonNull final CredentialsParameterValue parameterValue) {
         return new CredentialsParameterBinding(userId, parameterValue.getName(), parameterValue.getValue(),
                 parameterValue.isDefaultValue());
     }
@@ -61,7 +60,7 @@ public class CredentialsParameterBinding {
         return userId;
     }
 
-    @Nonnull
+    @NonNull
     public String getParameterName() {
         return parameterName;
     }

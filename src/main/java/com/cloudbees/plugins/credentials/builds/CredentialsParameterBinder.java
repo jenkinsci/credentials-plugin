@@ -25,6 +25,8 @@
 package com.cloudbees.plugins.credentials.builds;
 
 import com.cloudbees.plugins.credentials.CredentialsParameterValue;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.Cause;
 import hudson.model.InvisibleAction;
 import hudson.model.ParameterValue;
@@ -33,8 +35,6 @@ import hudson.model.Run;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,8 +53,8 @@ public final class CredentialsParameterBinder extends InvisibleAction {
      * Gets or creates a CredentialsParameterBinder for the given run.
      * This automatically imports credentials parameters provided in a {@link ParametersAction}.
      */
-    @Nonnull
-    public static CredentialsParameterBinder getOrCreate(@Nonnull final Run<?, ?> run) {
+    @NonNull
+    public static CredentialsParameterBinder getOrCreate(@NonNull final Run<?, ?> run) {
         CredentialsParameterBinder resolver = run.getAction(CredentialsParameterBinder.class);
         if (resolver == null) {
             resolver = new CredentialsParameterBinder();
@@ -78,20 +78,20 @@ public final class CredentialsParameterBinder extends InvisibleAction {
     /**
      * Binds a credentials parameter with an optional user ID. User credentials require a user ID.
      */
-    public void bindCredentialsParameter(@CheckForNull final String userId, @Nonnull final CredentialsParameterValue parameterValue) {
+    public void bindCredentialsParameter(@CheckForNull final String userId, @NonNull final CredentialsParameterValue parameterValue) {
         boundCredentials.put(parameterValue.getName(), CredentialsParameterBinding.fromParameter(userId, parameterValue));
     }
 
     /**
      * Unbinds a credentials parameter.
      */
-    public void unbindCredentialsParameter(@Nonnull final String parameterName) {
+    public void unbindCredentialsParameter(@NonNull final String parameterName) {
         boundCredentials.remove(parameterName);
     }
 
     @CheckForNull
     @Restricted(NoExternalUse.class)
-    public CredentialsParameterBinding forParameterName(@Nonnull final String parameterName) {
+    public CredentialsParameterBinding forParameterName(@NonNull final String parameterName) {
         return boundCredentials.get(parameterName);
     }
 

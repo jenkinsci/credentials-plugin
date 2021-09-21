@@ -56,7 +56,6 @@ import java.util.WeakHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import net.sf.json.JSONObject;
@@ -684,7 +683,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         public ACL getACL() {
             return new ACL() {
                 @Override
-                public boolean hasPermission(@Nonnull Authentication a, @Nonnull Permission permission) {
+                public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
                     return user.equals(User.getById(a.getName(), false)) && user.getACL().hasPermission(a, permission);
                 }
             };

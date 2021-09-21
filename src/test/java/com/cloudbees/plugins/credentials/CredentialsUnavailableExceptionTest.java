@@ -29,6 +29,7 @@ import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -61,8 +62,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -203,8 +202,8 @@ public class CredentialsUnavailableExceptionTest {
         }
 
         @Override
-        public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
-                             @Nonnull TaskListener listener, @javax.annotation.CheckForNull File changelogFile,
+        public void checkout(@NonNull Run<?, ?> build, @NonNull Launcher launcher, @NonNull FilePath workspace,
+                             @NonNull TaskListener listener, @javax.annotation.CheckForNull File changelogFile,
                              @javax.annotation.CheckForNull SCMRevisionState baseline) {
             StandardUsernamePasswordCredentials credentials =
                     CredentialsProvider.findCredentialById(this.id, StandardUsernamePasswordCredentials.class, build);
@@ -219,8 +218,8 @@ public class CredentialsUnavailableExceptionTest {
         }
 
         @Override
-        public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?, ?> build, @Nullable FilePath workspace,
-                                                       @Nullable Launcher launcher, @Nonnull TaskListener listener) {
+        public SCMRevisionState calcRevisionsFromBuild(@NonNull Run<?, ?> build, @Nullable FilePath workspace,
+                                                       @Nullable Launcher launcher, @NonNull TaskListener listener) {
             return new SCMRevisionState() {
                 @Override
                 public String getIconFileName() {
@@ -240,9 +239,9 @@ public class CredentialsUnavailableExceptionTest {
         }
 
         @Override
-        public PollingResult compareRemoteRevisionWith(@Nonnull Job<?, ?> project, @Nullable Launcher launcher,
-                                                       @Nullable FilePath workspace, @Nonnull TaskListener listener,
-                                                       @Nonnull SCMRevisionState baseline)
+        public PollingResult compareRemoteRevisionWith(@NonNull Job<?, ?> project, @Nullable Launcher launcher,
+                                                       @Nullable FilePath workspace, @NonNull TaskListener listener,
+                                                       @NonNull SCMRevisionState baseline)
                 throws IOException {
             StandardUsernamePasswordCredentials credentials = CredentialsMatchers.firstOrNull(
                     CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, project,
