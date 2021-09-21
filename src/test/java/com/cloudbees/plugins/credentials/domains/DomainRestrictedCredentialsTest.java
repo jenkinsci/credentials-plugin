@@ -38,9 +38,9 @@ import org.jvnet.hudson.test.JenkinsRule;
 import java.util.Collection;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 
 public class DomainRestrictedCredentialsTest {
     // Allow for testing using JUnit4, instead of JUnit3.

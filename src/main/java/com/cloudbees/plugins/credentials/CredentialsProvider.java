@@ -1716,7 +1716,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                             LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Users ({0} processed)",
                                     count);
                         }
-                        // HACK ALERT we just want to access the user's stores so we do just enough impersonation
+                        // HACK ALERT we just want to access the user's stores, so we do just enough impersonation
                         // to ensure that User.current() == user
                         // while we could use User.impersonate() that would force a query against the backing
                         // SecurityRealm to revalidate

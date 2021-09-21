@@ -388,7 +388,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                     if (pathSegments.size() >= 2) {
                         String firstSegment = pathSegments.get(0);
                         if ("user".equals(firstSegment)) {
-                            User user = User.get(pathSegments.get(1));
+                            User user = User.getById(pathSegments.get(1), false);
                             if (type.isInstance(user) && CredentialsProvider.hasStores(user)) {
                                 // we have a winner
                                 return type.cast(user);

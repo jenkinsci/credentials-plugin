@@ -112,11 +112,11 @@ public class ItemCredentialsFingerprintFacet extends AbstractCredentialsFingerpr
         long now = System.currentTimeMillis();
         return timestamp0 == getTimestamp()
                 ? Messages.AbstractCredentialsFingerprintFacet_timestampSingle(
-                Util.getPastTimeString(now - getTimestamp())
+                Util.getTimeSpanString(now - getTimestamp())
         )
                 : Messages.AbstractCredentialsFingerprintFacet_timestampRange(
-                        Util.getPastTimeString(now - timestamp0),
-                        Util.getPastTimeString(now - getTimestamp())
+                        Util.getTimeSpanString(now - timestamp0),
+                        Util.getTimeSpanString(now - getTimestamp())
                 );
     }
 
