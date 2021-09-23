@@ -228,7 +228,7 @@ public class CredentialsUnavailableExceptionTest {
             return new SCMRevisionState() {
                 @Override
                 public String getIconFileName() {
-                    return "mock.png";
+                    return "mock.svg";
                 }
 
                 @Override

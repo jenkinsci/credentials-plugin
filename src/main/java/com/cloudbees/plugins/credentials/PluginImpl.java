@@ -55,22 +55,22 @@ public class PluginImpl extends Plugin {
         }) {
             IconSet.icons.addIcon(new Icon(
                     String.format("icon-credentials-%s icon-sm", name),
-                    String.format("credentials/images/16x16/%s.png", name),
+                    String.format("credentials/images/%s.svg", name),
                             Icon.ICON_SMALL_STYLE, IconType.PLUGIN)
             );
             IconSet.icons.addIcon(new Icon(
                     String.format("icon-credentials-%s icon-md", name),
-                    String.format("credentials/images/24x24/%s.png", name),
+                    String.format("credentials/images/%s.svg", name),
                             Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN)
             );
             IconSet.icons.addIcon(new Icon(
                     String.format("icon-credentials-%s icon-lg", name),
-                    String.format("credentials/images/32x32/%s.png", name),
+                    String.format("credentials/images/%s.svg", name),
                             Icon.ICON_LARGE_STYLE, IconType.PLUGIN)
             );
             IconSet.icons.addIcon(new Icon(
                     String.format("icon-credentials-%s icon-xlg", name),
-                    String.format("credentials/images/48x48/%s.png", name),
+                    String.format("credentials/images/%s.svg", name),
                             Icon.ICON_XLARGE_STYLE, IconType.PLUGIN)
             );
         }
