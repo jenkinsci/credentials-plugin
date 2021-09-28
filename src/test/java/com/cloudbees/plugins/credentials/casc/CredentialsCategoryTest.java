@@ -104,8 +104,7 @@ public class CredentialsCategoryTest {
                                                "credential-certificate",
                                                "Credential with certificate",
                                                "password",
-                                               new CertificateCredentialsImpl.UploadedKeyStoreSource(Base64.encode(
-                                                       "Testing not real certificate".getBytes())));
+                                               new CertificateCredentialsImpl.UploadedKeyStoreSource(Base64.getEncoder().encode("Testing not real certificate".getBytes())));
 
         SystemCredentialsProvider.getInstance().getCredentials().add(usernamePasswordCredentials);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
