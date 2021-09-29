@@ -5,6 +5,7 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
@@ -126,27 +127,29 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         public ListBoxModel doFillCredentialTypeItems() {
             ListBoxModel result = new ListBoxModel();
             result.add("Any", StandardCredentials.class.getName());
-            for (CredentialsDescriptor d : CredentialsProvider.allCredentialsDescriptors()) {
-                if (d == null) {
+            for (Descriptor<Credentials> d : CredentialsProvider.allCredentialsDescriptors()) {
+                if (!(d instanceof CredentialsDescriptor)) {
                     continue;
                 }
-                if (StandardCredentials.class.isAssignableFrom(d.clazz)) {
-                    result.add(d.getDisplayName(), d.clazz.getName());
+                CredentialsDescriptor descriptor = (CredentialsDescriptor) d;
+                if (StandardCredentials.class.isAssignableFrom(descriptor.clazz)) {
+                    result.add(descriptor.getDisplayName(), descriptor.clazz.getName());
                 }
             }
             return result;
         }
 
         private Class<? extends StandardCredentials> decodeType(String credentialType) {
-            for (CredentialsDescriptor d : CredentialsProvider.allCredentialsDescriptors()) {
-                if (d == null) {
+            for (Descriptor<Credentials> d : CredentialsProvider.allCredentialsDescriptors()) {
+                if (!(d instanceof CredentialsDescriptor)) {
                     continue;
                 }
-                if (!StandardCredentials.class.isAssignableFrom(d.clazz)) {
+                CredentialsDescriptor descriptor = (CredentialsDescriptor) d;
+                if (!StandardCredentials.class.isAssignableFrom(descriptor.clazz)) {
                     continue;
                 }
-                if (credentialType.equals(d.clazz.getName())) {
-                    return d.clazz.asSubclass(StandardCredentials.class);
+                if (credentialType.equals(descriptor.clazz.getName())) {
+                    return descriptor.clazz.asSubclass(StandardCredentials.class);
                 }
             }
             return StandardCredentials.class;
