@@ -1,44 +1,54 @@
 package com.cloudbees.plugins.credentials.casc;
 
 import com.cloudbees.plugins.credentials.GlobalCredentialsConfiguration;
-import hudson.Extension;
 import hudson.ExtensionList;
-import io.jenkins.plugins.casc.ConfigurationAsCode;
+import io.jenkins.plugins.casc.ConfigurationContext;
+import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
+import io.jenkins.plugins.casc.model.CNode;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import org.jenkinsci.Symbol;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.TestExtension;
 
 import javax.annotation.Nonnull;
 
-import java.io.ByteArrayOutputStream;
-
-import static org.hamcrest.CoreMatchers.containsString;
+import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
+import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class CredentialsCategoryTest {
 
-    @Rule
-    public JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
+    @ClassRule
+    @ConfiguredWithCode("credentials-category.yaml")
+    public static JenkinsConfiguredWithCodeRule r = new JenkinsConfiguredWithCodeRule();
 
     @Test
-    @ConfiguredWithCode("credentials-category.yaml")
-    public void globalCredentialsConfigurationCategory() throws Exception {
-        assertThat(ExtensionList.lookupSingleton(TestGlobalConfiguration.class).getConfig(), equalTo("hello"));
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ConfigurationAsCode.get().export(out);
-        assertThat(out.toString(), containsString("globalCredentialsConfiguration:\n" +
-                "  testGlobalConfiguration:\n" +
-                "    config: \"hello\""));
+    public void importConfig() {
+        TestGlobalConfiguration testGlobalConfiguration = ExtensionList.lookupSingleton(TestGlobalConfiguration.class);
+        assertThat(testGlobalConfiguration.getConfig(), equalTo("hello"));
+    }
+
+    @Test
+    public void export() throws Exception {
+        ConfiguratorRegistry registry = ConfiguratorRegistry.get();
+        ConfigurationContext context = new ConfigurationContext(registry);
+        CNode yourAttribute = ConfigurationAsCodeCategoryRoot.getConfiguration(context).get("test");
+
+        String exported = toYamlString(yourAttribute);
+
+        String expected = toStringFromYamlFile(this, "credentials-category-export.yaml");
+
+        assertThat(exported, is(expected));
     }
 
     @TestExtension
-    @Symbol("testGlobalConfiguration")
+    @Symbol("test")
     public static class TestGlobalConfiguration extends GlobalConfiguration {
 
         private String config;
