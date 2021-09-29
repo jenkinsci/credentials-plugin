@@ -97,8 +97,7 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
                     LOGGER.fine(() -> "named `" + name + "` from " + nameProvider);
                     return new Result(name, nameWith.priority());
                 }
-            } catch (ClassCastException | InstantiationException | IllegalAccessException
-                    | NoSuchMethodException | InvocationTargetException e) {
+            } catch (Exception e) {
                 // ignore
             }
         }
