@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.GlobalCredentialsConfiguration;
+import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
@@ -14,7 +15,6 @@ import hudson.ExtensionList;
 import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
-import jcifs.util.Base64;
 
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
@@ -99,14 +99,14 @@ public class CredentialsCategoryTest {
 
     @Test
     public void exportCertificateCredentialsImplConfiguration() throws Exception {
-        CertificateCredentialsImpl usernamePasswordCredentials =
+        CertificateCredentialsImpl certificateCredentials =
                 new CertificateCredentialsImpl(CredentialsScope.GLOBAL,
                                                "credential-certificate",
                                                "Credential with certificate",
                                                "password",
-                                               new CertificateCredentialsImpl.UploadedKeyStoreSource(Base64.getEncoder().encode("Testing not real certificate".getBytes())));
+                                               new CertificateCredentialsImpl.UploadedKeyStoreSource(SecretBytes.fromBytes("Testing not real certificate".getBytes())));
 
-        SystemCredentialsProvider.getInstance().getCredentials().add(usernamePasswordCredentials);
+        SystemCredentialsProvider.getInstance().getCredentials().add(certificateCredentials);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ConfigurationAsCode.get().export(out);
 
