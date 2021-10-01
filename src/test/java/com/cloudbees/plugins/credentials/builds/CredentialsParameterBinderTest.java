@@ -36,6 +36,7 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Run;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
@@ -116,6 +117,25 @@ public class CredentialsParameterBinderTest {
         addCredentialsParameterDefinition();
         final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0,
                 new Cause.UserIdCause(USER_ID), selectCredentialsById(USER_CREDENTIALS_ID)));
+        final CredentialsParameterBinder binder = CredentialsParameterBinder.getOrCreate(build);
+        final CredentialsParameterBinding cred = binder.forParameterName(PARAMETER_NAME);
+        assertNotNull(cred);
+        assertEquals(USER_ID, cred.getUserId());
+        assertEquals(USER_CREDENTIALS_ID, cred.getCredentialsId());
+        // as a result:
+        assertNotNull(CredentialsProvider.findCredentialById(cred.getParameterName(), IdCredentials.class, build));
+    }
+
+    @Test
+    public void forParameterNameReturnsTriggeringUserForUpstream() throws Exception {
+        FreeStyleProject upstreamProject = j.createFreeStyleProject();
+        upstreamProject.addProperty(new ParametersDefinitionProperty(new CredentialsParameterDefinition(PARAMETER_NAME, null, null, IdCredentials.class.getName(), true)));
+        final Run<?, ?> upstreamBuild = j.assertBuildStatusSuccess(upstreamProject.scheduleBuild2(0,
+                new Cause.UserIdCause(USER_ID), selectCredentialsById(USER_CREDENTIALS_ID)));
+
+        addCredentialsParameterDefinition();
+        final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0,
+                new Cause.UpstreamCause(upstreamBuild), selectCredentialsById(USER_CREDENTIALS_ID)));
         final CredentialsParameterBinder binder = CredentialsParameterBinder.getOrCreate(build);
         final CredentialsParameterBinding cred = binder.forParameterName(PARAMETER_NAME);
         assertNotNull(cred);
