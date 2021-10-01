@@ -67,7 +67,7 @@
   <properties>
     <revision>2.6.2</revision>
     <changelist>-SNAPSHOT</changelist>
-    <jenkins.version>2.249.1</jenkins.version>
+    <jenkins.version>2.308</jenkins.version>
     <java.level>8</java.level>
     <antlr4.version>4.9.2</antlr4.version>
   </properties>
@@ -89,7 +89,7 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.249.x</artifactId>
+        <artifactId>bom-2.303.x</artifactId>
         <version>950.v396cb834de1e</version>
         <scope>import</scope>
         <type>pom</type>
@@ -146,7 +146,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>cloudbees-folder</artifactId>
-      <version>6.15</version>
+      <version>6.16</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -209,7 +209,7 @@
       <properties>
         <asciidoctor.maven.plugin.version>2.2.1</asciidoctor.maven.plugin.version>
         <asciidoctorj.pdf.version>1.6.0</asciidoctorj.pdf.version>
-        <asciidoctorj.version>2.5.1</asciidoctorj.version>
+        <asciidoctorj.version>2.5.2</asciidoctorj.version>
         <jruby.version>9.3.0.0</jruby.version>
       </properties>
       <build>

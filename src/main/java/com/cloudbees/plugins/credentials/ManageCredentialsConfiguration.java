@@ -22,7 +22,7 @@ public class ManageCredentialsConfiguration extends ManagementLink {
 
     @Override
     public String getIconFileName() {
-        return "/plugin/credentials/images/48x48/credentials.png";
+        return "/plugin/credentials/images/credentials.svg";
     }
 
     @Override

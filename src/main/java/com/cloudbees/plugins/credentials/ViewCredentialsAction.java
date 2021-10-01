@@ -113,7 +113,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public String getIconFileName() {
         return isVisible()
-                ? "/plugin/credentials/images/24x24/credentials.png"
+                ? "/plugin/credentials/images/credentials.svg"
                 : null;
     }
 
