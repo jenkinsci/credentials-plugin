@@ -104,7 +104,7 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
 
     @Override
     public boolean isUsernameSecret() {
-        return Boolean.TRUE.equals(usernameSecret);
+        return usernameSecret;
     }
 
     @DataBoundSetter

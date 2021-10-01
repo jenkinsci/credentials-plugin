@@ -203,8 +203,8 @@ public class CredentialsUnavailableExceptionTest {
 
         @Override
         public void checkout(@NonNull Run<?, ?> build, @NonNull Launcher launcher, @NonNull FilePath workspace,
-                             @NonNull TaskListener listener, @javax.annotation.CheckForNull File changelogFile,
-                             @javax.annotation.CheckForNull SCMRevisionState baseline) {
+                             @NonNull TaskListener listener, @CheckForNull File changelogFile,
+                             @CheckForNull SCMRevisionState baseline) {
             StandardUsernamePasswordCredentials credentials =
                     CredentialsProvider.findCredentialById(this.id, StandardUsernamePasswordCredentials.class, build);
             if (credentials == null) {

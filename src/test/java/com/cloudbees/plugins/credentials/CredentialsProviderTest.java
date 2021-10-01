@@ -42,8 +42,6 @@ import hudson.security.ACL;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.acegisecurity.Authentication;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -265,6 +263,7 @@ public class CredentialsProviderTest {
         assertEquals(legacyCredentials.getPassword(), r.getPassword());
     }
 
+    @SuppressWarnings("deprecated")
     @Test
     public void testNodeCredentialFingerprintsAreRemovedForNonExistentNodes() throws Exception {
         // Create dummy credentials to use
@@ -276,7 +275,7 @@ public class CredentialsProviderTest {
         // it should not be recorded
         DumbSlave nonAddedSlave = new DumbSlave("non-added-slave",
                 "dummy", "/home/test/agent", "1", Node.Mode.NORMAL, "remote",
-                new JNLPLauncher(false),
+                new JNLPLauncher(), // Use noarg ctor, see PR#228
                 RetentionStrategy.INSTANCE, Collections.emptyList());
 
 
@@ -288,7 +287,7 @@ public class CredentialsProviderTest {
         // one should be recorded
         DumbSlave addedSlave = new DumbSlave("added-agent",
                 "dummy", "/home/test/agent", "1", Node.Mode.NORMAL, "remote",
-                new JNLPLauncher(false),
+                new JNLPLauncher(), // Use noarg ctor, see PR#228
                 RetentionStrategy.INSTANCE, Collections.emptyList());
 
         Jenkins.get().addNode(addedSlave);
