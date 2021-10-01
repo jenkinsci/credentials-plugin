@@ -684,7 +684,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
             return new ACL() {
                 @Override
                 public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
-                    return user.equals(User.getById(a.getName(), false)) && user.getACL().hasPermission(a, permission);
+                    return user.equals(User.getById(a.getName(), true)) && user.getACL().hasPermission(a, permission);
                 }
             };
         }
