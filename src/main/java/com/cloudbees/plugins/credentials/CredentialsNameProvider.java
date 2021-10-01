@@ -91,7 +91,7 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
         NameWith nameWith = clazz.getAnnotation(NameWith.class);
         if (nameWith != null) {
             try {
-                CredentialsNameProvider nameProvider = nameWith.value().getDeclaredConstructor().newInstance();
+                CredentialsNameProvider nameProvider = nameWith.value().getConstructor().newInstance();
                 String name = nameProvider.getName(credentials);
                 if (!name.isEmpty()) {
                     LOGGER.fine(() -> "named `" + name + "` from " + nameProvider);
