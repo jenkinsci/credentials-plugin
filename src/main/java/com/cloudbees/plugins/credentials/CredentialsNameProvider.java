@@ -26,8 +26,6 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -91,13 +89,13 @@ public abstract class CredentialsNameProvider<C extends Credentials> {
         NameWith nameWith = clazz.getAnnotation(NameWith.class);
         if (nameWith != null) {
             try {
-                CredentialsNameProvider nameProvider = nameWith.value().getConstructor().newInstance();
+                CredentialsNameProvider nameProvider = nameWith.value().newInstance();
                 String name = nameProvider.getName(credentials);
                 if (!name.isEmpty()) {
                     LOGGER.fine(() -> "named `" + name + "` from " + nameProvider);
                     return new Result(name, nameWith.priority());
                 }
-            } catch (Exception e) {
+            } catch (ClassCastException | InstantiationException | IllegalAccessException e) {
                 // ignore
             }
         }
