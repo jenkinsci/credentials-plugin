@@ -568,6 +568,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         /**
          * Our {@link CredentialsStore}.
          */
+        @NonNull
         private final CredentialsStore store;
 
         /**
@@ -579,7 +580,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          * @param store    the {@link CredentialsStore}
          */
         public WrappedCredentialsStore(@NonNull ContextResolver resolver, @NonNull CredentialsProvider provider,
-                                       @NonNull String token, CredentialsStore store) {
+                                       @NonNull String token, @NonNull CredentialsStore store) {
             this.store = store;
             this.resolver = resolver;
             this.provider = provider;
