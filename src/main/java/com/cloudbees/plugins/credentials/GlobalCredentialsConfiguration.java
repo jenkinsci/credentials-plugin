@@ -78,7 +78,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
     public String getIconFileName() {
         return ExtensionList.lookup(CredentialsDescriptor.class).isEmpty()
                 ? null
-                : "/plugin/credentials/images/48x48/credentials.png";
+                : "/plugin/credentials/images/credentials.svg";
     }
 
     /**

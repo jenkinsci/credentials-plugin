@@ -569,7 +569,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @Override
         public String getIconFileName() {
             return isVisible()
-                    ? "/plugin/credentials/images/24x24/user-store.png"
+                    ? "/plugin/credentials/images/user-store.svg"
                     : null;
         }
 
