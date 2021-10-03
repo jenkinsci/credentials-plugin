@@ -27,10 +27,13 @@ import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
 import hudson.util.ListBoxModel;
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import jenkins.model.Jenkins;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -109,7 +112,7 @@ public abstract class CredentialsProviderTypeRestriction
         /**
          * The {@link CredentialsDescriptor} {@link Class#getName()}.
          */
-        private final String type;
+        private String type;
 
         /**
          * Our constructor.
@@ -121,6 +124,17 @@ public abstract class CredentialsProviderTypeRestriction
         public Includes(String provider, String type) {
             this.provider = provider;
             this.type = type;
+        }
+
+        private Object readResolve() {
+            Descriptor<?> descriptor = Jenkins.get().getDescriptor(type);
+            if (descriptor != null) {
+                return this;
+            }
+
+            this.type = convertDescriptorClassNameToId(type);
+
+            return this;
         }
 
         /**
@@ -187,8 +201,8 @@ public abstract class CredentialsProviderTypeRestriction
          */
         @Override
         public boolean filter(CredentialsProvider provider, CredentialsDescriptor type) {
-            return provider.getClass().getName().equals(this.provider)
-                    && type.getClass().getName().equals(this.type);
+            return provider.getId().equals(this.provider)
+                    && type.getId().equals(this.type);
         }
 
         /**
@@ -243,7 +257,7 @@ public abstract class CredentialsProviderTypeRestriction
             public ListBoxModel doFillProviderItems() {
                 return ExtensionList.lookup(CredentialsProvider.class)
                         .stream()
-                        .map(p -> new ListBoxModel.Option(p.getDisplayName(), p.getClass().getName()))
+                        .map(p -> new ListBoxModel.Option(p.getDisplayName(), p.getId()))
                         .collect(Collectors.toCollection(ListBoxModel::new));
             }
 
@@ -257,10 +271,19 @@ public abstract class CredentialsProviderTypeRestriction
             public ListBoxModel doFillTypeItems() {
                 return ExtensionList.lookup(CredentialsDescriptor.class)
                         .stream()
-                        .map(d -> new ListBoxModel.Option(d.getDisplayName(), d.getClass().getName()))
+                        .map(d -> new ListBoxModel.Option(d.getDisplayName(), d.getId()))
                         .collect(Collectors.toCollection(ListBoxModel::new));
             }
         }
+    }
+
+    private static String convertDescriptorClassNameToId(String restrictionType) {
+        return ExtensionList.lookup(CredentialsDescriptor.class)
+                .stream()
+                .filter(desc -> desc.getClass().getName().equals(restrictionType))
+                .map(Descriptor::getId)
+                .findFirst()
+                .orElse(restrictionType);
     }
 
     /**
@@ -280,7 +303,7 @@ public abstract class CredentialsProviderTypeRestriction
         /**
          * The {@link CredentialsDescriptor} {@link Class#getName()}.
          */
-        private final String type;
+        private String type;
 
         /**
          * Our constructor.
@@ -292,6 +315,17 @@ public abstract class CredentialsProviderTypeRestriction
         public Excludes(String provider, String type) {
             this.provider = provider;
             this.type = type;
+        }
+
+        private Object readResolve() {
+            Descriptor<?> descriptor = Jenkins.get().getDescriptor(type);
+            if (descriptor != null) {
+                return this;
+            }
+
+            this.type = convertDescriptorClassNameToId(type);
+
+            return this;
         }
 
         /**
@@ -358,8 +392,7 @@ public abstract class CredentialsProviderTypeRestriction
          */
         @Override
         public boolean filter(CredentialsProvider provider, CredentialsDescriptor type) {
-            return !(provider.getClass().getName().equals(this.provider)
-                    && type.getClass().getName().equals(this.type));
+            return !(provider.getId().equals(this.provider) && type.getId().equals(this.type));
         }
 
         /**
@@ -398,7 +431,7 @@ public abstract class CredentialsProviderTypeRestriction
             public ListBoxModel doFillProviderItems() {
                 return ExtensionList.lookup(CredentialsProvider.class)
                         .stream()
-                        .map(p -> new ListBoxModel.Option(p.getDisplayName(), p.getClass().getName()))
+                        .map(p -> new ListBoxModel.Option(p.getDisplayName(), p.getId()))
                         .collect(Collectors.toCollection(ListBoxModel::new));
             }
 
@@ -412,7 +445,7 @@ public abstract class CredentialsProviderTypeRestriction
             public ListBoxModel doFillTypeItems() {
                 return ExtensionList.lookup(CredentialsDescriptor.class)
                         .stream()
-                        .map(d -> new ListBoxModel.Option(d.getDisplayName(), d.getClass().getName()))
+                        .map(d -> new ListBoxModel.Option(d.getDisplayName(), d.getId()))
                         .collect(Collectors.toCollection(ListBoxModel::new));
             }
         }

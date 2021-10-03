@@ -4,19 +4,13 @@ import com.cloudbees.plugins.credentials.CredentialsProviderFilter;
 import com.cloudbees.plugins.credentials.CredentialsProviderManager;
 import com.cloudbees.plugins.credentials.CredentialsProviderTypeRestriction;
 import com.cloudbees.plugins.credentials.CredentialsTypeFilter;
-import com.cloudbees.plugins.credentials.GlobalCredentialsConfiguration;
-import hudson.ExtensionList;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
-import io.jenkins.plugins.casc.impl.configurators.GlobalConfigurationCategoryConfigurator;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.model.CNode;
-import io.jenkins.plugins.casc.model.Mapping;
 import org.junit.ClassRule;
 import org.junit.Test;
-
-import java.util.Objects;
 
 import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;

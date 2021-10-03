@@ -190,7 +190,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @Override
         public boolean filter(CredentialsProvider provider) {
-            return classNames.contains(provider.getClass().getName());
+            return classNames.contains(provider.getId());
         }
 
         /**
@@ -298,7 +298,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @Override
         public boolean filter(CredentialsProvider provider) {
-            return !classNames.contains(provider.getClass().getName());
+            return !classNames.contains(provider.getId());
         }
 
         /**

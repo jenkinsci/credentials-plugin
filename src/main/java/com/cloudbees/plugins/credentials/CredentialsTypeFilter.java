@@ -188,7 +188,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @Override
         public boolean filter(CredentialsDescriptor type) {
-            return classNames.contains(type.getClass().getName());
+            return classNames.contains(type.getId());
         }
 
         /**
@@ -296,7 +296,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @Override
         public boolean filter(CredentialsDescriptor type) {
-            return !classNames.contains(type.getClass().getName());
+            return !classNames.contains(type.getId());
         }
 
         /**
