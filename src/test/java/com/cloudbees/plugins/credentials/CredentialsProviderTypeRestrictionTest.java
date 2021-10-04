@@ -31,13 +31,13 @@ public class CredentialsProviderTypeRestrictionTest {
         assertThat(excludesRestriction, instanceOf(CredentialsProviderTypeRestriction.Excludes.class));
 
         CredentialsProviderTypeRestriction.Excludes excludes = (CredentialsProviderTypeRestriction.Excludes) excludesRestriction;
-        assertThat(excludes.getType(), is("com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl"));
+        assertThat(excludes.getType(), is("com.cloudbees.plugins.credentials.impl.DummyCredentials"));
 
         CredentialsProviderTypeRestriction includesRestriction = restrictions.get(1);
         assertThat(includesRestriction, instanceOf(CredentialsProviderTypeRestriction.Includes.class));
 
         CredentialsProviderTypeRestriction.Includes includes = (CredentialsProviderTypeRestriction.Includes) includesRestriction;
-        assertThat(includes.getType(), is("com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl"));
+        assertThat(includes.getType(), is("com.cloudbees.plugins.credentials.impl.DummyIdCredentials"));
     }
 
 }

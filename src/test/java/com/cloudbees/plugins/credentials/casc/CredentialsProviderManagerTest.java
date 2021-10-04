@@ -42,11 +42,11 @@ public class CredentialsProviderManagerTest {
         assertThat(restriction, instanceOf(CredentialsProviderTypeRestriction.Includes.class));
         CredentialsProviderTypeRestriction.Includes restrictionIncludes = (CredentialsProviderTypeRestriction.Includes) restriction;
         assertThat(restrictionIncludes.getProvider(), equalTo("com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider"));
-        assertThat(restrictionIncludes.getType(), equalTo("com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl$DescriptorImpl"));
+        assertThat(restrictionIncludes.getType(), equalTo("com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl"));
 
         assertThat(manager.getTypeFilter(), instanceOf(CredentialsTypeFilter.Excludes.class));
         CredentialsTypeFilter.Excludes excludesTypeFilter = (CredentialsTypeFilter.Excludes) manager.getTypeFilter();
-        assertThat(excludesTypeFilter.getClassNames(), contains("com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl$DescriptorImpl"));
+        assertThat(excludesTypeFilter.getClassNames(), contains("com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl"));
     }
 
     @Test
