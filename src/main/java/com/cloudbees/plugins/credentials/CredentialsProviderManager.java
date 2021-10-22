@@ -50,8 +50,6 @@ import jenkins.model.GlobalConfigurationCategory;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
@@ -349,7 +347,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
          * @return the {@link CredentialsProviderFilter}.
          */
         @SuppressWarnings("unused") // jelly EL helper
-        @Restricted(NoExternalUse.class)
         public CredentialsProviderFilter getProviderFilter() {
             CredentialsProviderManager manager = getInstance();
             return manager == null ? new CredentialsProviderFilter.None() : manager.getProviderFilter();
@@ -362,7 +359,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
          * @param providerFilter the {@link CredentialsProviderFilter}.
          */
         @SuppressWarnings("unused") // jelly form binding
-        @Restricted(NoExternalUse.class)
         public void setProviderFilter(CredentialsProviderFilter providerFilter) {
             CredentialsProviderManager manager = getInstance();
             if (manager != null) {
@@ -376,7 +372,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
          * @return the {@link CredentialsTypeFilter}.
          */
         @SuppressWarnings("unused") // jelly EL helper
-        @Restricted(NoExternalUse.class)
         public CredentialsTypeFilter getTypeFilter() {
             CredentialsProviderManager manager = getInstance();
             return manager == null ? new CredentialsTypeFilter.None() : manager.getTypeFilter();
@@ -389,7 +384,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
          * @param typeFilter the {@link CredentialsTypeFilter}.
          */
         @SuppressWarnings("unused") // jelly form binding
-        @Restricted(NoExternalUse.class)
         public void setTypeFilter(CredentialsTypeFilter typeFilter) {
             CredentialsProviderManager manager = getInstance();
             if (manager != null) {
@@ -403,7 +397,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
          * @return the {@link CredentialsProviderTypeRestriction} instances.
          */
         @SuppressWarnings("unused") // jelly EL helper
-        @Restricted(NoExternalUse.class)
         public List<CredentialsProviderTypeRestriction> getRestrictions() {
             CredentialsProviderManager manager = getInstance();
             return manager == null
@@ -418,7 +411,6 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
          * @param restrictions the {@link CredentialsProviderTypeRestriction} instances.
          */
         @SuppressWarnings("unused") // jelly form binding
-        @Restricted(NoExternalUse.class)
         public void setRestrictions(List<CredentialsProviderTypeRestriction> restrictions) {
             CredentialsProviderManager manager = getInstance();
             if (manager != null) {

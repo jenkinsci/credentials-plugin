@@ -31,6 +31,7 @@ import hudson.ExtensionPoint;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -160,7 +161,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
     }
 
     /**
-     * A filter that implements a allowlist policy, "if you are not on the list you can't come in".
+     * A filter that implements an allow-list policy, "if you are not on the list you can't come in".
      *
      * @since 2.0
      */
@@ -190,7 +191,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @Override
         public boolean filter(CredentialsProvider provider) {
-            return classNames.contains(provider.getClass().getName());
+            return classNames.contains(provider.getId());
         }
 
         /**
@@ -200,11 +201,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @NonNull
         public List<String> getClassNames() {
-            return ExtensionList.lookup(CredentialsDescriptor.class)
-                    .stream()
-                    .map(type -> type.getClass().getName())
-                    .filter(classNames::contains)
-                    .collect(Collectors.toList());
+            return new ArrayList<>(classNames);
         }
 
         /**
@@ -303,7 +300,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @Override
         public boolean filter(CredentialsProvider provider) {
-            return !classNames.contains(provider.getClass().getName());
+            return !classNames.contains(provider.getId());
         }
 
         /**
@@ -313,11 +310,7 @@ public abstract class CredentialsProviderFilter extends AbstractDescribableImpl<
          */
         @NonNull
         public List<String> getClassNames() {
-            return ExtensionList.lookup(CredentialsProvider.class)
-                    .stream()
-                    .map(provider -> provider.getClass().getName())
-                    .filter(classNames::contains)
-                    .collect(Collectors.toList());
+            return new ArrayList<>(classNames);
         }
 
         /**
