@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -189,7 +188,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @Override
         public boolean filter(CredentialsDescriptor type) {
-            return classNames.contains(type.getClass().getName());
+            return classNames.contains(type.getId());
         }
 
         /**
@@ -199,11 +198,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @NonNull
         public List<String> getClassNames() {
-            return ExtensionList.lookup(CredentialsDescriptor.class)
-                    .stream()
-                    .map(type -> type.getClass().getName())
-                    .filter(classNames::contains)
-                    .collect(Collectors.toList());
+            return new ArrayList<>(classNames);
         }
 
         /**
@@ -301,7 +296,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @Override
         public boolean filter(CredentialsDescriptor type) {
-            return !classNames.contains(type.getClass().getName());
+            return !classNames.contains(type.getId());
         }
 
         /**
@@ -311,11 +306,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         @NonNull
         public List<String> getClassNames() {
-            return ExtensionList.lookup(CredentialsDescriptor.class)
-                    .stream()
-                    .map(type -> type.getClass().getName())
-                    .filter(classNames::contains)
-                    .collect(Collectors.toList());
+            return new ArrayList<>(classNames);
         }
 
         /**
