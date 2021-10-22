@@ -24,7 +24,7 @@
 
 package com.cloudbees.plugins.credentials.domains;
 
-import javax.annotation.CheckForNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 
 /**
  * A requirement for a {@link Domain} that includes {@link com.cloudbees.plugins.credentials.Credentials} for a

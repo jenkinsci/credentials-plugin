@@ -29,7 +29,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class CredentialsScopeTest {
     @Test
-    public void displayNameIsNotNull() throws Exception {
+    public void displayNameIsNotNull() {
         for (CredentialsScope scope : CredentialsScope.values()) {
             assertNotNull("getDisplayName does not return null for " + scope, scope.getDisplayName());
         }

@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import com.cloudbees.plugins.credentials.impl.DummyIdCredentials;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -37,7 +38,7 @@ import hudson.model.Result;
 import hudson.model.User;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
-import java.io.IOException;
+
 import java.util.HashMap;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.Authentication;
@@ -86,7 +87,7 @@ public class SystemCredentialsProviderTest {
     }
 
     @Test
-    public void smokes() throws Exception {
+    public void smokes() {
         assertFalse(CredentialsProvider.allCredentialsDescriptors().isEmpty());
         assertNotNull(SystemCredentialsProvider.getInstance().getDescriptor());
         assertNotNull(SystemCredentialsProvider.getInstance().getCredentials());
@@ -130,7 +131,7 @@ public class SystemCredentialsProviderTest {
 
         r.jenkins.setAuthorizationStrategy(strategy);
         HashMap<String, Authentication> jobsToUsers = new HashMap<>();
-        jobsToUsers.put(prj.getFullName(), User.get("bob").impersonate());
+        jobsToUsers.put(prj.getFullName(), User.getById("bob", true).impersonate());
         MockQueueItemAuthenticator authenticator = new MockQueueItemAuthenticator(jobsToUsers);
 
         QueueItemAuthenticatorConfiguration.get().getAuthenticators().clear();
@@ -155,7 +156,7 @@ public class SystemCredentialsProviderTest {
 
         r.jenkins.setAuthorizationStrategy(strategy);
         HashMap<String, Authentication> jobsToUsers = new HashMap<>();
-        jobsToUsers.put(prj.getFullName(), User.get("bob").impersonate());
+        jobsToUsers.put(prj.getFullName(), User.getById("bob", true).impersonate());
         MockQueueItemAuthenticator authenticator = new MockQueueItemAuthenticator(jobsToUsers);
 
         QueueItemAuthenticatorConfiguration.get().getAuthenticators().clear();
@@ -177,8 +178,7 @@ public class SystemCredentialsProviderTest {
         }
 
         @Override
-        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
-                throws InterruptedException, IOException {
+        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
             IdCredentials credentials = CredentialsProvider.findCredentialById(id, IdCredentials.class, build);
             if (credentials == null) {
                 listener.getLogger().printf("Could not find any credentials with id %s%n", id);
@@ -198,6 +198,7 @@ public class SystemCredentialsProviderTest {
                 return true;
             }
 
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Probe credentials exist";

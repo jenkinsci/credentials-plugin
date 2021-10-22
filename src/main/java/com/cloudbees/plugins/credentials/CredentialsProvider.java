@@ -695,84 +695,80 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     public static Iterable<CredentialsStore> lookupStores(final ModelObject context) {
         final ExtensionList<CredentialsProvider> providers = all();
-        return new Iterable<CredentialsStore>() {
-            public Iterator<CredentialsStore> iterator() {
-                return new Iterator<CredentialsStore>() {
-                    private ModelObject current = context;
-                    private Iterator<CredentialsProvider> iterator = providers.iterator();
-                    private CredentialsStore next;
+        return () -> new Iterator<CredentialsStore>() {
+            private ModelObject current = context;
+            private Iterator<CredentialsProvider> iterator = providers.iterator();
+            private CredentialsStore next;
 
-                    public boolean hasNext() {
+            public boolean hasNext() {
+                if (next != null) {
+                    return true;
+                }
+                while (current != null) {
+                    while (iterator.hasNext()) {
+                        CredentialsProvider p = iterator.next();
+                        if (!p.isEnabled(context)) {
+                            continue;
+                        }
+                        next = p.getStore(current);
                         if (next != null) {
                             return true;
                         }
-                        while (current != null) {
-                            while (iterator.hasNext()) {
-                                CredentialsProvider p = iterator.next();
-                                if (!p.isEnabled(context)) {
-                                    continue;
-                                }
-                                next = p.getStore(current);
-                                if (next != null) {
-                                    return true;
-                                }
-                            }
-                            // now walk up the model object tree
-                            // TODO make this an extension point perhaps ContextResolver could help
-                            if (current instanceof Item) {
-                                current = ((Item) current).getParent();
-                                iterator = providers.iterator();
-                            } else if (current instanceof User) {
-                                Jenkins jenkins = Jenkins.get();
-                                Authentication a;
-                                if (jenkins.hasPermission(USE_ITEM) && current == User.current()) {
-                                    // this is the fast path for the 99% of cases
-                                    a = Jenkins.getAuthentication();
-                                } else {
-                                    try {
-                                        a = ((User) current).impersonate();
-                                    } catch (UsernameNotFoundException e) {
-                                        a = null;
-                                    }
-                                }
-                                if (current == User.current() && jenkins.getACL().hasPermission(a, USE_ITEM)) {
-                                    current = jenkins;
-                                    iterator = providers.iterator();
-                                } else {
-                                    current = null;
-                                }
-                            } else if (current instanceof Jenkins) {
-                                // escape
-                                current = null;
-                            } else if (current instanceof ComputerSet) {
-                                current = Jenkins.get();
-                                iterator = providers.iterator();
-                            } else if (current instanceof Computer) {
-                                current = Jenkins.get();
-                                iterator = providers.iterator();
-                            } else if (current instanceof Node) {
-                                current = Jenkins.get();
-                                iterator = providers.iterator();
-                            } else {
-                                // fall back to Jenkins as the ultimate parent of everything else
-                                current = Jenkins.get();
-                                iterator = providers.iterator();
+                    }
+                    // now walk up the model object tree
+                    // TODO make this an extension point perhaps ContextResolver could help
+                    if (current instanceof Item) {
+                        current = ((Item) current).getParent();
+                        iterator = providers.iterator();
+                    } else if (current instanceof User) {
+                        Jenkins jenkins = Jenkins.get();
+                        Authentication a;
+                        if (jenkins.hasPermission(USE_ITEM) && current == User.current()) {
+                            // this is the fast path for the 99% of cases
+                            a = Jenkins.getAuthentication();
+                        } else {
+                            try {
+                                a = ((User) current).impersonate();
+                            } catch (UsernameNotFoundException e) {
+                                a = null;
                             }
                         }
-                        return false;
+                        if (current == User.current() && jenkins.getACL().hasPermission(a, USE_ITEM)) {
+                            current = jenkins;
+                            iterator = providers.iterator();
+                        } else {
+                            current = null;
+                        }
+                    } else if (current instanceof Jenkins) {
+                        // escape
+                        current = null;
+                    } else if (current instanceof ComputerSet) {
+                        current = Jenkins.get();
+                        iterator = providers.iterator();
+                    } else if (current instanceof Computer) {
+                        current = Jenkins.get();
+                        iterator = providers.iterator();
+                    } else if (current instanceof Node) {
+                        current = Jenkins.get();
+                        iterator = providers.iterator();
+                    } else {
+                        // fall back to Jenkins as the ultimate parent of everything else
+                        current = Jenkins.get();
+                        iterator = providers.iterator();
                     }
+                }
+                return false;
+            }
 
-                    public CredentialsStore next() {
-                        if (!hasNext()) {
-                            throw new NoSuchElementException();
-                        }
-                        try {
-                            return next;
-                        } finally {
-                            next = null;
-                        }
-                    }
-                };
+            public CredentialsStore next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                try {
+                    return next;
+                } finally {
+                    next = null;
+                }
             }
         };
     }
@@ -1068,6 +1064,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     /**
      * {@inheritDoc}
      */
+    @NonNull
     @Override
     public String getDisplayName() {
         return StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(getClass().getSimpleName()), ' ');
@@ -1658,19 +1655,16 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * {@link DoNotUse} in order to ensure that no plugin attempts to call this method. If invoking this method
      * from an {@code init.d} Groovy script, ensure that the call is guarded by a marker file such that
      *
-     * @throws IOException if things go wrong.
      */
     @Restricted(DoNotUse.class) // Do not use from plugins
-    public static void saveAll() throws IOException {
+    public static void saveAll() {
         LOGGER.entering(CredentialsProvider.class.getName(), "saveAll");
         try {
             Jenkins jenkins = Jenkins.get();
             jenkins.checkPermission(Jenkins.ADMINISTER);
             LOGGER.log(Level.INFO, "Forced save credentials stores: Requested by {0}",
                     StringUtils.defaultIfBlank(Jenkins.getAuthentication().getName(), "anonymous"));
-            Timer.get().execute(new Runnable() {
-            @Override
-            public void run() {
+            Timer.get().execute(() -> {
                 try (ACLContext ctx = ACL.as(ACL.SYSTEM)) {
                     if (jenkins.getInitLevel().compareTo(InitMilestone.JOB_LOADED) < 0) {
                         LOGGER.log(Level.INFO, "Forced save credentials stores: Initialization has not completed");
@@ -1722,7 +1716,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                             LOGGER.log(Level.INFO, "Forced save credentials stores: Processing Users ({0} processed)",
                                     count);
                         }
-                        // HACK ALERT we just want to access the user's stores so we do just enough impersonation
+                        // HACK ALERT we just want to access the user's stores, so we do just enough impersonation
                         // to ensure that User.current() == user
                         // while we could use User.impersonate() that would force a query against the backing
                         // SecurityRealm to revalidate
@@ -1743,8 +1737,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 } finally {
                     LOGGER.log(Level.INFO, "Forced save credentials stores: Completed");
                 }
-            }
-        });
+            });
         } finally {
             LOGGER.exiting(CredentialsProvider.class.getName(), "saveAll");
         }

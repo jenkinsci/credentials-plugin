@@ -15,7 +15,6 @@ import io.jenkins.plugins.casc.Attribute;
 import io.jenkins.plugins.casc.BaseConfigurator;
 import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.ConfigurationContext;
-import io.jenkins.plugins.casc.ConfiguratorException;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.model.CNode;
@@ -113,7 +112,7 @@ public class CredentialsProviderTest {
         }
 
         @Override
-        protected TestCredentialsProvider instance(Mapping mapping, ConfigurationContext configurationContext) throws ConfiguratorException {
+        protected TestCredentialsProvider instance(Mapping mapping, ConfigurationContext configurationContext) {
             return ExtensionList.lookupSingleton(TestCredentialsProvider.class);
         }
 

@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.BaseCredentials;
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
 import org.junit.Rule;
@@ -37,9 +38,9 @@ import org.jvnet.hudson.test.JenkinsRule;
 import java.util.Collection;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 
 public class DomainRestrictedCredentialsTest {
     // Allow for testing using JUnit4, instead of JUnit3.
@@ -52,7 +53,7 @@ public class DomainRestrictedCredentialsTest {
             this.answer = answer;
         }
 
-        public boolean matches(List<DomainRequirement> requirements) {
+        public boolean matches(@NonNull List<DomainRequirement> requirements) {
             return answer;
         }
 
@@ -60,7 +61,7 @@ public class DomainRestrictedCredentialsTest {
     }
 
     @Test
-    public void testGetRestrictedCredentials() throws Exception {
+    public void testGetRestrictedCredentials() {
         Credentials trueCredentials = new TestRestrictedCredentials(true);
         Credentials falseCredentials = new TestRestrictedCredentials(false);
 

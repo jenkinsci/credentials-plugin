@@ -382,8 +382,7 @@ public class CertificateCredentialsImplTest {
         JenkinsRule.WebClient wc = r.createWebClient();
         Page page = wc.getPage(request);
 
-        String content = page.getWebResponse().getContentAsString();
-        return content;
+        return page.getWebResponse().getContentAsString();
     }
 
     private CredentialsStore getFolderStore(Folder f) {

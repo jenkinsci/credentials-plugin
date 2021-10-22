@@ -45,7 +45,6 @@ import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException2;
 import hudson.security.Permission;
 import java.io.IOException;
-import java.io.ObjectStreamException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +56,6 @@ import java.util.WeakHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import net.sf.json.JSONObject;
@@ -218,7 +216,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * @since 1.5
          */
         @SuppressWarnings("deprecation")
-        private Object readResolve() throws ObjectStreamException {
+        private Object readResolve() {
             if (domainCredentialsMap == null) {
                 return new UserCredentialsProperty(credentials);
             }
@@ -469,7 +467,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * {@inheritDoc}
          */
         @Override
-        public UserProperty reconfigure(StaplerRequest req, JSONObject form) throws Descriptor.FormException {
+        public UserProperty reconfigure(StaplerRequest req, JSONObject form) {
             return this;
         }
 
@@ -507,6 +505,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.UserCredentialsProvider_DisplayName();
@@ -679,12 +678,13 @@ public class UserCredentialsProvider extends CredentialsProvider {
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public ACL getACL() {
             return new ACL() {
                 @Override
-                public boolean hasPermission(@Nonnull Authentication a, @Nonnull Permission permission) {
-                    return user.equals(User.get(a.getName())) && user.getACL().hasPermission(a, permission);
+                public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
+                    return user.equals(User.getById(a.getName(), true)) && user.getACL().hasPermission(a, permission);
                 }
             };
         }

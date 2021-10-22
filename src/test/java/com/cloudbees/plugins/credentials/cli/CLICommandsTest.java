@@ -51,6 +51,7 @@ import org.xmlunit.matchers.CompareMatcher;
 import static hudson.cli.CLICommandInvoker.Matcher.failedWith;
 import static hudson.cli.CLICommandInvoker.Matcher.succeeded;
 import static hudson.cli.CLICommandInvoker.Matcher.succeededSilently;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -60,7 +61,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assume.assumeThat;
 
 public class CLICommandsTest {
@@ -340,7 +340,7 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void importCredentialsAsXML() throws IOException {
+    public void importCredentialsAsXML() {
         InputStream input = this.getClass().getResourceAsStream("credentials-input.xml");
         CLICommandInvoker invoker = new CLICommandInvoker(r, new ImportCredentialsAsXmlCommand());
 

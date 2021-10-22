@@ -33,11 +33,10 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.ACL;
+import hudson.security.ACLContext;
 import hudson.util.FormValidation;
 import java.io.IOException;
 import java.util.Iterator;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -48,9 +47,9 @@ import static hudson.util.FormValidation.Kind.ERROR;
 import static hudson.util.FormValidation.Kind.OK;
 import static hudson.util.FormValidation.Kind.WARNING;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class BaseStandardCredentialsTest {
@@ -59,7 +58,7 @@ public class BaseStandardCredentialsTest {
     public JenkinsRule r = new JenkinsRule();
 
     @Test
-    public void doCheckIdSyntax() throws Exception {
+    public void doCheckIdSyntax() {
         assertDoCheckId("", r.jenkins, OK);
         assertDoCheckId(/* random UUID */IdCredentials.Helpers.fixEmptyId(null), r.jenkins, OK);
         assertDoCheckId("blah-blah", r.jenkins, OK);
@@ -70,23 +69,17 @@ public class BaseStandardCredentialsTest {
     public void doCheckIdDuplication() throws Exception {
         // First set up two users, each of which has an existing credentials named ‘per-user’.
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        final User alice = User.get("alice");
-        SecurityContext ctx = ACL.impersonate(alice.impersonate());
-        try {
+        final User alice = User.getById("alice", true);
+        try (ACLContext ctx = ACL.as(alice)) {
             CredentialsStore store = lookupStore(alice);
             addCreds(store, CredentialsScope.USER, "alice");
             addCreds(store, CredentialsScope.USER, "per-user");
-        } finally {
-            SecurityContextHolder.setContext(ctx);
         }
-        User bob = User.get("bob");
-        ctx = ACL.impersonate(bob.impersonate());
-        try {
+        User bob = User.getById("bob", true);
+        try (ACLContext ctx = ACL.as(bob)) {
             CredentialsStore store = lookupStore(bob);
             addCreds(store, CredentialsScope.USER, "bob");
             addCreds(store, CredentialsScope.USER, "per-user");
-        } finally {
-            SecurityContextHolder.setContext(ctx);
         }
 
         // Now set up a folder tree with some masking of credentials.
@@ -104,42 +97,40 @@ public class BaseStandardCredentialsTest {
         addCreds(store, CredentialsScope.GLOBAL, "bottom");
 
         // Now as Alice we expect that duplications are checked in the current and parent contexts, plus the user if distinct.
-        ACL.impersonate(alice.impersonate(), new Runnable() {
-            public void run() {
-                assertDoCheckId("root", r.jenkins, ERROR);
-                assertDoCheckId("rootSystem", r.jenkins, ERROR);
-                assertDoCheckId("masked", r.jenkins, ERROR);
-                assertDoCheckId("top", r.jenkins, OK);
-                assertDoCheckId("bottom", r.jenkins, OK);
-                assertDoCheckId("alice", r.jenkins, WARNING);
-                assertDoCheckId("bob", r.jenkins, OK);
-                assertDoCheckId("per-user", r.jenkins, WARNING);
-                assertDoCheckId("root", top, WARNING);
-                assertDoCheckId("rootSystem", top, OK); // not exported to child contexts, so not a duplicate
-                assertDoCheckId("masked", top, ERROR);
-                assertDoCheckId("top", top, ERROR);
-                assertDoCheckId("bottom", top, OK);
-                assertDoCheckId("alice", top, WARNING);
-                assertDoCheckId("bob", top, OK);
-                assertDoCheckId("per-user", top, WARNING);
-                assertDoCheckId("root", bottom, WARNING);
-                assertDoCheckId("rootSystem", bottom, OK); // not exported to child contexts, so not a duplicate
-                assertDoCheckId("masked", bottom, ERROR);
-                assertDoCheckId("top", bottom, WARNING);
-                assertDoCheckId("bottom", bottom, ERROR);
-                assertDoCheckId("alice", bottom, WARNING);
-                assertDoCheckId("bob", bottom, OK);
-                assertDoCheckId("per-user", bottom, WARNING);
-                assertDoCheckId("root", alice, WARNING);
-                assertDoCheckId("rootSystem", alice, OK); // not exported to child contexts, so not a duplicate
-                assertDoCheckId("masked", alice, WARNING);
-                assertDoCheckId("top", alice, OK);
-                assertDoCheckId("bottom", alice, OK);
-                assertDoCheckId("alice", alice, ERROR);
-                assertDoCheckId("bob", alice, OK);
-                assertDoCheckId("per-user", alice, ERROR);
-            }
-        });
+        try (ACLContext ctx = ACL.as(alice)) {
+            assertDoCheckId("root", r.jenkins, ERROR);
+            assertDoCheckId("rootSystem", r.jenkins, ERROR);
+            assertDoCheckId("masked", r.jenkins, ERROR);
+            assertDoCheckId("top", r.jenkins, OK);
+            assertDoCheckId("bottom", r.jenkins, OK);
+            assertDoCheckId("alice", r.jenkins, WARNING);
+            assertDoCheckId("bob", r.jenkins, OK);
+            assertDoCheckId("per-user", r.jenkins, WARNING);
+            assertDoCheckId("root", top, WARNING);
+            assertDoCheckId("rootSystem", top, OK); // not exported to child contexts, so not a duplicate
+            assertDoCheckId("masked", top, ERROR);
+            assertDoCheckId("top", top, ERROR);
+            assertDoCheckId("bottom", top, OK);
+            assertDoCheckId("alice", top, WARNING);
+            assertDoCheckId("bob", top, OK);
+            assertDoCheckId("per-user", top, WARNING);
+            assertDoCheckId("root", bottom, WARNING);
+            assertDoCheckId("rootSystem", bottom, OK); // not exported to child contexts, so not a duplicate
+            assertDoCheckId("masked", bottom, ERROR);
+            assertDoCheckId("top", bottom, WARNING);
+            assertDoCheckId("bottom", bottom, ERROR);
+            assertDoCheckId("alice", bottom, WARNING);
+            assertDoCheckId("bob", bottom, OK);
+            assertDoCheckId("per-user", bottom, WARNING);
+            assertDoCheckId("root", alice, WARNING);
+            assertDoCheckId("rootSystem", alice, OK); // not exported to child contexts, so not a duplicate
+            assertDoCheckId("masked", alice, WARNING);
+            assertDoCheckId("top", alice, OK);
+            assertDoCheckId("bottom", alice, OK);
+            assertDoCheckId("alice", alice, ERROR);
+            assertDoCheckId("bob", alice, OK);
+            assertDoCheckId("per-user", alice, ERROR);
+        }
 
         // TODO could test the case that alice has Item.READ but not CredentialsProvider.VIEW on a folder, and mocks a web request passing that folder as context
     }

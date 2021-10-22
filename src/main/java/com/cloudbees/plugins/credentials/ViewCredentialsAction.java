@@ -54,7 +54,6 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.model.TransientActionFactory;
@@ -371,14 +370,14 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     /**
      * {@inheritDoc}
      */
-    @Nonnull
+    @NonNull
     @Override
     public ACL getACL() {
         final AccessControlled accessControlled =
                 context instanceof AccessControlled ? (AccessControlled) context : Jenkins.get();
         return new ACL() {
             @Override
-            public boolean hasPermission(@Nonnull Authentication a, @Nonnull Permission permission) {
+            public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
                 if (accessControlled.hasPermission(a, permission)) {
                     for (CredentialsStore s : getLocalStores()) {
                         if (s.hasPermission(a, permission)) {
@@ -397,7 +396,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     // In the general case we would implement ModelObjectWithChildren as the child actions could be viewed as children
     // but in this case we expose them in the sidebar, so they are more correctly part of the context menu.
     @Override
-    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) throws Exception {
+    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
         ContextMenu menu = new ContextMenu();
         for (CredentialsStoreAction action : getStoreActions()) {
             ContextMenuIconUtils.addMenuItem(
@@ -427,9 +426,9 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         /**
          * {@inheritDoc}
          */
-        @Nonnull
+        @NonNull
         @Override
-        public Collection<? extends Action> createFor(@Nonnull TopLevelItem target) {
+        public Collection<? extends Action> createFor(@NonNull TopLevelItem target) {
             return Collections.singleton(new ViewCredentialsAction(target));
         }
     }

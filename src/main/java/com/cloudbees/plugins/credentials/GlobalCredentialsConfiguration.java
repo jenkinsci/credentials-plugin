@@ -209,6 +209,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.GlobalCredentialsConfiguration_DisplayName();

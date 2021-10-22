@@ -43,12 +43,12 @@ import jenkins.model.Jenkins;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 public class SystemCredentialsTest {
 
@@ -57,7 +57,7 @@ public class SystemCredentialsTest {
     public static JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
 
     @Test
-    public void import_system_credentials() throws Exception {
+    public void import_system_credentials() {
         List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentials(
             UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM,
             Collections.singletonList(new HostnameRequirement("api.test.com"))

@@ -25,11 +25,11 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -62,21 +62,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
-import org.xml.sax.SAXException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 
 public class CredentialsUnavailableExceptionTest {
 
@@ -205,10 +202,9 @@ public class CredentialsUnavailableExceptionTest {
         }
 
         @Override
-        public void checkout(@Nonnull Run<?, ?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
-                             @Nonnull TaskListener listener, @javax.annotation.CheckForNull File changelogFile,
-                             @javax.annotation.CheckForNull SCMRevisionState baseline)
-                throws IOException, InterruptedException {
+        public void checkout(@NonNull Run<?, ?> build, @NonNull Launcher launcher, @NonNull FilePath workspace,
+                             @NonNull TaskListener listener, @CheckForNull File changelogFile,
+                             @CheckForNull SCMRevisionState baseline) {
             StandardUsernamePasswordCredentials credentials =
                     CredentialsProvider.findCredentialById(this.id, StandardUsernamePasswordCredentials.class, build);
             if (credentials == null) {
@@ -222,9 +218,8 @@ public class CredentialsUnavailableExceptionTest {
         }
 
         @Override
-        public SCMRevisionState calcRevisionsFromBuild(@Nonnull Run<?, ?> build, @Nullable FilePath workspace,
-                                                       @Nullable Launcher launcher, @Nonnull TaskListener listener)
-                throws IOException, InterruptedException {
+        public SCMRevisionState calcRevisionsFromBuild(@NonNull Run<?, ?> build, @Nullable FilePath workspace,
+                                                       @Nullable Launcher launcher, @NonNull TaskListener listener) {
             return new SCMRevisionState() {
                 @Override
                 public String getIconFileName() {
@@ -244,10 +239,10 @@ public class CredentialsUnavailableExceptionTest {
         }
 
         @Override
-        public PollingResult compareRemoteRevisionWith(@Nonnull Job<?, ?> project, @Nullable Launcher launcher,
-                                                       @Nullable FilePath workspace, @Nonnull TaskListener listener,
-                                                       @Nonnull SCMRevisionState baseline)
-                throws IOException, InterruptedException {
+        public PollingResult compareRemoteRevisionWith(@NonNull Job<?, ?> project, @Nullable Launcher launcher,
+                                                       @Nullable FilePath workspace, @NonNull TaskListener listener,
+                                                       @NonNull SCMRevisionState baseline)
+                throws IOException {
             StandardUsernamePasswordCredentials credentials = CredentialsMatchers.firstOrNull(
                     CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, project,
                             CredentialsProvider.getDefaultAuthenticationOf(project),
@@ -268,8 +263,7 @@ public class CredentialsUnavailableExceptionTest {
             return new ChangeLogParser() {
                 @Override
                 public ChangeLogSet<? extends ChangeLogSet.Entry> parse(Run build, RepositoryBrowser<?> browser,
-                                                                        File changelogFile)
-                        throws IOException, SAXException {
+                                                                        File changelogFile) {
                     return ChangeLogSet.createEmpty(build);
                 }
             };
@@ -282,6 +276,7 @@ public class CredentialsUnavailableExceptionTest {
                 super(RepositoryBrowser.class);
             }
 
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Password SCM";
@@ -298,8 +293,7 @@ public class CredentialsUnavailableExceptionTest {
         }
 
         @Override
-        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
-                throws InterruptedException, IOException {
+        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
             StandardUsernamePasswordCredentials credentials =
                     CredentialsProvider.findCredentialById(this.id, StandardUsernamePasswordCredentials.class, build);
             if (credentials == null) {
@@ -316,6 +310,7 @@ public class CredentialsUnavailableExceptionTest {
         @TestExtension
         public static class DescriptorImpl extends Descriptor<Builder> {
 
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Password buildstep";
@@ -354,6 +349,7 @@ public class CredentialsUnavailableExceptionTest {
         @TestExtension
         public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
 
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Username and unavailable password";

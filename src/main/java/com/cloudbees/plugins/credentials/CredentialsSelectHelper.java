@@ -94,6 +94,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
     /**
      * {@inheritDoc}
      */
+    @NonNull
     @Override
     public String getDisplayName() {
         return Messages.CredentialsSelectHelper_DisplayName();
@@ -567,6 +568,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         /**
          * Our {@link CredentialsStore}.
          */
+        @NonNull
         private final CredentialsStore store;
 
         /**
@@ -577,8 +579,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          * @param token    the context's {@link ContextResolver#getToken(ModelObject)}.
          * @param store    the {@link CredentialsStore}
          */
-        public WrappedCredentialsStore(ContextResolver resolver, CredentialsProvider provider,
-                                       String token, CredentialsStore store) {
+        public WrappedCredentialsStore(@NonNull ContextResolver resolver, @NonNull CredentialsProvider provider,
+                                       @NonNull String token, @NonNull CredentialsStore store) {
             this.store = store;
             this.resolver = resolver;
             this.provider = provider;
@@ -735,6 +737,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Nothing";

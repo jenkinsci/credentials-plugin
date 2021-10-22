@@ -73,7 +73,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.Source;
@@ -336,7 +335,7 @@ public abstract class CredentialsStoreAction
      * {@inheritDoc}
      */
     @Override
-    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) throws Exception {
+    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
         return getContextMenu("");
     }
 
@@ -345,7 +344,7 @@ public abstract class CredentialsStoreAction
      */
     @Override
     public ContextMenu doChildrenContextMenu(StaplerRequest request,
-                                             StaplerResponse response) throws Exception {
+                                             StaplerResponse response) {
         return getChildrenContextMenu("");
     }
 
@@ -571,7 +570,7 @@ public abstract class CredentialsStoreAction
     /**
      * {@inheritDoc}
      */
-    @Nonnull
+    @NonNull
     @Override
     public ACL getACL() {
         return getStore().getACL();
@@ -581,7 +580,7 @@ public abstract class CredentialsStoreAction
      * {@inheritDoc}
      */
     @Override
-    public void checkPermission(@Nonnull Permission permission) throws AccessDeniedException {
+    public void checkPermission(@NonNull Permission permission) throws AccessDeniedException {
         getACL().checkPermission(permission);
     }
 
@@ -589,7 +588,7 @@ public abstract class CredentialsStoreAction
      * {@inheritDoc}
      */
     @Override
-    public boolean hasPermission(@Nonnull Permission permission) {
+    public boolean hasPermission(@NonNull Permission permission) {
         return getACL().hasPermission(permission);
     }
 
@@ -934,8 +933,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response)
-                throws Exception {
+        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
             return getContextMenu("");
         }
 
@@ -944,7 +942,7 @@ public abstract class CredentialsStoreAction
          */
         @Override
         public ContextMenu doChildrenContextMenu(StaplerRequest request,
-                                                 StaplerResponse response) throws Exception {
+                                                 StaplerResponse response) {
             return getChildrenContextMenu("");
         }
 
@@ -1015,7 +1013,7 @@ public abstract class CredentialsStoreAction
         /**
          * {@inheritDoc}
          */
-        @Nonnull
+        @NonNull
         @Override
         public ACL getACL() {
             return getParent().getACL();
@@ -1025,7 +1023,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public void checkPermission(@Nonnull Permission permission) throws AccessDeniedException {
+        public void checkPermission(@NonNull Permission permission) throws AccessDeniedException {
             getACL().checkPermission(permission);
         }
 
@@ -1033,7 +1031,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public boolean hasPermission(@Nonnull Permission permission) {
+        public boolean hasPermission(@NonNull Permission permission) {
             return getACL().hasPermission(permission);
         }
 
@@ -1053,6 +1051,7 @@ public abstract class CredentialsStoreAction
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Domain";
@@ -1449,8 +1448,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response)
-                throws Exception {
+        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
             return getContextMenu("");
         }
 
@@ -1522,7 +1520,7 @@ public abstract class CredentialsStoreAction
         /**
          * {@inheritDoc}
          */
-        @Nonnull
+        @NonNull
         @Override
         public ACL getACL() {
             return getParent().getACL();
@@ -1532,7 +1530,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public void checkPermission(@Nonnull Permission permission) throws AccessDeniedException {
+        public void checkPermission(@NonNull Permission permission) throws AccessDeniedException {
             getACL().checkPermission(permission);
         }
 
@@ -1540,7 +1538,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public boolean hasPermission(@Nonnull Permission permission) {
+        public boolean hasPermission(@NonNull Permission permission) {
             return getACL().hasPermission(permission);
         }
 
@@ -1564,6 +1562,7 @@ public abstract class CredentialsStoreAction
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Credential";

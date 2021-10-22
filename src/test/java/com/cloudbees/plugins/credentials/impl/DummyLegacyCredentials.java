@@ -27,6 +27,7 @@ public class DummyLegacyCredentials extends BaseCredentials implements UsernameP
         this.password = Secret.fromString(password);
     }
 
+    @NonNull
     public String getUsername() {
         return username;
     }

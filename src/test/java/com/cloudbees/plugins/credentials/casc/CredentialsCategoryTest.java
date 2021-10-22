@@ -6,31 +6,28 @@ import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionList;
 import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
-import io.jenkins.plugins.casc.model.CNode;
-import jenkins.model.GlobalConfiguration;
-import jenkins.model.GlobalConfigurationCategory;
-import org.jenkinsci.Symbol;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.jvnet.hudson.test.TestExtension;
-
-import javax.annotation.Nonnull;
-
-import java.io.ByteArrayOutputStream;
-
 import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
+import io.jenkins.plugins.casc.model.CNode;
+import java.io.ByteArrayOutputStream;
+import jenkins.model.GlobalConfiguration;
+import jenkins.model.GlobalConfigurationCategory;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import org.jenkinsci.Symbol;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.jvnet.hudson.test.TestExtension;
 
 public class CredentialsCategoryTest {
 
@@ -63,13 +60,13 @@ public class CredentialsCategoryTest {
 
         private String config;
 
-        @Nonnull
+        @NonNull
         @Override
         public GlobalConfigurationCategory getCategory() {
             return GlobalConfigurationCategory.get(GlobalCredentialsConfiguration.Category.class);
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public String getDisplayName() {
             return "Test Global Configuration";

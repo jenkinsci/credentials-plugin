@@ -24,11 +24,11 @@ import org.jvnet.hudson.test.JenkinsRule;
 import org.xmlunit.matchers.CompareMatcher;
 
 import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assume.assumeThat;
 
 public class CredentialsStoreActionTest {
@@ -38,7 +38,7 @@ public class CredentialsStoreActionTest {
     private CredentialsStore systemStore;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         system = ExtensionList.lookup(CredentialsProvider.class).get(SystemCredentialsProvider.ProviderImpl.class);
         systemStore = system.getStore(j.getInstance());
     }

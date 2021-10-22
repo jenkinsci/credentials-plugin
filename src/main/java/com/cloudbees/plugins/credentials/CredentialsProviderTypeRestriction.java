@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
@@ -242,6 +243,7 @@ public abstract class CredentialsProviderTypeRestriction
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.CredentialsProviderTypeRestriction_Includes_DisplayName();
@@ -416,6 +418,7 @@ public abstract class CredentialsProviderTypeRestriction
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.CredentialsProviderTypeRestriction_Excludes_DisplayName();

@@ -24,6 +24,7 @@
 
 package com.cloudbees.plugins.credentials;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -125,8 +126,10 @@ public class CredentialsNameProviderTest {
         @Override public CredentialsScope getScope() {
             return CredentialsScope.GLOBAL;
         }
+        @NonNull
         @Override public CredentialsDescriptor getDescriptor() {
             return new CredentialsDescriptor() {
+                @NonNull
                 @Override public String getDisplayName() {
                     return TestCredentials.this.getClass().getSimpleName();
                 }
@@ -135,7 +138,8 @@ public class CredentialsNameProviderTest {
     }
 
     private static abstract class TestCredentialsNameProvider extends CredentialsNameProvider<Credentials> {
-         @Override public String getName(Credentials credentials) {
+         @NonNull
+         @Override public String getName(@NonNull Credentials credentials) {
             return getClass().getSimpleName();
         }
     }

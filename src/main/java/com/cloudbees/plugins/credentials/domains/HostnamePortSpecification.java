@@ -206,6 +206,7 @@ public class HostnamePortSpecification extends DomainSpecification {
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.HostnamePortSpecification_DisplayName();

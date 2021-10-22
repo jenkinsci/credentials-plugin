@@ -42,7 +42,7 @@ public class SecretBytesTest {
     public ConfidentialStoreRule confidentialStore = new ConfidentialStoreRule();
 
     @Test
-    public void encrypt() throws Exception {
+    public void encrypt() {
         SecretBytes secret = SecretBytes.fromBytes("abc".getBytes());
         assertThat(secret.getPlainData(), is("abc".getBytes()));
 
@@ -66,12 +66,12 @@ public class SecretBytesTest {
     }
 
     @Test
-    public void decrypt() throws Exception {
+    public void decrypt() {
         assertThat(SecretBytes.fromBytes("abc".getBytes()).getPlainData(), is("abc".getBytes()));
     }
 
     @Test
-    public void isSecretBytes() throws Exception {
+    public void isSecretBytes() {
         assertThat(SecretBytes.isSecretBytes(SecretBytes.fromBytes("abc".getBytes()).toString()), is(true));
         assertThat(SecretBytes.isSecretBytes(""), is(false));
         assertThat(SecretBytes.isSecretBytes("{}"), is(false));
@@ -95,7 +95,7 @@ public class SecretBytesTest {
     }
 
     @Test
-    public void noAccidentalDecrypt() throws Exception {
+    public void noAccidentalDecrypt() {
         // if this fails then you have magically picked up the secret key that this was generated from
         // running the test again should pass... but it is highly unlikely that you will ever get the
         // same key as I had wen I generated this value
@@ -104,7 +104,7 @@ public class SecretBytesTest {
     }
 
     @Test
-    public void serialization() throws Exception {
+    public void serialization() {
         SecretBytes s = SecretBytes.fromBytes("Mr.Jenkins".getBytes());
         String xml = Jenkins.XSTREAM.toXML(s);
         assertThat(xml, not(containsString(Base64.encodeBase64String("Mr.Jenkins".getBytes()))));
@@ -126,33 +126,31 @@ public class SecretBytesTest {
         Foo foo = new Foo();
         Jenkins.XSTREAM.fromXML(xml, foo);
         assertThat(SecretBytes.getPlainData(foo.password), is("secret".getBytes()));
-        //System.out.println(Jenkins.XSTREAM.toXML(foo));
-        //System.out.println(Jenkins.XSTREAM.toXML(foo));
     }
 
     @Test
-    public void largeRawString__noChunking__noUrlSafe() throws Exception {
+    public void largeRawString__noChunking__noUrlSafe() {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
         assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, false, false), StandardCharsets.US_ASCII)).getPlainData(), is(data));
     }
 
     @Test
-    public void largeRawString__chunking__noUrlSafe() throws Exception {
+    public void largeRawString__chunking__noUrlSafe() {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
         assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, true, false), StandardCharsets.US_ASCII)).getPlainData(), is(data));
     }
 
     @Test
-    public void largeRawString__noChunking__urlSafe() throws Exception {
+    public void largeRawString__noChunking__urlSafe() {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
         assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, false, true), StandardCharsets.US_ASCII)).getPlainData(), is(data));
     }
 
     @Test
-    public void largeRawString__chunking__urlSafe() throws Exception {
+    public void largeRawString__chunking__urlSafe() {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
         assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, true, true), StandardCharsets.US_ASCII)).getPlainData(), is(data));
