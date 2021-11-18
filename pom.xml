@@ -67,7 +67,7 @@
   <properties>
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
-    <jenkins.version>2.308</jenkins.version>
+    <jenkins.version>2.334</jenkins.version>
     <java.level>8</java.level>
     <antlr4.version>4.9.3</antlr4.version>
   </properties>
@@ -89,8 +89,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.303.x</artifactId>
-        <version>1090.v0a_33df40457a_</version>
+        <artifactId>bom-weekly</artifactId>
+        <version>1148.v7261f385f859</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
