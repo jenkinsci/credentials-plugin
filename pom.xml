@@ -34,7 +34,7 @@
   </parent>
 
   <artifactId>credentials</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>Credentials Plugin</name>
@@ -65,8 +65,7 @@
   </scm>
 
   <properties>
-    <revision>2.6.3</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <changelist>999999-SNAPSHOT</changelist>
     <jenkins.version>2.308</jenkins.version>
     <java.level>8</java.level>
     <antlr4.version>4.9.2</antlr4.version>
