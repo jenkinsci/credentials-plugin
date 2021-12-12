@@ -67,7 +67,7 @@
   <properties>
     <revision>2.6.3</revision>
     <changelist>-SNAPSHOT</changelist>
-    <jenkins.version>2.308</jenkins.version>
+    <jenkins.version>2.324-SNAPSHOT</jenkins.version>
     <java.level>8</java.level>
     <antlr4.version>4.9.2</antlr4.version>
   </properties>
