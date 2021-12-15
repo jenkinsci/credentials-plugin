@@ -1,5 +1,8 @@
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import hudson.ExtensionList;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -12,6 +15,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class CredentialsProviderTypeRestrictionTest {
 
@@ -38,6 +43,10 @@ public class CredentialsProviderTypeRestrictionTest {
 
         CredentialsProviderTypeRestriction.Includes includes = (CredentialsProviderTypeRestriction.Includes) includesRestriction;
         assertThat(includes.getType(), is("com.cloudbees.plugins.credentials.impl.DummyIdCredentials"));
+
+        CredentialsTypeFilter typeFilter = instance.getTypeFilter();
+        assertTrue(typeFilter.filter(ExtensionList.lookupSingleton(UsernamePasswordCredentialsImpl.DescriptorImpl.class)));
+        assertFalse(typeFilter.filter(ExtensionList.lookupSingleton(CertificateCredentialsImpl.DescriptorImpl.class)));
     }
 
 }
