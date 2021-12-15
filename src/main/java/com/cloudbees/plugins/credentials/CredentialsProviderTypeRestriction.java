@@ -34,7 +34,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jenkins.model.Jenkins;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -107,19 +106,19 @@ public abstract class CredentialsProviderTypeRestriction
          */
         private static final long serialVersionUID = 1L;
         /**
-         * The {@link CredentialsProvider} {@link Class#getName()}.
+         * The {@link CredentialsProvider} {@link Descriptor#getId}.
          */
-        private final String provider;
+        private String provider;
         /**
-         * The {@link CredentialsDescriptor} {@link Class#getName()}.
+         * The {@link CredentialsDescriptor} {@link Descriptor#getId}.
          */
         private String type;
 
         /**
          * Our constructor.
          *
-         * @param provider the {@link CredentialsProvider} {@link Class#getName()}.
-         * @param type     the {@link CredentialsDescriptor} {@link Class#getName()}.
+         * @param provider the {@link CredentialsProvider} {@link Descriptor#getId}.
+         * @param type     the {@link CredentialsDescriptor} {@link Descriptor#getId}.
          */
         @DataBoundConstructor
         public Includes(String provider, String type) {
@@ -128,13 +127,8 @@ public abstract class CredentialsProviderTypeRestriction
         }
 
         private Object readResolve() {
-            Descriptor<?> descriptor = Jenkins.get().getDescriptor(type);
-            if (descriptor != null) {
-                return this;
-            }
-
-            this.type = convertDescriptorClassNameToId(type);
-
+            provider = convertDescriptorClassNameToId(provider);
+            type = convertDescriptorClassNameToId(type);
             return this;
         }
 
@@ -279,13 +273,14 @@ public abstract class CredentialsProviderTypeRestriction
         }
     }
 
-    private static String convertDescriptorClassNameToId(String restrictionType) {
-        return ExtensionList.lookup(CredentialsDescriptor.class)
+    @SuppressWarnings("rawtypes")
+    static String convertDescriptorClassNameToId(String idOrDescriptorClassName) {
+        return ExtensionList.lookup(Descriptor.class)
                 .stream()
-                .filter(desc -> desc.getClass().getName().equals(restrictionType))
+                .filter(desc -> desc.getClass().getName().equals(idOrDescriptorClassName))
                 .map(Descriptor::getId)
                 .findFirst()
-                .orElse(restrictionType);
+                .orElse(idOrDescriptorClassName);
     }
 
     /**
@@ -299,19 +294,19 @@ public abstract class CredentialsProviderTypeRestriction
          */
         private static final long serialVersionUID = 1L;
         /**
-         * The {@link CredentialsProvider} {@link Class#getName()}.
+         * The {@link CredentialsProvider} {@link Descriptor#getId}.
          */
-        private final String provider;
+        private String provider;
         /**
-         * The {@link CredentialsDescriptor} {@link Class#getName()}.
+         * The {@link CredentialsDescriptor} {@link Descriptor#getId}.
          */
         private String type;
 
         /**
          * Our constructor.
          *
-         * @param provider the {@link CredentialsProvider} {@link Class#getName()}.
-         * @param type     the {@link CredentialsDescriptor} {@link Class#getName()}.
+         * @param provider the {@link CredentialsProvider} {@link Descriptor#getId}.
+         * @param type     the {@link CredentialsDescriptor} {@link Descriptor#getId}.
          */
         @DataBoundConstructor
         public Excludes(String provider, String type) {
@@ -320,29 +315,20 @@ public abstract class CredentialsProviderTypeRestriction
         }
 
         private Object readResolve() {
-            Descriptor<?> descriptor = Jenkins.get().getDescriptor(type);
-            if (descriptor != null) {
-                return this;
-            }
-
-            this.type = convertDescriptorClassNameToId(type);
-
+            provider = convertDescriptorClassNameToId(provider);
+            type = convertDescriptorClassNameToId(type);
             return this;
         }
 
         /**
-         * Returns the {@link CredentialsProvider} {@link Class#getName()}.
-         *
-         * @return the {@link CredentialsProvider} {@link Class#getName()}.
+         * Returns the {@link CredentialsProvider} {@link Descriptor#getId}.
          */
         public String getProvider() {
             return provider;
         }
 
         /**
-         * Returns the {@link CredentialsDescriptor} {@link Class#getName()}.
-         *
-         * @return the {@link CredentialsDescriptor} {@link Class#getName()}.
+         * Returns the {@link CredentialsDescriptor} {@link Descriptor#getId}.
          */
         public String getType() {
             return type;

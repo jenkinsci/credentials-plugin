@@ -170,18 +170,23 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         private static final long serialVersionUID = 1L;
         /**
-         * The set of classes that will be allowed.
+         * The set of {@link Descriptor#getId}s that will be allowed.
          */
-        private final Set<String> classNames;
+        private Set<String> classNames;
 
         /**
          * Our constructor.
          *
-         * @param classNames the list of included class names.
+         * @param classNames the list of included {@link Descriptor#getId}s.
          */
         @DataBoundConstructor
         public Includes(@CheckForNull List<String> classNames) {
             this.classNames = new LinkedHashSet<>(Util.fixNull(classNames));
+        }
+
+        private Object readResolve() {
+            classNames = CredentialsProviderFilter.convertDescriptorClassNamesToIds(classNames);
+            return this;
         }
 
         /**
@@ -193,9 +198,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
         }
 
         /**
-         * Returns the list of allowed {@link Class#getName()}.
-         *
-         * @return the list of allowed {@link Class#getName()}.
+         * Returns the list of allowed {@link Descriptor#getId}s.
          */
         @NonNull
         public List<String> getClassNames() {
@@ -279,18 +282,23 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
          */
         private static final long serialVersionUID = 1L;
         /**
-         * The set of classes that will not be allowed.
+         * The set of {@link Descriptor#getId}s that will not be allowed.
          */
-        private final Set<String> classNames;
+        private Set<String> classNames;
 
         /**
          * Our constructor.
          *
-         * @param classNames the list of excluded class names.
+         * @param classNames the list of excluded {@link Descriptor#getId}s.
          */
         @DataBoundConstructor
         public Excludes(@CheckForNull List<String> classNames) {
             this.classNames = new LinkedHashSet<>(Util.fixNull(classNames));
+        }
+
+        private Object readResolve() {
+            classNames = CredentialsProviderFilter.convertDescriptorClassNamesToIds(classNames);
+            return this;
         }
 
         /**
@@ -302,9 +310,7 @@ public abstract class CredentialsTypeFilter extends AbstractDescribableImpl<Cred
         }
 
         /**
-         * Returns the list of banned {@link Class#getName()}.
-         *
-         * @return the list of banned {@link Class#getName()}.
+         * Returns the list of banned {@link Descriptor#getId}s.
          */
         @NonNull
         public List<String> getClassNames() {
