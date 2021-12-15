@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.29</version>
+    <version>4.31</version>
     <relativePath />
   </parent>
 
@@ -209,7 +209,7 @@
         <asciidoctor.maven.plugin.version>2.2.1</asciidoctor.maven.plugin.version>
         <asciidoctorj.pdf.version>1.6.0</asciidoctorj.pdf.version>
         <asciidoctorj.version>2.5.2</asciidoctorj.version>
-        <jruby.version>9.3.1.0</jruby.version>
+        <jruby.version>9.3.2.0</jruby.version>
       </properties>
       <build>
         <plugins>
