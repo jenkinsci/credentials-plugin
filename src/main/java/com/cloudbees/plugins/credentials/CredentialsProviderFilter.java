@@ -30,6 +30,7 @@ import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
