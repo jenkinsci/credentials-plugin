@@ -25,10 +25,13 @@
 package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
 import java.util.logging.Level;
+import jenkins.model.Jenkins;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
 
@@ -46,6 +49,30 @@ public class UsernamePasswordCredentialsImplTest {
         assertEquals("bob/******", CredentialsNameProvider.name(creds));
         creds.setUsernameSecret(true);
         assertEquals("abc123", CredentialsNameProvider.name(creds));
+    }
+
+    @Issue("JENKINS-67132")
+    @Test public void subclassDeserialization() {
+        SpecialUsernamePasswordCredentialsImpl c = (SpecialUsernamePasswordCredentialsImpl) Jenkins.XSTREAM2.fromXML(
+            "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImplTest_-SpecialUsernamePasswordCredentialsImpl>\n" +
+            "  <scope>GLOBAL</scope>\n" +
+            "  <id>xxx</id>\n" +
+            "  <username>bob</username>\n" +
+            "  <password>s3cr3t</password>\n" +
+            "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImplTest_-SpecialUsernamePasswordCredentialsImpl>");
+        assertTrue(c.initialized);
+        assertEquals("bob", c.getUsername());
+        assertTrue(c.isUsernameSecret());
+    }
+    public static final class SpecialUsernamePasswordCredentialsImpl extends UsernamePasswordCredentialsImpl {
+        public SpecialUsernamePasswordCredentialsImpl(CredentialsScope scope, String id, String description, String username, String password) {
+            super(scope, id, description, username, password);
+        }
+        transient boolean initialized;
+        private Object readResolve() {
+            initialized = true;
+            return this;
+        }
     }
 
 }

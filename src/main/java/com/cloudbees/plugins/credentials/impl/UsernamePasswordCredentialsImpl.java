@@ -79,13 +79,6 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
         this.password = Secret.fromString(password);
     }
 
-    private Object readResolve() {
-        if (usernameSecret == null) {
-            usernameSecret = true;
-        }
-        return this;
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -104,7 +97,7 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
 
     @Override
     public boolean isUsernameSecret() {
-        return usernameSecret;
+        return usernameSecret != null ? usernameSecret : true;
     }
 
     @DataBoundSetter
