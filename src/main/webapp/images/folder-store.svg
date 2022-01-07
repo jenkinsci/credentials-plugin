@@ -12,7 +12,6 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    inkscape:export-ydpi="90"
    inkscape:export-xdpi="90"
-   inkscape:export-filename="/Users/stephenc/src/plugins/cloudbees-registration-plugin/src/main/webapp/images/48x48/credentials.png"
    sodipodi:docname="folder-store.svg"
    inkscape:version="0.48.5 r10040"
    sodipodi:version="0.32"
@@ -1126,7 +1125,6 @@
         <g
            inkscape:export-ydpi="74.800003"
            inkscape:export-xdpi="74.800003"
-           inkscape:export-filename="/home/jimmac/ximian_art/icons/nautilus/suse93/gnome-fs-directory.png"
            transform="matrix(1.040764,0,0.05449252,1.040764,-8.670199,2.670594)"
            id="g220"
            style="fill:#ffffff;fill-opacity:0.75706213000000000;fill-rule:nonzero;stroke:none">
@@ -1140,7 +1138,6 @@
         <path
            inkscape:export-ydpi="74.800003"
            inkscape:export-xdpi="74.800003"
-           inkscape:export-filename="/home/jimmac/ximian_art/icons/nautilus/suse93/gnome-fs-directory.png"
            sodipodi:nodetypes="cscccscc"
            id="path233"
            d="m 39.783532,39.51062 c 1.143894,-0.04406 1.963076,-1.096299 2.047035,-2.321005 0.791787,-11.548687 1.65936,-21.231949 1.65936,-21.231949 0.07215,-0.247484 -0.167911,-0.494967 -0.48014,-0.494967 l -34.3711566,0 c 0,0 -1.8503191,21.866892 -1.8503191,21.866892 -0.1145551,0.982066 -0.4660075,1.804718 -1.5498358,2.183713 l 34.5450565,-0.0027 z"
