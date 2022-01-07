@@ -143,7 +143,7 @@ public class BaseStandardCredentialsTest {
         // check there is no validation message about a duplicated ID when updating
         JenkinsRule.WebClient webClient = r.createWebClient();
         HtmlPage htmlPage = webClient.goTo("credentials/store/system/domain/_/credential/test/update");
-        assertThat(htmlPage.asText(), not(containsString("This ID is already in use")));
+        assertThat(htmlPage.asNormalizedText(), not(containsString("This ID is already in use")));
     }
     
     private static CredentialsStore lookupStore(ModelObject object) {
