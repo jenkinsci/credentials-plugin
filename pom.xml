@@ -67,7 +67,7 @@
   <properties>
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
-    <jenkins.version>2.338-SNAPSHOT</jenkins.version>
+    <jenkins.version>2.337</jenkins.version>
     <java.level>8</java.level>
     <antlr4.version>4.9.3</antlr4.version>
   </properties>

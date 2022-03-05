@@ -22,7 +22,7 @@ public class ManageCredentialsConfiguration extends ManagementLink {
 
     @Override
     public String getIconFileName() {
-        return "symbol-lock-closed";
+        return "symbol-key";
     }
 
     @Override

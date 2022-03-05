@@ -112,7 +112,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public String getIconFileName() {
         return isVisible()
-                ? "symbol-lock-closed"
+                ? "symbol-key"
                 : null;
     }
 

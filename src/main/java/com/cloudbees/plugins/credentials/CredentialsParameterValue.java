@@ -156,7 +156,7 @@ public class CredentialsParameterValue extends ParameterValue {
         if (c != null) {
             return c.getDescriptor().getIconClassName();
         }
-        return "symbol-lock-closed";
+        return "symbol-key";
     }
 
     public String url() {

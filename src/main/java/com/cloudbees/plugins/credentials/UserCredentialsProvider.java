@@ -164,7 +164,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
      */
     @Override
     public String getIconClassName() {
-        return "icon-credentials-user-store";
+        return "symbol-person";
     }
 
     /**
@@ -569,7 +569,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @Override
         public String getIconFileName() {
             return isVisible()
-                    ? "/plugin/credentials/images/user-store.svg"
+                    ? "symbol-person"
                     : null;
         }
 
@@ -579,7 +579,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
         @Override
         public String getIconClassName() {
             return isVisible()
-                    ? "icon-credentials-user-store"
+                    ? "symbol-person"
                     : null;
         }
 

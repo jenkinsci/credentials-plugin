@@ -298,7 +298,7 @@ public abstract class CredentialsStoreAction
         ContextMenu menu = new ContextMenu();
         if (getStore().isDomainsModifiable() && getStore().hasPermission(MANAGE_DOMAINS)) {
             menu.add(ContextMenuIconUtils.buildUrl(prefix, "newDomain"),
-                    getMenuItemIconUrlByClassSpec("icon-credentials-new-domain icon-md"),
+                    getMenuItemIconUrlByClassSpec("symbol-add"),
                     Messages.CredentialsStoreAction_AddDomainAction()
             );
         }
@@ -887,7 +887,7 @@ public abstract class CredentialsStoreAction
                 if (getStore().hasPermission(CREATE)) {
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "newCredentials"),
-                            getMenuItemIconUrlByClassSpec("symbol-add icon-md"),
+                            getMenuItemIconUrlByClassSpec("symbol-add"),
                             Messages.CredentialsStoreAction_AddCredentialsAction()
                     ));
                 }
