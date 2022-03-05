@@ -22,7 +22,7 @@ public class ManageCredentialsConfiguration extends ManagementLink {
 
     @Override
     public String getIconFileName() {
-        return "/plugin/credentials/images/credentials.svg";
+        return "symbol-lock-closed";
     }
 
     @Override

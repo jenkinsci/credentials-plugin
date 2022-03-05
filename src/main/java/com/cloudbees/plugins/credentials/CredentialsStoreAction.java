@@ -887,7 +887,7 @@ public abstract class CredentialsStoreAction
                 if (getStore().hasPermission(CREATE)) {
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "newCredentials"),
-                            getMenuItemIconUrlByClassSpec("icon-credentials-new-credential icon-md"),
+                            getMenuItemIconUrlByClassSpec("symbol-add icon-md"),
                             Messages.CredentialsStoreAction_AddCredentialsAction()
                     ));
                 }
