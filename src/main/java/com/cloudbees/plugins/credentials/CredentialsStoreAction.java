@@ -406,7 +406,7 @@ public abstract class CredentialsStoreAction
     @Override
     public String getIconClassName() {
         return isVisible()
-                ? "icon-credentials-credentials"
+                ? "symbol-key"
                 : null;
     }
 

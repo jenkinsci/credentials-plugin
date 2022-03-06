@@ -216,7 +216,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         @Override
         public String getIconClassName() {
-            return "icon-credentials-certificate";
+            return "icon-application-certificate";
         }
     }
 
