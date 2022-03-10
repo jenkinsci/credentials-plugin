@@ -58,6 +58,7 @@ import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
 import hudson.util.Secret;
 import hudson.util.XStream2;
+import java.awt.Menu;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
@@ -86,6 +87,7 @@ import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
 import org.acegisecurity.AccessDeniedException;
 import org.apache.commons.lang.StringUtils;
+import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -298,7 +300,7 @@ public abstract class CredentialsStoreAction
         ContextMenu menu = new ContextMenu();
         if (getStore().isDomainsModifiable() && getStore().hasPermission(MANAGE_DOMAINS)) {
             menu.add(ContextMenuIconUtils.buildUrl(prefix, "newDomain"),
-                    getMenuItemIconUrlByClassSpec("symbol-add"),
+                    getMenuItemIconUrlByClassSpec("icon-credentials-new-domain icon-md"),
                     Messages.CredentialsStoreAction_AddDomainAction()
             );
         }
@@ -887,7 +889,7 @@ public abstract class CredentialsStoreAction
                 if (getStore().hasPermission(CREATE)) {
                     result.add(new MenuItem(
                             ContextMenuIconUtils.buildUrl(prefix, "newCredentials"),
-                            getMenuItemIconUrlByClassSpec("symbol-add"),
+                            getMenuItemIconUrlByClassSpec("icon-credentials-new-credential icon-md"),
                             Messages.CredentialsStoreAction_AddCredentialsAction()
                     ));
                 }
