@@ -58,7 +58,6 @@ import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
 import hudson.util.Secret;
 import hudson.util.XStream2;
-import java.awt.Menu;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
