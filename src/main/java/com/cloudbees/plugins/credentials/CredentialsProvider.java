@@ -916,7 +916,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                         CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM, domainRequirements)
                 );
             }
-            return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
+            // TODO should this be calling track?
+            return contextualize(type, CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id)), run);
         }
         // this is a parameter and not the default value, we need to determine who triggered the build
         final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
@@ -960,15 +961,20 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (run.isLogUpdated()) {
             track(run, result);
         }
-        if (result != null) {
-            Credentials contextualized = result.forRun(run);
+        return contextualize(type, result, run);
+    }
+
+    @CheckForNull
+    private static <C extends Credentials> C contextualize(@NonNull Class<C> type, @CheckForNull C credentials, @NonNull Run<?, ?> run) {
+        if (credentials != null) {
+            Credentials contextualized = credentials.forRun(run);
             if (type.isInstance(contextualized)) {
                 return type.cast(contextualized);
             } else {
-                LOGGER.warning(() -> "Ignoring " + contextualized.getClass().getName() + " return value of " + result.getClass().getName() + ".forRun since it is not assignable to " + type.getName());
+                LOGGER.warning(() -> "Ignoring " + contextualized.getClass().getName() + " return value of " + credentials.getClass().getName() + ".forRun since it is not assignable to " + type.getName());
             }
         }
-        return result;
+        return credentials;
     }
 
     /**
