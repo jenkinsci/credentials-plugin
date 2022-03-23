@@ -964,6 +964,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             Credentials contextualized = result.forRun(run);
             if (type.isInstance(contextualized)) {
                 return type.cast(contextualized);
+            } else {
+                LOGGER.warning(() -> "Ignoring " + contextualized.getClass().getName() + " return value of " + result.getClass().getName() + ".forRun since it is not assignable to " + type.getName());
             }
         }
         return result;
