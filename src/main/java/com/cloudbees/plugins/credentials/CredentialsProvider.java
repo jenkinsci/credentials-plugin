@@ -955,6 +955,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             }
         }
         C result = CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(id));
+        Credentials contextualized = result.forRun(run);
+        if (type.isInstance(contextualized)) {
+            result = type.cast(contextualized);
+        }
         // if the run has not completed yet then we can safely assume that the credential is being used for this run
         // so we will track it's usage. We use isLogUpdated() as it could be used during post production
         return run.isLogUpdated() ? track(run, result) : result;
