@@ -174,12 +174,6 @@ public class ContextMenuIconUtils {
      */
     @CheckForNull
     public static Icon getIconByClassSpec(String spec) {
-        try {
-            Method getIconByClassSpec = IconSet.class.getMethod("getIconByClassSpec", Object.class);
-            return (Icon) getIconByClassSpec.invoke(IconSet.icons, spec);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            // ignore
-        }
         return IconSet.icons.getIconByClassSpec(spec);
     }
 
@@ -196,35 +190,14 @@ public class ContextMenuIconUtils {
         if (action.getIconFileName() == null) {
             return null;
         }
-        Icon icon;
-        try {
-            Method getIconByClassSpec = IconSet.class.getMethod("getIconByClassSpec", Object.class);
-            icon = action instanceof IconSpec
-                    ? (Icon) getIconByClassSpec.invoke(IconSet.icons, ((IconSpec) action).getIconClassName())
-                    : null;
-            if (icon != null) {
-                return icon;
-            }
-            Method toNormalizedIconNameClass = IconSet.class.getMethod("toNormalizedIconNameClass", Object.class);
-            icon = (Icon) getIconByClassSpec
-                    .invoke(IconSet.icons, toNormalizedIconNameClass.invoke(null, action.getIconFileName()));
-            if (icon != null) {
-                return icon;
-            }
-            Method getIconByUrl = IconSet.class.getMethod("getIconByUrl", Object.class);
-            return (Icon) getIconByUrl.invoke(IconSet.icons, action.getIconFileName());
-        } catch (NoSuchMethodException e) {
-            icon = action instanceof IconSpec
-                    ? IconSet.icons.getIconByClassSpec(((IconSpec) action).getIconClassName())
-                    : null;
-            if (icon == null) {
-                icon = IconSet.icons.getIconByClassSpec(IconSet.toNormalizedIconNameClass(action.getIconFileName()));
-            }
-            if (icon == null) {
-                icon = IconSet.icons.getIconByUrl(action.getIconFileName());
-            }
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            icon = null;
+        Icon icon = action instanceof IconSpec
+                ? IconSet.icons.getIconByClassSpec(((IconSpec) action).getIconClassName())
+                : null;
+        if (icon == null) {
+            icon = IconSet.icons.getIconByClassSpec(IconSet.toNormalizedIconNameClass(action.getIconFileName()));
+        }
+        if (icon == null) {
+            icon = IconSet.icons.getIconByUrl(action.getIconFileName());
         }
         return icon;
     }
