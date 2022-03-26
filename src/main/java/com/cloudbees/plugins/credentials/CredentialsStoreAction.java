@@ -86,6 +86,7 @@ import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
 import org.acegisecurity.AccessDeniedException;
 import org.apache.commons.lang.StringUtils;
+import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -406,7 +407,7 @@ public abstract class CredentialsStoreAction
     @Override
     public String getIconClassName() {
         return isVisible()
-                ? "icon-credentials-credentials"
+                ? "symbol-key"
                 : null;
     }
 

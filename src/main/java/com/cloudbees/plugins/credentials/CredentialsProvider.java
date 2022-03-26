@@ -1092,7 +1092,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @Override
     public String getIconClassName() {
-        return "icon-credentials-credentials";
+        return "symbol-key";
     }
 
     /**
