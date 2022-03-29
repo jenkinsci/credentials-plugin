@@ -16,7 +16,7 @@ import java.util.List;
  * @see CredentialsProvider#trackAll(Run, List) 
  * @see CredentialsProvider#trackAll(Node, List) 
  */
-public abstract class CredentialsUseListener implements ExtensionPoint {
+public interface CredentialsUseListener extends ExtensionPoint {
 
     /**
      * Called when {@link Credentials} is read by an object.
@@ -24,7 +24,7 @@ public abstract class CredentialsUseListener implements ExtensionPoint {
      * @param c   The used Credentials.
      * @param obj The object using the credentials.
      */
-    public abstract void onUse(Credentials c, ModelObject obj);
+    void onUse(Credentials c, ModelObject obj);
 
     /**
      * Fires the {@link #onUse} event to track the object that uses credentials.
@@ -32,7 +32,7 @@ public abstract class CredentialsUseListener implements ExtensionPoint {
      *  @see CredentialsProvider#trackAll(Run, List)
      *  @see CredentialsProvider#trackAll(Node, List)
      */
-    public static void fireUse(Credentials c, ModelObject obj) {
+    static void fireUse(Credentials c, ModelObject obj) {
         Listeners.notify(CredentialsUseListener.class, true, listener -> listener.onUse(c, obj));
     }
 }
