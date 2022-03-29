@@ -1,12 +1,20 @@
 package com.cloudbees.plugins.credentials;
 
 import hudson.ExtensionPoint;
+import hudson.model.Item;
 import hudson.model.ModelObject;
+import hudson.model.Node;
+import hudson.model.Run;
 import jenkins.util.Listeners;
+
+import java.util.List;
 
 
 /**
- * A Listener to track {@link Credentials } usage.
+ * A Listener to track {@link Credentials} usage.
+ * @see CredentialsProvider#trackAll(Item, List) 
+ * @see CredentialsProvider#trackAll(Run, List) 
+ * @see CredentialsProvider#trackAll(Node, List) 
  */
 public abstract class CredentialsUseListener implements ExtensionPoint {
 
@@ -20,10 +28,11 @@ public abstract class CredentialsUseListener implements ExtensionPoint {
 
     /**
      * Fires the {@link #onUse} event to track the object that uses credentials.
+     *  @see CredentialsProvider#trackAll(Item, List)
+     *  @see CredentialsProvider#trackAll(Run, List)
+     *  @see CredentialsProvider#trackAll(Node, List)
      */
     public static void fireUse(Credentials c, ModelObject obj) {
-        Listeners.notify(CredentialsUseListener.class, true, listener -> {
-            listener.onUse(c, obj);
-        });
+        Listeners.notify(CredentialsUseListener.class, true, listener -> listener.onUse(c, obj));
     }
 }
