@@ -27,6 +27,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionPoint;
 import hudson.model.Describable;
+import hudson.model.Run;
 import java.io.Serializable;
 
 /**
@@ -54,4 +55,16 @@ public interface Credentials extends Describable<Credentials>, Serializable, Ext
     @NonNull
     @SuppressWarnings("unchecked")
     CredentialsDescriptor getDescriptor();
+
+    /**
+     * Optionally produce a special value when used in the context of a particular build.
+     * @param context a build wishing to consume these credentials
+     * @return contextualized credentials, preferably implementing the same interfaces (if not of the same concrete type); by default, {@code this}
+     * @see CredentialsProvider#findCredentialById(java.lang.String, java.lang.Class, hudson.model.Run, com.cloudbees.plugins.credentials.domains.DomainRequirement...)
+     */
+    @NonNull
+    default Credentials forRun(@NonNull Run<?, ?> context) {
+        return this;
+    }
+
 }

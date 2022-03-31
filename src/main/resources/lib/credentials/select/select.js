@@ -262,7 +262,7 @@ Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, functi
 });
 Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0, function (e) {
     e.querySelector("input[name='includeUser']").onclick = function (evt) {
-        var caution = e.querySelector('span.user-credentials-caution');
+        var caution = e.querySelector('div.user-credentials-caution');
         caution.hidden = !this.checked;
     };
     // simpler version of f:helpLink using inline help text

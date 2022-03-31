@@ -126,7 +126,7 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
          */
         @Override
         public String getIconClassName() {
-            return "icon-credentials-userpass";
+            return "symbol-id-card";
         }
     }
 }
