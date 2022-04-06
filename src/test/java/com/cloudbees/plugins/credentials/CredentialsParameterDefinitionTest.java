@@ -27,36 +27,40 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlElementUtil;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.*;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
-import hudson.model.FreeStyleProject;
-import hudson.model.ParameterDefinition;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
-import hudson.model.ParametersDefinitionProperty;
-import hudson.model.User;
+import hudson.markup.MarkupFormatter;
+import hudson.model.*;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.tasks.Builder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.*;
 
 public class CredentialsParameterDefinitionTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
+
+    @Rule
+    public ErrorCollector collector = new ErrorCollector();
 
     @Test public void defaultValue() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
@@ -121,5 +125,50 @@ public class CredentialsParameterDefinitionTest {
         assertTrue("Caution message about user credentials should be displayed after checking the box", div.isDisplayed());
         form.getSelectByName("_.value").getOptions().stream().filter(option -> option.getValueAttribute().equals(userCredentialId)).findAny()
                 .orElseThrow(() -> new AssertionError("No credential found matching user credential id " + userCredentialId));
+    }
+
+    @Issue("SECURITY-2690")
+    @Test
+    public void escapeAndMarkupFormatAreDoneCorrectly() throws Exception {
+        r.jenkins.setMarkupFormatter(new MyMarkupFormatter());
+        FreeStyleProject p = r.createFreeStyleProject("p");
+        CredentialsParameterDefinition param = new CredentialsParameterDefinition("<param name>", "<param description>", "", "type", false);
+        assertEquals("<b>[</b>param description<b>]</b>", param.getFormattedDescription());
+        p.addProperty(new ParametersDefinitionProperty(param));
+        JenkinsRule.WebClient wc = r.createWebClient()
+                .withThrowExceptionOnFailingStatusCode(false);
+
+        HtmlPage page = wc.getPage(p, "build?delay=0sec");
+        collector.checkThat(page.getWebResponse().getStatusCode(), is(HttpURLConnection.HTTP_BAD_METHOD)); // 405 to dissuade scripts from thinking this triggered the build
+        String text = page.getWebResponse().getContentAsString();
+        collector.checkThat("build page should escape param name", text, containsString("&lt;param name&gt;"));
+        collector.checkThat("build page should not leave param name unescaped", text, not(containsString("<param name>")));
+        collector.checkThat("build page should mark up param description", text, containsString("<b>[</b>param description<b>]</b>"));
+        collector.checkThat("build page should not leave param description unescaped", text, not(containsString("<param description>")));
+
+        HtmlForm form = page.getFormByName("parameters");
+        r.submit(form);
+        r.waitUntilNoActivity();
+        FreeStyleBuild b = p.getBuildByNumber(1);
+
+        page = r.createWebClient().getPage(b, "parameters/");
+        text = page.getWebResponse().getContentAsString();
+        collector.checkThat("parameters page should escape param name", text, containsString("&lt;param name&gt;"));
+        collector.checkThat("parameters page should not leave param name unescaped", text, not(containsString("<param name>")));
+        collector.checkThat("parameters page should mark up param description", text, containsString("<b>[</b>param description<b>]</b>"));
+        collector.checkThat("parameters page should not leave param description unescaped", text, not(containsString("<param description>")));
+    }
+
+    static class MyMarkupFormatter extends MarkupFormatter {
+        @Override
+        public void translate(String markup, @NonNull Writer output) throws IOException {
+            Matcher m = Pattern.compile("[<>]").matcher(markup);
+            StringBuffer buf = new StringBuffer();
+            while (m.find()) {
+                m.appendReplacement(buf, m.group().equals("<") ? "<b>[</b>" : "<b>]</b>");
+            }
+            m.appendTail(buf);
+            output.write(buf.toString());
+        }
     }
 }
