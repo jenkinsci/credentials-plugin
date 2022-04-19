@@ -1479,6 +1479,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         } else {
             LOGGER.log(Level.FINEST, "TrackAll method (Run variant) called but fingerprints disabled by {0}", FINGERPRINT_ENABLED_NAME);
         }
+        for (Credentials c : credentials) {
+            CredentialsUseListener.fireUse(c, build);
+        }
         return credentials;
     }
 
@@ -1578,6 +1581,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         } else {
             LOGGER.log(Level.FINEST, "TrackAll method (Node variant) called but fingerprints disabled by {0}", FINGERPRINT_ENABLED_NAME);
         }
+        for (Credentials c : credentials) {
+            CredentialsUseListener.fireUse(c, node);
+        }
         return credentials;
     }
 
@@ -1662,6 +1668,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             }
         } else {
             LOGGER.log(Level.FINEST, "TrackAll method (Item variant) called but fingerprints disabled by {0}", FINGERPRINT_ENABLED_NAME);
+        }
+        for (Credentials c : credentials) {
+            CredentialsUseListener.fireUse(c, item);
         }
         return credentials;
     }
