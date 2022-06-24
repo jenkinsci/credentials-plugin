@@ -22,6 +22,9 @@ public class UsernamePasswordCredentialsSnapshotTaker extends CredentialsSnapsho
      */
     @Override
     public StandardUsernamePasswordCredentials snapshot(StandardUsernamePasswordCredentials credentials) {
+        if (credentials instanceof UsernamePasswordCredentialsImpl) {
+            return credentials;
+        }
         return new UsernamePasswordCredentialsImpl(credentials.getScope(), credentials.getId(), credentials.getDescription(), credentials.getUsername(), Secret.toString(credentials.getPassword()));
     }
 }
