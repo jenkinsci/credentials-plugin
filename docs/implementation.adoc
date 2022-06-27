@@ -96,7 +96,7 @@ public class DoNotDoThis extends BaseStandardCredentials {
   public Secret getApplicationSecret() {...}
   ...
   @Extension
-  public class DescriptorImpl extends BaseStandardCredentialsDescriptor { ... }
+  public static class DescriptorImpl extends BaseStandardCredentialsDescriptor { ... }
 }
 ----
 
@@ -130,7 +130,7 @@ public class DoThisImpl extends BaseStandardCredentials implements DoThis {
   public Secret getApplicationSecret() {...}
   ...
   @Extension
-  public class DescriptorImpl extends BaseStandardCredentialsDescriptor { ... }
+  public static class DescriptorImpl extends BaseStandardCredentialsDescriptor { ... }
 }
 ----
 
