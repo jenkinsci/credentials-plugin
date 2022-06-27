@@ -297,7 +297,7 @@ With this approach we can have the test cases just provide a raw unencrypted str
 <8> If you need a simplified programmatic constructor - for example when converting credentials or for use from plugin unit / integration testing, by all means add them, the only minimum requirement is that there be one (and only one) `@DataBoundConstructor`.
 <9> We can remove the exceptions from our implementation as we will not throw these exceptions from the default implementation. The exceptions are on the interface to assist consumers.
 <10> Ideally we would use Jenkins' I18N support and put this string in a `Messages.properties` resource, just showing the text here to keep the example more self-contained.
-<11> While not strictly required to provide a custom icon, it is recommended to provide one to give users additional visual queues.
+<11> While not strictly required to provide a custom icon, it is recommended to provide one to give users an additional visual hint.
 <12> You need to register the custom icon somewhere in a class that is guaranteed to be loaded before the icon class name is referenced. You can either do this in a `hudson.Plugin` or in a non-optional `Descriptor` or `@Extension`.
 
 Finally we need the configuration Stapler facet fragment / tear-off.
