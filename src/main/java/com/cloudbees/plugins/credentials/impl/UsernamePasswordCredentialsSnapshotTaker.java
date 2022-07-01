@@ -25,6 +25,8 @@ public class UsernamePasswordCredentialsSnapshotTaker extends CredentialsSnapsho
         if (credentials instanceof UsernamePasswordCredentialsImpl) {
             return credentials;
         }
-        return new UsernamePasswordCredentialsImpl(credentials.getScope(), credentials.getId(), credentials.getDescription(), credentials.getUsername(), Secret.toString(credentials.getPassword()));
+        UsernamePasswordCredentialsImpl snapshot = new UsernamePasswordCredentialsImpl(credentials.getScope(), credentials.getId(), credentials.getDescription(), credentials.getUsername(), Secret.toString(credentials.getPassword()));
+        snapshot.setUsernameSecret(credentials.isUsernameSecret());
+        return snapshot;
     }
 }
