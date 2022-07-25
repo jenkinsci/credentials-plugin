@@ -51,7 +51,6 @@ public class PluginImpl extends Plugin {
                 "userpass",
                 "system-store",
                 "user-store",
-                "folder-store",
         }) {
             IconSet.icons.addIcon(new Icon(
                     String.format("icon-credentials-%s icon-sm", name),
