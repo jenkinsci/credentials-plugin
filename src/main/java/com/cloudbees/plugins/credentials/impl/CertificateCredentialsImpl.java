@@ -45,6 +45,8 @@ import java.io.InputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -365,11 +367,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @Override
         public byte[] getKeyStoreBytes() {
             try {
-                InputStream inputStream = new FileInputStream(keyStoreFile);
-                try {
+                try (InputStream inputStream = Files.newInputStream(Paths.get(keyStoreFile))) {
                     return IOUtils.toByteArray(inputStream);
-                } finally {
-                    IOUtils.closeQuietly(inputStream);
                 }
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, "Could not read private key file " + keyStoreFile, e);
