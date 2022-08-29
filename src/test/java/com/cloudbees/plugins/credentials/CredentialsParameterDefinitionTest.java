@@ -35,6 +35,7 @@ import hudson.model.*;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.tasks.Builder;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
@@ -50,9 +51,13 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class CredentialsParameterDefinitionTest {
 
@@ -141,7 +146,7 @@ public class CredentialsParameterDefinitionTest {
         HtmlPage page = wc.getPage(p, "build?delay=0sec");
         collector.checkThat(page.getWebResponse().getStatusCode(), is(HttpURLConnection.HTTP_BAD_METHOD)); // 405 to dissuade scripts from thinking this triggered the build
         String text = page.getWebResponse().getContentAsString();
-        collector.checkThat("build page should escape param name", text, containsString("&lt;param name&gt;"));
+        collector.checkThat("build page should escape param name", text, Matchers.containsString("&lt;param name&gt;"));
         collector.checkThat("build page should not leave param name unescaped", text, not(containsString("<param name>")));
         collector.checkThat("build page should mark up param description", text, containsString("<b>[</b>param description<b>]</b>"));
         collector.checkThat("build page should not leave param description unescaped", text, not(containsString("<param description>")));
