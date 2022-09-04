@@ -86,7 +86,6 @@ import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
 import org.acegisecurity.AccessDeniedException;
 import org.apache.commons.lang.StringUtils;
-import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -240,15 +239,7 @@ public abstract class CredentialsStoreAction
     public String getDisplayName() {
         CredentialsStore store = getStore();
         if (this == store.getStoreAction()) {
-            Class<?> c = store.getClass();
-            while (c.getEnclosingClass() != null) {
-                c = c.getEnclosingClass();
-            }
-            String name = c.getSimpleName().replaceAll("(?i)(Impl|Credentials|Provider|Store)+", "");
-            if (StringUtils.isBlank(name)) {
-                name = c.getSimpleName();
-            }
-            return StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(name), ' ');
+            return store.getDisplayName();
         } else {
             return Messages.CredentialsStoreAction_DisplayName();
         }
