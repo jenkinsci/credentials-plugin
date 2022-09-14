@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.40</version>
+    <version>4.47</version>
     <relativePath />
   </parent>
 
@@ -68,7 +68,6 @@
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     <jenkins.version>2.346.1</jenkins.version>
-    <java.level>8</java.level>
     <antlr4.version>4.9.3</antlr4.version>
   </properties>
 
