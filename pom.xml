@@ -67,7 +67,7 @@
   <properties>
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
-    <jenkins.version>2.346.1</jenkins.version>
+    <jenkins.version>2.361.1</jenkins.version>
     <antlr4.version>4.9.3</antlr4.version>
   </properties>
 
@@ -88,8 +88,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.346.x</artifactId>
-        <version>1382.v7d694476f340</version>
+        <artifactId>bom-2.361.x</artifactId>
+        <version>1607.va_c1576527071</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>

@@ -452,7 +452,8 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
             return null;
         }
         if (context instanceof Jenkins) {
-            return URI.create(request.getContextPath() + "/").normalize().toString();
+            String suffix = Jenkins.get().hasPermission(Jenkins.ADMINISTER) ? "/manage/" : "/";
+            return URI.create(request.getContextPath() + suffix).normalize().toString();
         }
         if (context instanceof User) {
             return URI.create(request.getContextPath() + "/" + ((User) context).getUrl()+"/")
@@ -535,6 +536,22 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
         } else {
             return context.getDisplayName();
         }
+    }
+
+    /**
+     * Resolves a display name from the Store
+     * @return the display name
+     */
+    public String getDisplayName() {
+        Class<?> c = this.getClass();
+        while (c.getEnclosingClass() != null) {
+            c = c.getEnclosingClass();
+        }
+        String name = c.getSimpleName().replaceAll("(?i)(Impl|Credentials|Provider|Store)+", "");
+        if (StringUtils.isBlank(name)) {
+            name = c.getSimpleName();
+        }
+        return StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(name), ' ');
     }
 
     /**
