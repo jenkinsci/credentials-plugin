@@ -67,8 +67,7 @@
   <properties>
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
-    <jenkins.version>2.361.1</jenkins.version>
-    <antlr4.version>4.11.1</antlr4.version>
+    <jenkins.version>2.376</jenkins.version>
   </properties>
 
   <repositories>
@@ -89,7 +88,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.361.x</artifactId>
-        <version>1607.va_c1576527071</version>
+        <version>1654.vcb_69d035fa_20</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -118,11 +117,6 @@
           <artifactId>hamcrest-core</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.antlr</groupId>
-      <artifactId>antlr4-runtime</artifactId>
-      <version>${antlr4.version}</version>
     </dependency>
     <dependency>
       <groupId>org.kohsuke.metainf-services</groupId>
@@ -179,7 +173,8 @@
       <plugin>
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
-        <version>${antlr4.version}</version>
+        <!-- This must be kept in sync with the ANTLR version of this plugin's core baseline. -->
+        <version>4.11.1</version>
         <configuration>
           <listener>true</listener>
           <visitor>true</visitor>
