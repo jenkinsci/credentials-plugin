@@ -629,7 +629,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         @Override
         public String getIconFileName() {
             return isVisible()
-                    ? "/jenkins/plugin/credentials/images/system-store.svg"
+                    ? "/plugin/credentials/images/system-store.svg"
                     : null;
         }
 
@@ -639,7 +639,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         @Override
         public String getIconClassName() {
             return isVisible()
-                    ? "symbol-jenkins"
+                    ? "icon-credentials-system-store icon-sm"
                     : null;
         }
 
