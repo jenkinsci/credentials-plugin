@@ -51,12 +51,29 @@ import hudson.FilePath;
 import hudson.Util;
 import hudson.cli.CLICommandInvoker;
 import hudson.cli.UpdateJobCommand;
+import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
+import hudson.model.Node;
+import hudson.model.Result;
+import hudson.model.Slave;
 import hudson.security.ACL;
+import hudson.slaves.CommandLauncher;
+import hudson.slaves.ComputerLauncher;
+import hudson.slaves.DumbSlave;
+import hudson.slaves.RetentionStrategy;
 import hudson.util.Secret;
+import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.FileUtils;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
+import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+
+import javaposse.jobdsl.plugin.GlobalJobDslSecurityConfiguration;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,8 +81,10 @@ import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.recipes.LocalData;
+import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -81,6 +100,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assume.assumeThat;
 
 public class CertificateCredentialsImplTest {
 
@@ -96,6 +116,18 @@ public class CertificateCredentialsImplTest {
     private static final String INVALID_PASSWORD = "blabla";
     private static final String EXPECTED_DISPLAY_NAME = "EMAILADDRESS=me@myhost.mydomain, CN=pkcs12, O=Fort-Funston, L=SanFrancisco, ST=CA, C=US";
 
+    // See setupAgent() below
+    @Rule
+    public TemporaryFolder tmpAgent = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder tmpWorker = new TemporaryFolder();
+    // Where did we save that file?..
+    private File agentJar = null;
+    // Can this be reused for many test cases?
+    private Slave agent = null;
+    // Unknown/started/not usable
+    private Boolean agentUsable = null;
+
     @Before
     public void setup() throws IOException {
         p12 = tmp.newFile("test.p12");
@@ -104,6 +136,99 @@ public class CertificateCredentialsImplTest {
         FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("invalid.p12"), p12Invalid);
 
         r.jenkins.setCrumbIssuer(null);
+    }
+
+    // Helpers for some of the test cases (initially tied to JENKINS-70101 research)
+    // TODO: Offload to some class many tests can call upon?
+    Boolean isAvailableAgent() {
+        // Can be used to skip optional tests if we know we could not set up an agent
+        if (agentJar == null)
+            return false;
+        if (agent == null)
+            return false;
+        return agentUsable;
+    }
+
+    Boolean setupAgent() throws IOException, InterruptedException, OutOfMemoryError {
+        // Note we anticipate this might fail; it should not block the whole test suite from running
+        // Loosely inspired by
+        // https://docs.cloudbees.com/docs/cloudbees-ci-kb/latest/client-and-managed-masters/create-agent-node-from-groovy
+
+        // Is it known-impossible to start the agent?
+        if (agentUsable != null && agentUsable == false)
+            return agentUsable; // quickly for re-runs
+
+        // Did we download this file for earlier test cases?
+        if (agentJar == null) {
+            try {
+                URL url = new URL(r.jenkins.getRootUrl() + "jnlpJars/agent.jar");
+                agentJar = tmpAgent.newFile("agent.jar");
+                FileOutputStream out = new FileOutputStream(agentJar);
+                out.write(url.openStream().readAllBytes());
+                out.close();
+            } catch (IOException | OutOfMemoryError e) {
+                agentJar = null;
+                agentUsable = false;
+
+                System.out.println("Failed to download agent.jar from test instance: " +
+                    e.toString());
+
+                return agentUsable;
+            }
+        }
+
+        // This CLI spelling and quoting should play well with both Windows
+        // (including spaces in directory names) and Unix/Linux
+        ComputerLauncher launcher = new CommandLauncher(
+            "\"" + System.getProperty("java.home") + File.separator + "bin" +
+            File.separator + "java\" -jar \"" + agentJar.getAbsolutePath().toString() + "\""
+        );
+
+        try {
+            // Define a "Permanent Agent"
+            agent = new DumbSlave(
+                    "worker",
+                    tmpWorker.getRoot().getAbsolutePath().toString(),
+                    launcher);
+            agent.setNodeDescription("Worker in another JVM, remoting used");
+            agent.setNumExecutors(1);
+            agent.setLabelString("worker");
+            agent.setMode(Node.Mode.EXCLUSIVE);
+            agent.setRetentionStrategy(new RetentionStrategy.Always());
+
+/*
+            // Add node envvars
+            List<Entry> env = new ArrayList<Entry>();
+            env.add(new Entry("key1","value1"));
+            env.add(new Entry("key2","value2"));
+            EnvironmentVariablesNodeProperty envPro = new EnvironmentVariablesNodeProperty(env);
+            agent.getNodeProperties().add(envPro);
+*/
+
+            r.jenkins.addNode(agent);
+
+            String agentLog = null;
+            agentUsable = false;
+            for (long i = 0; i < 5; i++) {
+                Thread.sleep(1000);
+                agentLog = agent.getComputer().getLog();
+                if (i == 2 && (agentLog == null || agentLog.isEmpty())) {
+                    // Give it a little time to autostart, then kick it up if needed:
+                    agent.getComputer().connect(true); // "always" should have started it; avoid duplicate runs
+                }
+                if (agentLog != null && agentLog.contains("Agent successfully connected and online")) {
+                    agentUsable = true;
+                    break;
+                }
+            }
+            System.out.println("Spawned build agent " +
+                "usability: " + agentUsable.toString() +
+                "; connection log:" + (agentLog == null ? " <null>" : "\n" + agentLog));
+        } catch (Descriptor.FormException | NullPointerException e) {
+            agentUsable = false;
+        }
+
+        return agentUsable;
     }
 
     @Test
@@ -397,4 +522,169 @@ public class CertificateCredentialsImplTest {
         return folderStore;
     }
 
+    // Helper for a few tests below
+    // Roughly follows what tests above were proven to succeed doing
+    private void prepareUploadedKeystore() throws IOException {
+        prepareUploadedKeystore("myCert", "password");
+    }
+
+    private void prepareUploadedKeystore(String id, String password) throws IOException {
+        SecretBytes uploadedKeystore = SecretBytes.fromBytes(Files.readAllBytes(p12.toPath()));
+        CertificateCredentialsImpl.UploadedKeyStoreSource storeSource = new CertificateCredentialsImpl.UploadedKeyStoreSource(uploadedKeystore);
+        CertificateCredentialsImpl credentials = new CertificateCredentialsImpl(null, id, null, password, storeSource);
+        SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+        SystemCredentialsProvider.getInstance().save();
+    }
+
+    String cpsScriptCredentialTestImports() {
+        return  "import com.cloudbees.plugins.credentials.CredentialsMatchers;\n" +
+                "import com.cloudbees.plugins.credentials.CredentialsProvider;\n" +
+                "import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;\n" +
+                "import com.cloudbees.plugins.credentials.common.StandardCredentials;\n" +
+                "import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;\n" +
+                "import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;\n" +
+                "import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;\n" +
+                "import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl.KeyStoreSource;\n" +
+                "import hudson.security.ACL;\n" +
+                "import java.security.KeyStore;\n" +
+                "\n";
+    }
+
+    String cpsScriptCredentialTest(String runnerTag) {
+        return cpsScriptCredentialTest("myCert", "password", runnerTag);
+    }
+
+    String cpsScriptCredentialTest(String id, String password, String runnerTag) {
+        return  "def authentication='" + id + "';\n" +
+                "def password='" + password + "';\n" +
+                "StandardCredentials credential = CredentialsMatchers.firstOrNull(\n" +
+                "    CredentialsProvider.lookupCredentials(\n" +
+                "        StandardCredentials.class,\n" +
+                "        Jenkins.instance, null, null),\n" +
+                "    CredentialsMatchers.withId(authentication));\n" +
+                "StandardCredentials credentialSnap = CredentialsProvider.snapshot(credential);\n\n" +
+                "\n" +
+                "echo \"CRED ON " + runnerTag + ":\"\n" +
+                "echo credential.toString()\n" +
+                "KeyStore keyStore = credential.getKeyStore();\n" +
+                "KeyStoreSource kss = ((CertificateCredentialsImpl) credential).getKeyStoreSource();\n" +
+                "echo \"KSS: \" + kss.toString()\n" +
+                "byte[] kssb = kss.getKeyStoreBytes();\n" +
+                "echo \"KSS bytes (len): \" + kssb.length\n" +
+                "\n" +
+                "echo \"CRED-SNAP ON " + runnerTag + ":\"\n" +
+                "echo credentialSnap.toString()\n" +
+                "KeyStore keyStoreSnap = credentialSnap.getKeyStore();\n" +
+                "KeyStoreSource kssSnap = ((CertificateCredentialsImpl) credentialSnap).getKeyStoreSource();\n" +
+                "echo \"KSS-SNAP: \" + kssSnap.toString()\n" +
+                "byte[] kssbSnap = kssSnap.getKeyStoreBytes();\n" +
+                "echo \"KSS-SNAP bytes (len): \" + kssbSnap.length\n" +
+                "\n";
+    }
+
+    private void relaxScriptSecurityScript(String script) throws IOException {
+        ScriptApproval.get().preapprove(script, GroovyLanguage.get());
+        for (ScriptApproval.PendingScript p : ScriptApproval.get().getPendingScripts()) {
+            ScriptApproval.get().approveScript(p.getHash());
+        }
+    }
+
+    private void relaxScriptSecurityGlobal() throws IOException {
+        StaplerRequest stapler = null;
+        net.sf.json.JSONObject jsonObject = new net.sf.json.JSONObject();
+        jsonObject.put("useScriptSecurity", false);
+        GlobalConfiguration.all().get(GlobalJobDslSecurityConfiguration.class).configure(stapler, jsonObject);
+        GlobalConfiguration.all().get(GlobalJobDslSecurityConfiguration.class).save();
+/*
+        GlobalConfiguration.all().get(GlobalJobDslSecurityConfiguration.class).useScriptSecurity=false;
+        GlobalConfiguration.all().get(GlobalJobDslSecurityConfiguration.class).save();
+ */
+    }
+
+    private void relaxScriptSecurityCredentialTestSignatures() throws IOException {
+        ScriptApproval.get().approveSignature("method com.cloudbees.plugins.credentials.common.CertificateCredentials getKeyStore");
+        ScriptApproval.get().approveSignature("method com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl getKeyStoreSource");
+        ScriptApproval.get().approveSignature("method com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl$KeyStoreSource getKeyStoreBytes");
+        ScriptApproval.get().approveSignature("staticMethod com.cloudbees.plugins.credentials.CredentialsMatchers firstOrNull java.lang.Iterable com.cloudbees.plugins.credentials.CredentialsMatcher");
+        ScriptApproval.get().approveSignature("staticMethod com.cloudbees.plugins.credentials.CredentialsMatchers withId java.lang.String");
+        ScriptApproval.get().approveSignature("staticMethod com.cloudbees.plugins.credentials.CredentialsProvider lookupCredentials java.lang.Class hudson.model.ItemGroup org.acegisecurity.Authentication java.util.List");
+        ScriptApproval.get().approveSignature("staticMethod com.cloudbees.plugins.credentials.CredentialsProvider snapshot com.cloudbees.plugins.credentials.Credentials");
+        ScriptApproval.get().approveSignature("staticMethod jenkins.model.Jenkins getInstance");
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void keyStoreReadableOnController() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running without a node{}
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCredentialTest("CONTROLLER BUILT-IN");
+        proj.setDefinition(new CpsFlowDefinition(script, true));
+        relaxScriptSecurityCredentialTestSignatures();
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("KSS-SNAP bytes", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void keyStoreReadableOnNodeLocal() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a node{} (provided by the controller)
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                "node {\n" +
+                cpsScriptCredentialTest("CONTROLLER NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, true));
+        relaxScriptSecurityCredentialTestSignatures();
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("KSS-SNAP bytes", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void keyStoreReadableOnNodeRemote() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a remote node{} with separate JVM (check
+        // that remoting/snapshot work properly)
+        assumeThat("This test needs a separate build agent", this.setupAgent(), is(true));
+
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                "node(\"worker\") {\n" +
+                cpsScriptCredentialTest("REMOTE NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, true));
+        relaxScriptSecurityCredentialTestSignatures();
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("KSS-SNAP bytes", run);
+    }
 }
