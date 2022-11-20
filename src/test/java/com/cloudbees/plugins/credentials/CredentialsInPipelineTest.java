@@ -275,12 +275,13 @@ public class CredentialsInPipelineTest {
     /////////////////////////////////////////////////////////////////
 
     String cpsScriptCredentialTest(String runnerTag) {
-        return cpsScriptCredentialTest("myCert", "password", runnerTag);
+        return cpsScriptCredentialTest("myCert", "password", "1", runnerTag);
     }
 
-    String cpsScriptCredentialTest(String id, String password, String runnerTag) {
+    String cpsScriptCredentialTest(String id, String password, String alias, String runnerTag) {
         return  "def authentication='" + id + "';\n" +
                 "def password='" + password + "';\n" +
+                "def alias='" + alias + "';\n" +
                 "StandardCredentials credential = CredentialsMatchers.firstOrNull(\n" +
                 "    CredentialsProvider.lookupCredentials(\n" +
                 "        StandardCredentials.class,\n" +
@@ -393,19 +394,21 @@ public class CredentialsInPipelineTest {
                 "    def keystore = KeyStore.getInstance(keystoreFormat)\n" +
                 "    keystore.load(p12file, keyPassword.toCharArray())\n" +
                 "    p12file.close()\n" +
-                "    def key = keystore.getKey(alias ? alias : \"1\", keyPassword.toCharArray())\n" +
+                "    def key = keystore.getKey(alias, keyPassword.toCharArray())\n" +
                 "    return key.getEncoded().encodeBase64().toString()\n" +
                 "}\n" +
                 "\n";
     }
 
     String cpsScriptCredentialTestWithCredentials(String runnerTag) {
-        return cpsScriptCredentialTestWithCredentials("myCert", "password", runnerTag);
+        return cpsScriptCredentialTestWithCredentials("myCert", "password", "1", runnerTag);
     }
 
-    String cpsScriptCredentialTestWithCredentials(String id, String password, String runnerTag) {
+    String cpsScriptCredentialTestWithCredentials(String id, String password, String alias, String runnerTag) {
+        // Note: for some reason does not pass (env?.)myKeyAlias to closure
         return  "def authentication='" + id + "';\n" +
                 "def password='" + password + "';\n" +
+                "def alias='" + alias + "';\n" +
                 "echo \"WITH-CREDENTIALS ON " + runnerTag + ":\"\n" +
                 "withCredentials([certificate(\n" +
                 "        credentialsId: authentication,\n" +
@@ -416,7 +419,7 @@ public class CredentialsInPipelineTest {
                 "    echo \"Keystore bytes (len): \" + (new File(keystoreName)).length()\n" +
                 "    echo \"Got expected password? ${keyPassword == password}\"\n" +
                 "    def keystoreFormat = \"PKCS12\"\n" +
-                "    def keyValue = getKeyValue(keystoreName, keystoreFormat, keyPassword, env?.myKeyAlias)\n" +
+                "    def keyValue = getKeyValue(keystoreName, keystoreFormat, keyPassword, (env?.myKeyAlias ? env?.myKeyAlias : alias))\n" +
                 "    println \"-----BEGIN PRIVATE KEY-----\"\n" +
                 "    println keyValue\n" +
                 "    println \"-----END PRIVATE KEY-----\"\n" +
