@@ -296,6 +296,10 @@ public class CredentialsInPipelineTest {
                 "echo \"KSS: \" + kss.toString()\n" +
                 "byte[] kssb = kss.getKeyStoreBytes();\n" +
                 "echo \"KSS bytes (len): \" + kssb.length\n" +
+                "String keyValue = keyStore.getKey(alias, password.toCharArray()).getEncoded().encodeBase64().toString()\n" +
+                "echo  \"-----BEGIN PRIVATE KEY-----\"\n" +
+                "echo keyValue\n" +
+                "echo \"-----END PRIVATE KEY-----\"\n" +
                 "\n" +
                 "echo \"CRED-SNAP ON " + runnerTag + ":\"\n" +
                 "echo credentialSnap.toString()\n" +
@@ -304,6 +308,10 @@ public class CredentialsInPipelineTest {
                 "echo \"KSS-SNAP: \" + kssSnap.toString()\n" +
                 "byte[] kssbSnap = kssSnap.getKeyStoreBytes();\n" +
                 "echo \"KSS-SNAP bytes (len): \" + kssbSnap.length\n" +
+                "String keyValueSnap = keyStoreSnap.getKey(alias, password.toCharArray()).getEncoded().encodeBase64().toString()\n" +
+                "echo  \"-----BEGIN PRIVATE KEY-----\"\n" +
+                "echo keyValueSnap\n" +
+                "echo \"-----END PRIVATE KEY-----\"\n" +
                 "\n";
     }
 
