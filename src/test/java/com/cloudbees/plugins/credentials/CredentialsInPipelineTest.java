@@ -414,7 +414,9 @@ public class CredentialsInPipelineTest {
     }
 
     String cpsScriptCertCredentialTestWithCredentials(String id, String password, String alias, String runnerTag) {
-        // Note: for some reason does not pass (env?.)myKeyAlias to closure
+        // Note: does not pass a(ny) useful (env?.)myKeyAlias to closure
+        // https://issues.jenkins.io/browse/JENKINS-59331
+        // https://github.com/jenkinsci/credentials-binding-plugin/blob/fcd22059ac48b87d0924ef17d5b351a3b7a89a97/src/main/java/org/jenkinsci/plugins/credentialsbinding/impl/CertificateMultiBinding.java#L80-L81
         return  "def authentication='" + id + "';\n" +
                 "def password='" + password + "';\n" +
                 "def alias='" + alias + "';\n" +
