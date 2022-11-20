@@ -425,7 +425,7 @@ public class CredentialsInPipelineTest {
                 "        aliasVariable: 'myKeyAlias')\n" +
                 "]) {\n" +
                 "    echo \"Keystore bytes (len): \" + (new File(keystoreName)).length()\n" +
-                "    echo \"Got expected password? ${keyPassword == password}\"\n" +
+                "    echo \"Got expected key pass? ${keyPassword == password}\"\n" +
                 "    def keystoreFormat = \"PKCS12\"\n" +
                 "    def keyValue = getKeyValue(keystoreName, keystoreFormat, keyPassword, (env?.myKeyAlias ? env?.myKeyAlias : alias))\n" +
                 "    println \"-----BEGIN PRIVATE KEY-----\"\n" +
