@@ -541,6 +541,15 @@ public class CertificateCredentialsImplTest {
                 "import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl.KeyStoreSource;\n" +
                 "import hudson.security.ACL;\n" +
                 "import java.security.KeyStore;\n" +
+                "\n" +
+                "@NonCPS\n" +
+                "def getKey(def keystoreName, def keystoreFormat, def keyPassword, def alias) {\n" +
+                "    def p12file = new FileInputStream(keystoreName)\n" +
+                "    def keystore = KeyStore.getInstance(keystoreFormat)\n" +
+                "    keystore.load(p12file, keyPassword.toCharArray())\n" +
+                "    def key = keystore.getKey(alias, keyPassword.toCharArray())\n" +
+                "    return key.getEncoded().encodeBase64().toString()\n" +
+                "}\n" +
                 "\n";
     }
 
@@ -573,6 +582,21 @@ public class CertificateCredentialsImplTest {
                 "echo \"KSS-SNAP: \" + kssSnap.toString()\n" +
                 "byte[] kssbSnap = kssSnap.getKeyStoreBytes();\n" +
                 "echo \"KSS-SNAP bytes (len): \" + kssbSnap.length\n" +
+                "\n" +
+                "echo \"WITH-CREDENTIAL ON " + runnerTag + ":\"\n" + // https://groups.google.com/g/jenkinsci-users/c/evyx0O3bMWE
+                "withCredentials([certificate(\n" +
+                "        credentialsId: authentication,\n" +
+                "        keystoreVariable: 'keystoreName',\n" +
+                "        passwordVariable: 'keyPassword',\n" +
+                "        aliasVariable: 'myKeyAlias')\n" +
+                "]) {\n" +
+                "    echo \"Keystore bytes (len): \" + (new File(keystoreName)).length()\n" +
+                "    def keystoreFormat = \"PKCS12\"\n" +
+                "    def keyValue = '' //getKeyValue(keystoreName, keystoreFormat, keyPassword, myKeyAlias)\n" +
+                "    println \"-----BEGIN PRIVATE KEY-----\"\n" +
+                "    println keyValue\n" +
+                "    println \"-----END PRIVATE KEY-----\"\n" +
+                "}\n" +
                 "\n";
     }
 
