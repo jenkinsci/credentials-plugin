@@ -80,6 +80,7 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.recipes.LocalData;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -225,6 +226,12 @@ public class CredentialsInPipelineTest {
         return agentUsable;
     }
 
+    String getLogAsStringPlaintext(WorkflowRun f) throws java.io.IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        f.getLogText().writeLogTo(0, baos);
+        return baos.toString();
+    }
+
     /////////////////////////////////////////////////////////////////
     // Certificate credentials tests
     /////////////////////////////////////////////////////////////////
@@ -314,6 +321,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -338,6 +346,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -365,6 +374,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -431,6 +441,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -456,6 +467,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -484,6 +496,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
