@@ -515,4 +515,103 @@ public class CredentialsInPipelineTest {
         r.assertLogContains("END PRIVATE KEY", run);
     }
 
+    /////////////////////////////////////////////////////////////////
+    // Certificate credentials retrievability by http-request-plugin
+    /////////////////////////////////////////////////////////////////
+
+    String cpsScriptCertCredentialTestHttpRequest(String runnerTag) {
+        return cpsScriptCredentialTestHttpRequest("myCert", runnerTag);
+    }
+
+    String cpsScriptCredentialTestHttpRequest(String id, String runnerTag) {
+        // Note: we accept any outcome (for the plugin, unresolved host is HTTP-404)
+        // but it may not crash making use of the credential
+        return  "def authentication='" + id + "';\n"
+                + "def response = httpRequest(url: 'https://github.xcom/api/v3',\n"
+                + "                 httpMode: 'GET',\n"
+                + "                 authentication: authentication,\n"
+                + "                 consoleLogResponseBody: true,\n"
+                + "                 contentType : 'APPLICATION_FORM',\n"
+                + "                 validResponseCodes: '100:599',\n"
+                + "                 quiet: false)\n"
+                + "println('HTTP Request Plugin Status: '+ response.getStatus())\n"
+                + "println('HTTP Request Plugin Response: '+ response.getContent())\n"
+                + "\n";
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void testCertHttpRequestOnController() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running without a node{}
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCertCredentialTestHttpRequest("CONTROLLER BUILT-IN");
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void testCertHttpRequestOnNodeLocal() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a node{} (provided by the controller)
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script =
+                "node {\n" +
+                cpsScriptCertCredentialTestHttpRequest("CONTROLLER NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void testCertHttpRequestOnNodeRemote() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a remote node{} with separate JVM (check
+        // that remoting/snapshot work properly)
+        assumeThat("This test needs a separate build agent", this.setupAgent(), is(true));
+
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script =
+                "node(\"worker\") {\n" +
+                cpsScriptCertCredentialTestHttpRequest("REMOTE NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
 }

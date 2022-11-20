@@ -179,6 +179,13 @@
         <version>523.vd859a_4b_122e6</version>
         <scope>test</scope>
     </dependency>
+    <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>http_request</artifactId>
+        <!-- Note: testCertHttpRequestOnNodeRemote() fails for 1.16 -->
+        <version>1.16</version>
+        <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
