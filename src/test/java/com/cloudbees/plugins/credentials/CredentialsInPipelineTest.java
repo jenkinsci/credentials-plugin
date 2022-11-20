@@ -274,11 +274,11 @@ public class CredentialsInPipelineTest {
     // Certificate credentials retrievability in (trusted) pipeline
     /////////////////////////////////////////////////////////////////
 
-    String cpsScriptCredentialTest(String runnerTag) {
-        return cpsScriptCredentialTest("myCert", "password", "1", runnerTag);
+    String cpsScriptCertCredentialTestScriptedPipeline(String runnerTag) {
+        return cpsScriptCertCredentialTestScriptedPipeline("myCert", "password", "1", runnerTag);
     }
 
-    String cpsScriptCredentialTest(String id, String password, String alias, String runnerTag) {
+    String cpsScriptCertCredentialTestScriptedPipeline(String id, String password, String alias, String runnerTag) {
         return  "def authentication='" + id + "';\n" +
                 "def password='" + password + "';\n" +
                 "def alias='" + alias + "';\n" +
@@ -325,7 +325,7 @@ public class CredentialsInPipelineTest {
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
-                cpsScriptCredentialTest("CONTROLLER BUILT-IN");
+                cpsScriptCertCredentialTestScriptedPipeline("CONTROLLER BUILT-IN");
         proj.setDefinition(new CpsFlowDefinition(script, false));
 
         // Execute the build
@@ -349,7 +349,7 @@ public class CredentialsInPipelineTest {
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
                 "node {\n" +
-                cpsScriptCredentialTest("CONTROLLER NODE") +
+                cpsScriptCertCredentialTestScriptedPipeline("CONTROLLER NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
 
@@ -377,7 +377,7 @@ public class CredentialsInPipelineTest {
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
                 "node(\"worker\") {\n" +
-                cpsScriptCredentialTest("REMOTE NODE") +
+                cpsScriptCertCredentialTestScriptedPipeline("REMOTE NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
 
@@ -395,7 +395,7 @@ public class CredentialsInPipelineTest {
     // Certificate credentials retrievability by withCredentials() step
     /////////////////////////////////////////////////////////////////
 
-    String cpsScriptCredentialTestGetKeyValue() {
+    String cpsScriptCertCredentialTestGetKeyValue() {
         return  "@NonCPS\n" +
                 "def getKeyValue(def keystoreName, def keystoreFormat, def keyPassword, def alias) {\n" +
                 "    def p12file = new FileInputStream(keystoreName)\n" +
@@ -408,11 +408,11 @@ public class CredentialsInPipelineTest {
                 "\n";
     }
 
-    String cpsScriptCredentialTestWithCredentials(String runnerTag) {
-        return cpsScriptCredentialTestWithCredentials("myCert", "password", "1", runnerTag);
+    String cpsScriptCertCredentialTestWithCredentials(String runnerTag) {
+        return cpsScriptCertCredentialTestWithCredentials("myCert", "password", "1", runnerTag);
     }
 
-    String cpsScriptCredentialTestWithCredentials(String id, String password, String alias, String runnerTag) {
+    String cpsScriptCertCredentialTestWithCredentials(String id, String password, String alias, String runnerTag) {
         // Note: for some reason does not pass (env?.)myKeyAlias to closure
         return  "def authentication='" + id + "';\n" +
                 "def password='" + password + "';\n" +
@@ -446,8 +446,8 @@ public class CredentialsInPipelineTest {
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
-                cpsScriptCredentialTestGetKeyValue() +
-                cpsScriptCredentialTestWithCredentials("CONTROLLER BUILT-IN");
+                cpsScriptCertCredentialTestGetKeyValue() +
+                cpsScriptCertCredentialTestWithCredentials("CONTROLLER BUILT-IN");
         proj.setDefinition(new CpsFlowDefinition(script, false));
 
         // Execute the build
@@ -470,9 +470,9 @@ public class CredentialsInPipelineTest {
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
-                cpsScriptCredentialTestGetKeyValue() +
+                cpsScriptCertCredentialTestGetKeyValue() +
                 "node {\n" +
-                cpsScriptCredentialTestWithCredentials("CONTROLLER NODE") +
+                cpsScriptCertCredentialTestWithCredentials("CONTROLLER NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
 
@@ -499,9 +499,9 @@ public class CredentialsInPipelineTest {
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
-                cpsScriptCredentialTestGetKeyValue() +
+                cpsScriptCertCredentialTestGetKeyValue() +
                 "node(\"worker\") {\n" +
-                cpsScriptCredentialTestWithCredentials("REMOTE NODE") +
+                cpsScriptCertCredentialTestWithCredentials("REMOTE NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
 
