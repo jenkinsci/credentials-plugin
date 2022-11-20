@@ -37,6 +37,7 @@ import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.gargoylesoftware.htmlunit.FormEncodingType;
 import com.gargoylesoftware.htmlunit.HttpMethod;
 import com.gargoylesoftware.htmlunit.Page;
@@ -601,6 +602,99 @@ public class CredentialsInPipelineTest {
         String script =
                 "node(\"worker\") {\n" +
                 cpsScriptCertCredentialTestHttpRequest("REMOTE NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // User/pass credentials tests
+    /////////////////////////////////////////////////////////////////
+
+    // Partially from UsernamePasswordCredentialsImplTest setup()
+    private void prepareUsernamePassword() throws IOException {
+        UsernamePasswordCredentialsImpl credentials =
+                new UsernamePasswordCredentialsImpl(null,
+                        "abc123", "Bob’s laptop",
+                        "bob", "s3cr3t");
+        SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+        SystemCredentialsProvider.getInstance().save();
+    }
+
+    String cpsScriptUsernamePasswordCredentialTestHttpRequest(String runnerTag) {
+        return cpsScriptCredentialTestHttpRequest("abc123", runnerTag);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void testUsernamePasswordHttpRequestOnController() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running without a node{}
+        prepareUsernamePassword();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptUsernamePasswordCredentialTestHttpRequest("CONTROLLER BUILT-IN");
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void testUsernamePasswordHttpRequestOnNodeLocal() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a node{} (provided by the controller)
+        prepareUsernamePassword();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script =
+                "node {\n" +
+                cpsScriptUsernamePasswordCredentialTestHttpRequest("CONTROLLER NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void testUsernamePasswordHttpRequestOnNodeRemote() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a remote node{} with separate JVM (check
+        // that remoting/snapshot work properly)
+        assumeThat("This test needs a separate build agent", this.setupAgent(), is(true));
+
+        prepareUsernamePassword();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script =
+                "node(\"worker\") {\n" +
+                cpsScriptUsernamePasswordCredentialTestHttpRequest("REMOTE NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
 
