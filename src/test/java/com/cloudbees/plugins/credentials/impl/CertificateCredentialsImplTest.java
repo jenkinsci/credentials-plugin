@@ -63,16 +63,11 @@ import hudson.slaves.ComputerLauncher;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
 import hudson.util.Secret;
-import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.FileUtils;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
-import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-
-import javaposse.jobdsl.plugin.GlobalJobDslSecurityConfiguration;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -81,7 +76,6 @@ import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.recipes.LocalData;
-import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -582,36 +576,6 @@ public class CertificateCredentialsImplTest {
                 "\n";
     }
 
-    private void relaxScriptSecurityScript(String script) throws IOException {
-        ScriptApproval.get().preapprove(script, GroovyLanguage.get());
-        for (ScriptApproval.PendingScript p : ScriptApproval.get().getPendingScripts()) {
-            ScriptApproval.get().approveScript(p.getHash());
-        }
-    }
-
-    private void relaxScriptSecurityGlobal() throws IOException {
-        StaplerRequest stapler = null;
-        net.sf.json.JSONObject jsonObject = new net.sf.json.JSONObject();
-        jsonObject.put("useScriptSecurity", false);
-        GlobalConfiguration.all().get(GlobalJobDslSecurityConfiguration.class).configure(stapler, jsonObject);
-        GlobalConfiguration.all().get(GlobalJobDslSecurityConfiguration.class).save();
-/*
-        GlobalConfiguration.all().get(GlobalJobDslSecurityConfiguration.class).useScriptSecurity=false;
-        GlobalConfiguration.all().get(GlobalJobDslSecurityConfiguration.class).save();
- */
-    }
-
-    private void relaxScriptSecurityCredentialTestSignatures() throws IOException {
-        ScriptApproval.get().approveSignature("method com.cloudbees.plugins.credentials.common.CertificateCredentials getKeyStore");
-        ScriptApproval.get().approveSignature("method com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl getKeyStoreSource");
-        ScriptApproval.get().approveSignature("method com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl$KeyStoreSource getKeyStoreBytes");
-        ScriptApproval.get().approveSignature("staticMethod com.cloudbees.plugins.credentials.CredentialsMatchers firstOrNull java.lang.Iterable com.cloudbees.plugins.credentials.CredentialsMatcher");
-        ScriptApproval.get().approveSignature("staticMethod com.cloudbees.plugins.credentials.CredentialsMatchers withId java.lang.String");
-        ScriptApproval.get().approveSignature("staticMethod com.cloudbees.plugins.credentials.CredentialsProvider lookupCredentials java.lang.Class hudson.model.ItemGroup org.acegisecurity.Authentication java.util.List");
-        ScriptApproval.get().approveSignature("staticMethod com.cloudbees.plugins.credentials.CredentialsProvider snapshot com.cloudbees.plugins.credentials.Credentials");
-        ScriptApproval.get().approveSignature("staticMethod jenkins.model.Jenkins getInstance");
-    }
-
     @Test
     @Issue("JENKINS-70101")
     public void keyStoreReadableOnController() throws Exception {
@@ -623,8 +587,7 @@ public class CertificateCredentialsImplTest {
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
                 cpsScriptCredentialTest("CONTROLLER BUILT-IN");
-        proj.setDefinition(new CpsFlowDefinition(script, true));
-        relaxScriptSecurityCredentialTestSignatures();
+        proj.setDefinition(new CpsFlowDefinition(script, false));
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
@@ -648,8 +611,7 @@ public class CertificateCredentialsImplTest {
                 "node {\n" +
                 cpsScriptCredentialTest("CONTROLLER NODE") +
                 "}\n";
-        proj.setDefinition(new CpsFlowDefinition(script, true));
-        relaxScriptSecurityCredentialTestSignatures();
+        proj.setDefinition(new CpsFlowDefinition(script, false));
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
@@ -676,8 +638,7 @@ public class CertificateCredentialsImplTest {
                 "node(\"worker\") {\n" +
                 cpsScriptCredentialTest("REMOTE NODE") +
                 "}\n";
-        proj.setDefinition(new CpsFlowDefinition(script, true));
-        relaxScriptSecurityCredentialTestSignatures();
+        proj.setDefinition(new CpsFlowDefinition(script, false));
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
