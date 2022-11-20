@@ -72,6 +72,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -235,6 +236,8 @@ public class CredentialsInPipelineTest {
 
     private void prepareUploadedKeystore(String id, String password) throws IOException {
         if (p12 == null) {
+            // Contains a private key + openvpn certs,
+            // as alias named "1" (according to keytool)
             p12 = tmp.newFile("test.p12");
             FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("test.p12"), p12);
         }
@@ -257,17 +260,12 @@ public class CredentialsInPipelineTest {
                 "import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl.KeyStoreSource;\n" +
                 "import hudson.security.ACL;\n" +
                 "import java.security.KeyStore;\n" +
-                "\n" +
-                "@NonCPS\n" +
-                "def getKey(def keystoreName, def keystoreFormat, def keyPassword, def alias) {\n" +
-                "    def p12file = new FileInputStream(keystoreName)\n" +
-                "    def keystore = KeyStore.getInstance(keystoreFormat)\n" +
-                "    keystore.load(p12file, keyPassword.toCharArray())\n" +
-                "    def key = keystore.getKey(alias, keyPassword.toCharArray())\n" +
-                "    return key.getEncoded().encodeBase64().toString()\n" +
-                "}\n" +
                 "\n";
     }
+
+    /////////////////////////////////////////////////////////////////
+    // Certificate credentials retrievability in (trusted) pipeline
+    /////////////////////////////////////////////////////////////////
 
     String cpsScriptCredentialTest(String runnerTag) {
         return cpsScriptCredentialTest("myCert", "password", runnerTag);
@@ -298,27 +296,12 @@ public class CredentialsInPipelineTest {
                 "echo \"KSS-SNAP: \" + kssSnap.toString()\n" +
                 "byte[] kssbSnap = kssSnap.getKeyStoreBytes();\n" +
                 "echo \"KSS-SNAP bytes (len): \" + kssbSnap.length\n" +
-                "\n" +
-                "echo \"WITH-CREDENTIAL ON " + runnerTag + ":\"\n" + // https://groups.google.com/g/jenkinsci-users/c/evyx0O3bMWE
-                "withCredentials([certificate(\n" +
-                "        credentialsId: authentication,\n" +
-                "        keystoreVariable: 'keystoreName',\n" +
-                "        passwordVariable: 'keyPassword',\n" +
-                "        aliasVariable: 'myKeyAlias')\n" +
-                "]) {\n" +
-                "    echo \"Keystore bytes (len): \" + (new File(keystoreName)).length()\n" +
-                "    def keystoreFormat = \"PKCS12\"\n" +
-                "    def keyValue = '' //getKeyValue(keystoreName, keystoreFormat, keyPassword, myKeyAlias)\n" +
-                "    println \"-----BEGIN PRIVATE KEY-----\"\n" +
-                "    println keyValue\n" +
-                "    println \"-----END PRIVATE KEY-----\"\n" +
-                "}\n" +
                 "\n";
     }
 
     @Test
     @Issue("JENKINS-70101")
-    public void keyStoreReadableOnController() throws Exception {
+    public void testCertKeyStoreReadableOnController() throws Exception {
         // Check that credentials are usable with pipeline script
         // running without a node{}
         prepareUploadedKeystore();
@@ -340,7 +323,7 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void keyStoreReadableOnNodeLocal() throws Exception {
+    public void testCertKeyStoreReadableOnNodeLocal() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a node{} (provided by the controller)
         prepareUploadedKeystore();
@@ -364,7 +347,7 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void keyStoreReadableOnNodeRemote() throws Exception {
+    public void testCertKeyStoreReadableOnNodeRemote() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a remote node{} with separate JVM (check
         // that remoting/snapshot work properly)
@@ -387,6 +370,125 @@ public class CredentialsInPipelineTest {
         r.assertBuildStatus(Result.SUCCESS, run);
         // Got to the end?
         r.assertLogContains("KSS-SNAP bytes", run);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Certificate credentials retrievability by withCredentials() step
+    /////////////////////////////////////////////////////////////////
+
+    String cpsScriptCredentialTestGetKeyValue() {
+        return  "@NonCPS\n" +
+                "def getKeyValue(def keystoreName, def keystoreFormat, def keyPassword, def alias) {\n" +
+                "    def p12file = new FileInputStream(keystoreName)\n" +
+                "    def keystore = KeyStore.getInstance(keystoreFormat)\n" +
+                "    keystore.load(p12file, keyPassword.toCharArray())\n" +
+                "    p12file.close()\n" +
+                "    def key = keystore.getKey(alias ? alias : \"1\", keyPassword.toCharArray())\n" +
+                "    return key.getEncoded().encodeBase64().toString()\n" +
+                "}\n" +
+                "\n";
+    }
+
+    String cpsScriptCredentialTestWithCredentials(String runnerTag) {
+        return cpsScriptCredentialTestWithCredentials("myCert", "password", runnerTag);
+    }
+
+    String cpsScriptCredentialTestWithCredentials(String id, String password, String runnerTag) {
+        return  "def authentication='" + id + "';\n" +
+                "def password='" + password + "';\n" +
+                "echo \"WITH-CREDENTIALS ON " + runnerTag + ":\"\n" +
+                "withCredentials([certificate(\n" +
+                "        credentialsId: authentication,\n" +
+                "        keystoreVariable: 'keystoreName',\n" +
+                "        passwordVariable: 'keyPassword',\n" +
+                "        aliasVariable: 'myKeyAlias')\n" +
+                "]) {\n" +
+                "    echo \"Keystore bytes (len): \" + (new File(keystoreName)).length()\n" +
+                "    echo \"Got expected password? ${keyPassword == password}\"\n" +
+                "    def keystoreFormat = \"PKCS12\"\n" +
+                "    def keyValue = getKeyValue(keystoreName, keystoreFormat, keyPassword, env?.myKeyAlias)\n" +
+                "    println \"-----BEGIN PRIVATE KEY-----\"\n" +
+                "    println keyValue\n" +
+                "    println \"-----END PRIVATE KEY-----\"\n" +
+                "}\n" +
+                "\n";
+    }
+
+    @Test
+    @Ignore("Work with keystore file requires a node")
+    @Issue("JENKINS-70101")
+    public void testCertWithCredentialsOnController() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running without a node{}
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCredentialTestGetKeyValue() +
+                cpsScriptCredentialTestWithCredentials("CONTROLLER BUILT-IN");
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("END PRIVATE KEY", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void testCertWithCredentialsOnNodeLocal() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a node{} (provided by the controller)
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCredentialTestGetKeyValue() +
+                "node {\n" +
+                cpsScriptCredentialTestWithCredentials("CONTROLLER NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("END PRIVATE KEY", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void testCertWithCredentialsOnNodeRemote() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a remote node{} with separate JVM (check
+        // that remoting/snapshot work properly)
+        assumeThat("This test needs a separate build agent", this.setupAgent(), is(true));
+
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCredentialTestGetKeyValue() +
+                "node(\"worker\") {\n" +
+                cpsScriptCredentialTestWithCredentials("REMOTE NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("END PRIVATE KEY", run);
     }
 
 }
