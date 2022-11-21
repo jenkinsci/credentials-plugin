@@ -516,7 +516,7 @@ public class CredentialsInPipelineTest {
                 + "}\n" )
                   : "" )
                 + "\n"
-                + "msg = \"Querying HTTPS with cert...\"\n"
+                + "msg = \"Querying HTTPS with credential...\"\n"
                 + "echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
                 + "def response = httpRequest(url: 'https://github.xcom/api/v3',\n"
                 + "                 httpMode: 'GET',\n"
@@ -525,8 +525,20 @@ public class CredentialsInPipelineTest {
                 + "                 contentType : 'APPLICATION_FORM',\n"
                 + "                 validResponseCodes: '100:599',\n"
                 + "                 quiet: false)\n"
-                + "println('HTTP Request Plugin Status: '+ response.getStatus())\n"
-                + "println('HTTP Request Plugin Response: '+ response.getContent())\n"
+                + "println('First HTTP Request Plugin Status: '+ response.getStatus())\n"
+                + "println('First HTTP Request Plugin Response: '+ response.getContent())\n"
+                + "\n"
+                + "msg = \"Querying HTTPS with credential again (reentrability)...\"\n"
+                + "echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
+                + "response = httpRequest(url: 'https://github.xcom/api/v3',\n"
+                + "                 httpMode: 'GET',\n"
+                + "                 authentication: authentication,\n"
+                + "                 consoleLogResponseBody: true,\n"
+                + "                 contentType : 'APPLICATION_FORM',\n"
+                + "                 validResponseCodes: '100:599',\n"
+                + "                 quiet: false)\n"
+                + "println('Second HTTP Request Plugin Status: '+ response.getStatus())\n"
+                + "println('Second HTTP Request Plugin Response: '+ response.getContent())\n"
                 + "\n";
     }
 
