@@ -29,6 +29,8 @@ import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import hudson.Extension;
+import hudson.util.Secret;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.KeyStoreException;
@@ -74,7 +76,7 @@ public class CertificateCredentialsSnapshotTaker extends CredentialsSnapshotTake
             }
             return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
                     credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
-                    new CertificateCredentialsImpl.UploadedKeyStoreSource(SecretBytes.fromBytes(keyStoreSource.getKeyStoreBytes())));
+                    new CertificateCredentialsImpl.UploadedKeyStoreSource(CertificateCredentialsImpl.UploadedKeyStoreSource.DescriptorImpl.toSecret(keyStoreSource.getKeyStoreBytes())));
         }
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -90,6 +92,6 @@ public class CertificateCredentialsSnapshotTaker extends CredentialsSnapshotTake
 
         return new CertificateCredentialsImpl(credentials.getScope(), credentials.getId(),
                 credentials.getDescription(), credentials.getPassword().getEncryptedValue(),
-                new CertificateCredentialsImpl.UploadedKeyStoreSource(SecretBytes.fromBytes(bos.toByteArray())));
+                new CertificateCredentialsImpl.UploadedKeyStoreSource(CertificateCredentialsImpl.UploadedKeyStoreSource.DescriptorImpl.toSecret(bos.toByteArray())));
     }
 }
