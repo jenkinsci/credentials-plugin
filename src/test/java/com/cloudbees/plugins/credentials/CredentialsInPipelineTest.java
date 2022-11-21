@@ -68,6 +68,11 @@ public class CredentialsInPipelineTest {
      * Initially tied to JENKINS-70101 research.
      */
 
+    // For developers: set to `true` so that pipeline console logs show
+    // up in System.out (and/or System.err) of the plugin test run by
+    //   mvn test -Dtest="CredentialsInPipelineTest"
+    private boolean verbosePipelines = false;
+
     @Rule
     public JenkinsRule r = new JenkinsRule();
 
@@ -288,7 +293,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -313,7 +318,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -341,7 +346,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -412,7 +417,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -438,7 +443,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -467,7 +472,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -493,26 +498,26 @@ public class CredentialsInPipelineTest {
                 + (withLocalCertLookup ? (
                   "if (true) { // scoping\n"
                 + "  msg = \"Finding credential...\"\n"
-                + "  echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "  echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
                 + "  StandardCredentials credential = CredentialsMatchers.firstOrNull(\n"
                 + "    CredentialsProvider.lookupCredentials(\n"
                 + "        StandardCredentials.class,\n"
                 + "        Jenkins.instance, null, null),\n"
                 + "    CredentialsMatchers.withId(authentication));\n"
                 + "  msg = \"Getting keystore...\"\n"
-                + "  echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "  echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
                 + "  KeyStore keyStore = credential.getKeyStore();\n"
                 + "  msg = \"Getting keystore source...\"\n"
-                + "  echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "  echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
                 + "  KeyStoreSource kss = ((CertificateCredentialsImpl) credential).getKeyStoreSource();\n"
                 + "  msg = \"Getting keystore source bytes...\"\n"
-                + "  echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "  echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
                 + "  byte[] kssb = kss.getKeyStoreBytes();\n"
                 + "}\n" )
                   : "" )
                 + "\n"
                 + "msg = \"Querying HTTPS with cert...\"\n"
-                + "echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
                 + "def response = httpRequest(url: 'https://github.xcom/api/v3',\n"
                 + "                 httpMode: 'GET',\n"
                 + "                 authentication: authentication,\n"
@@ -540,7 +545,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -565,7 +570,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -593,7 +598,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -633,7 +638,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -658,7 +663,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
@@ -686,7 +691,7 @@ public class CredentialsInPipelineTest {
 
         // Execute the build
         WorkflowRun run = proj.scheduleBuild2(0).get();
-        System.out.println(getLogAsStringPlaintext(run));
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
 
         // Check expectations
         r.assertBuildStatus(Result.SUCCESS, run);
