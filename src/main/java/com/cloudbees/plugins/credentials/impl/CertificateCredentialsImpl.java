@@ -61,6 +61,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
+import jenkins.util.JenkinsJVM;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang.StringUtils;
@@ -539,7 +540,14 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         public SecretBytes getUploadedKeystore() {
             if (uploadedKeystore != null && uploadedKeystoreBytes == null) {
-                return SecretBytes.fromBytes(DescriptorImpl.toByteArray(uploadedKeystore));
+                if (/* XStream */ Channel.current() != null
+                &&  /* remote  */!(JenkinsJVM.isJenkinsJVM())
+                ) {
+                    // Force recoding on first read so the remote copy is secure
+                    useSecretBytes();
+                } else {
+                    return SecretBytes.fromBytes(DescriptorImpl.toByteArray(uploadedKeystore));
+                }
             }
             return uploadedKeystoreBytes;
         }
@@ -551,7 +559,14 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @Override
         public byte[] getKeyStoreBytes() {
             if (uploadedKeystore != null && uploadedKeystoreBytes == null) {
-                return DescriptorImpl.toByteArray(uploadedKeystore);
+                if (/* XStream */ Channel.current() != null
+                &&  /* remote  */!(JenkinsJVM.isJenkinsJVM())
+                ) {
+                    // Force recoding on first read so the remote copy is secure
+                    useSecretBytes();
+                } else {
+                    return DescriptorImpl.toByteArray(uploadedKeystore);
+                }
             }
             return SecretBytes.getPlainData(uploadedKeystoreBytes);
         }
