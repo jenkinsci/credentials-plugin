@@ -182,7 +182,9 @@
     <dependency>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>http_request</artifactId>
-        <!-- Note: testCertHttpRequestOnNodeRemote() fails for 1.16 -->
+        <!-- Note: testCertHttpRequestOnNodeRemote() fails for 1.16
+             unless CertificateCredentialsSnapshotTaker is functional
+         -->
         <version>1.16</version>
         <scope>test</scope>
     </dependency>

@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials.impl;
 
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
@@ -34,6 +35,7 @@ import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
+import hudson.remoting.Channel;
 import hudson.util.FormValidation;
 import hudson.util.IOUtils;
 import hudson.util.Secret;
@@ -136,6 +138,21 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     private static char[] toCharArray(@NonNull Secret password) {
         String plainText = Util.fixEmpty(password.getPlainText());
         return plainText == null ? null : plainText.toCharArray();
+    }
+
+    /**
+     * When serializing over a {@link Channel} ensure that we send a self-contained version.
+     *
+     * @return the object instance to write to the stream.
+     */
+    private Object writeReplace() {
+        if (/* XStream */ Channel.current() == null
+        ||  /* already safe to serialize */ keyStoreSource
+                .isSnapshotSource()
+        ) {
+            return this;
+        }
+        return CredentialsProvider.snapshot(this);
     }
 
     /**
