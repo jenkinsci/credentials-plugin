@@ -490,9 +490,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         /**
-         * Returns the private key file name.
+         * Returns the private key + certificate file bytes.
          *
-         * @return the private key file name.
+         * @return the private key + certificate file bytes.
          */
         public SecretBytes getUploadedKeystore() {
             return uploadedKeystoreBytes;
