@@ -436,17 +436,18 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
         /**
          * The old uploaded keystore.
+         * Still used for snapshot taking, with contents independent of Jenkins instance and JVM.
          */
         @CheckForNull
         @Deprecated
-        private transient Secret uploadedKeystore;
+        private Secret uploadedKeystore;
         /**
          * The uploaded keystore.
          *
          * @since 2.1.5
          */
         @CheckForNull
-        private final SecretBytes uploadedKeystoreBytes;
+        private SecretBytes uploadedKeystoreBytes;
 
         /**
          * Our constructor.
@@ -475,6 +476,19 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         }
 
         /**
+         * Our constructor for serialization (e.g. to remote agents, whose SecretBytes
+         * in another JVM use a different static KEY); would re-encode.
+         *
+         * @param uploadedKeystore the keystore content.
+         * @deprecated
+         */
+        @SuppressWarnings("unused") // by stapler
+        @Deprecated
+        public UploadedKeyStoreSource(@CheckForNull Secret uploadedKeystore) {
+            this.uploadedKeystore = uploadedKeystore;
+        }
+
+        /**
          * Constructor able to receive file directly
          * 
          * @param uploadedCertFile the keystore content from the file upload
@@ -490,6 +504,18 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 }
             }
             this.uploadedKeystoreBytes = uploadedKeystore;
+        }
+
+        /**
+         * Request that if the less-efficient but more-portable Secret
+         * is involved (e.g. to cross the remoting gap to another JVM),
+         * we use the more secure and efficient SecretBytes.
+         */
+        public void useSecretBytes() {
+            if (this.uploadedKeystore != null && this.uploadedKeystoreBytes == null) {
+                this.uploadedKeystoreBytes = SecretBytes.fromBytes(DescriptorImpl.toByteArray(this.uploadedKeystore));
+                this.uploadedKeystore = null;
+            }
         }
 
         /**
@@ -512,6 +538,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          * @return the private key + certificate file bytes.
          */
         public SecretBytes getUploadedKeystore() {
+            if (uploadedKeystore != null && uploadedKeystoreBytes == null) {
+                return SecretBytes.fromBytes(DescriptorImpl.toByteArray(uploadedKeystore));
+            }
             return uploadedKeystoreBytes;
         }
 
@@ -521,6 +550,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @NonNull
         @Override
         public byte[] getKeyStoreBytes() {
+            if (uploadedKeystore != null && uploadedKeystoreBytes == null) {
+                return DescriptorImpl.toByteArray(uploadedKeystore);
+            }
             return SecretBytes.getPlainData(uploadedKeystoreBytes);
         }
 
