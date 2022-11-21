@@ -71,7 +71,7 @@ public class CredentialsInPipelineTest {
     // For developers: set to `true` so that pipeline console logs show
     // up in System.out (and/or System.err) of the plugin test run by
     //   mvn test -Dtest="CredentialsInPipelineTest"
-    private boolean verbosePipelines = false;
+    private boolean verbosePipelines = true;
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
@@ -616,6 +616,9 @@ public class CredentialsInPipelineTest {
         r.assertBuildStatus(Result.SUCCESS, run);
         // Got to the end?
         r.assertLogContains("HTTP Request Plugin Response: ", run);
+
+        String agentLog = agent.getComputer().getLog();
+        System.out.println(agentLog);
     }
 
     /////////////////////////////////////////////////////////////////

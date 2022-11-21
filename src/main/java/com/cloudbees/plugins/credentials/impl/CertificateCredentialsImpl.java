@@ -514,6 +514,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         public void useSecretBytes() {
             if (this.uploadedKeystore != null && this.uploadedKeystoreBytes == null) {
+                String msg = "[INFOLOG] UploadedKeyStoreSource instance was using Secret and fixed to use SecretBytes";
+                LOGGER.log(Level.SEVERE, msg);
+                LOGGER.log(Level.INFO, msg);
+                System.out.println (msg);
+                System.err.println (msg);
                 this.uploadedKeystoreBytes = SecretBytes.fromBytes(DescriptorImpl.toByteArray(this.uploadedKeystore));
                 this.uploadedKeystore = null;
             }
@@ -540,6 +545,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         public SecretBytes getUploadedKeystore() {
             if (uploadedKeystore != null && uploadedKeystoreBytes == null) {
+                String msg = "[INFOLOG] UploadedKeyStoreSource instance using Secret:" +
+                        " in Channel: " + (Channel.current() == null ? "false" : "true") +
+                        " on controller: " + (JenkinsJVM.isJenkinsJVM() ? "true" : "false");
+                LOGGER.log(Level.SEVERE, msg);
+                LOGGER.log(Level.INFO, msg);
+                System.out.println (msg);
+                System.err.println (msg);
                 if (/* XStream */ Channel.current() != null
                 &&  /* remote  */!(JenkinsJVM.isJenkinsJVM())
                 ) {
@@ -559,6 +571,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @Override
         public byte[] getKeyStoreBytes() {
             if (uploadedKeystore != null && uploadedKeystoreBytes == null) {
+                String msg = "[INFOLOG] UploadedKeyStoreSource instance using Secret:" +
+                        " in Channel: " + (Channel.current() == null ? "false" : "true") +
+                        " on controller: " + (JenkinsJVM.isJenkinsJVM() ? "true" : "false");
+                LOGGER.log(Level.SEVERE, msg);
+                LOGGER.log(Level.INFO, msg);
+                System.err.println (msg);
+                System.out.println (msg);
                 if (/* XStream */ Channel.current() != null
                 &&  /* remote  */!(JenkinsJVM.isJenkinsJVM())
                 ) {
