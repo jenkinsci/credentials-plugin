@@ -523,13 +523,39 @@ public class CredentialsInPipelineTest {
     /////////////////////////////////////////////////////////////////
 
     String cpsScriptCertCredentialTestHttpRequest(String runnerTag) {
-        return cpsScriptCredentialTestHttpRequest("myCert", runnerTag);
+        return cpsScriptCredentialTestHttpRequest("myCert", runnerTag, true);
     }
 
-    String cpsScriptCredentialTestHttpRequest(String id, String runnerTag) {
+    String cpsScriptCredentialTestHttpRequest(String id, String runnerTag, Boolean withLocalCertLookup) {
         // Note: we accept any outcome (for the plugin, unresolved host is HTTP-404)
         // but it may not crash making use of the credential
+        // Note: cases withLocalCertLookup also need cpsScriptCredentialTestImports()
         return  "def authentication='" + id + "';\n"
+                + "\n"
+                + "def msg\n"
+                + (withLocalCertLookup ? (
+                  "if (true) { // scoping\n"
+                + "  msg = \"Finding credential...\"\n"
+                + "  echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "  StandardCredentials credential = CredentialsMatchers.firstOrNull(\n"
+                + "    CredentialsProvider.lookupCredentials(\n"
+                + "        StandardCredentials.class,\n"
+                + "        Jenkins.instance, null, null),\n"
+                + "    CredentialsMatchers.withId(authentication));\n"
+                + "  msg = \"Getting keystore...\"\n"
+                + "  echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "  KeyStore keyStore = credential.getKeyStore();\n"
+                + "  msg = \"Getting keystore source...\"\n"
+                + "  echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "  KeyStoreSource kss = ((CertificateCredentialsImpl) credential).getKeyStoreSource();\n"
+                + "  msg = \"Getting keystore source bytes...\"\n"
+                + "  echo msg; System.out.println(msg); System.err.println(msg);\n"
+                + "  byte[] kssb = kss.getKeyStoreBytes();\n"
+                + "}\n" )
+                  : "" )
+                + "\n"
+                + "msg = \"Querying HTTPS with cert...\"\n"
+                + "echo msg; System.out.println(msg); System.err.println(msg);\n"
                 + "def response = httpRequest(url: 'https://github.xcom/api/v3',\n"
                 + "                 httpMode: 'GET',\n"
                 + "                 authentication: authentication,\n"
@@ -551,7 +577,8 @@ public class CredentialsInPipelineTest {
 
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
-        String script = cpsScriptCertCredentialTestHttpRequest("CONTROLLER BUILT-IN");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCertCredentialTestHttpRequest("CONTROLLER BUILT-IN");
         proj.setDefinition(new CpsFlowDefinition(script, false));
 
         // Execute the build
@@ -573,7 +600,7 @@ public class CredentialsInPipelineTest {
 
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
-        String script =
+        String script = cpsScriptCredentialTestImports() +
                 "node {\n" +
                 cpsScriptCertCredentialTestHttpRequest("CONTROLLER NODE") +
                 "}\n";
@@ -601,7 +628,7 @@ public class CredentialsInPipelineTest {
 
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
-        String script =
+        String script = cpsScriptCredentialTestImports() +
                 "node(\"worker\") {\n" +
                 cpsScriptCertCredentialTestHttpRequest("REMOTE NODE") +
                 "}\n";
@@ -632,7 +659,7 @@ public class CredentialsInPipelineTest {
     }
 
     String cpsScriptUsernamePasswordCredentialTestHttpRequest(String runnerTag) {
-        return cpsScriptCredentialTestHttpRequest("abc123", runnerTag);
+        return cpsScriptCredentialTestHttpRequest("abc123", runnerTag, false);
     }
 
     @Test
