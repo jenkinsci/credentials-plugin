@@ -569,7 +569,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          */
         @Override
         public boolean isSnapshotSource() {
-            return true;
+            //return this.snapshotSecretBytes;
+            // If context is local, clone SecretBytes directly (only
+            // usable in same JVM). Otherwise use Secret for transport
+            // (see {@link CertificateCredentialsSnapshotTaker}.
+            return (/* XStream */ Channel.current() == null);
         }
 
         /**
