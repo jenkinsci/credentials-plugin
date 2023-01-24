@@ -160,7 +160,7 @@ public class CredentialsParameterDefinitionTest {
 
         page = wc.getPage(p, "configure");
         form = page.getFormByName("config");
-        HtmlTextArea value = form.getTextAreaByName("parameter.description");
+        HtmlTextArea value = form.getTextAreaByName(param.name+".description");
         value.setText("<markup description>");
         r.submit(form);
         r.waitUntilNoActivity();
