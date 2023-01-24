@@ -157,6 +157,21 @@ public class CredentialsParameterDefinitionTest {
         collector.checkThat("parameters page should not leave param name unescaped", text, not(containsString("<param name>")));
         collector.checkThat("parameters page should mark up param description", text, containsString("<b>[</b>param description<b>]</b>"));
         collector.checkThat("parameters page should not leave param description unescaped", text, not(containsString("<param description>")));
+
+        page = wc.getPage(p, "configure");
+        form = page.getFormByName("config");
+        HtmlTextArea value = form.getTextAreaByName("parameter.description");
+        value.setText("<markup description>");
+        r.submit(form);
+        r.waitUntilNoActivity();
+        page = wc.getPage(p, "build?delay=0sec");
+        collector.checkThat(page.getWebResponse().getStatusCode(), is(HttpURLConnection.HTTP_BAD_METHOD)); // 405 to dissuade scripts from thinking this triggered the build
+        text = page.getWebResponse().getContentAsString();
+        collector.checkThat("build page should escape param name", text, containsString("&lt;param name&gt;"));
+        collector.checkThat("build page should not leave param name unescaped", text, not(containsString("<param name>")));
+        collector.checkThat("build page should mark up param description", text, containsString("<b>[</b>markup description<b>]</b>"));
+        collector.checkThat("build page should not leave param description unescaped", text, not(containsString("<markup description>")));        
+
     }
 
     static class MyMarkupFormatter extends MarkupFormatter {
