@@ -156,7 +156,7 @@ public class CredentialsParameterDefinitionTest {
         collector.checkThat("parameters page should escape param name", text, containsString("&lt;param name&gt;"));
         collector.checkThat("parameters page should not leave param name unescaped", text, not(containsString("<param name>")));
         collector.checkThat("parameters page should mark up param description", text, containsString("<b>[</b>param description<b>]</b>"));
-        collector.checkThat("parameters page should not leave param description unescaped", text, not(containsString("<param description>")));        
+        collector.checkThat("parameters page should not leave param description unescaped", text, not(containsString("<param description>")));
     }
 
     static class MyMarkupFormatter extends MarkupFormatter {
