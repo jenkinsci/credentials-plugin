@@ -398,7 +398,7 @@ public abstract class CredentialsStoreAction
     @Override
     public String getIconClassName() {
         return isVisible()
-                ? "symbol-key"
+                ? "symbol-credentials plugin-credentials"
                 : null;
     }
 
