@@ -231,7 +231,7 @@ Behaviour.specify("DIV.credentials-select-control", 'credentials-select', 100, f
                         this.addClassName('credentials-select-content-active');
                         this.removeClassName('credentials-select-content-inactive');
                         this.removeAttribute('field-disabled');
-                    } else {
+                    } else if (this instanceof HTMLElement) {
                         this.addClassName('credentials-select-content-inactive');
                         this.removeClassName('credentials-select-content-active');
                         this.setAttribute('field-disabled', 'true');

@@ -22,7 +22,7 @@ public class ManageCredentialsConfiguration extends ManagementLink {
 
     @Override
     public String getIconFileName() {
-        return "symbol-key";
+        return "symbol-credentials plugin-credentials";
     }
 
     @Override

@@ -156,7 +156,7 @@ public class CredentialsParameterValue extends ParameterValue {
         if (c != null) {
             return c.getDescriptor().getIconClassName();
         }
-        return "symbol-key";
+        return "symbol-credentials plugin-credentials";
     }
 
     public String url() {
