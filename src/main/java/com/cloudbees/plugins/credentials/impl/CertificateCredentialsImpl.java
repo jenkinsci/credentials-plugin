@@ -35,16 +35,15 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
 import hudson.util.FormValidation;
-import hudson.util.IOUtils;
 import hudson.util.Secret;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -366,10 +365,8 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @Override
         public byte[] getKeyStoreBytes() {
             try {
-                try (InputStream inputStream = Files.newInputStream(Paths.get(keyStoreFile))) {
-                    return IOUtils.toByteArray(inputStream);
-                }
-            } catch (IOException e) {
+                return Files.readAllBytes(Paths.get(keyStoreFile));
+            } catch (IOException | InvalidPathException e) {
                 LOGGER.log(Level.WARNING, "Could not read private key file " + keyStoreFile, e);
                 return new byte[0];
             }
