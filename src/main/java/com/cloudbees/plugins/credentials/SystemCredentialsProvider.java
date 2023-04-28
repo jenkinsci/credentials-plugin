@@ -187,6 +187,26 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
     }
 
     /**
+     * Merge the given credentials with the current set. Replace existing domain credentials or add new credentials.
+     * Existing credentials not in the given set will not be removed.
+     *
+     * @param domainCredentialsMap credentials to add or update
+     */
+    public synchronized void mergeDomainCredentialsMap(Map<Domain, List<Credentials>> domainCredentialsMap) {
+        for (Map.Entry<Domain, List<Credentials>> entry : DomainCredentials.toCopyOnWriteMap(domainCredentialsMap).entrySet()) {
+            List<Credentials> target = this.domainCredentialsMap.get(entry.getKey());
+            if (target == null) {
+                this.domainCredentialsMap.put(entry.getKey(), entry.getValue());
+            } else {
+                target.removeAll(entry.getValue());
+                target.addAll(entry.getValue());
+                this.domainCredentialsMap.remove(entry.getKey());
+                this.domainCredentialsMap.put(entry.getKey(), target);
+            }
+        }
+    }
+
+    /**
      * Short-cut method for {@link Jenkins#checkPermission(hudson.security.Permission)}
      *
      * @param p the permission to check.
