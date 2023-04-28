@@ -25,6 +25,8 @@ package com.cloudbees.plugins.credentials;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -126,14 +128,14 @@ public abstract class CredentialsResolver<F extends Credentials, T extends Crede
             // if the reflective instantiation proves a hot point, put a cache in front.
             try {
                 @SuppressWarnings("unchecked")
-                final CredentialsResolver<Credentials, C> resolver = resolveWith.value().newInstance();
+                final CredentialsResolver<Credentials, C> resolver = resolveWith.value().getDeclaredConstructor().newInstance();
                 if (Credentials.class.isAssignableFrom(resolver.getFromClass())
                         && clazz.isAssignableFrom(resolver.getToClass())) {
                     return resolver;
                 }
                 LOGGER.log(Level.SEVERE, "Resolver {0} for type {1} resolves to {2} which is not assignable to {1}",
                         new Object[]{resolver.getClass(), clazz, resolver.getToClass()});
-            } catch (InstantiationException | IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 LOGGER.log(Level.WARNING, "Could not instantiate resolver: " + resolveWith.value(), e);
                 return null;
             }

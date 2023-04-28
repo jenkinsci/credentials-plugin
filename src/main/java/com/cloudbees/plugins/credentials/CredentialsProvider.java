@@ -63,6 +63,7 @@ import hudson.security.PermissionScope;
 import hudson.security.SecurityRealm;
 import hudson.util.ListBoxModel;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestOutputStream;
@@ -1382,7 +1383,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static Fingerprint getFingerprintOf(@NonNull Credentials c) throws IOException {
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
-            DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
+            DigestOutputStream out = new DigestOutputStream(OutputStream.nullOutputStream(), md5);
             try {
                 FINGERPRINT_XML.toXML(c, new OutputStreamWriter(out, StandardCharsets.UTF_8));
             } finally {
@@ -1408,7 +1409,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 c instanceof IdCredentials ? ((IdCredentials) c).getId() : "unknown", CredentialsNameProvider.name(c));
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
-            DigestOutputStream out = new DigestOutputStream(new NullOutputStream(), md5);
+            DigestOutputStream out = new DigestOutputStream(OutputStream.nullOutputStream(), md5);
             try {
                 FINGERPRINT_XML.toXML(c, new OutputStreamWriter(out, StandardCharsets.UTF_8));
             } finally {

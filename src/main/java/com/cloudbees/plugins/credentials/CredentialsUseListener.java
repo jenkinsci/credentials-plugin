@@ -2,7 +2,6 @@ package com.cloudbees.plugins.credentials;
 
 import hudson.ExtensionPoint;
 import hudson.model.Item;
-import hudson.model.ModelObject;
 import hudson.model.Node;
 import hudson.model.Run;
 import jenkins.util.Listeners;

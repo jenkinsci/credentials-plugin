@@ -28,8 +28,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Functions;
 import hudson.model.Action;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import jenkins.model.ModelObjectWithContextMenu;
 import org.apache.commons.jelly.JellyContext;
 import org.apache.commons.lang.StringUtils;
