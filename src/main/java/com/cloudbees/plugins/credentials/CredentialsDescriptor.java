@@ -243,7 +243,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      * @since 1.25
      */
     public String getIconClassName() {
-        return "symbol-key";
+        return "symbol-credentials plugin-credentials";
     }
 
     /**
