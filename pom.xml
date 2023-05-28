@@ -88,7 +88,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.387.x</artifactId>
-        <version>1836.vfe602c266c05</version>
+        <version>2102.v854b_fec19c92</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -174,7 +174,7 @@
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
         <!-- This must be compatible with the ANTLR runtime provided by Jenkins core. -->
-        <version>4.11.1</version>
+        <version>4.13.0</version>
         <configuration>
           <listener>true</listener>
           <visitor>true</visitor>
@@ -195,7 +195,7 @@
       <id>pdfs</id>
       <properties>
         <asciidoctor.maven.plugin.version>2.2.3</asciidoctor.maven.plugin.version>
-        <asciidoctorj.pdf.version>2.3.4</asciidoctorj.pdf.version>
+        <asciidoctorj.pdf.version>2.3.7</asciidoctorj.pdf.version>
         <asciidoctorj.version>2.5.8</asciidoctorj.version>
         <jruby.version>9.4.2.0</jruby.version>
       </properties>
