@@ -124,11 +124,11 @@ public class CredentialsParameterDefinitionTest {
         assertFalse("List user credentials checkbox should not be checked by default", checkbox.isChecked());
         HtmlElement div = form.getOneHtmlElementByAttribute("div", "class", "warning user-credentials-caution");
         assertFalse("Caution message about user credentials should not be displayed yet", div.isDisplayed());
-        form.getSelectByName("_.value").getOptions().forEach(option -> assertNotEquals("No user credential should be an option yet", userCredentialId, option.getValue()));
+        form.getSelectByName("_.value").getOptions().forEach(option -> assertNotEquals("No user credential should be an option yet", userCredentialId, option.getValueAttribute()));
 
         HtmlElementUtil.click(checkbox);
         assertTrue("Caution message about user credentials should be displayed after checking the box", div.isDisplayed());
-        form.getSelectByName("_.value").getOptions().stream().filter(option -> option.getValue().equals(userCredentialId)).findAny()
+        form.getSelectByName("_.value").getOptions().stream().filter(option -> option.getValueAttribute().equals(userCredentialId)).findAny()
                 .orElseThrow(() -> new AssertionError("No credential found matching user credential id " + userCredentialId));
     }
 
