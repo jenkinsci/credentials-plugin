@@ -27,7 +27,7 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import com.gargoylesoftware.htmlunit.html.*;
+import org.htmlunit.html.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Launcher;
 import hudson.markup.MarkupFormatter;
