@@ -27,7 +27,7 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import com.gargoylesoftware.htmlunit.html.*;
+import org.htmlunit.html.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Launcher;
 import hudson.markup.MarkupFormatter;
@@ -35,6 +35,7 @@ import hudson.model.*;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.tasks.Builder;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
@@ -50,9 +51,13 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class CredentialsParameterDefinitionTest {
 

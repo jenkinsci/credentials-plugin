@@ -112,7 +112,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public String getIconFileName() {
         return isVisible()
-                ? "symbol-key"
+                ? "symbol-credentials plugin-credentials"
                 : null;
     }
 
@@ -295,7 +295,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public String getIconClassName() {
         return isVisible()
-                ? "symbol-key"
+                ? "symbol-credentials plugin-credentials"
                 : null;
     }
 
