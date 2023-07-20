@@ -27,7 +27,7 @@ window.credentials.init = function () {
         var div = document.createElement("DIV");
         document.body.appendChild(div);
         div.innerHTML = "<div id='credentialsDialog'><div class='bd'></div></div>";
-        window.credentials.body = $('credentialsDialog');
+        window.credentials.body = document.getElementById('credentialsDialog');
         window.credentials.dialog = new YAHOO.widget.Panel(window.credentials.body, {
             fixedcenter: true,
             close: true,
@@ -48,30 +48,33 @@ window.credentials.init = function () {
 };
 window.credentials.add = function (e) {
     window.credentials.init();
-    new Ajax.Request(e, {
-        method: 'get',
-        requestHeaders: {'Crumb': crumb},
-        onSuccess: function (t) {
-            window.credentials.body.innerHTML = t.responseText;
-            Behaviour.applySubtree(window.credentials.body, false);
-            window.credentials.form = $('credentials-dialog-form');
-            // window.credentials.form.action = e;
-            var r = YAHOO.util.Dom.getClientRegion();
-            window.credentials.dialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
-            window.credentials.dialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
-            window.credentials.dialog.center();
-            window.credentials.dialog.show();
+    fetch(e, {
+        method: 'GET',
+        headers: crumb.wrap({}),
+    }).then(rsp => {
+        if (rsp.ok) {
+            rsp.text().then((responseText) => {
+                window.credentials.body.innerHTML = responseText;
+                Behaviour.applySubtree(window.credentials.body, false);
+                window.credentials.form = document.getElementById('credentials-dialog-form');
+                // window.credentials.form.action = e;
+                var r = YAHOO.util.Dom.getClientRegion();
+                window.credentials.dialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
+                window.credentials.dialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
+                window.credentials.dialog.center();
+                window.credentials.dialog.show();
+            });
         }
     });
     return false;
 };
 window.credentials.refreshAll = function () {
-    $$('select.credentials-select').each(function (e) {
+    document.querySelectorAll('select.credentials-select').forEach(function (e) {
         var deps = [];
 
         function h() {
             var params = {};
-            deps.each(function (d) {
+            deps.forEach(function (d) {
                 params[d.name] = controlValue(d.control);
             });
             var value = e.value;
@@ -100,7 +103,7 @@ window.credentials.refreshAll = function () {
 
         var v = e.getAttribute("fillDependsOn");
         if (v != null) {
-            v.split(" ").each(function (name) {
+            v.split(" ").forEach(function (name) {
                 var c = findNearBy(e, name);
                 if (c == null) {
                     if (window.console != null) {
@@ -143,14 +146,14 @@ window.credentials.addSubmit = function (e) {
         }
     }
 
-    var f = $('credentials-dialog-form');
+    var f = document.getElementById('credentials-dialog-form');
     // create a throw-away IFRAME to avoid back button from loading the POST result back
     id = "iframe" + (iota++);
     target = document.createElement("iframe");
     target.setAttribute("id", id);
     target.setAttribute("name", id);
     target.setAttribute("style", "height:100%; width:100%");
-    $(containerId).appendChild(target);
+    document.getElementById(containerId).appendChild(target);
 
     attachIframeOnload(target, function () {
         if (target.contentWindow && target.contentWindow.applyCompletionHandler) {
@@ -165,7 +168,7 @@ window.credentials.addSubmit = function (e) {
             responseDialog.show();
         }
         window.setTimeout(function () {// otherwise Firefox will fail to leave the "connecting" state
-            $(id).remove();
+            document.getElementById(id).remove();
         }, 0)
     });
 
@@ -180,8 +183,11 @@ window.credentials.addSubmit = function (e) {
     return false;
 };
 Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, function(e) {
-    var btn = $(e);
-    var menu = btn.next('DIV.credentials-add-menu-items');
+    var btn = e;
+    var menu = btn.nextElementSibling;
+    while (menu && !menu.matches('DIV.credentials-add-menu-items')) {
+        menu = menu.nextElementSibling;
+    }
     if (menu) {
         var menuAlign = (btn.getAttribute("menualign") || "tl-bl");
 
@@ -191,8 +197,11 @@ Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, func
             menualignment: menuAlign.split("-"),
             menuminscrollheight: 250
         });
-        $(menuButton._button).addClassName(btn.className);    // copy class names
-        $(menuButton._button).setAttribute("suffix", btn.getAttribute("suffix"));
+        // copy class names
+        for (var i = 0; i < btn.classList.length; i++) {
+            menuButton._button.classList.add(btn.classList.item(i));
+        }
+        menuButton._button.setAttribute("suffix", btn.getAttribute("suffix"));
         menuButton.getMenu().clickEvent.subscribe(function (type, args, value) {
             var item = args[1];
             if (item.cfg.getProperty("disabled")) {
@@ -219,26 +228,25 @@ Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e
     e = null; // avoid memory leak
 });
 Behaviour.specify("DIV.credentials-select-control", 'credentials-select', 100, function (d) {
-    d = $(d);
-    var buttons = d.getElementsBySelector("INPUT.credentials-select-radio-control");
+    var buttons = Array.from(d.querySelectorAll("INPUT.credentials-select-radio-control"));
     var u = (function () {
         for (var i = 0; i < this.length; i++) {
             this[i]();
         }
-    }).bind(buttons.collect(function (x) {
+    }).bind(buttons.map(function (x) {
                 return (function () {
                     if (x.checked) {
-                        this.addClassName('credentials-select-content-active');
-                        this.removeClassName('credentials-select-content-inactive');
+                        this.classList.add('credentials-select-content-active');
+                        this.classList.remove('credentials-select-content-inactive');
                         this.removeAttribute('field-disabled');
                     } else if (this instanceof HTMLElement) {
-                        this.addClassName('credentials-select-content-inactive');
-                        this.removeClassName('credentials-select-content-active');
+                        this.classList.add('credentials-select-content-inactive');
+                        this.classList.remove('credentials-select-content-active');
                         this.setAttribute('field-disabled', 'true');
                     }
-                }).bind(d.getElementsBySelector(x.value == 'select'
+                }).bind(d.querySelector(x.value == 'select'
                                 ? "DIV.credentials-select-content-select"
-                                : "DIV.credentials-select-content-param")[0]);
+                                : "DIV.credentials-select-content-param"));
             }));
     u();
     for (var i = 0; i < buttons.length; i++) {
@@ -251,13 +259,13 @@ Behaviour.specify("DIV.credentials-select-control", 'credentials-select', 100, f
 Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, function (x) {
   x.onchange = x.oninput = x.onkeyup = (function() {
     if (!this.value.startsWith('${')) {
-      this.next().show();
+      this.nextElementSibling.style.display = '';
     } else if (this.value=='' || this.value=='${}' || this.value.indexOf('}')!=this.value.length-1) {
-      this.next().show();
+      this.nextElementSibling.style.display = '';
     } else {
-      this.next().hide();
+      this.nextElementSibling.style.display = 'none';
     }
-  }).bind($(x));
+  }).bind(x);
   x.onchange();
 });
 Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0, function (e) {
