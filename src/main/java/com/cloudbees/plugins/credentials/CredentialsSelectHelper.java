@@ -38,7 +38,6 @@ import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.AccessControlled;
 import hudson.security.Permission;
-import hudson.util.FormApply;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -596,10 +595,13 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          * @throws ServletException if something goes wrong.
          */
         @RequirePOST
-        public void doAddCredentials(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
+        @Restricted(NoExternalUse.class)
+        public JSONObject doAddCredentials(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
             if (!store.isDomainsModifiable()) {
                 hudson.util.HttpResponses.status(400).generateResponse(req, rsp, null);
-                FormApply.applyResponse("window.alert('Domain is read-only')").generateResponse(req, rsp, null);
+                return new JSONObject()
+                        .accumulate("message", "Domain is read-only")
+                        .accumulate("notificationType", "ERROR");
             }
             store.checkPermission(CredentialsStoreAction.CREATE);
             JSONObject data = req.getSubmittedForm();
@@ -607,13 +609,16 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             CredentialsStoreAction.DomainWrapper wrapper = getWrappers().get(domainName);
             if (!store.getDomains().contains(wrapper.getDomain())) {
                 hudson.util.HttpResponses.status(400).generateResponse(req, rsp, null);
-                FormApply.applyResponse("window.alert('Store does not have selected domain')")
-                        .generateResponse(req, rsp, null);
+                return new JSONObject()
+                        .accumulate("message", "Store does not have selected domain")
+                        .accumulate("notificationType", "ERROR");
             }
             store.checkPermission(CredentialsStoreAction.CREATE);
             Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
             store.addCredentials(wrapper.getDomain(), credentials);
-            FormApply.applyResponse("window.credentials.refreshAll();").generateResponse(req, rsp, null);
+            return new JSONObject()
+                    .accumulate("message", "Credentials created")
+                    .accumulate("notificationType", "SUCCESS");
         }
 
         /**
