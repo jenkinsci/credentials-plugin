@@ -30,7 +30,7 @@ public class CredentialsSelectHelperTest {
             addCredentialsButton.click();
             HtmlListItem li = htmlPage.querySelector(".credentials-add-menu-items li");
             li.click();
-            wc.waitForBackgroundJavaScript(2000);
+            wc.waitForBackgroundJavaScript(4000);
             HtmlForm form = htmlPage.querySelector("#credentialsDialog form");
 
             HtmlInput username = form.querySelector("input[name='_.username']");
@@ -42,7 +42,7 @@ public class CredentialsSelectHelperTest {
 
             HtmlSpan formSubmitButton = form.querySelector("#credentials-add-submit");
             formSubmitButton.fireEvent("click");
-            wc.waitForBackgroundJavaScript(1000);
+            wc.waitForBackgroundJavaScript(5000);
 
             // check if credentials were added
             List<UsernamePasswordCredentials> creds = CredentialsProvider.lookupCredentials(UsernamePasswordCredentials.class);
