@@ -600,8 +600,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             if (!store.isDomainsModifiable()) {
                 hudson.util.HttpResponses.status(400).generateResponse(req, rsp, null);
                 return new JSONObject()
-                        .accumulate("message", "Domain is read-only")
-                        .accumulate("notificationType", "ERROR");
+                        .element("message", "Domain is read-only")
+                        .element("notificationType", "ERROR");
             }
             store.checkPermission(CredentialsStoreAction.CREATE);
             JSONObject data = req.getSubmittedForm();
@@ -610,15 +610,22 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             if (!store.getDomains().contains(wrapper.getDomain())) {
                 hudson.util.HttpResponses.status(400).generateResponse(req, rsp, null);
                 return new JSONObject()
-                        .accumulate("message", "Store does not have selected domain")
-                        .accumulate("notificationType", "ERROR");
+                        .element("message", "Store does not have selected domain")
+                        .element("notificationType", "ERROR");
             }
             store.checkPermission(CredentialsStoreAction.CREATE);
             Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
-            store.addCredentials(wrapper.getDomain(), credentials);
-            return new JSONObject()
-                    .accumulate("message", "Credentials created")
-                    .accumulate("notificationType", "SUCCESS");
+            boolean credentialsWereAdded = store.addCredentials(wrapper.getDomain(), credentials);
+            if (credentialsWereAdded) {
+                return new JSONObject()
+                        .element("message", "Credentials created")
+                        .element("notificationType", "SUCCESS");
+            } else {
+                return new JSONObject()
+                        .element("message", "Credentials with specified ID already exist in " + domainName + " domain")
+                        // TODO: or domain does not exist at all?
+                        .element("notificationType", "ERROR");
+            }
         }
 
         /**
