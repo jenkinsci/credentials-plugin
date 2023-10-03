@@ -811,7 +811,7 @@ public abstract class CredentialsStoreAction
                 }
             } else {
                 JSONObject data = req.getSubmittedForm();
-                Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
+                Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
                 getStore().addCredentials(domain, credentials);
                 return HttpResponses.redirectTo("../../domain/" + getUrlName());
             }
@@ -1394,7 +1394,7 @@ public abstract class CredentialsStoreAction
         public HttpResponse doUpdateSubmit(StaplerRequest req) throws ServletException, IOException {
             getStore().checkPermission(UPDATE);
             JSONObject data = req.getSubmittedForm();
-            Credentials credentials = req.bindJSON(Credentials.class, data);
+            Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data);
             if (!getStore().updateCredentials(this.domain.domain, this.credentials, credentials)) {
                 return HttpResponses.redirectTo("concurrentModification");
             }
