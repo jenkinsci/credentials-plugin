@@ -611,7 +611,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                         .generateResponse(req, rsp, null);
             }
             store.checkPermission(CredentialsStoreAction.CREATE);
-            Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
+            Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
             store.addCredentials(wrapper.getDomain(), credentials);
             FormApply.applyResponse("window.credentials.refreshAll();").generateResponse(req, rsp, null);
         }
