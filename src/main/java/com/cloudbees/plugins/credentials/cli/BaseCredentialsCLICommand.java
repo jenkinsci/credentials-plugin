@@ -28,7 +28,6 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
-import com.thoughtworks.xstream.io.xml.XppDriver;
 import hudson.cli.CLICommand;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +41,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import hudson.util.XStream2;
 import jenkins.util.xml.XMLUtils;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
@@ -103,7 +103,7 @@ public abstract class BaseCredentialsCLICommand extends CLICommand {
         } catch (TransformerException | SAXException e) {
             throw new IOException("Failed to parse", e);
         }
-        return new XppDriver().createReader(new StringReader(out.toString()));
+        return XStream2.getDefaultDriver().createReader(new StringReader(out.toString()));
 
     }
 }

@@ -614,7 +614,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                         .element("notificationType", "ERROR");
             }
             store.checkPermission(CredentialsStoreAction.CREATE);
-            Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
+            Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
             boolean credentialsWereAdded = store.addCredentials(wrapper.getDomain(), credentials);
             if (credentialsWereAdded) {
                 return new JSONObject()

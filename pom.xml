@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.71</version>
+    <version>4.74</version>
     <relativePath />
   </parent>
 
@@ -121,7 +121,7 @@
     <dependency>
       <groupId>org.kohsuke.metainf-services</groupId>
       <artifactId>metainf-services</artifactId>
-      <version>1.9</version>
+      <version>1.11</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -194,9 +194,9 @@
     <profile>
       <id>pdfs</id>
       <properties>
-        <asciidoctor.maven.plugin.version>2.2.3</asciidoctor.maven.plugin.version>
+        <asciidoctor.maven.plugin.version>2.2.4</asciidoctor.maven.plugin.version>
         <asciidoctorj.pdf.version>2.3.9</asciidoctorj.pdf.version>
-        <asciidoctorj.version>2.5.8</asciidoctorj.version>
+        <asciidoctorj.version>2.5.10</asciidoctorj.version>
         <jruby.version>9.4.3.0</jruby.version>
       </properties>
       <build>
