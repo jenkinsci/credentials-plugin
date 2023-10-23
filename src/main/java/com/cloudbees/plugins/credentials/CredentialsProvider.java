@@ -122,7 +122,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
          */
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
                                                               @Nullable Authentication authentication) {
             return Collections.emptyList();
         }
@@ -470,7 +470,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
-                    for (C c : provider.getCredentials(type, itemGroup, authentication, domainRequirements)) {
+                    for (C c : provider.getCredentials2(type, itemGroup, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
                             // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
@@ -550,7 +550,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
-                    for (ListBoxModel.Option option : provider.getCredentialIds(
+                    for (ListBoxModel.Option option : provider.getCredentialIds2(
                             type, itemGroup, authentication, domainRequirements, matcher)
                             ) {
                         if (ids.add(option.value)) {
@@ -678,7 +678,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    for (C c: provider.getCredentials(type, item, authentication, domainRequirements)) {
+                    for (C c: provider.getCredentials2(type, item, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
                             // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
@@ -763,7 +763,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    for (ListBoxModel.Option option : provider.getCredentialIds(
+                    for (ListBoxModel.Option option : provider.getCredentialIds2(
                             type, item, authentication, domainRequirements, matcher)
                             ) {
                         if (ids.add(option.value)) {
@@ -1284,14 +1284,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param <C>            the credentials type.
      * @return the list of credentials.
-     * @deprecated use {@link #getCredentials(Class, Item, Authentication)} instead.
+     * @deprecated use {@link #getCredentials2(Class, Item, Authentication)} instead.
      */
     @NonNull
     @Deprecated
     public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
                                                                    @Nullable ItemGroup itemGroup,
                                                                    @Nullable org.acegisecurity.Authentication authentication) {
-        return getCredentials(type, itemGroup, authentication == null ? null : authentication.toSpring());
+        return getCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring());
     }
 
     /**
@@ -1306,7 +1306,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     @SuppressWarnings("deprecation")
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
                                                                    @Nullable ItemGroup itemGroup,
                                                                    @Nullable Authentication authentication) {
         if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, ItemGroup.class, org.acegisecurity.Authentication.class)) {
@@ -1328,7 +1328,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *                           assume the match is true).
      * @param <C>                the credentials type.
      * @return the list of credentials.
-     * @deprecated use {@link #getCredentials(Class, Item, Authentication, List)} instead.
+     * @deprecated use {@link #getCredentials2(Class, Item, Authentication, List)} instead.
      * @since 1.5
      */
     @Deprecated
@@ -1337,7 +1337,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @Nullable ItemGroup itemGroup,
                                                           @Nullable org.acegisecurity.Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials(type, itemGroup, authentication, domainRequirements);
+        return getCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements);
     }
 
 
@@ -1358,14 +1358,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     @SuppressWarnings("deprecation")
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
                                                           @Nullable ItemGroup itemGroup,
                                                           @Nullable Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
         if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, ItemGroup.class, org.acegisecurity.Authentication.class, List.class)) {
             return getCredentials(type, itemGroup, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication), domainRequirements);
         }
-        return getCredentials(type, itemGroup, authentication);
+        return getCredentials2(type, itemGroup, authentication);
     }
 
     /**
@@ -1374,7 +1374,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
      * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
-     * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
+     * requirements. The default implementation just uses {@link #getCredentials2(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against if {@link CredentialsMatchers#describe(CredentialsMatcher)} returns
      * {@code null}
@@ -1387,7 +1387,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param matcher            the additional filtering to apply to the credentials
      * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with names provided by
      * {@link CredentialsNameProvider}.
-     * @deprecated Use {@link #getCredentialIds(Class, ItemGroup, Authentication, List, CredentialsMatcher)} instead.
+     * @deprecated Use {@link #getCredentialIds2(Class, ItemGroup, Authentication, List, CredentialsMatcher)} instead.
      * @since 2.1.0
      */
     @NonNull
@@ -1398,7 +1398,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                    @NonNull
                                                                    List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
-        return getCredentialIds(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
+        return getCredentialIds2(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
     }
 
     /**
@@ -1407,7 +1407,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
      * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
-     * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
+     * requirements. The default implementation just uses {@link #getCredentials2(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against if {@link CredentialsMatchers#describe(CredentialsMatcher)} returns
      * {@code null}
@@ -1423,13 +1423,13 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 2.1.0
      */
     @NonNull
-    public <C extends IdCredentials> ListBoxModel getCredentialIds(@NonNull Class<C> type,
+    public <C extends IdCredentials> ListBoxModel getCredentialIds2(@NonNull Class<C> type,
                                                                    @Nullable ItemGroup itemGroup,
                                                                    @Nullable Authentication authentication,
                                                                    @NonNull
                                                                            List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
-        return getCredentials(type, itemGroup, authentication, domainRequirements)
+        return getCredentials2(type, itemGroup, authentication, domainRequirements)
                 .stream()
                 .filter(matcher::matches)
                 .sorted(new CredentialsNameComparator())
@@ -1446,7 +1446,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param <C>            the credentials type.
      * @return the list of credentials.
-     * @deprecated Use {@link #getCredentials(Class, Item, Authentication)} instead.
+     * @deprecated Use {@link #getCredentials2(Class, Item, Authentication)} instead.
      */
     @Deprecated
     @NonNull
@@ -1454,7 +1454,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @NonNull Item item,
                                                           @Nullable org.acegisecurity.Authentication authentication) {
         Objects.requireNonNull(item);
-        return getCredentials(type, item.getParent(), authentication);
+        return getCredentials2(type, item.getParent(), authentication == null ? null : authentication.toSpring());
     }
 
     /**
@@ -1468,11 +1468,11 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @return the list of credentials.
      */
     @NonNull
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
                                                           @NonNull Item item,
                                                           @Nullable Authentication authentication) {
         Objects.requireNonNull(item);
-        return getCredentials(type, item.getParent(), authentication);
+        return getCredentials2(type, item.getParent(), authentication);
     }
 
     /**
@@ -1485,7 +1485,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param domainRequirements the credential domain to match.
      * @param <C>                the credentials type.
      * @return the list of credentials.
-     * @deprecated Use {@link #getCredentials(Class, Item, Authentication, List)} instead.
+     * @deprecated Use {@link #getCredentials2(Class, Item, Authentication, List)} instead.
      * @since 1.5
      */
     @Deprecated
@@ -1494,7 +1494,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @NonNull Item item,
                                                           @Nullable org.acegisecurity.Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements);
+        return getCredentials2(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements);
     }
 
     /**
@@ -1510,11 +1510,11 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 1.5
      */
     @NonNull
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
                                                           @NonNull Item item,
                                                           @Nullable Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials(type, item instanceof ItemGroup ? (ItemGroup) item : item.getParent(),
+        return getCredentials2(type, item instanceof ItemGroup ? (ItemGroup) item : item.getParent(),
                 authentication, domainRequirements);
     }
 
@@ -1524,7 +1524,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
      * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
-     * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
+     * requirements. The default implementation just uses {@link #getCredentials2(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against.
      *
@@ -1536,7 +1536,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param <C>                the credentials type.
      * @return the {@link ListBoxModel} of {@link IdCredentials#getId()} with names provided by
      * {@link CredentialsNameProvider}.
-     * @deprecated Use {@link #getCredentialIds(Class, Item, Authentication, List, CredentialsMatcher)} instead.
+     * @deprecated Use {@link #getCredentialIds2(Class, Item, Authentication, List, CredentialsMatcher)} instead.
      * @since 2.1.0
      */
     @NonNull
@@ -1546,7 +1546,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                    @Nullable org.acegisecurity.Authentication authentication,
                                                                    @NonNull List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
-        return getCredentialIds(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
+        return getCredentialIds2(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
     }
 
     /**
@@ -1555,7 +1555,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
      * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
-     * requirements. The default implementation just uses {@link #getCredentials(Class, Item, Authentication, List)}
+     * requirements. The default implementation just uses {@link #getCredentials2(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against.
      *
@@ -1570,15 +1570,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since 2.1.0
      */
     @NonNull
-    public <C extends IdCredentials> ListBoxModel getCredentialIds(@NonNull Class<C> type,
+    public <C extends IdCredentials> ListBoxModel getCredentialIds2(@NonNull Class<C> type,
                                                                    @NonNull Item item,
                                                                    @Nullable Authentication authentication,
                                                                    @NonNull List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
         if (item instanceof ItemGroup) {
-            return getCredentialIds(type, (ItemGroup) item, authentication, domainRequirements, matcher);
+            return getCredentialIds2(type, (ItemGroup) item, authentication, domainRequirements, matcher);
         }
-        return getCredentials(type, item, authentication, domainRequirements)
+        return getCredentials2(type, item, authentication, domainRequirements)
                 .stream()
                 .filter(matcher::matches)
                 .sorted(new CredentialsNameComparator())

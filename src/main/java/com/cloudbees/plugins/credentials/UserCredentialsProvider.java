@@ -119,9 +119,9 @@ public class UserCredentialsProvider extends CredentialsProvider {
      */
     @NonNull
     @Override
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
                                                           @Nullable Authentication authentication) {
-        return getCredentials(type, itemGroup, authentication, Collections.emptyList());
+        return getCredentials2(type, itemGroup, authentication, Collections.emptyList());
     }
 
     /**
@@ -129,7 +129,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
      */
     @NonNull
     @Override
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
                                                           @Nullable ItemGroup itemGroup,
                                                           @Nullable Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {

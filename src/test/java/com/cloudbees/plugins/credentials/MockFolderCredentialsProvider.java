@@ -76,14 +76,14 @@ import org.springframework.security.core.Authentication;
 
     @NonNull
     @Override
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
                                                           @Nullable Authentication authentication) {
-        return getCredentials(type, itemGroup, authentication, Collections.emptyList());
+        return getCredentials2(type, itemGroup, authentication, Collections.emptyList());
     }
 
     @NonNull
     @Override
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
                                                           @Nullable Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
         if (authentication == null) {
