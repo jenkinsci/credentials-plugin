@@ -37,7 +37,7 @@ window.credentials.init = function () {
             visible: false,
             keylisteners: [
               new YAHOO.util.KeyListener(document, {keys:27}, {
-                fn:(function() {window.credentials.dialog.hide();}),
+                fn:(function() {window.credentials.dialog.style.display = "none";}),
                 scope:document,
                 correctScope:false
               })
@@ -62,7 +62,7 @@ window.credentials.add = function (e) {
                 window.credentials.dialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
                 window.credentials.dialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
                 window.credentials.dialog.center();
-                window.credentials.dialog.show();
+                window.credentials.dialog.style.display = "";
             });
         }
     });
@@ -165,7 +165,7 @@ window.credentials.addSubmit = function (e) {
             responseDialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
             responseDialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
             responseDialog.center();
-            responseDialog.show();
+            responseDialog.style.display = "";
         }
         window.setTimeout(function () {// otherwise Firefox will fail to leave the "connecting" state
             document.getElementById(id).remove();
@@ -179,7 +179,7 @@ window.credentials.addSubmit = function (e) {
     } finally {
         f.target = null;
     }
-    window.credentials.dialog.hide();
+    window.credentials.dialog.style.display = "none";
     return false;
 };
 Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, function(e) {
