@@ -21,10 +21,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import jenkins.model.Jenkins;
-import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
+import org.springframework.security.core.Authentication;
 
 /**
  * A {@link ParameterValue} produced from a {@link CredentialsParameterDefinition}.
@@ -89,16 +89,16 @@ public class CredentialsParameterValue extends ParameterValue {
 
     public <C extends IdCredentials> C lookupCredentials(@NonNull Class<C> type, @NonNull Run run,
                                                          List<DomainRequirement> domainRequirements) {
-        Authentication authentication = Jenkins.getAuthentication();
+        Authentication authentication = Jenkins.getAuthentication2();
         final Executor executor = run.getExecutor();
         if (executor != null) {
             final WorkUnit workUnit = executor.getCurrentWorkUnit();
             if (workUnit != null) {
-                authentication = workUnit.context.item.authenticate();
+                authentication = workUnit.context.item.authenticate2();
             }
         }
         List<C> candidates = new ArrayList<>();
-        final boolean isSystem = ACL.SYSTEM.equals(authentication);
+        final boolean isSystem = ACL.SYSTEM2.equals(authentication);
         if (!isSystem && run.getParent().hasPermission(CredentialsProvider.USE_OWN)) {
             candidates.addAll(CredentialsProvider
                     .lookupCredentials(type, run.getParent(), authentication, domainRequirements));
@@ -106,7 +106,7 @@ public class CredentialsParameterValue extends ParameterValue {
         if (run.getParent().hasPermission(CredentialsProvider.USE_ITEM) || isSystem
                 || isDefaultValue) {
             candidates.addAll(
-                    CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM, domainRequirements));
+                    CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM2, domainRequirements));
         }
         return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(value));
     }
@@ -120,14 +120,14 @@ public class CredentialsParameterValue extends ParameterValue {
             throw new IllegalStateException("Should only be called from value.jelly");
         }
         StandardCredentials c = CredentialsMatchers.firstOrNull(
-                CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(), ACL.SYSTEM,
+                CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(), ACL.SYSTEM2,
                         Collections.emptyList()), CredentialsMatchers.withId(value));
         if (c != null) {
             return CredentialsNameProvider.name(c);
         }
         c = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(),
-                        Jenkins.getAuthentication(),
+                        Jenkins.getAuthentication2(),
                         Collections.emptyList()), CredentialsMatchers.withId(value));
         if (c != null) {
             return CredentialsNameProvider.name(c);
@@ -144,14 +144,14 @@ public class CredentialsParameterValue extends ParameterValue {
             throw new IllegalStateException("Should only be called from value.jelly");
         }
         StandardCredentials c = CredentialsMatchers.firstOrNull(
-                CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(), ACL.SYSTEM,
+                CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(), ACL.SYSTEM2,
                         Collections.emptyList()), CredentialsMatchers.withId(value));
         if (c != null) {
             return c.getDescriptor().getIconClassName();
         }
         c = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(StandardCredentials.class, run.getParent(),
-                        Jenkins.getAuthentication(),
+                        Jenkins.getAuthentication2(),
                         Collections.emptyList()), CredentialsMatchers.withId(value));
         if (c != null) {
             return c.getDescriptor().getIconClassName();
@@ -167,7 +167,7 @@ public class CredentialsParameterValue extends ParameterValue {
         if (run == null) {
             throw new IllegalStateException("Should only be called from value.jelly");
         }
-        try (ACLContext ctx = ACL.as(ACL.SYSTEM)) {
+        try (ACLContext ignored = ACL.as2(ACL.SYSTEM2)) {
             for (CredentialsStore store : CredentialsProvider.lookupStores(run.getParent())) {
                 String url = url(store);
                 if (url != null) {

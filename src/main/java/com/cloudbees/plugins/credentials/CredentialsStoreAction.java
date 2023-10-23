@@ -83,7 +83,6 @@ import jenkins.model.ModelObjectWithChildren;
 import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
-import org.acegisecurity.AccessDeniedException;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
@@ -97,6 +96,7 @@ import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.springframework.security.access.AccessDeniedException;
 import org.xml.sax.SAXException;
 
 import static com.cloudbees.plugins.credentials.ContextMenuIconUtils.getMenuItemIconUrlByClassSpec;

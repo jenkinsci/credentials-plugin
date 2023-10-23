@@ -96,32 +96,32 @@ public class DomainTest {
         List<DomainRequirement> reqFoo = Arrays.asList(new DomainRequirement[] { new HostnameRequirement("foo.com") });
         List<DomainRequirement> reqBar = Arrays.asList(new DomainRequirement[] { new HostnameRequirement("bar.com") });
         
-        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).isEmpty());
-        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqFoo).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqBar).isEmpty());
     
         // Add credentials to domains
         store.addCredentials(domainFoo, systemCred);
         store.addCredentials(domainBar, systemCred1);
     
         // Search credentials with specific domain restrictions
-        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).size());
-        assertEquals(systemCred.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).get(0).getUsername());
-        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).size());
-        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).get(0).getUsername());
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqFoo).size());
+        assertEquals(systemCred.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqFoo).get(0).getUsername());
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqBar).size());
+        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqBar).get(0).getUsername());
     
         // Update credential from domain
         store.updateCredentials(domainFoo, systemCred, systemCredMod);
         
-        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).size());
-        assertEquals(systemCredMod.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).get(0).getUsername());
-        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).size());
-        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).get(0).getUsername());
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqFoo).size());
+        assertEquals(systemCredMod.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqFoo).get(0).getUsername());
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqBar).size());
+        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqBar).get(0).getUsername());
   
         // Remove credential from domain
         store.removeCredentials(domainFoo, systemCredMod);
         
-        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqFoo).isEmpty());
-        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).size());
-        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM, reqBar).get(0).getUsername());
+        assertTrue(CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqFoo).isEmpty());
+        assertEquals(1, CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqBar).size());
+        assertEquals(systemCred1.getUsername(), CredentialsProvider.lookupCredentials(DummyCredentials.class, r.jenkins, ACL.SYSTEM2, reqBar).get(0).getUsername());
     }
 }

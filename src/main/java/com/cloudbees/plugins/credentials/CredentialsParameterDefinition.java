@@ -17,13 +17,13 @@ import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.springframework.security.core.Authentication;
 
 /**
  * A {@link ParameterDefinition} for a parameter that supplies a {@link Credentials}.
@@ -173,7 +173,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             final StandardListBoxModel result = new StandardListBoxModel();
             result.includeEmptyValue();
             if (acl.hasPermission(CredentialsProvider.USE_ITEM)) {
-                result.includeAs(CredentialsProvider.getDefaultAuthenticationOf(context), context, typeClass, domainRequirements);
+                result.includeAs(CredentialsProvider.getDefaultAuthenticationOf2(context), context, typeClass, domainRequirements);
             }
             return result;
         }
@@ -185,9 +185,9 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
                                                      @QueryParameter boolean includeUser) {
             Jenkins jenkins = Jenkins.get();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
-            final Authentication authentication = Jenkins.getAuthentication();
-            final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf(context);
-            final boolean isSystem = ACL.SYSTEM.equals(authentication);
+            final Authentication authentication = Jenkins.getAuthentication2();
+            final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf2(context);
+            final boolean isSystem = ACL.SYSTEM2.equals(authentication);
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
             final List<DomainRequirement> domainRequirements = Collections.emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
