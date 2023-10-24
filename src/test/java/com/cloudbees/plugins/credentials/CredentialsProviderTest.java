@@ -111,6 +111,54 @@ public class CredentialsProviderTest {
                 "manchu");
 
     }
+
+    /**
+     * Same test as {@link #testNoCredentialsUntilWeAddSome()} but using new APIs.
+     */
+    @Test
+    public void testNoCredentialsUntilWeAddSome2() throws Exception {
+        FreeStyleProject project = r.createFreeStyleProject();
+        assertTrue(CredentialsProvider.lookupCredentials2(Credentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        SystemCredentialsProvider.getInstance().getCredentials().add(
+                new DummyCredentials(CredentialsScope.SYSTEM, "foo", "bar"));
+        assertFalse(CredentialsProvider.lookupCredentials2(Credentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), ACL.SYSTEM2).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), Jenkins.ANONYMOUS2).isEmpty());
+        assertFalse("null auth -> ACL.SYSTEM",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), null).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), ACL.SYSTEM2).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, (ItemGroup) null, ACL.SYSTEM2).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials2(DummyCredentials.class, project, ACL.SYSTEM2).isEmpty());
+
+        SystemCredentialsProvider.getInstance().getCredentials().add(
+                new DummyCredentials(CredentialsScope.GLOBAL, "manchu", "bar"));
+
+        assertFalse(CredentialsProvider.lookupCredentials2(Credentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), ACL.SYSTEM2).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), Jenkins.ANONYMOUS2).isEmpty());
+        assertFalse("null auth -> ACL.SYSTEM",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), null).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), ACL.SYSTEM2).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, (ItemGroup) null, ACL.SYSTEM2).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, project, ACL.SYSTEM2).isEmpty());
+        assertEquals(CredentialsProvider.lookupCredentials2(DummyCredentials.class, project, ACL.SYSTEM2).size(), 1);
+        assertEquals(
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, project, ACL.SYSTEM2).iterator().next().getUsername(),
+                "manchu");
+
+    }
     
     @Test
     public void testNoCredentialsUntilWeAddSomeViaStore() throws Exception {
@@ -154,6 +202,52 @@ public class CredentialsProviderTest {
                 CredentialsProvider.lookupCredentials(DummyCredentials.class, project).iterator().next().getUsername(),
                 "manchu");
 
+    }
+
+    /**
+     * Same test as {@link #testNoCredentialsUntilWeAddSomeViaStore()} but using new APIs.
+     */
+    @Test
+    public void testNoCredentialsUntilWeAddSomeViaStore2() throws Exception {
+        FreeStyleProject project = r.createFreeStyleProject();
+        assertTrue(CredentialsProvider.lookupCredentials2(Credentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
+        store.addCredentials(Domain.global(), new DummyCredentials(CredentialsScope.SYSTEM, "foo", "bar"));
+        assertFalse(CredentialsProvider.lookupCredentials2(Credentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), ACL.SYSTEM2).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), Jenkins.ANONYMOUS2).isEmpty());
+        assertFalse("null auth -> ACL.SYSTEM",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), null).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), ACL.SYSTEM2).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, (ItemGroup) null, ACL.SYSTEM2).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials2(DummyCredentials.class, project, ACL.SYSTEM2).isEmpty());
+
+        store.addCredentials(Domain.global(), new DummyCredentials(CredentialsScope.GLOBAL, "manchu", "bar"));
+
+        assertFalse(CredentialsProvider.lookupCredentials2(Credentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), ACL.SYSTEM2).isEmpty());
+        assertTrue(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), Jenkins.ANONYMOUS2).isEmpty());
+        assertFalse("null auth -> ACL.SYSTEM",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), null).isEmpty());
+
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, Jenkins.get(), ACL.SYSTEM2).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, (Item) null, ACL.SYSTEM2).isEmpty());
+        assertFalse("null item -> Root",
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, (ItemGroup) null, ACL.SYSTEM2).isEmpty());
+        assertFalse(CredentialsProvider.lookupCredentials2(DummyCredentials.class, project, ACL.SYSTEM2).isEmpty());
+        assertEquals(CredentialsProvider.lookupCredentials2(DummyCredentials.class, project, ACL.SYSTEM2).size(), 1);
+        assertEquals(
+                CredentialsProvider.lookupCredentials2(DummyCredentials.class, project, ACL.SYSTEM2).iterator().next().getUsername(),
+                "manchu");
     }
 
     @Test
