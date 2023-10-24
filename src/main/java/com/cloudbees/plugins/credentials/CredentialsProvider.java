@@ -1267,7 +1267,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated Use {@link #getCredentials2(Class, Item, Authentication)} instead.
+     * @deprecated Use {@link #getCredentials2(Class, Item, Authentication, List)} instead.
      */
     @Deprecated
     @NonNull
@@ -1276,25 +1276,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @Nullable org.acegisecurity.Authentication authentication) {
         Objects.requireNonNull(item);
         return getCredentials2(type, item.getParent(), authentication == null ? null : authentication.toSpring());
-    }
-
-    /**
-     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for the specified {@link Item}
-     *
-     * @param type           the type of credentials to return.
-     * @param item           the item.
-     * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM2}.
-     * @param <C>            the credentials type.
-     * @return the list of credentials.
-     * @since TODO
-     */
-    @NonNull
-    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
-                                                           @NonNull Item item,
-                                                           @Nullable Authentication authentication) {
-        Objects.requireNonNull(item);
-        return getCredentials2(type, item.getParent(), authentication);
     }
 
     /**
