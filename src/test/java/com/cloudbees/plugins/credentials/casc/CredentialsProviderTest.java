@@ -84,7 +84,7 @@ public class CredentialsProviderTest {
 
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication) {
+        public <C extends Credentials> List<C> getCredentials2ItemGroup(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication) {
             if (!type.equals(DummyCredentials.class)) {
                 return Collections.emptyList();
             }

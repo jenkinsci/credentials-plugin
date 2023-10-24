@@ -169,11 +169,6 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
 
 
     /**
-     * Checks if the given principle has the given permission.
-     *
-     * @param a          the principle.
-     * @param permission the permission.
-     * @return {@code false} if the user doesn't have the permission.
      * @deprecated Use {@link #hasPermission2(Authentication, Permission)} instead.
      */
     @Deprecated
@@ -187,6 +182,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * @param a          the principle.
      * @param permission the permission.
      * @return {@code false} if the user doesn't have the permission.
+     * @since TODO
      */
     public boolean hasPermission2(@NonNull Authentication a, @NonNull Permission permission) {
         if (Util.isOverridden(CredentialsStore.class, getClass(), "hasPermission", org.acegisecurity.Authentication.class,

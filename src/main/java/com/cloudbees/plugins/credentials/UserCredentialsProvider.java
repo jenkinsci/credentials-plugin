@@ -42,7 +42,6 @@ import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
-import hudson.security.AccessDeniedException2;
 import hudson.security.AccessDeniedException3;
 import hudson.security.Permission;
 import java.io.IOException;
@@ -119,9 +118,9 @@ public class UserCredentialsProvider extends CredentialsProvider {
      */
     @NonNull
     @Override
-    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
-                                                          @Nullable Authentication authentication) {
-        return getCredentials2(type, itemGroup, authentication, Collections.emptyList());
+    public <C extends Credentials> List<C> getCredentials2ItemGroup(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+                                                                    @Nullable Authentication authentication) {
+        return getCredentials2ItemGroup(type, itemGroup, authentication, Collections.emptyList());
     }
 
     /**
@@ -129,10 +128,10 @@ public class UserCredentialsProvider extends CredentialsProvider {
      */
     @NonNull
     @Override
-    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
-                                                          @Nullable ItemGroup itemGroup,
-                                                          @Nullable Authentication authentication,
-                                                          @NonNull List<DomainRequirement> domainRequirements) {
+    public <C extends Credentials> List<C> getCredentials2ItemGroup(@NonNull Class<C> type,
+                                                                    @Nullable ItemGroup itemGroup,
+                                                                    @Nullable Authentication authentication,
+                                                                    @NonNull List<DomainRequirement> domainRequirements) {
         // ignore itemGroup, as per-user credentials are available on any object
         if (authentication == null) {
             // assume ACL#SYSTEM
