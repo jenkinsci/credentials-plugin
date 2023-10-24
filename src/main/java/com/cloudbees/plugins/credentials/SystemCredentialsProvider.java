@@ -451,16 +451,6 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         @NonNull
         @Override
         public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @NonNull Item item,
-                                                               @Nullable Authentication authentication) {
-            return getCredentials2(type, item, authentication, Collections.emptyList());
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @NonNull Item item,
                                                                @Nullable Authentication authentication,
                                                                @NonNull List<DomainRequirement> domainRequirements) {
             if (ACL.SYSTEM2.equals(authentication)) {

@@ -1144,7 +1144,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #getCredentials2(Class, Item, Authentication)} instead.
+     * @deprecated use {@link #getCredentials2(Class, Item, Authentication, List)} instead.
      */
     @NonNull
     @Deprecated
