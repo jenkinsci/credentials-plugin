@@ -313,7 +313,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                     @Nullable ItemGroup itemGroup,
                                                                     @Nullable org.acegisecurity.Authentication authentication,
                                                                     @Nullable DomainRequirement... domainRequirements) {
-        return lookupCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), Arrays.asList(domainRequirements));
+        return lookupCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), Arrays.asList(domainRequirements == null ? new DomainRequirement[0] : domainRequirements));
     }
 
     /**
@@ -634,7 +634,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
                     for (ListBoxModel.Option option : provider.getCredentialIds2(
-                            type, item, authentication, domainRequirements, matcher)
+                            type, item, authentication, domainRequirements, matcher == null ? CredentialsMatchers.always() : matcher)
                             ) {
                         if (ids.add(option.value)) {
                             result.add(option);
@@ -743,7 +743,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                             try {
                                 a = ((User) current).impersonate2();
                             } catch (UsernameNotFoundException e) {
-                                a = null;
+                                a = Jenkins.ANONYMOUS2;
                             }
                         }
                         if (current == User.current() && jenkins.getACL().hasPermission2(a, USE_ITEM)) {
