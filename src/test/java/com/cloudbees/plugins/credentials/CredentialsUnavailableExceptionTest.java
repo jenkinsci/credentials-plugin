@@ -244,7 +244,7 @@ public class CredentialsUnavailableExceptionTest {
                                                        @NonNull SCMRevisionState baseline)
                 throws IOException {
             StandardUsernamePasswordCredentials credentials = CredentialsMatchers.firstOrNull(
-                    CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, project,
+                    CredentialsProvider.lookupCredentials2(StandardUsernamePasswordCredentials.class, project,
                             CredentialsProvider.getDefaultAuthenticationOf2(project),
                             Collections.emptyList()), CredentialsMatchers.withId(id));
             if (credentials == null) {

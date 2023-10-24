@@ -122,8 +122,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
          */
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials2ItemGroup(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
-                                                                        @Nullable Authentication authentication) {
+        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+                                                               @Nullable Authentication authentication) {
             return Collections.emptyList();
         }
     };
@@ -243,8 +243,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)}
-     * or {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
+     * @deprecated use {@link #lookupCredentials2(Class, Item, Authentication, List)}
+     * or {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)}
      */
     @Deprecated
     @NonNull
@@ -254,8 +254,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)},
-     * {@link #lookupCredentials(Class, ItemGroup, Authentication, List)}
+     * @deprecated use {@link #lookupCredentials2(Class, Item, Authentication, List)},
+     * {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)}
      */
     @Deprecated
     @NonNull
@@ -266,7 +266,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)} instead.
+     * @deprecated use {@link #lookupCredentials2(Class, Item, Authentication, List)} instead.
      */
     @Deprecated
     @NonNull
@@ -279,7 +279,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)} instead.
+     * @deprecated use {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)} instead.
      */
     @Deprecated
     @NonNull
@@ -290,7 +290,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)} instead.
+     * @deprecated use {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)} instead.
      */
     @Deprecated
     @NonNull
@@ -298,11 +298,11 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable ItemGroup itemGroup,
                                                                     @Nullable org.acegisecurity.Authentication authentication) {
-        return lookupCredentials(type, itemGroup, authentication == null ? null : authentication.toSpring(), Collections.emptyList());
+        return lookupCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), Collections.emptyList());
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)} instead.
+     * @deprecated use {@link #lookupCredentials2(Class, Item, Authentication, List)} instead.
      */
     @Deprecated
     @NonNull
@@ -310,11 +310,11 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
                                                                     @Nullable Item item,
                                                                     @Nullable org.acegisecurity.Authentication authentication) {
-        return lookupCredentials(type, item, authentication == null ? null : authentication.toSpring(), Collections.emptyList());
+        return lookupCredentials2(type, item, authentication == null ? null : authentication.toSpring(), Collections.emptyList());
     }
 
     /**
-     * @deprecated Use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)} or {@link #lookupCredentials(Class, ItemGroup, Authentication)}.
+     * @deprecated Use {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)} or {@link #lookupCredentials2(Class, ItemGroup, Authentication)}.
      */
     @Deprecated
     @NonNull
@@ -323,7 +323,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                     @Nullable ItemGroup itemGroup,
                                                                     @Nullable org.acegisecurity.Authentication authentication,
                                                                     @Nullable DomainRequirement... domainRequirements) {
-        return lookupCredentials(type, itemGroup, authentication == null ? null : authentication.toSpring(), Arrays.asList(domainRequirements));
+        return lookupCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), Arrays.asList(domainRequirements));
     }
 
     /**
@@ -339,14 +339,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     @SuppressWarnings({"unchecked", "unused"}) // API entry point for consumers
-    public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
-                                                                    @Nullable ItemGroup itemGroup,
-                                                                    @Nullable Authentication authentication) {
-        return lookupCredentials(type, itemGroup, authentication, List.of());
+    public static <C extends Credentials> List<C> lookupCredentials2(@NonNull Class<C> type,
+                                                                     @Nullable ItemGroup itemGroup,
+                                                                     @Nullable Authentication authentication) {
+        return lookupCredentials2(type, itemGroup, authentication, List.of());
     }
 
     /**
-     * @deprecated Use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)} instead.
+     * @deprecated Use {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)} instead.
      */
     @NonNull
     @SuppressWarnings({"unchecked", "unused"}) // API entry point for consumers
@@ -355,7 +355,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                     @Nullable ItemGroup itemGroup,
                                                                     @Nullable org.acegisecurity.Authentication authentication,
                                                                     @Nullable List<DomainRequirement> domainRequirements) {
-        return lookupCredentials(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements);
+        return lookupCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements);
     }
 
     /**
@@ -372,10 +372,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     @SuppressWarnings({"unchecked", "unused"}) // API entry point for consumers
-    public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
-                                                                    @Nullable ItemGroup itemGroup,
-                                                                    @Nullable Authentication authentication,
-                                                                    @Nullable List<DomainRequirement> domainRequirements) {
+    public static <C extends Credentials> List<C> lookupCredentials2(@NonNull Class<C> type,
+                                                                     @Nullable ItemGroup itemGroup,
+                                                                     @Nullable Authentication authentication,
+                                                                     @Nullable List<DomainRequirement> domainRequirements) {
         Objects.requireNonNull(type);
         Jenkins jenkins = Jenkins.get();
         itemGroup = itemGroup == null ? jenkins : itemGroup;
@@ -387,7 +387,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             LOGGER.log(Level.FINE, "Resolving legacy credentials of type {0} with resolver {1}",
                     new Object[]{type, resolver});
             final List<Credentials> originals =
-                    lookupCredentials(resolver.getFromClass(), itemGroup, authentication, domainRequirements);
+                    lookupCredentials2(resolver.getFromClass(), itemGroup, authentication, domainRequirements);
             LOGGER.log(Level.FINE, "Original credentials for resolving: {0}", originals);
             return resolver.resolve(originals);
         }
@@ -396,7 +396,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
-                    for (C c : provider.getCredentials2ItemGroup(type, itemGroup, authentication, domainRequirements)) {
+                    for (C c : provider.getCredentials2(type, itemGroup, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
                             // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
@@ -413,7 +413,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated Use {@link #listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)} instead.
+     * @deprecated Use {@link #listCredentials2(Class, ItemGroup, Authentication, List, CredentialsMatcher)} instead.
      */
     @Deprecated
     public static <C extends IdCredentials> ListBoxModel listCredentials(@NonNull Class<C> type,
@@ -422,7 +422,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                          @Nullable List<DomainRequirement>
                                                                                  domainRequirements,
                                                                          @Nullable CredentialsMatcher matcher) {
-        return listCredentials(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
+        return listCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
     }
 
     /**
@@ -439,12 +439,12 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * provided by {@link CredentialsNameProvider}.
      * @since TODO
      */
-    public static <C extends IdCredentials> ListBoxModel listCredentials(@NonNull Class<C> type,
-                                                                         @Nullable ItemGroup itemGroup,
-                                                                         @Nullable Authentication authentication,
-                                                                         @Nullable List<DomainRequirement>
+    public static <C extends IdCredentials> ListBoxModel listCredentials2(@NonNull Class<C> type,
+                                                                          @Nullable ItemGroup itemGroup,
+                                                                          @Nullable Authentication authentication,
+                                                                          @Nullable List<DomainRequirement>
                                                                                  domainRequirements,
-                                                                         @Nullable CredentialsMatcher matcher) {
+                                                                          @Nullable CredentialsMatcher matcher) {
         Objects.requireNonNull(type);
         Jenkins jenkins = Jenkins.get();
         itemGroup = itemGroup == null ? jenkins : itemGroup;
@@ -456,7 +456,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (resolver != null && IdCredentials.class.isAssignableFrom(resolver.getFromClass())) {
             LOGGER.log(Level.FINE, "Listing legacy credentials of type {0} identified by resolver {1}",
                     new Object[]{type, resolver});
-            return listCredentials((Class) resolver.getFromClass(), itemGroup, authentication, domainRequirements,
+            return listCredentials2((Class) resolver.getFromClass(), itemGroup, authentication, domainRequirements,
                     matcher);
         }
         ListBoxModel result = new ListBoxModel();
@@ -464,7 +464,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
-                    for (ListBoxModel.Option option : provider.getCredentialIds2ItemGroup(
+                    for (ListBoxModel.Option option : provider.getCredentialIds2(
                             type, itemGroup, authentication, domainRequirements, matcher)
                             ) {
                         if (ids.add(option.value)) {
@@ -482,7 +482,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials(Class, ItemGroup, Authentication, List)} or {@link #lookupCredentials(Class, ItemGroup, Authentication)}.
+     * @deprecated use {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)} or {@link #lookupCredentials2(Class, ItemGroup, Authentication)}.
      */
     @Deprecated
     @NonNull
@@ -491,7 +491,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                     @Nullable Item item,
                                                                     @Nullable org.acegisecurity.Authentication authentication,
                                                                     DomainRequirement... domainRequirements) {
-        return lookupCredentials(type, item, authentication == null ? null : authentication.toSpring(), Arrays.asList(domainRequirements));
+        return lookupCredentials2(type, item, authentication == null ? null : authentication.toSpring(), Arrays.asList(domainRequirements));
     }
 
     /**
@@ -507,14 +507,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     @SuppressWarnings("unused") // API entry point for consumers
-    public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
-                                                                    @Nullable Item item,
-                                                                    @Nullable Authentication authentication) {
-        return lookupCredentials(type, item, authentication, List.of());
+    public static <C extends Credentials> List<C> lookupCredentials2(@NonNull Class<C> type,
+                                                                     @Nullable Item item,
+                                                                     @Nullable Authentication authentication) {
+        return lookupCredentials2(type, item, authentication, List.of());
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials(Class, Item, Authentication, List)}
+     * @deprecated use {@link #lookupCredentials2(Class, Item, Authentication, List)}
      */
     @NonNull
     @SuppressWarnings("unused") // API entry point for consumers
@@ -524,7 +524,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                     @Nullable org.acegisecurity.Authentication authentication,
                                                                     @Nullable List<DomainRequirement>
                                                                             domainRequirements) {
-        return lookupCredentials(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements);
+        return lookupCredentials2(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements);
     }
 
     /**
@@ -541,17 +541,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     @SuppressWarnings("unused") // API entry point for consumers
-    public static <C extends Credentials> List<C> lookupCredentials(@NonNull Class<C> type,
-                                                                    @Nullable Item item,
-                                                                    @Nullable Authentication authentication,
-                                                                    @Nullable List<DomainRequirement>
+    public static <C extends Credentials> List<C> lookupCredentials2(@NonNull Class<C> type,
+                                                                     @Nullable Item item,
+                                                                     @Nullable Authentication authentication,
+                                                                     @Nullable List<DomainRequirement>
                                                                             domainRequirements) {
         Objects.requireNonNull(type);
         if (item == null) {
-            return lookupCredentials(type, Jenkins.get(), authentication, domainRequirements);
+            return lookupCredentials2(type, Jenkins.get(), authentication, domainRequirements);
         }
         if (item instanceof ItemGroup) {
-            return lookupCredentials(type, (ItemGroup)item, authentication, domainRequirements);
+            return lookupCredentials2(type, (ItemGroup)item, authentication, domainRequirements);
         }
         authentication = authentication == null ? ACL.SYSTEM2 : authentication;
         domainRequirements = domainRequirements
@@ -561,7 +561,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             LOGGER.log(Level.FINE, "Resolving legacy credentials of type {0} with resolver {1}",
                     new Object[]{type, resolver});
             final List<Credentials> originals =
-                    lookupCredentials(resolver.getFromClass(), item, authentication, domainRequirements);
+                    lookupCredentials2(resolver.getFromClass(), item, authentication, domainRequirements);
             LOGGER.log(Level.FINE, "Original credentials for resolving: {0}", originals);
             return resolver.resolve(originals);
         }
@@ -570,7 +570,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    for (C c: provider.getCredentials2Item(type, item, authentication, domainRequirements)) {
+                    for (C c: provider.getCredentials2(type, item, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
                             // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
@@ -587,7 +587,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated Use {@link #listCredentials(Class, Item, Authentication, List, CredentialsMatcher)} instead.
+     * @deprecated Use {@link #listCredentials2(Class, Item, Authentication, List, CredentialsMatcher)} instead.
      */
     @NonNull
     @Deprecated
@@ -597,7 +597,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                          @Nullable List<DomainRequirement>
                                                                                  domainRequirements,
                                                                          @Nullable CredentialsMatcher matcher) {
-        return listCredentials(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
+        return listCredentials2(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
     }
 
     /**
@@ -615,18 +615,18 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since TODO
      */
     @NonNull
-    public static <C extends IdCredentials> ListBoxModel listCredentials(@NonNull Class<C> type,
-                                                                         @Nullable Item item,
-                                                                         @Nullable Authentication authentication,
-                                                                         @Nullable List<DomainRequirement>
+    public static <C extends IdCredentials> ListBoxModel listCredentials2(@NonNull Class<C> type,
+                                                                          @Nullable Item item,
+                                                                          @Nullable Authentication authentication,
+                                                                          @Nullable List<DomainRequirement>
                                                                                  domainRequirements,
-                                                                         @Nullable CredentialsMatcher matcher) {
+                                                                          @Nullable CredentialsMatcher matcher) {
         Objects.requireNonNull(type);
         if (item == null) {
-            return listCredentials(type, Jenkins.get(), authentication, domainRequirements, matcher);
+            return listCredentials2(type, Jenkins.get(), authentication, domainRequirements, matcher);
         }
         if (item instanceof ItemGroup) {
-            return listCredentials(type, (ItemGroup) item, authentication, domainRequirements, matcher);
+            return listCredentials2(type, (ItemGroup) item, authentication, domainRequirements, matcher);
         }
         authentication = authentication == null ? ACL.SYSTEM2 : authentication;
         domainRequirements = domainRequirements
@@ -635,7 +635,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (resolver != null && IdCredentials.class.isAssignableFrom(resolver.getFromClass())) {
             LOGGER.log(Level.FINE, "Listing legacy credentials of type {0} identified by resolver {1}",
                     new Object[]{type, resolver});
-            return listCredentials((Class) resolver.getFromClass(), item, authentication,
+            return listCredentials2((Class) resolver.getFromClass(), item, authentication,
                     domainRequirements, matcher);
         }
         ListBoxModel result = new ListBoxModel();
@@ -643,7 +643,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    for (ListBoxModel.Option option : provider.getCredentialIds2Item(
+                    for (ListBoxModel.Option option : provider.getCredentialIds2(
                             type, item, authentication, domainRequirements, matcher)
                             ) {
                         if (ids.add(option.value)) {
@@ -929,12 +929,12 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf2(run.getParent());
             // we want the credentials available to the user the build is running as
             List<C> candidates = new ArrayList<>(
-                    CredentialsProvider.lookupCredentials(type, run.getParent(), runAuth, domainRequirements)
+                    CredentialsProvider.lookupCredentials2(type, run.getParent(), runAuth, domainRequirements)
             );
             // if that user can use the item's credentials, add those in too
             if (runAuth != ACL.SYSTEM2 && run.hasPermission2(runAuth, CredentialsProvider.USE_ITEM)) {
                 candidates.addAll(
-                        CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM2, domainRequirements)
+                        CredentialsProvider.lookupCredentials2(type, run.getParent(), ACL.SYSTEM2, domainRequirements)
                 );
             }
             // TODO should this be calling track?
@@ -948,14 +948,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // the user triggered this job directly and they are allowed to supply their own credentials, so
             // add those into the list. We do not want to follow the chain for the user's authentication
             // though, as there is no way to limit how far the passed-through parameters can be used
-            candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), a, domainRequirements));
+            candidates.addAll(CredentialsProvider.lookupCredentials2(type, run.getParent(), a, domainRequirements));
         }
         if (inputUserId != null) {
             final User inputUser = User.getById(inputUserId, false);
             if (inputUser != null) {
                 final Authentication inputAuth = inputUser.impersonate2();
                 if (run.hasPermission2(inputAuth, CredentialsProvider.USE_OWN)) {
-                    candidates.addAll(CredentialsProvider.lookupCredentials(type, run.getParent(), inputAuth, domainRequirements));
+                    candidates.addAll(CredentialsProvider.lookupCredentials2(type, run.getParent(), inputAuth, domainRequirements));
                 }
             }
         }
@@ -967,12 +967,12 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf2(run.getParent());
             // we want the credentials available to the user the build is running as
             candidates.addAll(
-                    CredentialsProvider.lookupCredentials(type, run.getParent(), runAuth, domainRequirements)
+                    CredentialsProvider.lookupCredentials2(type, run.getParent(), runAuth, domainRequirements)
             );
             // if that user can use the item's credentials, add those in too
             if (runAuth != ACL.SYSTEM2 && run.hasPermission2(runAuth, CredentialsProvider.USE_ITEM)) {
                 candidates.addAll(
-                        CredentialsProvider.lookupCredentials(type, run.getParent(), ACL.SYSTEM2, domainRequirements)
+                        CredentialsProvider.lookupCredentials2(type, run.getParent(), ACL.SYSTEM2, domainRequirements)
                 );
             }
         }
@@ -1152,14 +1152,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM}.
      * @param <C>            the credentials type.
      * @return the list of credentials.
-     * @deprecated use {@link #getCredentials2Item(Class, Item, Authentication)} instead.
+     * @deprecated use {@link #getCredentials2(Class, Item, Authentication)} instead.
      */
     @NonNull
     @Deprecated
     public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
                                                                    @Nullable ItemGroup itemGroup,
                                                                    @Nullable org.acegisecurity.Authentication authentication) {
-        return getCredentials2ItemGroup(type, itemGroup, authentication == null ? null : authentication.toSpring());
+        return getCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring());
     }
 
     /**
@@ -1174,9 +1174,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     @SuppressWarnings("deprecation")
-    public <C extends Credentials> List<C> getCredentials2ItemGroup(@NonNull Class<C> type,
-                                                                    @Nullable ItemGroup itemGroup,
-                                                                    @Nullable Authentication authentication) {
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
+                                                           @Nullable ItemGroup itemGroup,
+                                                           @Nullable Authentication authentication) {
         if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, ItemGroup.class, org.acegisecurity.Authentication.class)) {
             return getCredentials(type, itemGroup, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication));
         }
@@ -1196,7 +1196,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *                           assume the match is true).
      * @param <C>                the credentials type.
      * @return the list of credentials.
-     * @deprecated use {@link #getCredentials2Item(Class, Item, Authentication, List)} instead.
+     * @deprecated use {@link #getCredentials2(Class, Item, Authentication, List)} instead.
      * @since 1.5
      */
     @Deprecated
@@ -1205,7 +1205,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @Nullable ItemGroup itemGroup,
                                                           @Nullable org.acegisecurity.Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials2ItemGroup(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements);
+        return getCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements);
     }
 
 
@@ -1226,18 +1226,18 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      */
     @NonNull
     @SuppressWarnings("deprecation")
-    public <C extends Credentials> List<C> getCredentials2ItemGroup(@NonNull Class<C> type,
-                                                                    @Nullable ItemGroup itemGroup,
-                                                                    @Nullable Authentication authentication,
-                                                                    @NonNull List<DomainRequirement> domainRequirements) {
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
+                                                           @Nullable ItemGroup itemGroup,
+                                                           @Nullable Authentication authentication,
+                                                           @NonNull List<DomainRequirement> domainRequirements) {
         if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, ItemGroup.class, org.acegisecurity.Authentication.class, List.class)) {
             return getCredentials(type, itemGroup, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication), domainRequirements);
         }
-        return getCredentials2ItemGroup(type, itemGroup, authentication);
+        return getCredentials2(type, itemGroup, authentication);
     }
 
     /**
-     * @deprecated Use {@link #getCredentialIds2ItemGroup(Class, ItemGroup, Authentication, List, CredentialsMatcher)} instead.
+     * @deprecated Use {@link #getCredentialIds2(Class, ItemGroup, Authentication, List, CredentialsMatcher)} instead.
      */
     @NonNull
     @Deprecated
@@ -1247,7 +1247,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                    @NonNull
                                                                    List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
-        return getCredentialIds2ItemGroup(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
+        return getCredentialIds2(type, itemGroup, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
     }
 
     /**
@@ -1256,7 +1256,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
      * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
-     * requirements. The default implementation just uses {@link #getCredentials2Item(Class, Item, Authentication, List)}
+     * requirements. The default implementation just uses {@link #getCredentials2(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against if {@link CredentialsMatchers#describe(CredentialsMatcher)} returns
      * {@code null}
@@ -1272,13 +1272,13 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since TODO
      */
     @NonNull
-    public <C extends IdCredentials> ListBoxModel getCredentialIds2ItemGroup(@NonNull Class<C> type,
-                                                                   @Nullable ItemGroup itemGroup,
-                                                                   @Nullable Authentication authentication,
-                                                                   @NonNull
+    public <C extends IdCredentials> ListBoxModel getCredentialIds2(@NonNull Class<C> type,
+                                                                    @Nullable ItemGroup itemGroup,
+                                                                    @Nullable Authentication authentication,
+                                                                    @NonNull
                                                                            List<DomainRequirement> domainRequirements,
-                                                                   @NonNull CredentialsMatcher matcher) {
-        return getCredentials2ItemGroup(type, itemGroup, authentication, domainRequirements)
+                                                                    @NonNull CredentialsMatcher matcher) {
+        return getCredentials2(type, itemGroup, authentication, domainRequirements)
                 .stream()
                 .filter(matcher::matches)
                 .sorted(new CredentialsNameComparator())
@@ -1287,7 +1287,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated Use {@link #getCredentials2Item(Class, Item, Authentication)} instead.
+     * @deprecated Use {@link #getCredentials2(Class, Item, Authentication)} instead.
      */
     @Deprecated
     @NonNull
@@ -1295,7 +1295,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @NonNull Item item,
                                                           @Nullable org.acegisecurity.Authentication authentication) {
         Objects.requireNonNull(item);
-        return getCredentials2ItemGroup(type, item.getParent(), authentication == null ? null : authentication.toSpring());
+        return getCredentials2(type, item.getParent(), authentication == null ? null : authentication.toSpring());
     }
 
     /**
@@ -1310,15 +1310,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since TODO
      */
     @NonNull
-    public <C extends Credentials> List<C> getCredentials2Item(@NonNull Class<C> type,
-                                                               @NonNull Item item,
-                                                               @Nullable Authentication authentication) {
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
+                                                           @NonNull Item item,
+                                                           @Nullable Authentication authentication) {
         Objects.requireNonNull(item);
-        return getCredentials2ItemGroup(type, item.getParent(), authentication);
+        return getCredentials2(type, item.getParent(), authentication);
     }
 
     /**
-     * @deprecated Use {@link #getCredentials2Item(Class, Item, Authentication, List)} instead.
+     * @deprecated Use {@link #getCredentials2(Class, Item, Authentication, List)} instead.
      */
     @Deprecated
     @NonNull
@@ -1326,7 +1326,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @NonNull Item item,
                                                           @Nullable org.acegisecurity.Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials2Item(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements);
+        return getCredentials2(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements);
     }
 
     /**
@@ -1342,16 +1342,16 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since TODO
      */
     @NonNull
-    public <C extends Credentials> List<C> getCredentials2Item(@NonNull Class<C> type,
-                                                               @NonNull Item item,
-                                                               @Nullable Authentication authentication,
-                                                               @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentials2ItemGroup(type, item instanceof ItemGroup ? (ItemGroup) item : item.getParent(),
+    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
+                                                           @NonNull Item item,
+                                                           @Nullable Authentication authentication,
+                                                           @NonNull List<DomainRequirement> domainRequirements) {
+        return getCredentials2(type, item instanceof ItemGroup ? (ItemGroup) item : item.getParent(),
                 authentication, domainRequirements);
     }
 
     /**
-     * @deprecated Use {@link #getCredentialIds2Item(Class, Item, Authentication, List, CredentialsMatcher)} instead.
+     * @deprecated Use {@link #getCredentialIds2(Class, Item, Authentication, List, CredentialsMatcher)} instead.
      */
     @NonNull
     @Deprecated
@@ -1360,7 +1360,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                    @Nullable org.acegisecurity.Authentication authentication,
                                                                    @NonNull List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
-        return getCredentialIds2Item(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
+        return getCredentialIds2(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements, matcher);
     }
 
     /**
@@ -1369,7 +1369,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
      * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
-     * requirements. The default implementation just uses {@link #getCredentials2Item(Class, Item, Authentication, List)}
+     * requirements. The default implementation just uses {@link #getCredentials2(Class, Item, Authentication, List)}
      * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
      * instance to apply the matcher against.
      *
@@ -1384,15 +1384,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @since TODO
      */
     @NonNull
-    public <C extends IdCredentials> ListBoxModel getCredentialIds2Item(@NonNull Class<C> type,
-                                                                   @NonNull Item item,
-                                                                   @Nullable Authentication authentication,
-                                                                   @NonNull List<DomainRequirement> domainRequirements,
-                                                                   @NonNull CredentialsMatcher matcher) {
+    public <C extends IdCredentials> ListBoxModel getCredentialIds2(@NonNull Class<C> type,
+                                                                    @NonNull Item item,
+                                                                    @Nullable Authentication authentication,
+                                                                    @NonNull List<DomainRequirement> domainRequirements,
+                                                                    @NonNull CredentialsMatcher matcher) {
         if (item instanceof ItemGroup) {
-            return getCredentialIds2ItemGroup(type, (ItemGroup) item, authentication, domainRequirements, matcher);
+            return getCredentialIds2(type, (ItemGroup) item, authentication, domainRequirements, matcher);
         }
-        return getCredentials2Item(type, item, authentication, domainRequirements)
+        return getCredentials2(type, item, authentication, domainRequirements)
                 .stream()
                 .filter(matcher::matches)
                 .sorted(new CredentialsNameComparator())

@@ -290,7 +290,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param context the context to add credentials from.
      * @param type    the base class of the credentials to add.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@Nullable Item context, @NonNull Class<? extends C> type) {
@@ -304,7 +304,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param context the context to add credentials from.
      * @param type    the base class of the credentials to add.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull ItemGroup context,
@@ -330,7 +330,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param context        the context to add credentials from.
      * @param type           the base class of the credentials to add.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, Item, Authentication, List, CredentialsMatcher)
      * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
@@ -357,7 +357,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param context        the context to add credentials from.
      * @param type           the base class of the credentials to add.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
@@ -374,7 +374,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param type               the base class of the credentials to add.
      * @param domainRequirements the domain requirements.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@Nullable Item context, @NonNull Class<? extends C> type,
@@ -390,7 +390,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param type               the base class of the credentials to add.
      * @param domainRequirements the domain requirements.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull ItemGroup context, @NonNull Class<? extends C> type,
@@ -418,7 +418,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param type               the base class of the credentials to add.
      * @param domainRequirements the domain requirements.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, Item, Authentication, List, CredentialsMatcher)
      * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
@@ -448,7 +448,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param type               the base class of the credentials to add.
      * @param domainRequirements the domain requirements.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
@@ -467,7 +467,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param domainRequirements the domain requirements.
      * @param matcher            the filter to apply to the credentials.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatching(@Nullable Item context,
@@ -486,7 +486,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param domainRequirements the domain requirements.
      * @param matcher            the filter to apply to the credentials.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatching(@NonNull ItemGroup context,
@@ -519,7 +519,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param domainRequirements the domain requirements.
      * @param matcher            the filter to apply to the credentials.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, Item, Authentication, List, CredentialsMatcher)
      * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull Authentication authentication,
@@ -528,7 +528,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
                                                                      @NonNull
                                                                              List<DomainRequirement> domainRequirements,
                                                                      @NonNull CredentialsMatcher matcher) {
-        addMissing(CredentialsProvider.listCredentials(type, context, authentication, domainRequirements, matcher));
+        addMissing(CredentialsProvider.listCredentials2(type, context, authentication, domainRequirements, matcher));
         return this;
     }
 
@@ -555,7 +555,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param domainRequirements the domain requirements.
      * @param matcher            the filter to apply to the credentials.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentials2(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull Authentication authentication,
@@ -564,7 +564,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
                                                                      @NonNull
                                                                              List<DomainRequirement> domainRequirements,
                                                                      @NonNull CredentialsMatcher matcher) {
-        addMissing(CredentialsProvider.listCredentials(type, context, authentication, domainRequirements, matcher));
+        addMissing(CredentialsProvider.listCredentials2(type, context, authentication, domainRequirements, matcher));
         return this;
     }
 
