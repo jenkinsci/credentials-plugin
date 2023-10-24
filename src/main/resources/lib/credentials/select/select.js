@@ -120,68 +120,32 @@ window.credentials.refreshAll = function () {
         h();
     });
 };
-window.credentials.addSubmit = function (e) {
-    var id;
-    var containerId = "container" + (iota++);
+window.credentials.addSubmit = function (_) {
+    const form = document.getElementById('credentials-dialog-form');
+    buildFormTree(form);
+    ajaxFormSubmit(form);
 
-    var responseDialog = new YAHOO.widget.Panel("wait" + (iota++), {
-        fixedcenter: true,
-        close: true,
-        draggable: true,
-        zindex: 4,
-        modal: true,
-        visible: false
-    });
-
-    responseDialog.setHeader("Error");
-    responseDialog.setBody("<div id='" + containerId + "'></div>");
-    responseDialog.render(document.body);
-    var target; // iframe
-
-    function attachIframeOnload(target, f) {
-        if (target.attachEvent) {
-            target.attachEvent("onload", f);
-        } else {
-            target.onload = f;
-        }
+    function ajaxFormSubmit(form) {
+        fetch(form.action, {
+            method: form.method,
+            headers: crumb.wrap({}),
+            body: new FormData(form)
+        })
+            .then(res => res.json())
+            .then(data => {
+                window.notificationBar.show(data.message, window.notificationBar[data.notificationType]);
+                window.credentials.refreshAll();
+            })
+            .catch((e) => {
+                // notificationBar.show(...) with logging ID could be handy here?
+                console.error("Could not add credentials:", e);
+            })
+            .finally(() => {
+                window.credentials.dialog.style.display = "none";
+            });
     }
-
-    var f = document.getElementById('credentials-dialog-form');
-    // create a throw-away IFRAME to avoid back button from loading the POST result back
-    id = "iframe" + (iota++);
-    target = document.createElement("iframe");
-    target.setAttribute("id", id);
-    target.setAttribute("name", id);
-    target.setAttribute("style", "height:100%; width:100%");
-    document.getElementById(containerId).appendChild(target);
-
-    attachIframeOnload(target, function () {
-        if (target.contentWindow && target.contentWindow.applyCompletionHandler) {
-            // apply-aware server is expected to set this handler
-            target.contentWindow.applyCompletionHandler(window);
-        } else {
-            // otherwise this is possibly an error from the server, so we need to render the whole content.
-            var r = YAHOO.util.Dom.getClientRegion();
-            responseDialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
-            responseDialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
-            responseDialog.center();
-            responseDialog.style.display = "";
-        }
-        window.setTimeout(function () {// otherwise Firefox will fail to leave the "connecting" state
-            document.getElementById(id).remove();
-        }, 0)
-    });
-
-    f.target = target.id;
-    try {
-        buildFormTree(f);
-        f.submit();
-    } finally {
-        f.target = null;
-    }
-    window.credentials.dialog.style.display = "none";
-    return false;
 };
+
 Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, function(e) {
     var btn = e;
     var menu = btn.nextElementSibling;
