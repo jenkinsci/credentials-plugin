@@ -290,7 +290,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)} instead.
+     * @deprecated use {@link #lookupCredentials2(Class, ItemGroup, Authentication)} instead.
      */
     @Deprecated
     @NonNull
@@ -302,7 +302,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials2(Class, Item, Authentication, List)} instead.
+     * @deprecated use {@link #lookupCredentials2(Class, Item, Authentication)} instead.
      */
     @Deprecated
     @NonNull
@@ -314,7 +314,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated Use {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)} or {@link #lookupCredentials2(Class, ItemGroup, Authentication)}.
+     * @deprecated Use {@link #lookupCredentials2(Class, ItemGroup, Authentication)} or {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)}.
      */
     @Deprecated
     @NonNull
@@ -482,7 +482,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)} or {@link #lookupCredentials2(Class, ItemGroup, Authentication)}.
+     * @deprecated use {@link #lookupCredentials2(Class, ItemGroup, Authentication)} or {@link #lookupCredentials2(Class, ItemGroup, Authentication, List)}.
      */
     @Deprecated
     @NonNull
@@ -1144,14 +1144,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for items in the specified {@link ItemGroup}
-     *
-     * @param type           the type of credentials to return.
-     * @param itemGroup      the item group (if {@code null} assume {@link Jenkins#get()}.
-     * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM}.
-     * @param <C>            the credentials type.
-     * @return the list of credentials.
      * @deprecated use {@link #getCredentials2(Class, Item, Authentication)} instead.
      */
     @NonNull
@@ -1171,6 +1163,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM2}.
      * @param <C>            the credentials type.
      * @return the list of credentials.
+     * @since TODO
      */
     @NonNull
     @SuppressWarnings("deprecation")
@@ -1184,20 +1177,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for items in the specified {@link ItemGroup} and are appropriate for the specified {@link com.cloudbees
-     * .plugins.credentials.domains.DomainRequirement}s.
-     *
-     * @param type               the type of credentials to return.
-     * @param itemGroup          the item group (if {@code null} assume {@link Jenkins#get()}.
-     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM}.
-     * @param domainRequirements the credential domains to match (if the {@link CredentialsProvider} does not support
-     *                           {@link DomainRequirement}s then it should
-     *                           assume the match is true).
-     * @param <C>                the credentials type.
-     * @return the list of credentials.
      * @deprecated use {@link #getCredentials2(Class, Item, Authentication, List)} instead.
-     * @since 1.5
      */
     @Deprecated
     @NonNull
@@ -1222,7 +1202,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *                           assume the match is true).
      * @param <C>                the credentials type.
      * @return the list of credentials.
-     * @since 1.5
+     * @since TODO
      */
     @NonNull
     @SuppressWarnings("deprecation")
