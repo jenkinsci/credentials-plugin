@@ -867,6 +867,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
+     * @deprecated Use {@link #findCredentialById(String, Class, Run, List)} instead.
+     */
+    public static <C extends IdCredentials> C findCredentialById(@NonNull String id, @NonNull Class<C> type,
+                                                                 @NonNull Run<?, ?> run,
+                                                                 DomainRequirement... domainRequirements) {
+        return findCredentialById(id, type, run, Arrays.asList(domainRequirements));
+    }
+
+    /**
      * A common requirement for plugins is to resolve a specific credential by id in the context of a specific run.
      * Given that the credential itself could be resulting from a build parameter expression and the complexities of
      * determining the scope of items from which the credential should be resolved in a chain of builds, this method
