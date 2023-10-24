@@ -118,16 +118,6 @@ public class UserCredentialsProvider extends CredentialsProvider {
      */
     @NonNull
     @Override
-    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
-                                                           @Nullable Authentication authentication) {
-        return getCredentials2(type, itemGroup, authentication, Collections.emptyList());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @NonNull
-    @Override
     public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
                                                            @Nullable ItemGroup itemGroup,
                                                            @Nullable Authentication authentication,

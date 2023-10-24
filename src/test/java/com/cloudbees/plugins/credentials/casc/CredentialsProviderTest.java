@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnameRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -84,7 +85,7 @@ public class CredentialsProviderTest {
 
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication) {
+        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication, @Nullable List<DomainRequirement> domainRequirements) {
             if (!type.equals(DummyCredentials.class)) {
                 return Collections.emptyList();
             }

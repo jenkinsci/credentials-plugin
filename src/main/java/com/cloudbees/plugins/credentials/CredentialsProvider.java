@@ -116,17 +116,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      *
      * @since 2.1.1
      */
-    public static final CredentialsProvider NONE = new CredentialsProvider() {
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
-                                                               @Nullable Authentication authentication) {
-            return Collections.emptyList();
-        }
-    };
+    public static final CredentialsProvider NONE = new CredentialsProvider() {};
 
     /**
      * The permission group for credentials.
@@ -1151,29 +1141,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
                                                                    @Nullable ItemGroup itemGroup,
                                                                    @Nullable org.acegisecurity.Authentication authentication) {
-        return getCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring());
-    }
-
-    /**
-     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
-     * for items in the specified {@link ItemGroup}
-     *
-     * @param type           the type of credentials to return.
-     * @param itemGroup      the item group (if {@code null} assume {@link Jenkins#get()}.
-     * @param authentication the authentication (if {@code null} assume {@link ACL#SYSTEM2}.
-     * @param <C>            the credentials type.
-     * @return the list of credentials.
-     * @since TODO
-     */
-    @NonNull
-    @SuppressWarnings("deprecation")
-    public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type,
-                                                           @Nullable ItemGroup itemGroup,
-                                                           @Nullable Authentication authentication) {
-        if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, ItemGroup.class, org.acegisecurity.Authentication.class)) {
-            return getCredentials(type, itemGroup, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication));
-        }
-        throw new AbstractMethodError("Implement getCredentials(Class, ItemGroup, Authentication)");
+        return getCredentials2(type, itemGroup, authentication == null ? null : authentication.toSpring(), List.of());
     }
 
     /**
@@ -1213,7 +1181,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, ItemGroup.class, org.acegisecurity.Authentication.class, List.class)) {
             return getCredentials(type, itemGroup, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication), domainRequirements);
         }
-        return getCredentials2(type, itemGroup, authentication);
+        throw new AbstractMethodError("Implement getCredentials2(Class, ItemGroup, Authentication, List)");
     }
 
     /**
@@ -1275,7 +1243,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @NonNull Item item,
                                                           @Nullable org.acegisecurity.Authentication authentication) {
         Objects.requireNonNull(item);
-        return getCredentials2(type, item.getParent(), authentication == null ? null : authentication.toSpring());
+        return getCredentials2(type, item.getParent(), authentication == null ? null : authentication.toSpring(), List.of());
     }
 
     /**
