@@ -37,7 +37,7 @@ window.credentials.init = function () {
             visible: false,
             keylisteners: [
               new YAHOO.util.KeyListener(document, {keys:27}, {
-                fn:(function() {window.credentials.dialog.style.display = "none";}),
+                fn:(function() {window.credentials.dialog.hide();}),
                 scope:document,
                 correctScope:false
               })
@@ -62,7 +62,7 @@ window.credentials.add = function (e) {
                 window.credentials.dialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
                 window.credentials.dialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
                 window.credentials.dialog.center();
-                window.credentials.dialog.style.display = "";
+                window.credentials.dialog.show();
             });
         }
     });
@@ -141,7 +141,7 @@ window.credentials.addSubmit = function (_) {
                 console.error("Could not add credentials:", e);
             })
             .finally(() => {
-                window.credentials.dialog.style.display = "none";
+                window.credentials.dialog.hide();
             });
     }
 };
