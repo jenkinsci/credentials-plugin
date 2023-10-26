@@ -340,12 +340,12 @@ public class CertificateCredentialsImplTest {
         newCredentialsForm.getInputsByName("_.password").forEach(input -> input.setValue(VALID_PASSWORD));
         htmlPage.getDocumentElement().querySelector("input[type=file][name=uploadedCertFile]");
         
-        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentials2(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
+        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(0));
         
         r.submit(newCredentialsForm);
 
-        certificateCredentials = CredentialsProvider.lookupCredentials2(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
+        certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(1));
 
         CertificateCredentials certificate = certificateCredentials.get(0);

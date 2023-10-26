@@ -423,9 +423,9 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          */
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
-                                                               @Nullable Authentication authentication,
-                                                               @NonNull List<DomainRequirement> domainRequirements) {
+        public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+                                                                         @Nullable Authentication authentication,
+                                                                         @NonNull List<DomainRequirement> domainRequirements) {
             if (ACL.SYSTEM2.equals(authentication)) {
                 CredentialsMatcher matcher = Jenkins.get() == itemGroup ? always() : not(withScope(SYSTEM));
                 return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
@@ -439,9 +439,9 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          */
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @NonNull Item item,
-                                                               @Nullable Authentication authentication,
-                                                               @NonNull List<DomainRequirement> domainRequirements) {
+        public <C extends Credentials> List<C> getCredentialsInItem(@NonNull Class<C> type, @NonNull Item item,
+                                                                    @Nullable Authentication authentication,
+                                                                    @NonNull List<DomainRequirement> domainRequirements) {
             if (ACL.SYSTEM2.equals(authentication)) {
                 return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
                         .getDomainCredentialsMap(), type, domainRequirements, not(withScope(SYSTEM)));

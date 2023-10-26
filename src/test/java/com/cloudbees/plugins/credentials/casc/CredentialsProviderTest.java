@@ -46,7 +46,7 @@ public class CredentialsProviderTest {
     @Test
     @ConfiguredWithCode("CredentialsProviderExtension.yaml")
     public void import_credentials_provider_extension_credentials() {
-        List<DummyCredentials> dummyCred = CredentialsProvider.lookupCredentials2(
+        List<DummyCredentials> dummyCred = CredentialsProvider.lookupCredentialsInItemGroup(
                 DummyCredentials.class, j.jenkins, ACL.SYSTEM2,
                 Collections.emptyList()
         );
@@ -54,7 +54,7 @@ public class CredentialsProviderTest {
         assertThat(dummyCred.get(0).getUsername(), equalTo("user1"));
 
         // the system provider works fine too
-        List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentials2(
+        List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentialsInItemGroup(
                 UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM2,
                 Collections.singletonList(new HostnameRequirement("api.test.com"))
         );
@@ -85,7 +85,7 @@ public class CredentialsProviderTest {
 
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials2(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication, @Nullable List<DomainRequirement> domainRequirements) {
+        public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication, @Nullable List<DomainRequirement> domainRequirements) {
             if (!type.equals(DummyCredentials.class)) {
                 return Collections.emptyList();
             }
