@@ -742,9 +742,9 @@ If you have implemented that check before creating the proxy then you could be m
 <2> Any consumer plugin that is transferring a credential to another JVM is supposed to call `CredentialsProvider.snapshot(credential)` and send the return value.
 The `CredentialsSnapshotTaker` is supposed to fetch the secret as part of the snapshotting, so a proper consumer will never be at risk of this `IOException`.
 
-* The `CredentialsProvider.getCredentials(...)` methods should instantiate the proxies, so these methods will operate from the cache while initiate background refresh. Where the cache is a miss or where the cache is stale, a short term block is acceptable.
+* The `CredentialsProvider.getCredentialsInItem(...)` / `CredentialsProvider.getCredentialsInItemGroup(...)` methods should instantiate the proxies, so these methods will operate from the cache while initiate background refresh. Where the cache is a miss or where the cache is stale, a short term block is acceptable.
 
-* The `CredentialsProvider.getCredentialIds(...)` methods are used to list credentials for drop-down list population, so these methods should use a live request with a fall-back to the cache where the live request takes too long.
+* The `CredentialsProvider.getCredentialIdsInItem(...)` / `CredentialsProvider.getCredentialIdsInItemGroup(...)` methods are used to list credentials for drop-down list population, so these methods should use a live request with a fall-back to the cache where the live request takes too long.
 
 [NOTE]
 ====
@@ -758,6 +758,6 @@ The main work in an implementation will be the mapping to `CredentialStore` inst
 +
 [NOTE]
 ====
-Technically, the "read-only, implicitly exposed" style credentials provider implementation does not need to interact with the `CredentialsStore` portion of the API as it can expose credentials directly using just the `CredentialsProvider.getCredentials(...)` and `CredentialsProvider.getCredentialIds(...)`, however, implementing the `CredentialsStore` contract is required in order for the credentials to be visible to users via the Credentials side action on the different Jenkins context objects.
+Technically, the "read-only, implicitly exposed" style credentials provider implementation does not need to interact with the `CredentialsStore` portion of the API as it can expose credentials directly using just the `CredentialsProvider.getCredentialsInItem(...)`/`CredentialsProvider.getCredentialsInItemGroup(...)` and `CredentialsProvider.getCredentialIdsInItem(...)`/`CredentialsProvider.getCredentialIdsInItemGroup(...)`, however, implementing the `CredentialsStore` contract is required in order for the credentials to be visible to users via the Credentials side action on the different Jenkins context objects.
 ====
 * A "read-write, implicitly exposed" style implementation will need to semi-dynamically create `CredentialsStore` instances for each context in order to integrate with the Jenkins credentials management UI.
