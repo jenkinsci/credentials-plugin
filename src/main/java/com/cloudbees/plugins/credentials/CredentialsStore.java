@@ -189,7 +189,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
                 Permission.class)) {
             return hasPermission(org.acegisecurity.Authentication.fromSpring(a), permission);
         }
-        throw new AbstractMethodError("Implement hasPermission2");
+        throw new AbstractMethodError("Implement hasPermission2 from " + getClass());
     }
 
     /**

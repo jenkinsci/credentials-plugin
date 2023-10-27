@@ -1190,7 +1190,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, ItemGroup.class, org.acegisecurity.Authentication.class, List.class)) {
             return getCredentials(type, itemGroup, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication), domainRequirements);
         }
-        throw new AbstractMethodError("Implement getCredentialsInItemGroup");
+        if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, ItemGroup.class, org.acegisecurity.Authentication.class)) {
+            return getCredentials(type, itemGroup, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication));
+        }
+        throw new AbstractMethodError("Implement getCredentialsInItemGroup from " + getClass());
     }
 
     /**
