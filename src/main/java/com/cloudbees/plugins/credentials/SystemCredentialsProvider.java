@@ -59,9 +59,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
-import org.acegisecurity.Authentication;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
+import org.springframework.security.core.Authentication;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.always;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.not;
@@ -204,7 +204,7 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
      */
     private void checkedSave(Permission p) throws IOException {
         checkPermission(p);
-        try (ACLContext ignored = ACL.as(ACL.SYSTEM)) {
+        try (ACLContext ignored = ACL.as2(ACL.SYSTEM2)) {
             save();
         }
     }
@@ -423,21 +423,10 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          */
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
-                                                              @Nullable ItemGroup itemGroup,
-                                                              @Nullable Authentication authentication) {
-            return getCredentials(type, itemGroup, authentication, Collections.emptyList());
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
-                                                              @Nullable Authentication authentication,
-                                                              @NonNull List<DomainRequirement> domainRequirements) {
-            if (ACL.SYSTEM.equals(authentication)) {
+        public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
+                                                                         @Nullable Authentication authentication,
+                                                                         @NonNull List<DomainRequirement> domainRequirements) {
+            if (ACL.SYSTEM2.equals(authentication)) {
                 CredentialsMatcher matcher = Jenkins.get() == itemGroup ? always() : not(withScope(SYSTEM));
                 return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
                         .getDomainCredentialsMap(), type, domainRequirements, matcher);
@@ -450,20 +439,10 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          */
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @NonNull Item item,
-                                                              @Nullable Authentication authentication) {
-            return getCredentials(type, item, authentication, Collections.emptyList());
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @NonNull Item item,
-                                                              @Nullable Authentication authentication,
-                                                              @NonNull List<DomainRequirement> domainRequirements) {
-            if (ACL.SYSTEM.equals(authentication)) {
+        public <C extends Credentials> List<C> getCredentialsInItem(@NonNull Class<C> type, @NonNull Item item,
+                                                                    @Nullable Authentication authentication,
+                                                                    @NonNull List<DomainRequirement> domainRequirements) {
+            if (ACL.SYSTEM2.equals(authentication)) {
                 return DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance()
                         .getDomainCredentialsMap(), type, domainRequirements, not(withScope(SYSTEM)));
             }
@@ -507,9 +486,9 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
          * {@inheritDoc}
          */
         @Override
-        public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
+        public boolean hasPermission2(@NonNull Authentication a, @NonNull Permission permission) {
             // we follow the permissions of Jenkins itself
-            return getACL().hasPermission(a, permission);
+            return getACL().hasPermission2(a, permission);
         }
 
         @NonNull

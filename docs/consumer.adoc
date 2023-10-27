@@ -170,7 +170,7 @@ public FormValidation doCheckCredentialsId(
   if (value.startsWith("${") && value.endsWith("}")) { // <5>
     return FormValidation.warning("Cannot validate expression based credentials");
   }
-  if (CredentialsProvider.listCredentials( // <6>
+  if (CredentialsProvider.listCredentialsInItem( // <6>
     ...,
     CredentialsMatchers.withId(value) // <6>
   ).isEmpty()) {
@@ -187,29 +187,26 @@ Better yet would be to try and ping the remote service anonymously and report su
 _You may want to cache the check result for a short time-span if the remote service has rate limits on anonymous access._
 <5> If you have not enabled credentials parameter expressions on the select control then you do not need this test.
 <6> This example checks that the credentials exist, but does not use them to connect.
-Alternatively `CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentials(...), withId(value))` can be used to retrieve the credentials, a `null` return value would indicate that the error that they cannot be found, while the non-`null` return value could be used to validate the credentials against the remote service.
+Alternatively `CredentialsMatchers.firstOrNull(CredentialsProvider.lookupCredentialsInItem(...), withId(value))` can be used to retrieve the credentials, a `null` return value would indicate that the error that they cannot be found, while the non-`null` return value could be used to validate the credentials against the remote service.
 _You may want to cache the check result for a short time-span if the remote service has rate limits._
 
 === Listing available credentials matching some specific set of criteria
 
-We use the `CredentialsProvider.listCredentials()` overloads to list credentials.
-An external credentials provider may be recording usage of the credential and as such the `listCredentials` methods are supposed to not access the secret information and hence should not trigger such usage records.
+We use the `CredentialsProvider.listCredentialsInItem()` or `CredentialsProvider.listCredentialsInItemGroup()` methods to list credentials.
+An external credentials provider may be recording usage of the credential and as such the `listCredentialsInItem`/`listCredentialsInItemGroup` methods are supposed to not access the secret information and hence should not trigger such usage records.
 
 [TIP]
 ====
-If you are listing available credentials in order to populate a drop-down list, then `StandardListBoxModel.includeMatchingAs()` may be a more convenient way to call `CredentialsProvider.listCredentials()`
+If you are listing available credentials in order to populate a drop-down list, then `StandardListBoxModel.includeMatchingAs()` may be a more convenient way to call `CredentialsProvider.listCredentialsInItem()`/`CredentialsProvider.listCredentialsInItemGroup()`
 ====
-
-There are currently two overloads, one taking `Item` as the context and the other taking `ItemGroup` as the context, the other parameters are otherwise identical.
-
-NOTE: A current RFE https://issues.jenkins-ci.org/browse/JENKINS-39324[JENKINS-39324] is looking to replace overloaded methods with a single method taking the more generic `ModelObject`.
 
 The parameters are:
 
 `type`::
 The type of credentials to list.
 
-`item` or `itemGroup`::
+`item` (when using `CredentialsProvider.listCredentialsInItem`)::
+`itemGroup` (when using `CredentialsProvider.listCredentialsInItemGroup`)::
 The context within which to list available credentials.
 
 `authentication`::
@@ -227,12 +224,12 @@ Here are some examples of usage:
 +
 [source,java]
 ----
-CredentialsProvider.listCredentials(
+CredentialsProvider.listCredentialsInItem(
     StandardUsernamePasswordCredentials.class, // <1>
     job, // <2>
     job instanceof Queue.Task // <3>
-      ? Tasks.getAuthenticationOf((Queue.Task)job)) // <4>
-      : ACL.SYSTEM, // <5>
+      ? Tasks.getAuthenticationOf2((Queue.Task)job)) // <4>
+      : ACL.SYSTEM2, // <5>
     URIRequirementBuilder.fromUri(scmUrl), // <6>
     null // <7>
 );
@@ -244,7 +241,7 @@ We need `UsernamePasswordCredentials` to ensure that they are username and passw
 <3> For almost all implementations of `Job`, this will be `true`.
 (Note: https://plugins.jenkins.io/external-monitor-job[external jobs] do *not* implement `Queue.Task`)
 <4> This is important, we must use the authentication that the job is likely to run as.
-<5> If not a `Queue.Task` then use `ACL.SYSTEM`
+<5> If not a `Queue.Task` then use `ACL.SYSTEM2`
 <6> We use the requirements builder most idiomatically appropriate to our use case.
 In most cases, unless `URIRequirementBuilder` can be used to construct at least some domain requirements.
 <7> We do not have any additional requirements to place, so we can specify `null` for the matcher.
@@ -253,10 +250,10 @@ In most cases, unless `URIRequirementBuilder` can be used to construct at least 
 +
 [source,java]
 ----
-CredentialsProvider.listCredentials(
+CredentialsProvider.listCredentialsInItem(
     StandardUsernamePasswordCredentials.class,
     job,
-    Jenkins.getAuthentication(), // <1>
+    Jenkins.getAuthentication2(), // <1>
     URIRequirementBuilder.fromUri(scmUrl),
     null
 )
@@ -267,12 +264,12 @@ CredentialsProvider.listCredentials(
 +
 [source,java]
 ----
-CredentialsProvider.listCredentials(
+CredentialsProvider.listCredentialsInItem(
     StandardCredentials.class, // <1>
     job,
     job instanceof Queue.Task
-      ? Tasks.getAuthenticationOf((Queue.Task)job))
-      : ACL.SYSTEM,
+      ? Tasks.getAuthenticationOf2((Queue.Task)job))
+      : ACL.SYSTEM2,
     URIRequirementBuilder.fromUri(issueTrackerUrl),
     AuthenticationTokens.matcher(IssueTrackerAuthentication.class) // <2>
 )
@@ -288,10 +285,10 @@ Alternatively, more complex conversion contexts can be handled with `Authenticat
 +
 [source,java]
 ----
-CredentialsProvider.listCredentials(
+CredentialsProvider.listCredentialsInItem(
     StandardCredentials.class, // <1>
     job,
-    Jenkins.getAuthentication(), // <2>
+    Jenkins.getAuthentication2(), // <2>
     URIRequirementBuilder.fromUri(loadBalancerUrl),
     CredentialsMatchers.allOf(
       AuthenticationTokens.matcher(LoadBalancerAuthentication.class),
@@ -313,10 +310,10 @@ This drop down list would typically be displayed from one of the _Manage Jenkins
 +
 [source,java]
 ----
-CredentialsProvider.listCredentials(
+CredentialsProvider.listCredentialsInItemGroup(
     StandardUsernameCredentials.class, // <1>
     Jenkins.get(), // <2>
-    ACL.SYSTEM, // <2>
+    ACL.SYSTEM2, // <2>
     URIRequirementBuilder.fromUri(scmUrl),
     AuthenticationTokens.matcher(MySCMAuthentication.class) // <1>
 )
@@ -324,7 +321,7 @@ CredentialsProvider.listCredentials(
 <1> For this SCM, management of post commit hooks requires authentication that has specified a username, so even though there are other authentication mechanisms supported by `AuthenticationTokens.matcher(...)` we limit at the type level as that reduces the response that needs to be filtered.
 The alternative would have been a matcher that combined `CredentialsMatchers.instanceOf(StandardUsernameCredentials.class)` but this reduces the ability of an external credentials provider to filter the query on the remote side.
 <2> We are doing this operation outside of the context of a single job, rather this is being performed on behalf of the entire Jenkins instance.
-Thus we should be performing this as `ACL.SYSTEM` and in the context of `Jenkins.get()`.
+Thus we should be performing this as `ACL.SYSTEM2` and in the context of `Jenkins.get()`.
 This has the additional benefit that the admin can restrict the high permission hook management credentials to `CredentialsScope.SYSTEM` which will prevent access by jobs.
 
 === Persist a reference to a specific credential instance
@@ -382,24 +379,24 @@ If we have a job, "foobar", and we configure a credentials parameter on that job
 
 If you are working outside the context of a `Run` then you will not have to deal with the complexities of credentials expressions.
 
-In most cases the retrieval will just be a call to one of the `CredentialsProvider.lookupCredentials(...)` wrapped within `CredentialsMatchers.firstOrNull(..., CredentialsMatchers.withId(...))`, for example:
+In most cases the retrieval will just be a call to one of the `CredentialsProvider.lookupCredentialsInItem(...)`/`CredentialsProvider.lookupCredentialsInItemGroup(...)` wrapped within `CredentialsMatchers.firstOrNull(..., CredentialsMatchers.withId(...))`, for example:
 
 [source,java]
 ----
 StandardCredentials c = CredentialsMatchers.firstOrNull(
-  CredentialsProvider.lookupCredentials(
+  CredentialsProvider.lookupCredentialsInItem(
     StandardCredentials.class, // <1>
     job, // <1>
     job instanceof Queue.Task // <1>
       ? Tasks.getAuthenticationOf((Queue.Task)job))
-      : ACL.SYSTEM,
+      : ACL.SYSTEM2,
     URIRequirementBuilder.fromUri(...) // <1>
   ),
   CredentialsMatchers.withId(credentialsId) // <2>
 );
 ----
-<1> These should be the same as your call to `CredentialsProvider.listCredentials(...)`/`StandardListBoxModel.includeMatchingAs(...)` in order to ensure that we get the same credential instance back.
-<2> If you had additional `CredentialsMatcher` expressions in your call to `CredentialsProvider.listCredentials(...)`/`StandardListBoxModel.includeMatchingAs(...)` then you should merge them here with a `CredentialsMatchers.allOf(...)`
+<1> These should be the same as your call to `CredentialsProvider.listCredentialsInItem(...)`/`CredentialsProvider.listCredentialsInItemGroup(...)`/`StandardListBoxModel.includeMatchingAs(...)` in order to ensure that we get the same credential instance back.
+<2> If you had additional `CredentialsMatcher` expressions in your call to `CredentialsProvider.listCredentialsInItem(...)`/`CredentialsProvider.listCredentialsInItemGroup(...)`/`StandardListBoxModel.includeMatchingAs(...)` then you should merge them here with a `CredentialsMatchers.allOf(...)`
 
 Once you have retrieved a non-null credentials instance, all non-secret properties can be assumed as eager-fetch immutable.
 
@@ -416,12 +413,12 @@ The recommended way to use a credential is through the https://plugins.jenkins.i
 [source,java]
 ----
 StandardCredentials c = CredentialsMatchers.firstOrNull( // <1>
-    CredentialsProvider.listCredentials(
+    CredentialsProvider.listCredentialsInItem(
       StandardCredentials.class,
       job,
       job instanceof Queue.Task
-        ? Tasks.getAuthenticationOf((Queue.Task)job))
-        : ACL.SYSTEM,
+        ? Tasks.getAuthenticationOf2((Queue.Task)job))
+        : ACL.SYSTEM2,
       URIRequirementBuilder.fromUri(issueTrackerUrl)
     ),
     CredentialsMatchers.allOf(
@@ -461,12 +458,12 @@ IssueTrackerAuthentication auth = AuthenticationTokens.convert(
   CredentialsProvider.track(
     job,
     CredentialsMatchers.firstOrNull(
-      CredentialsProvider.listCredentials(
+      CredentialsProvider.listCredentialsInItem(
         StandardCredentials.class,
         job,
         job instanceof Queue.Task
-          ? Tasks.getAuthenticationOf((Queue.Task)job))
-          : ACL.SYSTEM,
+          ? Tasks.getAuthenticationOf2((Queue.Task)job))
+          : ACL.SYSTEM2,
         URIRequirementBuilder.fromUri(issueTrackerUrl)
       ),
       CredentialsMatchers.allOf(
