@@ -1255,7 +1255,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @NonNull Item item,
                                                           @Nullable org.acegisecurity.Authentication authentication) {
         Objects.requireNonNull(item);
-        return getCredentialsInItemGroup(type, item.getParent(), authentication == null ? null : authentication.toSpring(), List.of());
+        return getCredentialsInItemFallback(type, item, authentication == null ? null : authentication.toSpring(), List.of());
     }
 
     /**
@@ -1267,7 +1267,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                           @NonNull Item item,
                                                           @Nullable org.acegisecurity.Authentication authentication,
                                                           @NonNull List<DomainRequirement> domainRequirements) {
-        return getCredentialsInItem(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements);
+        return getCredentialsInItemFallback(type, item, authentication == null ? null : authentication.toSpring(), domainRequirements);
     }
 
     /**
@@ -1287,6 +1287,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                 @NonNull Item item,
                                                                 @Nullable Authentication authentication,
                                                                 @NonNull List<DomainRequirement> domainRequirements) {
+        if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, Item.class, org.acegisecurity.Authentication.class, List.class)) {
+            return getCredentials(type, item, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication), domainRequirements);
+        }
+        if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, Item.class, org.acegisecurity.Authentication.class)) {
+            return getCredentials(type, item, authentication == null ? null : org.acegisecurity.Authentication.fromSpring(authentication));
+        }
+        return getCredentialsInItemFallback(type, item, authentication, domainRequirements);
+    }
+
+    @NonNull
+    private <C extends Credentials> List<C> getCredentialsInItemFallback(@NonNull Class<C> type, @NonNull Item item, @Nullable Authentication authentication, @NonNull List<DomainRequirement> domainRequirements) {
         return getCredentialsInItemGroup(type, item instanceof ItemGroup ? (ItemGroup) item : item.getParent(),
                 authentication, domainRequirements);
     }
