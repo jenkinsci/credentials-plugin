@@ -41,7 +41,7 @@ import hudson.model.Saveable;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.AccessControlled;
-import hudson.security.AccessDeniedException2;
+import hudson.security.AccessDeniedException3;
 import hudson.security.Permission;
 import java.io.IOException;
 import java.net.URI;
@@ -51,10 +51,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import jenkins.model.Jenkins;
-import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
+import org.springframework.security.core.Authentication;
 
 /**
  * A store of {@link Credentials}. Each {@link CredentialsStore} is associated with one and only one
@@ -167,14 +167,30 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
     @NonNull
     public abstract ModelObject getContext();
 
+
+    /**
+     * @deprecated Use {@link #hasPermission2(Authentication, Permission)} instead.
+     */
+    @Deprecated
+    public boolean hasPermission(@NonNull org.acegisecurity.Authentication a, @NonNull Permission permission) {
+        return hasPermission2(a.toSpring(), permission);
+    }
+
     /**
      * Checks if the given principle has the given permission.
      *
      * @param a          the principle.
      * @param permission the permission.
      * @return {@code false} if the user doesn't have the permission.
+     * @since TODO
      */
-    public abstract boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission);
+    public boolean hasPermission2(@NonNull Authentication a, @NonNull Permission permission) {
+        if (Util.isOverridden(CredentialsStore.class, getClass(), "hasPermission", org.acegisecurity.Authentication.class,
+                Permission.class)) {
+            return hasPermission(org.acegisecurity.Authentication.fromSpring(a), permission);
+        }
+        throw new AbstractMethodError("Implement hasPermission2 from " + getClass());
+    }
 
     /**
      * {@inheritDoc}
@@ -185,8 +201,8 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
         // an effective ACL implementation.
         return new ACL() {
             @Override
-            public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
-                return CredentialsStore.this.hasPermission(a, permission);
+            public boolean hasPermission2(@NonNull Authentication a, @NonNull Permission permission) {
+                return CredentialsStore.this.hasPermission2(a, permission);
             }
         };
     }
@@ -197,12 +213,12 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * Note: This is just a convenience function.
      * </p>
      *
-     * @throws org.acegisecurity.AccessDeniedException if the user doesn't have the permission.
+     * @throws AccessDeniedException3 if the user doesn't have the permission.
      */
     public final void checkPermission(@NonNull Permission p) {
-        Authentication a = Jenkins.getAuthentication();
-        if (!hasPermission(a, p)) {
-            throw new AccessDeniedException2(a, p);
+        Authentication a = Jenkins.getAuthentication2();
+        if (!hasPermission2(a, p)) {
+            throw new AccessDeniedException3(a, p);
         }
     }
 
@@ -212,7 +228,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * @return {@code false} if the user doesn't have the permission.
      */
     public final boolean hasPermission(@NonNull Permission p) {
-        return hasPermission(Jenkins.getAuthentication(), p);
+        return hasPermission2(Jenkins.getAuthentication2(), p);
     }
 
     /**

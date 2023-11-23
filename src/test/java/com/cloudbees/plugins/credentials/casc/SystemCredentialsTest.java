@@ -58,8 +58,8 @@ public class SystemCredentialsTest {
 
     @Test
     public void import_system_credentials() {
-        List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentials(
-            UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM,
+        List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentialsInItemGroup(
+            UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM2,
             Collections.singletonList(new HostnameRequirement("api.test.com"))
         );
         assertThat(ups, hasSize(1));

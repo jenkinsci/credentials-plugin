@@ -39,6 +39,7 @@ import hudson.model.User;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.Authentication;
@@ -82,7 +83,7 @@ public class SystemCredentialsProviderTest {
         assertTrue(new SystemCredentialsProvider().getCredentials().isEmpty());
         SystemCredentialsProvider.getInstance().save();
         assertFalse(new SystemCredentialsProvider().getCredentials().isEmpty());
-        FileUtils.writeStringToFile(SystemCredentialsProvider.getConfigFile().getFile(), "<<barf>>");
+        FileUtils.writeStringToFile(SystemCredentialsProvider.getConfigFile().getFile(), "<<barf>>", StandardCharsets.UTF_8);
         assertTrue(new SystemCredentialsProvider().getCredentials().isEmpty());
     }
 

@@ -35,18 +35,18 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.cloudbees.plugins.credentials.common.CertificateCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
-import com.gargoylesoftware.htmlunit.FormEncodingType;
-import com.gargoylesoftware.htmlunit.HttpMethod;
-import com.gargoylesoftware.htmlunit.Page;
-import com.gargoylesoftware.htmlunit.WebRequest;
-import com.gargoylesoftware.htmlunit.html.DomNode;
-import com.gargoylesoftware.htmlunit.html.DomNodeList;
-import com.gargoylesoftware.htmlunit.html.HtmlElementUtil;
-import com.gargoylesoftware.htmlunit.html.HtmlFileInput;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlOption;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
+import org.htmlunit.FormEncodingType;
+import org.htmlunit.HttpMethod;
+import org.htmlunit.Page;
+import org.htmlunit.WebRequest;
+import org.htmlunit.html.DomNode;
+import org.htmlunit.html.DomNodeList;
+import org.htmlunit.html.HtmlElementUtil;
+import org.htmlunit.html.HtmlFileInput;
+import org.htmlunit.html.HtmlForm;
+import org.htmlunit.html.HtmlOption;
+import org.htmlunit.html.HtmlPage;
+import org.htmlunit.html.HtmlRadioButtonInput;
 import hudson.FilePath;
 import hudson.Util;
 import hudson.cli.CLICommandInvoker;
@@ -337,15 +337,15 @@ public class CertificateCredentialsImplTest {
         uploadedCertFileInput.setFiles(p12);
 
         // for all the types of credentials
-        newCredentialsForm.getInputsByName("_.password").forEach(input -> input.setValueAttribute(VALID_PASSWORD));
+        newCredentialsForm.getInputsByName("_.password").forEach(input -> input.setValue(VALID_PASSWORD));
         htmlPage.getDocumentElement().querySelector("input[type=file][name=uploadedCertFile]");
         
-        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentials(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM);
+        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(0));
         
         r.submit(newCredentialsForm);
 
-        certificateCredentials = CredentialsProvider.lookupCredentials(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM);
+        certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(1));
 
         CertificateCredentials certificate = certificateCredentials.get(0);

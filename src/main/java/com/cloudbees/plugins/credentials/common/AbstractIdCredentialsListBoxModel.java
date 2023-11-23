@@ -43,8 +43,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
-import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.security.core.Authentication;
 
 /**
  * {@link ListBoxModel} with support for credentials.
@@ -290,7 +290,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param context the context to add credentials from.
      * @param type    the base class of the credentials to add.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentialsInItem(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@Nullable Item context, @NonNull Class<? extends C> type) {
@@ -304,7 +304,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param context the context to add credentials from.
      * @param type    the base class of the credentials to add.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentialsInItemGroup(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull ItemGroup context,
@@ -313,17 +313,10 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
     }
 
     /**
-     * Adds the ids of the specified credential type that are available to the specified context as the specified
-     * authentication.
-     *
-     * @param authentication the authentication to search with
-     * @param context        the context to add credentials from.
-     * @param type           the base class of the credentials to add.
-     * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
-     * @since 2.1.0
+     * @deprecated Use {@link #includeAs(Authentication, Item, Class)} instead.
      */
-    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
+    @Deprecated
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull org.acegisecurity.Authentication authentication,
                                                              @Nullable Item context,
                                                              @NonNull Class<? extends C> type) {
         return includeAs(authentication, context, type, Collections.emptyList());
@@ -337,8 +330,35 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param context        the context to add credentials from.
      * @param type           the base class of the credentials to add.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
-     * @since 2.1.0
+     * @see CredentialsProvider#listCredentialsInItem(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since TODO
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
+                                                             @Nullable Item context,
+                                                             @NonNull Class<? extends C> type) {
+        return includeAs(authentication, context, type, Collections.emptyList());
+    }
+
+    /**
+     * @deprecated Use {@link #includeAs(Authentication, ItemGroup, Class)} instead.
+     */
+    @Deprecated
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull org.acegisecurity.Authentication authentication,
+                                                             @NonNull ItemGroup context,
+                                                             @NonNull Class<? extends C> type) {
+        return includeAs(authentication, context, type, Collections.emptyList());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the specified
+     * authentication.
+     *
+     * @param authentication the authentication to search with
+     * @param context        the context to add credentials from.
+     * @param type           the base class of the credentials to add.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentialsInItemGroup(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
                                                              @NonNull ItemGroup context,
@@ -354,7 +374,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param type               the base class of the credentials to add.
      * @param domainRequirements the domain requirements.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentialsInItem(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@Nullable Item context, @NonNull Class<? extends C> type,
@@ -370,7 +390,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param type               the base class of the credentials to add.
      * @param domainRequirements the domain requirements.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentialsInItemGroup(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> include(@NonNull ItemGroup context, @NonNull Class<? extends C> type,
@@ -379,18 +399,10 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
     }
 
     /**
-     * Adds the ids of the specified credential type that are available to the specified context as the specified
-     * authentication with the specified domain requirements.
-     *
-     * @param authentication     the authentication to search with
-     * @param context            the context to add credentials from.
-     * @param type               the base class of the credentials to add.
-     * @param domainRequirements the domain requirements.
-     * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
-     * @since 2.1.0
+     * @deprecated Use {@link #includeAs(Authentication, Item, Class, List)} instead.
      */
-    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
+    @Deprecated
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull org.acegisecurity.Authentication authentication,
                                                              @Nullable Item context,
                                                              @NonNull Class<? extends C> type,
                                                              @NonNull List<DomainRequirement> domainRequirements) {
@@ -406,8 +418,38 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param type               the base class of the credentials to add.
      * @param domainRequirements the domain requirements.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
-     * @since 2.1.0
+     * @see CredentialsProvider#listCredentialsInItem(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since TODO
+     */
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
+                                                             @Nullable Item context,
+                                                             @NonNull Class<? extends C> type,
+                                                             @NonNull List<DomainRequirement> domainRequirements) {
+        return includeMatchingAs(authentication, context, type, domainRequirements, CredentialsMatchers.always());
+    }
+
+    /**
+     * @deprecated Use {@link #includeAs(Authentication, ItemGroup, Class, List)} instead.
+     */
+    @Deprecated
+    public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull org.acegisecurity.Authentication authentication,
+                                                             @NonNull ItemGroup context,
+                                                             @NonNull Class<? extends C> type,
+                                                             @NonNull List<DomainRequirement> domainRequirements) {
+        return includeMatchingAs(authentication.toSpring(), context, type, domainRequirements, CredentialsMatchers.always());
+    }
+
+    /**
+     * Adds the ids of the specified credential type that are available to the specified context as the specified
+     * authentication with the specified domain requirements.
+     *
+     * @param authentication     the authentication to search with
+     * @param context            the context to add credentials from.
+     * @param type               the base class of the credentials to add.
+     * @param domainRequirements the domain requirements.
+     * @return {@code this} for method chaining.
+     * @see CredentialsProvider#listCredentialsInItemGroup(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeAs(@NonNull Authentication authentication,
                                                              @NonNull ItemGroup context,
@@ -425,14 +467,14 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param domainRequirements the domain requirements.
      * @param matcher            the filter to apply to the credentials.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentialsInItem(Class, Item, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatching(@Nullable Item context,
                                                                    @NonNull Class<? extends C> type,
                                                                    @NonNull List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
-        return includeMatchingAs(Jenkins.getAuthentication(), context, type, domainRequirements, matcher);
+        return includeMatchingAs(Jenkins.getAuthentication2(), context, type, domainRequirements, matcher);
     }
 
     /**
@@ -444,14 +486,27 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param domainRequirements the domain requirements.
      * @param matcher            the filter to apply to the credentials.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @see CredentialsProvider#listCredentialsInItemGroup(Class, ItemGroup, Authentication, List, CredentialsMatcher)
      * @since 2.1.0
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatching(@NonNull ItemGroup context,
                                                                    @NonNull Class<? extends C> type,
                                                                    @NonNull List<DomainRequirement> domainRequirements,
                                                                    @NonNull CredentialsMatcher matcher) {
-        return includeMatchingAs(Jenkins.getAuthentication(), context, type, domainRequirements, matcher);
+        return includeMatchingAs(Jenkins.getAuthentication2(), context, type, domainRequirements, matcher);
+    }
+
+    /**
+     * @deprecated Use {@link #includeMatchingAs(Authentication, Item, Class, List, CredentialsMatcher)} instead.
+     */
+    @Deprecated
+    public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull org.acegisecurity.Authentication authentication,
+                                                                     @Nullable Item context,
+                                                                     @NonNull Class<? extends C> type,
+                                                                     @NonNull
+                                                                             List<DomainRequirement> domainRequirements,
+                                                                     @NonNull CredentialsMatcher matcher) {
+        return includeMatchingAs(authentication.toSpring(), context, type, domainRequirements, matcher);
     }
 
     /**
@@ -464,8 +519,8 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param domainRequirements the domain requirements.
      * @param matcher            the filter to apply to the credentials.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, Item, Authentication, List, CredentialsMatcher)
-     * @since 2.1.0
+     * @see CredentialsProvider#listCredentialsInItem(Class, Item, Authentication, List, CredentialsMatcher)
+     * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull Authentication authentication,
                                                                      @Nullable Item context,
@@ -473,8 +528,21 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
                                                                      @NonNull
                                                                              List<DomainRequirement> domainRequirements,
                                                                      @NonNull CredentialsMatcher matcher) {
-        addMissing(CredentialsProvider.listCredentials(type, context, authentication, domainRequirements, matcher));
+        addMissing(CredentialsProvider.listCredentialsInItem(type, context, authentication, domainRequirements, matcher));
         return this;
+    }
+
+    /**
+     * @deprecated Use {@link #includeMatchingAs(Authentication, ItemGroup, Class, List, CredentialsMatcher)} instead.
+     */
+    @Deprecated
+    public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull org.acegisecurity.Authentication authentication,
+                                                                     @NonNull ItemGroup context,
+                                                                     @NonNull Class<? extends C> type,
+                                                                     @NonNull
+                                                                             List<DomainRequirement> domainRequirements,
+                                                                     @NonNull CredentialsMatcher matcher) {
+        return includeMatchingAs(authentication.toSpring(), context, type, domainRequirements, matcher);
     }
 
     /**
@@ -487,8 +555,8 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
      * @param domainRequirements the domain requirements.
      * @param matcher            the filter to apply to the credentials.
      * @return {@code this} for method chaining.
-     * @see CredentialsProvider#listCredentials(Class, ItemGroup, Authentication, List, CredentialsMatcher)
-     * @since 2.1.0
+     * @see CredentialsProvider#listCredentialsInItemGroup(Class, ItemGroup, Authentication, List, CredentialsMatcher)
+     * @since TODO
      */
     public AbstractIdCredentialsListBoxModel<T, C> includeMatchingAs(@NonNull Authentication authentication,
                                                                      @NonNull ItemGroup context,
@@ -496,7 +564,7 @@ public abstract class AbstractIdCredentialsListBoxModel<T extends AbstractIdCred
                                                                      @NonNull
                                                                              List<DomainRequirement> domainRequirements,
                                                                      @NonNull CredentialsMatcher matcher) {
-        addMissing(CredentialsProvider.listCredentials(type, context, authentication, domainRequirements, matcher));
+        addMissing(CredentialsProvider.listCredentialsInItemGroup(type, context, authentication, domainRequirements, matcher));
         return this;
     }
 

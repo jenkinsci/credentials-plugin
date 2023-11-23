@@ -57,7 +57,6 @@ import java.util.stream.StreamSupport;
 import jenkins.model.Jenkins;
 import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.model.TransientActionFactory;
-import org.acegisecurity.Authentication;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -65,6 +64,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
+import org.springframework.security.core.Authentication;
 
 /**
  * An {@link Action} that lets you view the available credentials for any {@link ModelObject}.
@@ -112,7 +112,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public String getIconFileName() {
         return isVisible()
-                ? "symbol-key"
+                ? "symbol-credentials plugin-credentials"
                 : null;
     }
 
@@ -295,7 +295,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     @Override
     public String getIconClassName() {
         return isVisible()
-                ? "symbol-key"
+                ? "symbol-credentials plugin-credentials"
                 : null;
     }
 
@@ -377,10 +377,10 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
                 context instanceof AccessControlled ? (AccessControlled) context : Jenkins.get();
         return new ACL() {
             @Override
-            public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
-                if (accessControlled.hasPermission(a, permission)) {
+            public boolean hasPermission2(@NonNull Authentication a, @NonNull Permission permission) {
+                if (accessControlled.hasPermission2(a, permission)) {
                     for (CredentialsStore s : getLocalStores()) {
-                        if (s.hasPermission(a, permission)) {
+                        if (s.hasPermission2(a, permission)) {
                             return true;
                         }
                     }

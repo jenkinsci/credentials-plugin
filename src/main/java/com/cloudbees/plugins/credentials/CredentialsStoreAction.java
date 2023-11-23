@@ -33,7 +33,6 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.thoughtworks.xstream.io.xml.XppDriver;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -84,7 +83,6 @@ import jenkins.model.ModelObjectWithChildren;
 import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
-import org.acegisecurity.AccessDeniedException;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
@@ -98,6 +96,7 @@ import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.springframework.security.access.AccessDeniedException;
 import org.xml.sax.SAXException;
 
 import static com.cloudbees.plugins.credentials.ContextMenuIconUtils.getMenuItemIconUrlByClassSpec;
@@ -398,7 +397,7 @@ public abstract class CredentialsStoreAction
     @Override
     public String getIconClassName() {
         return isVisible()
-                ? "symbol-key"
+                ? "symbol-credentials plugin-credentials"
                 : null;
     }
 
@@ -541,7 +540,7 @@ public abstract class CredentialsStoreAction
             }
 
             Domain domain = (Domain)
-                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                    Items.XSTREAM.unmarshal(XStream2.getDefaultDriver().createReader(new StringReader(out.toString())));
             if (getStore().addDomain(domain)) {
                 return HttpResponses.ok();
             } else {
@@ -804,7 +803,7 @@ public abstract class CredentialsStoreAction
                 }
 
                 Credentials credentials = (Credentials)
-                        Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                        Items.XSTREAM.unmarshal(XStream2.getDefaultDriver().createReader(new StringReader(out.toString())));
                 if (getStore().addCredentials(domain, credentials)) {
                     return HttpResponses.ok();
                 } else {
@@ -812,7 +811,7 @@ public abstract class CredentialsStoreAction
                 }
             } else {
                 JSONObject data = req.getSubmittedForm();
-                Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
+                Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
                 getStore().addCredentials(domain, credentials);
                 return HttpResponses.redirectTo("../../domain/" + getUrlName());
             }
@@ -998,7 +997,7 @@ public abstract class CredentialsStoreAction
             }
 
             Domain replacement = (Domain)
-                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                    Items.XSTREAM.unmarshal(XStream2.getDefaultDriver().createReader(new StringReader(out.toString())));
             getStore().updateDomain(domain, replacement);
         }
 
@@ -1395,7 +1394,7 @@ public abstract class CredentialsStoreAction
         public HttpResponse doUpdateSubmit(StaplerRequest req) throws ServletException, IOException {
             getStore().checkPermission(UPDATE);
             JSONObject data = req.getSubmittedForm();
-            Credentials credentials = req.bindJSON(Credentials.class, data);
+            Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data);
             if (!getStore().updateCredentials(this.domain.domain, this.credentials, credentials)) {
                 return HttpResponses.redirectTo("concurrentModification");
             }
@@ -1505,7 +1504,7 @@ public abstract class CredentialsStoreAction
             }
 
             Credentials credentials = (Credentials)
-                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                    Items.XSTREAM.unmarshal(XStream2.getDefaultDriver().createReader(new StringReader(out.toString())));
             getStore().updateCredentials(domain.getDomain(), this.credentials, credentials);
         }
 
@@ -1561,4 +1560,5 @@ public abstract class CredentialsStoreAction
             }
         }
     }
+
 }
