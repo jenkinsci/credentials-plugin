@@ -31,7 +31,7 @@ public class CredentialsSelectHelperTest {
             HtmlListItem li = htmlPage.querySelector(".credentials-add-menu-items li");
             li.click();
             wc.waitForBackgroundJavaScript(4000);
-            HtmlForm form = htmlPage.querySelector("#credentialsDialog form");
+            HtmlForm form = htmlPage.querySelector("#credentials-dialog-form");
 
             HtmlInput username = form.querySelector("input[name='_.username']");
             username.setValue("bob");
@@ -40,7 +40,7 @@ public class CredentialsSelectHelperTest {
             HtmlInput id = form.querySelector("input[name='_.id']");
             id.setValue("test");
 
-            HtmlSpan formSubmitButton = form.querySelector("#credentials-add-submit");
+            HtmlButton formSubmitButton = htmlPage.querySelector(".jenkins-button[data-id='ok']");
             formSubmitButton.fireEvent("click");
             wc.waitForBackgroundJavaScript(5000);
 
