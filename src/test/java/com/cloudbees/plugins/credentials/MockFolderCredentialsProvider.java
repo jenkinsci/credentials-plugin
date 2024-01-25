@@ -330,6 +330,14 @@ import org.springframework.security.core.Authentication;
         private synchronized boolean updateCredentials(@NonNull Domain domain, @NonNull Credentials current,
                                                        @NonNull Credentials replacement) throws IOException {
             checkPermission(CredentialsProvider.UPDATE);
+
+            // See IdCredentials.Helper#equals.
+            // Note: We probably should not assume that all credentials are IdCredentials. We also do this a few lines below in list.indexOf(current) call.
+            // If this one breaks, that one breaks as well.
+            if (!current.equals(replacement)) {
+                throw new IllegalArgumentException("Credentials' IDs do not match, will not update.");
+            }
+
             Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
             if (domainCredentialsMap.containsKey(domain)) {
                 List<Credentials> list = domainCredentialsMap.get(domain);

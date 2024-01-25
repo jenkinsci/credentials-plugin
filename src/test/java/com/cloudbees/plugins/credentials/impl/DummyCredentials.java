@@ -23,7 +23,6 @@
  */
 package com.cloudbees.plugins.credentials.impl;
 
-import com.cloudbees.plugins.credentials.BaseCredentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
@@ -35,7 +34,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 /**
  * A test credentials impl.
  */
-public class DummyCredentials extends BaseCredentials implements UsernamePasswordCredentials {
+public class DummyCredentials extends BaseStandardCredentials implements UsernamePasswordCredentials {
 
     private final String username;
 
@@ -43,7 +42,11 @@ public class DummyCredentials extends BaseCredentials implements UsernamePasswor
 
     @DataBoundConstructor
     public DummyCredentials(CredentialsScope scope, String username, String password) {
-        super(scope);
+        this(scope, null, null, username, password);
+    }
+
+    public DummyCredentials(CredentialsScope scope, String id, String description, String username, String password) {
+        super(scope, id, description);
         this.username = username;
         this.password = Secret.fromString(password);
     }
