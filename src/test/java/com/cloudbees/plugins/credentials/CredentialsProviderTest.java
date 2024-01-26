@@ -41,7 +41,6 @@ import hudson.slaves.RetentionStrategy;
 import hudson.security.ACL;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -256,7 +255,7 @@ public class CredentialsProviderTest {
         final User alice = User.getById("alice", true);
         DummyCredentials aliceCred1 = new DummyCredentials(CredentialsScope.USER, "aliceCred1", "pwd");
         DummyCredentials aliceCred2 = new DummyCredentials(CredentialsScope.USER, "aliceCred2", "pwd");
-        DummyCredentials aliceCred3 = new DummyCredentials(CredentialsScope.USER, aliceCred1.getId(), aliceCred1.getDescription(), "aliceCred3", "pwd");
+        DummyCredentials aliceCred3 = new DummyCredentials(CredentialsScope.USER, "aliceCred3", "pwd");
         
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
@@ -290,7 +289,7 @@ public class CredentialsProviderTest {
         DummyCredentials systemCred = new DummyCredentials(CredentialsScope.SYSTEM, "systemCred", "pwd");
         DummyCredentials systemCred2 = new DummyCredentials(CredentialsScope.SYSTEM, "systemCred2", "pwd");
         DummyCredentials globalCred = new DummyCredentials(CredentialsScope.GLOBAL, "globalCred", "pwd");
-        DummyCredentials modCredential = new DummyCredentials(CredentialsScope.GLOBAL, globalCred.getId(), globalCred.getDescription(), "modCredential", "pwd");
+        DummyCredentials modCredential = new DummyCredentials(CredentialsScope.GLOBAL, "modCredential", "pwd");
 
         CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
         
@@ -457,15 +456,5 @@ public class CredentialsProviderTest {
         assertThat(options, hasSize(2));
         assertThat(options.get(0).value, is("2"));
         assertThat(options.get(1).value, is("1"));
-    }
-
-    @Test
-    @Issue("SECURITY-3252")
-    public void cannotUpdateCredentialsId() {
-        DummyCredentials cred1 = new DummyCredentials(CredentialsScope.GLOBAL, "cred1", "pwd");
-        DummyCredentials cred2 = new DummyCredentials(CredentialsScope.GLOBAL, "cred2", "pwd");
-        CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
-
-        Assert.assertThrows(IllegalArgumentException.class, () -> store.updateCredentials(Domain.global(), cred1, cred2));
     }
 }
