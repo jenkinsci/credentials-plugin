@@ -84,7 +84,7 @@ public class DomainTest {
         Domain domainBar = new Domain("domainBar", "Path domain", Arrays.asList(new DomainSpecification[] { new HostnameSpecification("bar.com", "") }));
         DummyCredentials systemCred = new DummyCredentials(CredentialsScope.SYSTEM, "systemCred", "pwd");
         DummyCredentials systemCred1 = new DummyCredentials(CredentialsScope.SYSTEM, "systemCred1", "pwd");
-        DummyCredentials systemCredMod = new DummyCredentials(CredentialsScope.SYSTEM, systemCred.getId(), systemCred.getDescription(), "systemCredMod", "pwd");
+        DummyCredentials systemCredMod = new DummyCredentials(CredentialsScope.SYSTEM, "systemCredMod", "pwd");
 
         CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
         
