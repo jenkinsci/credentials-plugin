@@ -460,7 +460,7 @@ public class CredentialsProviderTest {
     }
 
     @Test
-    @Issue("SECURITY-3252")
+    @Issue("JENKINS-72611")
     public void credentialsIdCannotBeUpdated() {
         DummyIdCredentials cred1 = new DummyIdCredentials(null, CredentialsScope.GLOBAL, "cred1", "pwd", "Cred 1");
         DummyIdCredentials cred2 = new DummyIdCredentials(null, CredentialsScope.GLOBAL, "cred2", "pwd", "Cred 2");
