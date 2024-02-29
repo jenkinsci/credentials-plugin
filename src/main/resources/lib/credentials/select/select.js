@@ -38,8 +38,9 @@ window.credentials.add = function (e) {
     }).then(rsp => {
         if (rsp.ok) {
             rsp.text().then((responseText) => {
+                // do not apply behaviour on parsed HTML, dialog.form does that later
+                // otherwise we have crumb and json fields twice
                 window.credentials.body.innerHTML = responseText;
-                Behaviour.applySubtree(window.credentials.body, false);
                 window.credentials.form = document.getElementById('credentials-dialog-form');
 				const data = window.credentials.form.dataset;
 				const options = {'title': data['title'], 'okText': data['add'], 'submitButton':false, 'minWidth': '75vw'};
@@ -102,8 +103,11 @@ window.credentials.refreshAll = function () {
 };
 window.credentials.addSubmit = function (_) {
     const form = window.credentials.form;
+    // temporarily attach to DOM (avoid https://github.com/HtmlUnit/htmlunit/issues/740)
+    document.body.appendChild(form);
     buildFormTree(form);
     ajaxFormSubmit(form);
+    form.remove();
 
     function ajaxFormSubmit(form) {
         fetch(form.action, {
