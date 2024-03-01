@@ -28,22 +28,6 @@ window.credentials.init = function () {
         document.body.appendChild(div);
         div.innerHTML = "<div id='credentialsDialog'><div class='bd'></div></div>";
         window.credentials.body = document.getElementById('credentialsDialog');
-        window.credentials.dialog = new YAHOO.widget.Panel(window.credentials.body, {
-            fixedcenter: true,
-            close: true,
-            draggable: true,
-            zindex: 1000,
-            modal: true,
-            visible: false,
-            keylisteners: [
-              new YAHOO.util.KeyListener(document, {keys:27}, {
-                fn:(function() {window.credentials.dialog.hide();}),
-                scope:document,
-                correctScope:false
-              })
-            ]
-        });
-        window.credentials.dialog.render();
     }
 };
 window.credentials.add = function (e) {
@@ -54,15 +38,15 @@ window.credentials.add = function (e) {
     }).then(rsp => {
         if (rsp.ok) {
             rsp.text().then((responseText) => {
+                // do not apply behaviour on parsed HTML, dialog.form does that later
+                // otherwise we have crumb and json fields twice
                 window.credentials.body.innerHTML = responseText;
-                Behaviour.applySubtree(window.credentials.body, false);
                 window.credentials.form = document.getElementById('credentials-dialog-form');
-                // window.credentials.form.action = e;
-                var r = YAHOO.util.Dom.getClientRegion();
-                window.credentials.dialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
-                window.credentials.dialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
-                window.credentials.dialog.center();
-                window.credentials.dialog.show();
+				const data = window.credentials.form.dataset;
+				const options = {'title': data['title'], 'okText': data['add'], 'submitButton':false, 'minWidth': '75vw'};
+				dialog.form(window.credentials.form, options)
+					.then(window.credentials.addSubmit);
+				window.credentials.form.querySelector('select').focus();
             });
         }
     });
@@ -109,9 +93,6 @@ window.credentials.refreshAll = function () {
                     if (window.console != null) {
                         console.warn("Unable to find nearby " + name);
                     }
-                    if (window.YUI != null) {
-                        YUI.log("Unable to find a nearby control of the name " + name, "warn")
-                    }
                     return;
                 }
                 deps.push({name: Path.tail(name), control: c});
@@ -121,9 +102,12 @@ window.credentials.refreshAll = function () {
     });
 };
 window.credentials.addSubmit = function (_) {
-    const form = document.getElementById('credentials-dialog-form');
+    const form = window.credentials.form;
+    // temporarily attach to DOM (avoid https://github.com/HtmlUnit/htmlunit/issues/740)
+    document.body.appendChild(form);
     buildFormTree(form);
     ajaxFormSubmit(form);
+    form.remove();
 
     function ajaxFormSubmit(form) {
         fetch(form.action, {
@@ -140,9 +124,6 @@ window.credentials.addSubmit = function (_) {
                 // notificationBar.show(...) with logging ID could be handy here?
                 console.error("Could not add credentials:", e);
             })
-            .finally(() => {
-                window.credentials.dialog.hide();
-            });
     }
 };
 
