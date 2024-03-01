@@ -560,7 +560,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    for (C c: provider.getCredentialsInItem(type, item, authentication, domainRequirements)) {
+                    List<C> credentials = provider.getCredentialsInItem(type, item, authentication, domainRequirements);
+                    // also lookup credentials as SYSTEM if granted for this item
+                    if (authentication != ACL.SYSTEM2
+                            && (item.getACL().hasPermission2(authentication, CredentialsProvider.USE_ITEM)
+                            || item.getACL().hasPermission2(authentication, CredentialsProvider.USE_OWN))) {
+                        credentials.addAll(provider.getCredentialsInItem(type, item, ACL.SYSTEM2, domainRequirements));
+                    }
+
+                    for (C c: credentials) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
                             // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
@@ -633,9 +641,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    for (ListBoxModel.Option option : provider.getCredentialIdsInItem(
-                            type, item, authentication, domainRequirements, matcher == null ? CredentialsMatchers.always() : matcher)
-                            ) {
+                    ListBoxModel credentialIds = provider.getCredentialIdsInItem(type, item, authentication, domainRequirements, matcher);
+                    // also lookup credentials with scope SYSTEM when user has grants for this item
+                    if (authentication != ACL.SYSTEM2
+                            && (item.getACL().hasPermission2(authentication, CredentialsProvider.USE_ITEM)
+                            || item.getACL().hasPermission2(authentication, CredentialsProvider.USE_OWN))) {
+                        credentialIds.addAll(provider.getCredentialIdsInItem(type, item, ACL.SYSTEM2, domainRequirements, matcher));
+                    }
+                    for (ListBoxModel.Option option : credentialIds) {
                         if (ids.add(option.value)) {
                             result.add(option);
                         }
