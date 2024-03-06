@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
@@ -325,6 +326,11 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
         checkPermission(CredentialsProvider.UPDATE);
         Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
         if (domainCredentialsMap.containsKey(domain)) {
+            if (current instanceof IdCredentials || replacement instanceof IdCredentials) {
+                if (!current.equals(replacement)) {
+                    throw new IllegalArgumentException("Credentials' IDs do not match, will not update.");
+                }
+            }
             List<Credentials> list = domainCredentialsMap.get(domain);
             int index = list.indexOf(current);
             if (index == -1) {
