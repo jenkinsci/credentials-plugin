@@ -220,10 +220,14 @@ Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0,
     };
     // simpler version of f:helpLink using inline help text
     e.querySelector('span.help-btn').onclick = function (evt) {
-        var help = e.querySelector('.help-content');
-        help.hidden = !help.hidden;
+        var help = e.querySelector('.help');
+        help.style.display = help.style.display == "block" ? "" : "block";
+        return false;
     };
 });
+// prevent accidental removal of CSS by moving it to the head (https://issues.jenkins.io/browse/JENKINS-26578)
+var style = document.querySelector("body link[href$='credentials/select/select.css']");
+style && document.head.appendChild(style);
 window.setTimeout(function() {
     // HACK: can be removed once base version of Jenkins has fix of https://issues.jenkins-ci.org/browse/JENKINS-26578
     // need to apply the new behaviours to existing objects
