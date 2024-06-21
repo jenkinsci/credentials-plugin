@@ -37,14 +37,10 @@ import hudson.model.Items;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -58,7 +54,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang.StringUtils;
@@ -335,72 +330,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 }
             }
         }
-    }
-
-    /**
-     * Let the user reference a file on the disk.
-     * @deprecated This approach has security vulnerabilities and should be migrated to {@link UploadedKeyStoreSource}
-     */
-    @Deprecated
-    public static class FileOnMasterKeyStoreSource extends KeyStoreSource {
-
-        /**
-         * Our logger.
-         */
-        private static final Logger LOGGER = Logger.getLogger(FileOnMasterKeyStoreSource.class.getName());
-
-        /**
-         * The path of the file on the controller.
-         */
-        private final String keyStoreFile;
-
-        public FileOnMasterKeyStoreSource(String keyStoreFile) {
-            this.keyStoreFile = keyStoreFile;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        public byte[] getKeyStoreBytes() {
-            try {
-                return Files.readAllBytes(Paths.get(keyStoreFile));
-            } catch (IOException | InvalidPathException e) {
-                LOGGER.log(Level.WARNING, "Could not read private key file " + keyStoreFile, e);
-                return new byte[0];
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long getKeyStoreLastModified() {
-            return new File(keyStoreFile).lastModified();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString() {
-            return "FileOnMasterKeyStoreSource{" +
-                    "keyStoreFile='" + keyStoreFile + '\'' +
-                    "}";
-        }
-
-        private Object readResolve() {
-            if (!Jenkins.get().hasPermission(Jenkins.RUN_SCRIPTS)) {
-                LOGGER.warning("SECURITY-1322: Permission failure migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource for a Certificate. An administrator may need to perform the migration.");
-                Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
-            }
-
-            LOGGER.log(Level.INFO, "SECURITY-1322: Migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource. The containing item may need to be saved to complete the migration.");
-            SecretBytes secretBytes = SecretBytes.fromBytes(getKeyStoreBytes());
-            return new UploadedKeyStoreSource(secretBytes);
-        }
-
     }
 
     /**

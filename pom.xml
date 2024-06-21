@@ -169,6 +169,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <compatibleSinceVersion>1344</compatibleSinceVersion>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.antlr</groupId>
