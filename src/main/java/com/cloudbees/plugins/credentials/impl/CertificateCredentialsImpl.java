@@ -66,9 +66,7 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 public class CertificateCredentialsImpl extends BaseStandardCredentials implements StandardCertificateCredentials {
@@ -612,89 +610,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 return validateCertificateKeystore("PKCS12", keystoreBytes, password);
             }
 
-            /**
-             * Creates a new {@link Upload} for the specified {@literal <input id="..."/>}
-             *
-             * @param divId the id if the form input element to inject the uploaded content into.
-             * @return the {@link Upload}
-             */
-            @SuppressWarnings("unused") // invoked by stapler binding
-            @Restricted(NoExternalUse.class)
-            public Upload getUpload(String divId) {
-                return new Upload(divId, null);
-            }
-
-        }
-
-        /**
-         * Stapler binding object to handle a pop-up window for file upload.
-         * 
-         * @deprecated since 2.4. This is no longer required/supported due to the inlining of the file input.
-         * Deprecated for removal soon.
-         */
-        @Deprecated
-        public static class Upload {
-
-            /**
-             * The id of the {@literal <input>} element on the {@code window.opener} of the pop-up to inject the
-             * uploaded content into.
-             */
-            @NonNull
-            private final String divId;
-
-            /**
-             * The uploaded content.
-             */
-            @CheckForNull
-            private final SecretBytes uploadedKeystore;
-
-            /**
-             * Our constructor.
-             *
-             * @param divId            id of the {@literal <input>} element on the {@code window.opener} of the
-             *                         pop-up to inject the uploaded content into.
-             * @param uploadedKeystore the content.
-             */
-            public Upload(@NonNull String divId, @CheckForNull SecretBytes uploadedKeystore) {
-                this.divId = divId;
-                this.uploadedKeystore = uploadedKeystore;
-            }
-
-            /**
-             * Gets the id of the {@literal <input>} element on the {@code window.opener} of the pop-up to inject the
-             * uploaded content into.
-             *
-             * @return the id of the {@literal <input>} element on the {@code window.opener} of the pop-up to inject the
-             * uploaded content into.
-             */
-            @NonNull
-            public String getDivId() {
-                return divId;
-            }
-
-            /**
-             * Returns the content.
-             *
-             * @return the content.
-             */
-            @CheckForNull
-            @SuppressWarnings("unused") // used by Jelly EL
-            public SecretBytes getUploadedKeystore() {
-                return uploadedKeystore;
-            }
-
-            /**
-             * Performs the actual upload.
-             *
-             * @param req the request.
-             * @return the response.
-             */
-            @NonNull
-            public HttpResponse doUpload(@NonNull StaplerRequest req) {
-                return FormValidation.ok("This endpoint is no longer required/supported due to the inlining of the file input. " +
-                        "If you came to this endpoint due to another plugin, you will have to update that plugin to be compatible with Credentials Plugin 2.4+. " +
-                        "It will be deleted soon.");
-            }
         }
     }
 
