@@ -168,10 +168,7 @@ Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, func
     }
     e=null;
 });
-Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
-    makeButton(e, e.disabled ? null : window.credentials.add);
-    e = null; // avoid memory leak
-});
+
 Behaviour.specify("DIV.credentials-select-control", 'credentials-select', 100, function (d) {
     var buttons = Array.from(d.querySelectorAll("INPUT.credentials-select-radio-control"));
     var u = (function () {
