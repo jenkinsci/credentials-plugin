@@ -3,7 +3,7 @@
 ![credentials version](https://img.shields.io/jenkins/plugin/v/credentials?label=credentials)
 ![credentials installs](https://img.shields.io/jenkins/plugin/i/credentials)
 [![MIT license](https://img.shields.io/github/license/jenkinsci/credentials-plugin)](https://github.com/jenkinsci/credentials-plugin/blob/master/LICENSE.txt)
-[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/jenkinsci/credentials-plugin.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/jenkinsci/credentials-plugin/context:java)
+[![security scan](https://github.com/jenkinsci/credentials-plugin/actions/workflows/jenkins-security-scan.yml/badge.svg)](https://github.com/jenkinsci/credentials-plugin/actions/workflows/jenkins-security-scan.yml)
 
 ## Documentation
 
