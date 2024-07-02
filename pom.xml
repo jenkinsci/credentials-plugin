@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.80</version>
+    <version>4.84</version>
     <relativePath />
   </parent>
 
@@ -169,6 +169,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <compatibleSinceVersion>1354</compatibleSinceVersion>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.antlr</groupId>

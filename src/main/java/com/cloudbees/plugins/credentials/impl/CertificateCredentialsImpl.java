@@ -37,14 +37,10 @@ import hudson.model.Items;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -57,7 +53,6 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
 import jenkins.model.Jenkins;
 import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
@@ -67,9 +62,7 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 public class CertificateCredentialsImpl extends BaseStandardCredentials implements StandardCertificateCredentials {
@@ -339,72 +332,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     }
 
     /**
-     * Let the user reference a file on the disk.
-     * @deprecated This approach has security vulnerabilities and should be migrated to {@link UploadedKeyStoreSource}
-     */
-    @Deprecated
-    public static class FileOnMasterKeyStoreSource extends KeyStoreSource {
-
-        /**
-         * Our logger.
-         */
-        private static final Logger LOGGER = Logger.getLogger(FileOnMasterKeyStoreSource.class.getName());
-
-        /**
-         * The path of the file on the controller.
-         */
-        private final String keyStoreFile;
-
-        public FileOnMasterKeyStoreSource(String keyStoreFile) {
-            this.keyStoreFile = keyStoreFile;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @NonNull
-        @Override
-        public byte[] getKeyStoreBytes() {
-            try {
-                return Files.readAllBytes(Paths.get(keyStoreFile));
-            } catch (IOException | InvalidPathException e) {
-                LOGGER.log(Level.WARNING, "Could not read private key file " + keyStoreFile, e);
-                return new byte[0];
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long getKeyStoreLastModified() {
-            return new File(keyStoreFile).lastModified();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString() {
-            return "FileOnMasterKeyStoreSource{" +
-                    "keyStoreFile='" + keyStoreFile + '\'' +
-                    "}";
-        }
-
-        private Object readResolve() {
-            if (!Jenkins.get().hasPermission(Jenkins.RUN_SCRIPTS)) {
-                LOGGER.warning("SECURITY-1322: Permission failure migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource for a Certificate. An administrator may need to perform the migration.");
-                Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
-            }
-
-            LOGGER.log(Level.INFO, "SECURITY-1322: Migrating FileOnMasterKeyStoreSource to UploadedKeyStoreSource. The containing item may need to be saved to complete the migration.");
-            SecretBytes secretBytes = SecretBytes.fromBytes(getKeyStoreBytes());
-            return new UploadedKeyStoreSource(secretBytes);
-        }
-
-    }
-
-    /**
      * Let the user reference an uploaded PKCS12 file.
      */
     public static class UploadedKeyStoreSource extends KeyStoreSource implements Serializable {
@@ -635,89 +562,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 return validateCertificateKeystore("PKCS12", keystoreBytes, password);
             }
 
-            /**
-             * Creates a new {@link Upload} for the specified {@literal <input id="..."/>}
-             *
-             * @param divId the id if the form input element to inject the uploaded content into.
-             * @return the {@link Upload}
-             */
-            @SuppressWarnings("unused") // invoked by stapler binding
-            @Restricted(NoExternalUse.class)
-            public Upload getUpload(String divId) {
-                return new Upload(divId, null);
-            }
-
-        }
-
-        /**
-         * Stapler binding object to handle a pop-up window for file upload.
-         * 
-         * @deprecated since 2.4. This is no longer required/supported due to the inlining of the file input.
-         * Deprecated for removal soon.
-         */
-        @Deprecated
-        public static class Upload {
-
-            /**
-             * The id of the {@literal <input>} element on the {@code window.opener} of the pop-up to inject the
-             * uploaded content into.
-             */
-            @NonNull
-            private final String divId;
-
-            /**
-             * The uploaded content.
-             */
-            @CheckForNull
-            private final SecretBytes uploadedKeystore;
-
-            /**
-             * Our constructor.
-             *
-             * @param divId            id of the {@literal <input>} element on the {@code window.opener} of the
-             *                         pop-up to inject the uploaded content into.
-             * @param uploadedKeystore the content.
-             */
-            public Upload(@NonNull String divId, @CheckForNull SecretBytes uploadedKeystore) {
-                this.divId = divId;
-                this.uploadedKeystore = uploadedKeystore;
-            }
-
-            /**
-             * Gets the id of the {@literal <input>} element on the {@code window.opener} of the pop-up to inject the
-             * uploaded content into.
-             *
-             * @return the id of the {@literal <input>} element on the {@code window.opener} of the pop-up to inject the
-             * uploaded content into.
-             */
-            @NonNull
-            public String getDivId() {
-                return divId;
-            }
-
-            /**
-             * Returns the content.
-             *
-             * @return the content.
-             */
-            @CheckForNull
-            @SuppressWarnings("unused") // used by Jelly EL
-            public SecretBytes getUploadedKeystore() {
-                return uploadedKeystore;
-            }
-
-            /**
-             * Performs the actual upload.
-             *
-             * @param req the request.
-             * @return the response.
-             */
-            @NonNull
-            public HttpResponse doUpload(@NonNull StaplerRequest req) {
-                return FormValidation.ok("This endpoint is no longer required/supported due to the inlining of the file input. " +
-                        "If you came to this endpoint due to another plugin, you will have to update that plugin to be compatible with Credentials Plugin 2.4+. " +
-                        "It will be deleted soon.");
-            }
         }
     }
 
