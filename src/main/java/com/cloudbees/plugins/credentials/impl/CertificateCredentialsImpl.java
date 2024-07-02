@@ -53,7 +53,8 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
+import jenkins.model.Jenkins;
+import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang.StringUtils;
@@ -331,7 +332,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     }
 
     /**
-     * Let the user reference an uploaded file.
+     * Let the user reference an uploaded PKCS12 file.
      */
     public static class UploadedKeyStoreSource extends KeyStoreSource implements Serializable {
         /**
@@ -362,6 +363,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @SuppressWarnings("unused") // by stapler
         @Deprecated
         public UploadedKeyStoreSource(String uploadedKeystore) {
+            ensureNotRunningInFIPSMode();
             this.uploadedKeystoreBytes = StringUtils.isBlank(uploadedKeystore)
                     ? null
                     : SecretBytes.fromBytes(DescriptorImpl.toByteArray(Secret.fromString(uploadedKeystore)));
@@ -376,6 +378,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @SuppressWarnings("unused") // by stapler
         @Deprecated
         public UploadedKeyStoreSource(@CheckForNull SecretBytes uploadedKeystore) {
+            ensureNotRunningInFIPSMode();
             this.uploadedKeystoreBytes = uploadedKeystore;
         }
 
@@ -388,6 +391,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         @SuppressWarnings("unused") // by stapler
         @DataBoundConstructor
         public UploadedKeyStoreSource(FileItem uploadedCertFile, @CheckForNull SecretBytes uploadedKeystore) {
+            ensureNotRunningInFIPSMode();
             if (uploadedCertFile != null) {
                 byte[] fileBytes = uploadedCertFile.get();
                 if (fileBytes.length != 0) {
@@ -405,6 +409,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          * @since 2.1.5
          */
         private Object readResolve() throws ObjectStreamException {
+            ensureNotRunningInFIPSMode();
             if (uploadedKeystore != null && uploadedKeystoreBytes == null) {
                 return new UploadedKeyStoreSource(SecretBytes.fromBytes(DescriptorImpl.toByteArray(uploadedKeystore)));
             }
@@ -453,12 +458,30 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             return "UploadedKeyStoreSource{uploadedKeystoreBytes=******}";
         }
 
+        /*
+         * Prevents the use of any direct usage of the class when running in FIPS mode as PKCS12 is not compliant.
+         */
+        private static void ensureNotRunningInFIPSMode() {
+            if (FIPS140.useCompliantAlgorithms()) {
+                throw new IllegalStateException("UploadedKeyStoreSource is not compliant with FIPS-140 and can not be used when Jenkins is in FIPS mode. " +
+                                                "This is an error in the calling code and an issue should be filed against the plugin that is calling to adapt to become FIPS compliant.");
+            }
+        }
+
         /**
          * {@inheritDoc}
          */
-        @Extension
         public static class DescriptorImpl extends KeyStoreSourceDescriptor {
             public static final String DEFAULT_VALUE = UploadedKeyStoreSource.class.getName() + ".default-value";
+
+            /**
+             * Creates the extension if we are not in FIPS mode, do <em>NOT</em> call this directly!
+             */
+            @Restricted(NoExternalUse.class)
+            @Extension
+            public static DescriptorImpl extension() {
+                return FIPS140.useCompliantAlgorithms() ? null : new DescriptorImpl();
+            }
 
             /**
              * Decode the {@link Base64} keystore wrapped in a {@link Secret}.
