@@ -170,7 +170,7 @@
           </execution>
         </executions>
         <configuration>
-          <compatibleSinceVersion>1344</compatibleSinceVersion>
+          <compatibleSinceVersion>1354</compatibleSinceVersion>
         </configuration>
       </plugin>
       <plugin>
