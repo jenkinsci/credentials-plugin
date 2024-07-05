@@ -41,12 +41,14 @@ import org.htmlunit.Page;
 import org.htmlunit.WebRequest;
 import org.htmlunit.html.DomNode;
 import org.htmlunit.html.DomNodeList;
+import org.htmlunit.html.HtmlButton;
 import org.htmlunit.html.HtmlElementUtil;
 import org.htmlunit.html.HtmlFileInput;
 import org.htmlunit.html.HtmlForm;
 import org.htmlunit.html.HtmlOption;
 import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlRadioButtonInput;
+
 import hudson.FilePath;
 import hudson.Util;
 import hudson.cli.CLICommandInvoker;
@@ -57,6 +59,7 @@ import hudson.security.ACL;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -71,6 +74,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.KeyStore;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -91,10 +95,14 @@ public class CertificateCredentialsImplTest {
 
     private File p12;
     private File p12Invalid;
+    private String pemCert;
+    private String pemKey;
 
     private static final String VALID_PASSWORD = "password";
     private static final String INVALID_PASSWORD = "blabla";
     private static final String EXPECTED_DISPLAY_NAME = "EMAILADDRESS=me@myhost.mydomain, CN=pkcs12, O=Fort-Funston, L=SanFrancisco, ST=CA, C=US";
+    // BC uses a different format even though the file was converted from the pkcs12 file
+    private static final String EXPECTED_DISPLAY_NAME_PEM = "C=US,ST=CA,L=SanFrancisco,O=Fort-Funston,CN=pkcs12,E=me@myhost.mydomain";
 
     @Before
     public void setup() throws IOException {
@@ -102,6 +110,9 @@ public class CertificateCredentialsImplTest {
         FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("test.p12"), p12);
         p12Invalid = tmp.newFile("invalid.p12");
         FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("invalid.p12"), p12Invalid);
+
+        pemCert = IOUtils.toString(CertificateCredentialsImplTest.class.getResource("certs.pem"), StandardCharsets.UTF_8);
+        pemKey = IOUtils.toString(CertificateCredentialsImplTest.class.getResource("key.pem"), StandardCharsets.UTF_8);
 
         r.jenkins.setCrumbIssuer(null);
     }
@@ -212,7 +223,8 @@ public class CertificateCredentialsImplTest {
     @Issue("JENKINS-63761")
     public void fullSubmitOfUploadedKeystore() throws Exception {
         String certificateDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.class).getDisplayName();
-        
+        String KeyStoreSourceDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.UploadedKeyStoreSource.class).getDisplayName();
+
         JenkinsRule.WebClient wc = r.createWebClient();
         HtmlPage htmlPage = wc.goTo("credentials/store/system/domain/_/newCredentials");
         HtmlForm newCredentialsForm = htmlPage.getFormByName("newCredentials");
@@ -234,9 +246,11 @@ public class CertificateCredentialsImplTest {
             return false;
         });
         assertTrue("The Certificate option was not found in the credentials type select", optionFound);
-        
-        HtmlRadioButtonInput keyStoreRadio = htmlPage.getDocumentElement().querySelector("input[name$=keyStoreSource]");
-        HtmlElementUtil.click(keyStoreRadio);
+
+        List<HtmlRadioButtonInput> inputs = htmlPage.getDocumentElement().
+                getByXPath("//input[contains(@name, 'keyStoreSource') and following-sibling::label[contains(.,'"+KeyStoreSourceDisplayName+"')]]");
+        assertThat("query should return only a singular input", inputs, hasSize(1));
+        HtmlElementUtil.click(inputs.get(0));
 
         HtmlFileInput uploadedCertFileInput = htmlPage.getDocumentElement().querySelector("input[type=file][name=uploadedCertFile]");
         uploadedCertFileInput.setFiles(p12);
@@ -256,6 +270,66 @@ public class CertificateCredentialsImplTest {
         CertificateCredentials certificate = certificateCredentials.get(0);
         String displayName = StandardCertificateCredentials.NameProvider.getSubjectDN(certificate.getKeyStore());
         assertEquals(EXPECTED_DISPLAY_NAME, displayName);
+    }
+
+    @Test
+    @Issue("JENKINS-73335")
+    public void fullSubmitOfUploadedPEM() throws Exception {
+        String certificateDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.class).getDisplayName();
+        String KeyStoreSourceDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.PEMEntryKeyStoreSource.class).getDisplayName();
+
+        JenkinsRule.WebClient wc = r.createWebClient();
+        HtmlPage htmlPage = wc.goTo("credentials/store/system/domain/_/newCredentials");
+        HtmlForm newCredentialsForm = htmlPage.getFormByName("newCredentials");
+
+        DomNodeList<DomNode> allOptions = htmlPage.getDocumentElement().querySelectorAll("select.dropdownList option");
+        boolean optionFound = allOptions.stream().anyMatch(domNode -> {
+            if (domNode instanceof HtmlOption) {
+                HtmlOption option = (HtmlOption) domNode;
+                if (option.getVisibleText().equals(certificateDisplayName)) {
+                    try {
+                        HtmlElementUtil.click(option);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    return true;
+                }
+            }
+
+            return false;
+        });
+        assertTrue("The Certificate option was not found in the credentials type select", optionFound);
+
+        List<HtmlRadioButtonInput> inputs = htmlPage.getDocumentElement().
+                getByXPath("//input[contains(@name, 'keyStoreSource') and following-sibling::label[contains(.,'"+KeyStoreSourceDisplayName+"')]]");
+        assertThat("query should return only a singular input", inputs, hasSize(1));
+        HtmlElementUtil.click(inputs.get(0));
+
+        // enable entry of the secret (HACK just click all the Add buttons)
+        List<HtmlButton> buttonsByName =  htmlPage.getDocumentElement().getByXPath("//button[contains(.,'Add')]");
+        assertThat("I need 2 buttons", buttonsByName, hasSize(2));
+        for (HtmlButton b : buttonsByName) {
+            HtmlElementUtil.click(b);
+        }
+
+        newCredentialsForm.getTextAreaByName("_.certChain").setTextContent(pemCert);
+        newCredentialsForm.getTextAreaByName("_.privateKey").setTextContent(pemKey);
+
+        // for all the types of credentials
+        newCredentialsForm.getInputsByName("_.password").forEach(input -> input.setValue(VALID_PASSWORD));
+
+        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
+        assertThat(certificateCredentials, hasSize(0));
+        
+        r.submit(newCredentialsForm);
+
+        certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
+        assertThat(certificateCredentials, hasSize(1));
+
+        CertificateCredentials certificate = certificateCredentials.get(0);
+        KeyStore ks = certificate.getKeyStore();
+        String displayName = StandardCertificateCredentials.NameProvider.getSubjectDN(certificate.getKeyStore());
+        assertEquals(EXPECTED_DISPLAY_NAME_PEM, displayName);
     }
 
     private String getValidP12_base64() throws Exception {
