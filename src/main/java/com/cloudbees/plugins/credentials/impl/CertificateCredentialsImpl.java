@@ -134,6 +134,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         Objects.requireNonNull(keyStoreSource);
         this.password = Secret.fromString(password);
         this.keyStoreSource = keyStoreSource;
+        // ensure the keySore is valid
+        // we check here as otherwise it will lead to hard to diagnose errors when used
+        try {
+            keyStoreSource.toKeyStore(toCharArray(this.password));
+        } catch (GeneralSecurityException | IOException e) {
+            throw new IllegalArgumentException("KeyStore is not valid.", e);
+        }
     }
 
     /**
