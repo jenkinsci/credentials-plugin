@@ -17,7 +17,6 @@ import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import io.jenkins.plugins.casc.model.CNode;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
