@@ -347,16 +347,10 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                                     buf.toString()));
                 }
 
-        /**
-         * {@inheritDoc}
-         */
         protected KeyStoreSourceDescriptor() {
             super();
         }
 
-        /**
-         * {@inheritDoc}
-         */
         protected KeyStoreSourceDescriptor(Class<? extends KeyStoreSource> clazz) {
             super(clazz);
         }
@@ -515,9 +509,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             }
         }
 
-        /**
-         * {@inheritDoc}
-         */
         public static class DescriptorImpl extends KeyStoreSourceDescriptor {
             public static final String DEFAULT_VALUE = UploadedKeyStoreSource.class.getName() + ".default-value";
 
@@ -611,7 +602,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             /**
              * Helper method that performs form validation on a {@link KeyStore}.
              *
-             * @param type          the type of keystore to instantiate, see {@link KeyStore#getInstance(String)}.
              * @param keystoreBytes the {@code byte[]} content of the {@link KeyStore}.
              * @param password      the password to use when loading the {@link KeyStore} and recovering the key from the
              *                      {@link KeyStore}.
