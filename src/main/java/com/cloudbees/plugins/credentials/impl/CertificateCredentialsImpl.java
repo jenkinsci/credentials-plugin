@@ -245,13 +245,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             Secret s = Secret.fromString(value);
             String pw = s.getPlainText();
             if (FIPS140.useCompliantAlgorithms() && pw.length() < 14) {
-                return FormValidation.error("password is too short (< 14 characters)");
+                return FormValidation.error(Messages.CertificateCredentialsImpl_ShortPasswordFIPS());
             }
             if (pw.isEmpty()) {
-                return FormValidation.warning("password is empty");
+                return FormValidation.warning(Messages.CertificateCredentialsImpl_NoPassword());
             }
             if (pw.length() < 14) {
-                return FormValidation.warning("password is short (< 14 characters)");
+                return FormValidation.warning(Messages.CertificateCredentialsImpl_ShortPassword());
             }
             return FormValidation.ok();
         }
@@ -749,11 +749,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     List<PEMEncodable> pemEncodables = PEMEncodable.decodeAll(pemCerts, null);
                     long count = pemEncodables.stream().map(PEMEncodable::toCertificate).filter(Objects::nonNull).count();
                     if (count < 1) {
-                        return FormValidation.error("No Certificates provided");
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoCertificates());
                     }
                     // ensure only certs are provided.
                     if (pemEncodables.size() != count) {
-                        return FormValidation.error("PEM contains non certificate entries");
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoCertificates());
                     }
                     Certificate cert = pemEncodables.get(0).toCertificate();
                     if (cert instanceof X509Certificate) {
@@ -765,9 +765,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 } catch (UnrecoverableKeyException | IOException e) {
                     String message = e.getMessage();
                     if (message != null) {
-                        return FormValidation.error(e, "Could not parse certificate chain: " + message);
+                        return FormValidation.error(e, Messages.CertificateCredentialsImpl_PEMCertificateParsingError(message));
                     }
-                    return FormValidation.error(e, "Could not parse certificate chain");
+                    return FormValidation.error(e, Messages.CertificateCredentialsImpl_PEMCertificateParsingError("unkown reason"));
                 }
             }
 
@@ -781,14 +781,14 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     List<PEMEncodable> pemEncodables = PEMEncodable.decodeAll(key, toCharArray(Secret.fromString(password)));
                     long count = pemEncodables.stream().map(PEMEncodable::toPrivateKey).filter(Objects::nonNull).count();
                     if (count == 0) {
-                        return FormValidation.error("No Keys Provided");
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoKeys());
                     }
                     if (count > 1) {
-                        return FormValidation.error("More than 1 key provided");
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMMultipleKeys());
                     }
                     // ensure only keys are provided.
                     if (pemEncodables.size() != 1) {
-                        return FormValidation.error("PEM contains non key entries");
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNonKeys());
                     }
                     PrivateKey pk = pemEncodables.get(0).toPrivateKey();
                     String format;
@@ -810,7 +810,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                         // the size of pemEncodables is one and contains a private key
                         // so it can not be
                         format = "unknown format (" + pk.getClass() +")";
-                        length = "unknown length";
+                        length = "unknown strength";
                     } else { // pk == null can not happen
                         return FormValidation.error("there is a bug in the code, pk is null!");
                     }
@@ -819,9 +819,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     } catch (@SuppressWarnings("unused") DestroyFailedException ignored) {
                             // best effort
                     }
-                    return FormValidation.ok(length + " " + format + " private key");
+                    return FormValidation.ok(Messages.CertificateCredentialsImpl_PEMKeyInfo(length, format));
                 } catch (UnrecoverableKeyException | IOException e) {
-                    return FormValidation.error(e, "Could not parse key: " + e.getLocalizedMessage());
+                    return FormValidation.error(e, Messages.CertificateCredentialsImpl_PEMKeyParseError(e.getLocalizedMessage()));
                 }
             }
 
