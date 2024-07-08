@@ -825,38 +825,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 }
             }
 
-            /**
-             * Checks all the values.
-             *
-             * @param certChain pem encoded list of certificates (possibly a secret)
-             * @param privateKey pem encoded private key (possibly a secret)
-             * @param password for the key (may be null, and possibly a secret)
-             * @return the {@link FormValidation} results.
-             */
-            public FormValidation doXXCheckCertChain(@QueryParameter String certChain,
-                                                   @QueryParameter String privateKey,
-                                                   @RelativePath("..")
-                                                   @QueryParameter String password) {
-                String certs = Secret.fromString(certChain).getPlainText();
-                String key = Secret.fromString(privateKey).getPlainText();
-                String pass = Secret.fromString(password).getPlainText();
-                if (StringUtils.isBlank(certs)) {
-                    return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoCertificates());
-                }
-                if (StringUtils.isBlank(key)) {
-                    return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoKey());
-                }
-                 // pass will always be blank see JENKINS-65616
-                if (StringUtils.isBlank(pass)) {
-                    return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoPassword());
-                }
-                try {
-                    KeyStore ks = PEMEntryKeyStoreSource.toKeyStore(certs, key, pass.toCharArray());
-                    return validateCertificateKeystore(ks, pass.toCharArray());
-                } catch (GeneralSecurityException | IOException e) {
-                    return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
-                }
-            }
         }
     }
 
