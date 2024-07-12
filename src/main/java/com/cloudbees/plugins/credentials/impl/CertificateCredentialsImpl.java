@@ -30,6 +30,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
+import hudson.RelativePath;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -41,18 +42,32 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.UnrecoverableEntryException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.RSAKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import javax.crypto.interfaces.DHPrivateKey;
+import javax.security.auth.DestroyFailedException;
+import jenkins.bouncycastle.api.PEMEncodable;
 import jenkins.model.Jenkins;
 import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
@@ -64,6 +79,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.kohsuke.stapler.verb.POST;
 
 public class CertificateCredentialsImpl extends BaseStandardCredentials implements StandardCertificateCredentials {
 
@@ -118,6 +134,13 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         Objects.requireNonNull(keyStoreSource);
         this.password = Secret.fromString(password);
         this.keyStoreSource = keyStoreSource;
+        // ensure the keySore is valid
+        // we check here as otherwise it will lead to hard to diagnose errors when used
+        try {
+            keyStoreSource.toKeyStore(toCharArray(this.password));
+        } catch (GeneralSecurityException | IOException e) {
+            throw new IllegalArgumentException("KeyStore is not valid.", e);
+        }
     }
 
     /**
@@ -137,23 +160,25 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
      *
      * @return the {@link KeyStore} containing the certificate.
      */
+    @Override
     @NonNull
     public synchronized KeyStore getKeyStore() {
         long lastModified = keyStoreSource.getKeyStoreLastModified();
         if (keyStore == null || keyStoreLastModified < lastModified) {
             KeyStore keyStore;
             try {
-                keyStore = KeyStore.getInstance("PKCS12");
-            } catch (KeyStoreException e) {
-                throw new IllegalStateException("PKCS12 is a keystore type per the JLS spec", e);
-            }
-            try {
-                keyStore.load(new ByteArrayInputStream(keyStoreSource.getKeyStoreBytes()), toCharArray(password));
-            } catch (CertificateException | NoSuchAlgorithmException | IOException e) {
+                keyStore = keyStoreSource.toKeyStore(toCharArray(password));
+            } catch (GeneralSecurityException | IOException e) {
                 LogRecord lr = new LogRecord(Level.WARNING, "Credentials ID {0}: Could not load keystore from {1}");
                 lr.setParameters(new Object[]{getId(), keyStoreSource});
                 lr.setThrown(e);
                 LOGGER.log(lr);
+                // provide an empty uninitialised KeyStore for consumers
+                try {
+                    keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+                } catch (KeyStoreException e2) {
+                    throw new IllegalStateException("JVM can not create a KeyStore of the JVM Default Type ("+ KeyStore.getDefaultType() +")", e2);
+                }
             }
             this.keyStore = keyStore;
             this.keyStoreLastModified = lastModified;
@@ -166,6 +191,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
      *
      * @return the password used to protect the certificate's private key in {@link #getKeyStore()}.
      */
+    @Override
     @NonNull
     public Secret getPassword() {
         return password;
@@ -212,6 +238,23 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         public String getIconClassName() {
             return "icon-application-certificate";
         }
+
+        @Restricted(NoExternalUse.class)
+        @POST
+        public FormValidation doCheckPassword(@QueryParameter String value) {
+            Secret s = Secret.fromString(value);
+            String pw = s.getPlainText();
+            if (FIPS140.useCompliantAlgorithms() && pw.length() < 14) {
+                return FormValidation.error(Messages.CertificateCredentialsImpl_ShortPasswordFIPS());
+            }
+            if (pw.isEmpty()) {
+                return FormValidation.warning(Messages.CertificateCredentialsImpl_NoPassword());
+            }
+            if (pw.length() < 14) {
+                return FormValidation.warning(Messages.CertificateCredentialsImpl_ShortPassword());
+            }
+            return FormValidation.ok();
+        }
     }
 
     /**
@@ -220,12 +263,16 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     public static abstract class KeyStoreSource extends AbstractDescribableImpl<KeyStoreSource> {
 
         /**
-         * Returns the {@code byte[]} content of the {@link KeyStore}.
-         *
-         * @return the {@code byte[]} content of the {@link KeyStore}.
+         * @deprecated code should neither implement nor call this. 
+         * This is an internal representation of a KeyStore and use of this internal representation would require knowledge of the keystore type.
+         * @see #toKeyStore(char[])
+         * @throws IllegalStateException always
          */
         @NonNull
-        public abstract byte[] getKeyStoreBytes();
+        @Deprecated(forRemoval = true)
+        public byte[] getKeyStoreBytes() {
+            throw new IllegalStateException("Callers should use toKeyStore");
+        }
 
         /**
          * Returns a {@link System#currentTimeMillis()} comparable timestamp of when the content was last modified.
@@ -235,6 +282,16 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
          * @return a {@link System#currentTimeMillis()} comparable timestamp of when the content was last modified.
          */
         public abstract long getKeyStoreLastModified();
+
+        /**
+         * Returns an in memory {@link KeyStore} created from the source.
+         *
+         * @return The KeyStore content of the {@link KeyStore}.
+         * @throws GeneralSecurityException if there was an issue creating the KeyStore
+         * @throws IOException if there was an IOException whilst creating the KeyStore
+         */
+        @NonNull
+        public abstract KeyStore toKeyStore(@Nullable char[] password) throws GeneralSecurityException, IOException;
 
         /**
          * Returns {@code true} if and only if the source is self contained.
@@ -254,81 +311,50 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
      * The base class for all {@link KeyStoreSource} {@link Descriptor} instances.
      */
     public static abstract class KeyStoreSourceDescriptor extends Descriptor<KeyStoreSource> {
-        /**
-         * {@inheritDoc}
-         */
+        protected static FormValidation validateCertificateKeystore(KeyStore keyStore, char[] passwordChars)
+                throws KeyStoreException, NoSuchAlgorithmException {
+                    int size = keyStore.size();
+                    if (size == 0) {
+                        return FormValidation.warning(Messages.CertificateCredentialsImpl_EmptyKeystore());
+                    }
+                    StringBuilder buf = new StringBuilder();
+                    boolean first = true;
+                    for (Enumeration<String> enumeration = keyStore.aliases(); enumeration.hasMoreElements(); ) {
+                        String alias = enumeration.nextElement();
+                        if (first) {
+                            first = false;
+                        } else {
+                            buf.append(", ");
+                        }
+                        buf.append(alias);
+                        if (keyStore.isCertificateEntry(alias)) {
+                            keyStore.getCertificate(alias);
+                        } else if (keyStore.isKeyEntry(alias)) {
+                            if (passwordChars == null) {
+                                return FormValidation.warning(
+                                        Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword(alias));
+                            }
+                            try {
+                                keyStore.getKey(alias, passwordChars);
+                            } catch (UnrecoverableEntryException e) {
+                                return FormValidation.warning(e,
+                                        Messages.CertificateCredentialsImpl_LoadKeyFailed(alias));
+                            }
+                        }
+                    }
+                    return FormValidation.ok(StringUtils
+                            .defaultIfEmpty(StandardCertificateCredentials.NameProvider.getSubjectDN(keyStore),
+                                    buf.toString()));
+                }
+
         protected KeyStoreSourceDescriptor() {
             super();
         }
 
-        /**
-         * {@inheritDoc}
-         */
         protected KeyStoreSourceDescriptor(Class<? extends KeyStoreSource> clazz) {
             super(clazz);
         }
 
-        /**
-         * Helper method that performs form validation on a {@link KeyStore}.
-         *
-         * @param type          the type of keystore to instantiate, see {@link KeyStore#getInstance(String)}.
-         * @param keystoreBytes the {@code byte[]} content of the {@link KeyStore}.
-         * @param password      the password to use when loading the {@link KeyStore} and recovering the key from the
-         *                      {@link KeyStore}.
-         * @return the validation results.
-         */
-        @NonNull
-        protected static FormValidation validateCertificateKeystore(String type, byte[] keystoreBytes,
-                                                                    String password) {
-
-            if (keystoreBytes == null || keystoreBytes.length == 0) {
-                return FormValidation.warning(Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
-            }
-
-            char[] passwordChars = toCharArray(Secret.fromString(password));
-            try {
-                KeyStore keyStore = KeyStore.getInstance(type);
-                keyStore.load(new ByteArrayInputStream(keystoreBytes), passwordChars);
-                int size = keyStore.size();
-                if (size == 0) {
-                    return FormValidation.warning(Messages.CertificateCredentialsImpl_EmptyKeystore());
-                }
-                StringBuilder buf = new StringBuilder();
-                boolean first = true;
-                for (Enumeration<String> enumeration = keyStore.aliases(); enumeration.hasMoreElements(); ) {
-                    String alias = enumeration.nextElement();
-                    if (first) {
-                        first = false;
-                    } else {
-                        buf.append(", ");
-                    }
-                    buf.append(alias);
-                    if (keyStore.isCertificateEntry(alias)) {
-                        keyStore.getCertificate(alias);
-                    } else if (keyStore.isKeyEntry(alias)) {
-                        if (passwordChars == null) {
-                            return FormValidation.warning(
-                                    Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword(alias));
-                        }
-                        try {
-                            keyStore.getKey(alias, passwordChars);
-                        } catch (UnrecoverableEntryException e) {
-                            return FormValidation.warning(e,
-                                    Messages.CertificateCredentialsImpl_LoadKeyFailed(alias));
-                        }
-                    }
-                }
-                return FormValidation.ok(StringUtils
-                        .defaultIfEmpty(StandardCertificateCredentials.NameProvider.getSubjectDN(keyStore),
-                                buf.toString()));
-            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException e) {
-                return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
-            } finally {
-                if (passwordChars != null) {
-                    Arrays.fill(passwordChars, ' ');
-                }
-            }
-        }
     }
 
     /**
@@ -450,6 +476,21 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             return true;
         }
 
+        @Override
+        public KeyStore toKeyStore(char[] password) throws NoSuchAlgorithmException, CertificateException, KeyStoreException, KeyStoreException, IOException {
+            if (FIPS140.useCompliantAlgorithms()) {
+                Class<? extends KeyStoreSource> self = this.getClass();
+                String className = self.getName();
+                String pluginName = Jenkins.get().getPluginManager().whichPlugin(self).getShortName();
+                throw new IllegalStateException(className + " is not FIPS compliant and can not be used when Jenkins is in FIPS mode. " +
+                                                "An issue should be filed against the plugin " + pluginName + " to ensure it is adapted to be able to work in this mode");
+            }
+            // legacy behaviour that assumed all KeyStoreSources where in the non compliant PKCS12 format
+            KeyStore keyStore = KeyStore.getInstance("PKCS12");
+            keyStore.load(new ByteArrayInputStream(getKeyStoreBytes()), password);
+            return keyStore;
+        }
+
         /**
          * {@inheritDoc}
          */
@@ -468,9 +509,6 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             }
         }
 
-        /**
-         * {@inheritDoc}
-         */
         public static class DescriptorImpl extends KeyStoreSourceDescriptor {
             public static final String DEFAULT_VALUE = UploadedKeyStoreSource.class.getName() + ".default-value";
 
@@ -479,7 +517,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
              */
             @Restricted(NoExternalUse.class)
             @Extension
-            public static DescriptorImpl extension() {
+            public static KeyStoreSourceDescriptor extension() {
                 return FIPS140.useCompliantAlgorithms() ? null : new DescriptorImpl();
             }
 
@@ -542,7 +580,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 // Priority for the file, to cover the (re-)upload cases
                 if (StringUtils.isNotEmpty(uploadedCertFile)) {
                     byte[] uploadedCertFileBytes = Base64.getDecoder().decode(uploadedCertFile.getBytes(StandardCharsets.UTF_8));
-                    return validateCertificateKeystore("PKCS12", uploadedCertFileBytes, password);
+                    return validateCertificateKeystore(uploadedCertFileBytes, password);
                 }
 
                 if (StringUtils.isBlank(value)) {
@@ -558,8 +596,223 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 if (keystoreBytes == null || keystoreBytes.length == 0) {
                     return FormValidation.error(Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
                 }
+                return validateCertificateKeystore(keystoreBytes, password);
+            }
 
-                return validateCertificateKeystore("PKCS12", keystoreBytes, password);
+            /**
+             * Helper method that performs form validation on a {@link KeyStore}.
+             *
+             * @param keystoreBytes the {@code byte[]} content of the {@link KeyStore}.
+             * @param password      the password to use when loading the {@link KeyStore} and recovering the key from the
+             *                      {@link KeyStore}.
+             * @return the validation results.
+             */
+            @NonNull
+            protected static FormValidation validateCertificateKeystore(byte[] keystoreBytes,
+                                                                        String password) {
+
+                ensureNotRunningInFIPSMode();
+                if (keystoreBytes == null || keystoreBytes.length == 0) {
+                    return FormValidation.warning(Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
+                }
+
+                char[] passwordChars = toCharArray(Secret.fromString(password));
+                try {
+                    KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                    keyStore.load(new ByteArrayInputStream(keystoreBytes), passwordChars);
+                    return validateCertificateKeystore(keyStore, passwordChars);
+                } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException e) {
+                    return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
+                } finally {
+                    if (passwordChars != null) {
+                        Arrays.fill(passwordChars, ' ');
+                    }
+                }
+            }
+
+        }
+    }
+
+    /**
+     * A user entered PEM encoded certificate chain and key.
+     */
+    public static class PEMEntryKeyStoreSource extends KeyStoreSource implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        /** The chain of certificates encoded as multiple PEM objects*/
+        private final Secret certChain;
+        /** The PEM encoded (and possibly encrypted) secret key */
+        private final Secret privateKey;
+
+        /**
+         * Constructor able to receive file directly
+         * 
+         * @param certChain the PEM encoded certificate chain (possibly encrypted as a secret)
+         * @param privateKey the PEM encoded and possibly encrypted key for the certificate (possibly encrypted as a secret)
+         */
+        @SuppressWarnings("unused") // by stapler
+        @DataBoundConstructor
+        public PEMEntryKeyStoreSource(String certChain, String privateKey) {
+            this.certChain = Secret.fromString(certChain);
+            this.privateKey = Secret.fromString(privateKey);
+        }
+
+        /**
+         * Returns the PEM encoded certificate chain.
+         */
+        @Restricted(NoExternalUse.class) // for jelly only
+        public Secret getCertChain() {
+            return certChain;
+        }
+
+        /**
+         * Returns the PEM encoded private key.
+         */
+        @Restricted(NoExternalUse.class) // for jelly only
+        public Secret getPrivateKey() {
+            return privateKey;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public long getKeyStoreLastModified() {
+            return 0L; // our content is final so it will never change
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isSnapshotSource() {
+            return true;
+        }
+
+        @Override
+        public KeyStore toKeyStore(char[] password) throws NoSuchAlgorithmException, CertificateException, KeyStoreException, KeyStoreException, UnrecoverableKeyException, IOException {
+            return toKeyStore(certChain.getPlainText(), privateKey.getPlainText(), password);
+        }
+
+        protected static KeyStore toKeyStore(String pemEncodedCerts, String pemEncodedKey, char[] password) throws NoSuchAlgorithmException, CertificateException, KeyStoreException, KeyStoreException, UnrecoverableKeyException, IOException {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, password); // initialise the keystore
+
+            List<PEMEncodable> pemEncodeableCerts = PEMEncodable.decodeAll(pemEncodedCerts, password);
+            List<Certificate> certs = pemEncodeableCerts.stream().map(PEMEncodable::toCertificate).filter(Objects::nonNull).collect(Collectors.toList());
+
+            List<PEMEncodable> pemEncodeableKeys = PEMEncodable.decodeAll(pemEncodedKey, password);
+            if (pemEncodeableKeys.size() != 1) {
+                throw new IOException("expected one key but got " + pemEncodeableKeys.size());
+            }
+
+            PrivateKey privateKey = pemEncodeableKeys.get(0).toPrivateKey();
+
+            keyStore.setKeyEntry("keychain", privateKey, password, certs.toArray(new Certificate[] {}));
+
+            return keyStore;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return "PEMEntryKeyStoreSource{pemCertChain=******,pemKey=******}";
+        }
+
+        @Extension
+        public static class DescriptorImpl extends KeyStoreSourceDescriptor {
+
+            @NonNull
+            @Override
+            public String getDisplayName() {
+                return Messages.CertificateCredentialsImpl_PEMEntryKeyStoreSourceDisplayName();
+            }
+
+            @Restricted(NoExternalUse.class)
+            @POST
+            public FormValidation doCheckCertChain(@QueryParameter String value) {
+                String pemCerts = Secret.fromString(value).getPlainText();
+                try {
+                    List<PEMEncodable> pemEncodables = PEMEncodable.decodeAll(pemCerts, null);
+                    long count = pemEncodables.stream().map(PEMEncodable::toCertificate).filter(Objects::nonNull).count();
+                    if (count < 1) {
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoCertificates());
+                    }
+                    // ensure only certs are provided.
+                    if (pemEncodables.size() != count) {
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoCertificates());
+                    }
+                    Certificate cert = pemEncodables.get(0).toCertificate();
+                    if (cert instanceof X509Certificate) {
+                        X509Certificate x509 = (X509Certificate) cert;
+                        return FormValidation.ok(x509.getSubjectDN().getName());
+                    }
+                    // no details
+                    return FormValidation.ok();
+                } catch (UnrecoverableKeyException | IOException e) {
+                    String message = e.getMessage();
+                    if (message != null) {
+                        return FormValidation.error(e, Messages.CertificateCredentialsImpl_PEMCertificateParsingError(message));
+                    }
+                    return FormValidation.error(e, Messages.CertificateCredentialsImpl_PEMCertificateParsingError("unkown reason"));
+                }
+            }
+
+            @Restricted(NoExternalUse.class)
+            @POST
+            public FormValidation doCheckPrivateKey(@QueryParameter String value,
+                                                    @RelativePath("..")
+                                                    @QueryParameter String password) {
+                String key = Secret.fromString(value).getPlainText();
+                try {
+                    List<PEMEncodable> pemEncodables = PEMEncodable.decodeAll(key, toCharArray(Secret.fromString(password)));
+                    long count = pemEncodables.stream().map(PEMEncodable::toPrivateKey).filter(Objects::nonNull).count();
+                    if (count == 0) {
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoKeys());
+                    }
+                    if (count > 1) {
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMMultipleKeys());
+                    }
+                    // ensure only keys are provided.
+                    if (pemEncodables.size() != 1) {
+                        return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNonKeys());
+                    }
+                    PrivateKey pk = pemEncodables.get(0).toPrivateKey();
+                    String format;
+                    String length;
+                    if (pk instanceof RSAPrivateKey) {
+                        format = "RSA";
+                        length = ((RSAKey)pk).getModulus().bitLength() + " bit";
+                    } else if (pk instanceof ECPrivateKey) {
+                        format = "elliptic curve (EC)";
+                        length =  ((ECPrivateKey)pk).getParams().getOrder().bitLength() + " bit";
+                    } else if (pk instanceof DSAPrivateKey) {
+                        format = "DSA";
+                        length = ((DSAPrivateKey)pk).getParams().getP().bitLength() + " bit";
+                    } else if (pk instanceof DHPrivateKey) {
+                        format = "Diffie-Hellman";
+                        length =  ((DHPrivateKey)pk).getParams().getP().bitLength() + " bit";
+                    } else if (pk != null) {
+                        // spotbugs things pk may be null, but we have already checked 
+                        // the size of pemEncodables is one and contains a private key
+                        // so it can not be
+                        format = "unknown format (" + pk.getClass() +")";
+                        length = "unknown strength";
+                    } else { // pk == null can not happen
+                        return FormValidation.error("there is a bug in the code, pk is null!");
+                    }
+                    try {
+                        pk.destroy();
+                    } catch (@SuppressWarnings("unused") DestroyFailedException ignored) {
+                            // best effort
+                    }
+                    return FormValidation.ok(Messages.CertificateCredentialsImpl_PEMKeyInfo(length, format));
+                } catch (UnrecoverableKeyException | IOException e) {
+                    return FormValidation.error(e, Messages.CertificateCredentialsImpl_PEMKeyParseError(e.getLocalizedMessage()));
+                }
             }
 
         }

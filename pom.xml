@@ -88,6 +88,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.426.x</artifactId>
+        <!-- when updating remove the bouncycastle-api override -->
         <version>2961.v1f472390972e</version>
         <scope>import</scope>
         <type>pom</type>
@@ -105,7 +106,11 @@
       <artifactId>configuration-as-code</artifactId>
       <optional>true</optional>
     </dependency>
-
+    <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>bouncycastle-api</artifactId>
+        <version>2.30.1.78.1-246.ve1089fe22055</version>
+    </dependency>
     <!-- test dependencies -->
     <dependency>
       <groupId>org.mockito</groupId>
