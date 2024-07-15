@@ -32,7 +32,6 @@ window.credentials.init = function () {
 };
 window.credentials.add = function (e) {
     window.credentials.init();
-    console.log(e);
     fetch(e, {
         method: 'GET',
         headers: crumb.wrap({}),
