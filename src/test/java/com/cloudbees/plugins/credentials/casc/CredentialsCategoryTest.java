@@ -17,6 +17,7 @@ import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import io.jenkins.plugins.casc.model.CNode;
 import java.io.ByteArrayOutputStream;
+
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -101,12 +102,13 @@ public class CredentialsCategoryTest {
 
     @Test
     public void exportCertificateCredentialsImplConfiguration() throws Exception {
+        byte[] p12Bytes = CertificateCredentialsImpl.class.getResourceAsStream("test.p12").readAllBytes();
         CertificateCredentialsImpl certificateCredentials =
                 new CertificateCredentialsImpl(CredentialsScope.GLOBAL,
                                                "credential-certificate",
                                                "Credential with certificate",
                                                "password",
-                                               new CertificateCredentialsImpl.UploadedKeyStoreSource(null, SecretBytes.fromBytes("Testing not real certificate".getBytes())));
+                                               new CertificateCredentialsImpl.UploadedKeyStoreSource(null, SecretBytes.fromBytes(p12Bytes)));
 
         SystemCredentialsProvider.getInstance().getCredentials().add(certificateCredentials);
         ByteArrayOutputStream out = new ByteArrayOutputStream();

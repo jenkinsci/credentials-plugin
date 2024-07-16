@@ -19,6 +19,10 @@ Behaviour.specify(".certificate-file-upload", 'certificate-file-upload', -99, fu
   }
   const base64field = uploadedCertFileInput.closest('.radioBlock-container').querySelector('[name="certificateBase64"]');
   function fileOnChange() {
+    // only trigger validation if the PKCS12 upload is selected
+    if (uploadedCertFileInput.closest(".form-container").className.indexOf("-hidden") != -1) {
+      return
+    }
     try { // inspired by https://stackoverflow.com/a/754398
       var uploadedCertFileInputFile = uploadedCertFileInput.files[0];
       var reader = new FileReader();

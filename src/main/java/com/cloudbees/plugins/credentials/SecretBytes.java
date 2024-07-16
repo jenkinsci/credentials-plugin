@@ -244,7 +244,10 @@ public class SecretBytes implements Serializable {
      *
      * @param data the data to wrap or decrypt.
      * @return never null
+     *
+     * @deprecated prefer {@link #fromRawBytes(byte[])}
      */
+    @Deprecated
     public static SecretBytes fromBytes(byte[] data) {
         data = data == null ? new byte[0] : data;
         SecretBytes s = decrypt(data);
@@ -252,6 +255,18 @@ public class SecretBytes implements Serializable {
             s = new SecretBytes(false, data);
         }
         return s;
+    }
+
+
+    /**
+     * Unlike {@link #fromBytes(byte[])} this won't attempt to decrypt this as a secret. Always treat this as unencrypted bytes.
+     *
+     * @param data the data to wrap
+     * @return secret bytes
+     */
+    public static SecretBytes fromRawBytes(byte[] data) {
+        data = data == null ? new byte[0] : data;
+        return new SecretBytes(false, data);
     }
 
     /**
