@@ -47,8 +47,8 @@ Behaviour.specify(".certificate-file-upload", 'certificate-file-upload', -99, fu
     }
   }
 
-  // workaround for JENKINS-19124
-  // without this script, the password changes will be not trigger the check on the uploadedKeystore
+  // workaround for JENKINS-65616
+  // tweaks `checkDependsOn` to reference password by id instead of RelativePath
   var r = window.document.getElementById(fileId + "-textbox");
   var p = findNextFormItem(r, 'password');
   if (p) {
