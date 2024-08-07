@@ -182,7 +182,7 @@
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
         <!-- This must be compatible with the ANTLR runtime provided by Jenkins core. -->
-        <version>4.13.1</version>
+        <version>4.13.2</version>
         <configuration>
           <listener>true</listener>
           <visitor>true</visitor>
