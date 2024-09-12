@@ -30,11 +30,17 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.Util;
+import hudson.util.FormValidation;
 import hudson.util.Secret;
 
+import jenkins.security.FIPS140;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+
+import java.util.Objects;
 
 /**
  * Concrete implementation of {@link StandardUsernamePasswordCredentials}.
@@ -76,6 +82,9 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
                                            @CheckForNull String username, @CheckForNull String password) {
         super(scope, id, description);
         this.username = Util.fixNull(username);
+        if(FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
+            throw new IllegalArgumentException(Messages.passwordTooShortFIPS());
+        }
         this.password = Secret.fromString(password);
     }
 
@@ -127,6 +136,13 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
         @Override
         public String getIconClassName() {
             return "symbol-id-card";
+        }
+
+        public FormValidation doCheckPassword(@QueryParameter String password) {
+            if(FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
+                return FormValidation.error(Messages.passwordTooShortFIPS());
+            }
+            return FormValidation.ok();
         }
     }
 }
