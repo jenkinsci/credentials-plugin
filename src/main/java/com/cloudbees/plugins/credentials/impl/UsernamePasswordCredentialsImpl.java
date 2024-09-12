@@ -39,6 +39,7 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import java.util.Objects;
 
@@ -138,6 +139,7 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
             return "symbol-id-card";
         }
 
+        @RequirePOST
         public FormValidation doCheckPassword(@QueryParameter String password) {
             if(FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
                 return FormValidation.error(Messages.passwordTooShortFIPS());
