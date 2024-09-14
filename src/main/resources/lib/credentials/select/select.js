@@ -127,7 +127,7 @@ window.credentials.addSubmit = function (_) {
     }
 };
 
-Behaviour.specify("[data-type='credentials-test-thing']", 'credentials-test-thing', -99, function(e) {
+Behaviour.specify("[data-type='credentials-add-store-item']", 'credentials-add-store-item', -99, function(e) {
     e.addEventListener("click", function (event) {
         window.credentials.add(event.target.dataset.url);
     });
