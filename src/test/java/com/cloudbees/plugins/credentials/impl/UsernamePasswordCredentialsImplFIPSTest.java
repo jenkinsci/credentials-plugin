@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThrows;
 
 public class UsernamePasswordCredentialsImplFIPSTest {
 
-    @Rule public RealJenkinsRule rule = new RealJenkinsRule().javaOptions("-Djenkins.security.FIPS140.COMPLIANCE=true")
+    @Rule public RealJenkinsRule rule = new RealJenkinsRule().javaOptions("-Djenkins.security.FIPS140.COMPLIANCE=true", "-Xmx=512M")
             .withDebugPort(8000).withDebugServer(true).withDebugSuspend(true);
 
     @Test
