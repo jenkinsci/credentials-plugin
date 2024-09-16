@@ -30,6 +30,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.Util;
+import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 
@@ -80,11 +81,12 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
     @SuppressWarnings("unused") // by stapler
     public UsernamePasswordCredentialsImpl(@CheckForNull CredentialsScope scope,
                                            @CheckForNull String id, @CheckForNull String description,
-                                           @CheckForNull String username, @CheckForNull String password) {
+                                           @CheckForNull String username, @CheckForNull String password)
+            throws Descriptor.FormException {
         super(scope, id, description);
         this.username = Util.fixNull(username);
         if(FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
-            throw new IllegalArgumentException(Messages.passwordTooShortFIPS());
+            throw new Descriptor.FormException(Messages.passwordTooShortFIPS(), "password");
         }
         this.password = Secret.fromString(password);
     }

@@ -35,13 +35,11 @@ import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.util.FormValidation;
-import java.io.IOException;
 import java.util.Iterator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockFolder;
-import org.xml.sax.SAXException;
 
 import static hudson.util.FormValidation.Kind.ERROR;
 import static hudson.util.FormValidation.Kind.OK;
@@ -136,7 +134,7 @@ public class BaseStandardCredentialsTest {
     }
 
     @Test
-    public void noIDValidationMessageOnCredentialsUpdate() throws IOException, SAXException {
+    public void noIDValidationMessageOnCredentialsUpdate() throws Exception {
         // create credentials with ID test
         CredentialsStore store = lookupStore(r.jenkins);
         addCreds(store, CredentialsScope.GLOBAL, "test");
@@ -154,7 +152,7 @@ public class BaseStandardCredentialsTest {
         return store;
     }
 
-    private static void addCreds(CredentialsStore store, CredentialsScope scope, String id) throws IOException {
+    private static void addCreds(CredentialsStore store, CredentialsScope scope, String id) throws Exception {
         // For purposes of this test we do not care about domains.
         store.addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(scope, id, null, "x", "y"));
     }

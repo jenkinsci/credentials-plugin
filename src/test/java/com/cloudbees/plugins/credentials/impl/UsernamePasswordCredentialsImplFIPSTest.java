@@ -6,6 +6,7 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.ExtensionList;
+import hudson.model.Descriptor;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
@@ -36,11 +37,11 @@ public class UsernamePasswordCredentialsImplFIPSTest {
         rule.then(r -> {
             new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "all-good-beer", "Best captain and player in the world",
                     "Pat Cummins", "theaustraliancricketteamisthebest");
-            assertThrows(IllegalArgumentException.class, () -> new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "bad-foo", "someone",
+            assertThrows(Descriptor.FormException.class, () -> new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "bad-foo", "someone",
                     "Virat", "tooshort"));
-            assertThrows(IllegalArgumentException.class, () -> new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "bad-bar", "duck",
+            assertThrows(Descriptor.FormException.class, () -> new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "bad-bar", "duck",
                     "Rohit", ""));
-            assertThrows(IllegalArgumentException.class, () -> new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "bad-foo", "not too bad",
+            assertThrows(Descriptor.FormException.class, () -> new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "bad-foo", "not too bad",
                     "Gill", null));
         });
     }
@@ -59,7 +60,7 @@ public class UsernamePasswordCredentialsImplFIPSTest {
                     CredentialsProvider.lookupCredentialsInItem(UsernamePasswordCredentialsImpl.class, null, ACL.SYSTEM2),
                     CredentialsMatchers.withId("all-good"));
             assertThat(cred, notNullValue());
-            assertThrows(IllegalArgumentException.class, () -> store.addCredentials(Domain.global(),  new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "all-good", "someone",
+            assertThrows(Descriptor.FormException.class, () -> store.addCredentials(Domain.global(),  new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "all-good", "someone",
                     "foo", "tooshort")));
             store.save();
             // Invalid password size threw an exception, so it wasn't saved
