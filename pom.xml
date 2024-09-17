@@ -68,6 +68,7 @@
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     <jenkins.version>2.426.3</jenkins.version>
+    <hpi.compatibleSinceVersion>1372</hpi.compatibleSinceVersion>
   </properties>
 
   <repositories>
