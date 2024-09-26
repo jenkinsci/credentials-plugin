@@ -307,7 +307,7 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void listCredentialsAsXML() throws IOException {
+    public void listCredentialsAsXML() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
                 Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =

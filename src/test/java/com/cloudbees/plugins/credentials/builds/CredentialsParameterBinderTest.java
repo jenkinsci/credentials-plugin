@@ -61,7 +61,7 @@ public class CredentialsParameterBinderTest {
     private static final String PARAMETER_NAME = "cred";
 
     @BeforeClass
-    public static void setUpClass() throws IOException {
+    public static void setUpClass() throws Exception {
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
         CredentialsProvider.lookupStores(j.jenkins).iterator().next()
                 .addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, GLOBAL_CREDENTIALS_ID, "global credential", "root", "correct horse battery staple"));
