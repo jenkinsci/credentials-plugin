@@ -27,6 +27,8 @@ package com.cloudbees.plugins.credentials.impl;
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import java.util.logging.Level;
+
+import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -40,7 +42,7 @@ public class UsernamePasswordCredentialsImplTest {
     @Rule public JenkinsRule r = new JenkinsRule(); // needed for Secret.fromString to work
     @Rule public LoggerRule logging = new LoggerRule().record(CredentialsNameProvider.class, Level.FINE);
     
-    @Test public void displayName() {
+    @Test public void displayName() throws Exception {
         UsernamePasswordCredentialsImpl creds = new UsernamePasswordCredentialsImpl(null, "abc123", "Bob’s laptop", "bob", "s3cr3t");
         assertEquals("bob/****** (Bob’s laptop)", CredentialsNameProvider.name(creds));
         creds.setUsernameSecret(true);
@@ -65,7 +67,7 @@ public class UsernamePasswordCredentialsImplTest {
         assertTrue(c.isUsernameSecret());
     }
     public static final class SpecialUsernamePasswordCredentialsImpl extends UsernamePasswordCredentialsImpl {
-        public SpecialUsernamePasswordCredentialsImpl(CredentialsScope scope, String id, String description, String username, String password) {
+        public SpecialUsernamePasswordCredentialsImpl(CredentialsScope scope, String id, String description, String username, String password) throws Descriptor.FormException {
             super(scope, id, description, username, password);
         }
         transient boolean initialized;

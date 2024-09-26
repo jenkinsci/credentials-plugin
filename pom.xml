@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.85</version>
+    <version>4.87</version>
     <relativePath />
   </parent>
 
@@ -68,6 +68,7 @@
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     <jenkins.version>2.426.3</jenkins.version>
+    <hpi.compatibleSinceVersion>1372</hpi.compatibleSinceVersion>
   </properties>
 
   <repositories>
@@ -89,7 +90,7 @@
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.426.x</artifactId>
         <!-- when updating remove the bouncycastle-api override -->
-        <version>2961.v1f472390972e</version>
+        <version>3208.vb_21177d4b_cd9</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -109,7 +110,7 @@
     <dependency>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>bouncycastle-api</artifactId>
-        <version>2.30.1.78.1-246.ve1089fe22055</version>
+        <version>2.30.1.78.1-248.ve27176eb_46cb_</version>
     </dependency>
     <!-- test dependencies -->
     <dependency>
@@ -182,7 +183,7 @@
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
         <!-- This must be compatible with the ANTLR runtime provided by Jenkins core. -->
-        <version>4.13.1</version>
+        <version>4.13.2</version>
         <configuration>
           <listener>true</listener>
           <visitor>true</visitor>
