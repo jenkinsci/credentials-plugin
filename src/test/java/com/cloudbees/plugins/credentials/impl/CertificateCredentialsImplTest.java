@@ -342,7 +342,7 @@ public class CertificateCredentialsImplTest {
         request.setEncodingType(FormEncodingType.URL_ENCODED);
         request.setRequestBody(
                 "value="+URLEncoder.encode(value, StandardCharsets.UTF_8.name())+
-                        "&uploadedCertFile="+URLEncoder.encode(uploadedCertFile, StandardCharsets.UTF_8.name())+
+                        "&certificateBase64="+URLEncoder.encode(uploadedCertFile, StandardCharsets.UTF_8.name())+
                         "&password="+URLEncoder.encode(password, StandardCharsets.UTF_8.name())
         );
 

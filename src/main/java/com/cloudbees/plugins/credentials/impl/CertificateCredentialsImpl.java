@@ -575,11 +575,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             @Restricted(NoExternalUse.class)
             @RequirePOST
             public FormValidation doCheckUploadedKeystore(@QueryParameter String value,
-                                                          @QueryParameter String uploadedCertFile,
+                                                          @QueryParameter String certificateBase64,
                                                           @QueryParameter String password) {
                 // Priority for the file, to cover the (re-)upload cases
-                if (StringUtils.isNotEmpty(uploadedCertFile)) {
-                    byte[] uploadedCertFileBytes = Base64.getDecoder().decode(uploadedCertFile.getBytes(StandardCharsets.UTF_8));
+                if (StringUtils.isNotEmpty(certificateBase64)) {
+                    byte[] uploadedCertFileBytes = Base64.getDecoder().decode(certificateBase64.getBytes(StandardCharsets.UTF_8));
                     return validateCertificateKeystore(uploadedCertFileBytes, password);
                 }
 
