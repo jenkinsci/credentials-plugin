@@ -9,9 +9,9 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 @Restricted(NoExternalUse.class)
-public class SecretBytesReactionExtension {
+public class SecretBytesRedactionExtension {
 
-    public static final Logger LOGGER = Logger.getLogger(SecretBytesReactionExtension.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(SecretBytesRedactionExtension.class.getName());
 
     // TODO Delete this and annotate `SecretBytesRedaction` with `@Extension` once the core dependency is >= 2.479
     @Initializer
