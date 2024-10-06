@@ -10,9 +10,7 @@ import org.hamcrest.Matchers;
 import org.htmlunit.html.HtmlButton;
 import org.htmlunit.html.HtmlForm;
 import org.htmlunit.html.HtmlInput;
-import org.htmlunit.html.HtmlListItem;
 import org.htmlunit.html.HtmlPage;
-import org.htmlunit.html.HtmlSpan;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -26,10 +24,15 @@ public class CredentialsSelectHelperTest {
     public void doAddCredentialsFromPopupWorksAsExpected() throws Exception {
         try (JenkinsRule.WebClient wc = j.createWebClient()) {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
+
             HtmlButton addCredentialsButton = htmlPage.querySelector(".credentials-add-menu");
+            // The 'click' event doesn't fire a 'mouseenter' event causing the menu not to show, so let's fire one
+            addCredentialsButton.fireEvent("mouseenter");
             addCredentialsButton.click();
-            HtmlListItem li = htmlPage.querySelector(".credentials-add-menu-items li");
-            li.click();
+
+            HtmlButton jenkinsCredentialsOption = htmlPage.querySelector(".jenkins-dropdown__item");
+            jenkinsCredentialsOption.click();
+
             wc.waitForBackgroundJavaScript(4000);
             HtmlForm form = htmlPage.querySelector("#credentials-dialog-form");
 
