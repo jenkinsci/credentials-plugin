@@ -22,7 +22,7 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.springframework.security.core.Authentication;
 
 /**
@@ -68,7 +68,7 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
      * {@inheritDoc}
      */
     @Override
-    public ParameterValue createValue(StaplerRequest req, JSONObject jo) {
+    public ParameterValue createValue(StaplerRequest2 req, JSONObject jo) {
         CredentialsParameterValue value = req.bindJSON(CredentialsParameterValue.class, jo);
         if ((isRequired() && StringUtils.isBlank(value.getValue()))) {
             return new CredentialsParameterValue(value.getName(), getDefaultValue(), getDescription(), true);

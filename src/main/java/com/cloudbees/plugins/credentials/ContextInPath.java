@@ -4,18 +4,18 @@ import hudson.model.ModelObject;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AnnotationHandler;
 import org.kohsuke.stapler.InjectedParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Indicates that this parameter is injected by evaluating
- * {@link StaplerRequest#getAncestors()} and searching for a credentials context with the parameter type.
+ * {@link StaplerRequest2#getAncestors()} and searching for a credentials context with the parameter type.
  * You can enhance the lookup by ensuring that there are query parameters of {@code $provider} and {@code $token}
  * that correspond to the context's {@link CredentialsSelectHelper.ContextResolver} FQCN and
  * {@link CredentialsSelectHelper.ContextResolver#getToken(ModelObject)} respectively.
@@ -29,7 +29,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @InjectedParameter(ContextInPath.HandlerImpl.class)
 public @interface ContextInPath {
     class HandlerImpl extends AnnotationHandler<ContextInPath> {
-        public Object parse(StaplerRequest request, ContextInPath contextInPath, Class type, String parameterName)
+        @Override
+        public Object parse(StaplerRequest2 request, ContextInPath contextInPath, Class type, String parameterName)
                 throws
                 ServletException {
             String $provider = request.getParameter("$provider");

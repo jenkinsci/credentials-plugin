@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.springframework.security.core.Authentication;
 
 /**
@@ -463,7 +463,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
         if (context instanceof Item) {
             return Functions.getRelativeLinkTo((Item) context);
         }
-        StaplerRequest request = Stapler.getCurrentRequest();
+        StaplerRequest2 request = Stapler.getCurrentRequest2();
         if (request == null) {
             return null;
         }
