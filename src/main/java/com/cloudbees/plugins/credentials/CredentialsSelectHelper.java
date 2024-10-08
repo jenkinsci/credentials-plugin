@@ -47,7 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -58,8 +58,8 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Localizable;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.StaplerRequest2;
+import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
@@ -112,7 +112,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         if (context instanceof ModelObject) {
             return (ModelObject) context;
         }
-        StaplerRequest request = Stapler.getCurrentRequest();
+        StaplerRequest2 request = Stapler.getCurrentRequest2();
         if (request != null) {
             return request.findAncestorObject(ModelObject.class);
         }
@@ -132,7 +132,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         Set<String> urls = new HashSet<>();
         List<StoreItem> result = new ArrayList<>();
         if (context == null) {
-            StaplerRequest request = Stapler.getCurrentRequest();
+            StaplerRequest2 request = Stapler.getCurrentRequest2();
             if (request != null) {
                 context = request.findAncestorObject(ModelObject.class);
             }
@@ -193,7 +193,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             }
         }
         if (context == null) {
-            StaplerRequest request = Stapler.getCurrentRequest();
+            StaplerRequest2 request = Stapler.getCurrentRequest2();
             if (request != null) {
                 context = request.findAncestorObject(ModelObject.class);
             }
@@ -596,7 +596,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
          */
         @RequirePOST
         @Restricted(NoExternalUse.class)
-        public JSONObject doAddCredentials(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
+        public JSONObject doAddCredentials(StaplerRequest2 req, StaplerResponse2 rsp) throws IOException, ServletException {
             if (!store.isDomainsModifiable()) {
                 hudson.util.HttpResponses.status(400).generateResponse(req, rsp, null);
                 return new JSONObject()

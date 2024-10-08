@@ -62,7 +62,7 @@ import net.jcip.annotations.GuardedBy;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.springframework.security.core.Authentication;
@@ -463,7 +463,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * {@inheritDoc}
          */
         @Override
-        public UserProperty reconfigure(StaplerRequest req, JSONObject form) {
+        public UserProperty reconfigure(StaplerRequest2 req, JSONObject form) {
             return this;
         }
 
@@ -761,7 +761,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @Override
         public String getRelativeLinkToContext() {
-            StaplerRequest request = Stapler.getCurrentRequest();
+            StaplerRequest2 request = Stapler.getCurrentRequest2();
             return URI.create(request.getContextPath() + "/" + user.getUrl() + "/").normalize().toString() ;
         }
 

@@ -53,7 +53,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Ancestor;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * Descriptor for credentials.
@@ -116,7 +116,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
     @Restricted(NoExternalUse.class)
     @RestrictedSince("2.1.5")
     public boolean isScopeRelevant() {
-        Ancestor ancestor = Stapler.getCurrentRequest().findAncestor(Object.class);
+        Ancestor ancestor = Stapler.getCurrentRequest2().findAncestor(Object.class);
         while (ancestor != null) {
             if (ancestor.getObject() instanceof ModelObject) {
                 ModelObject context = unwrapContext((ModelObject) ancestor.getObject());
@@ -177,7 +177,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
             return isScopeRelevant(wrapper.getStore().getContext());
         }
         CredentialsStoreAction action =
-                Stapler.getCurrentRequest().findAncestorObject(CredentialsStoreAction.class);
+                Stapler.getCurrentRequest2().findAncestorObject(CredentialsStoreAction.class);
         if (action != null) {
             return isScopeRelevant(action.getStore().getContext());
         }
@@ -199,7 +199,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
             return isScopeRelevant(wrapper.getStore().getContext());
         }
         CredentialsStoreAction action =
-                Stapler.getCurrentRequest().findAncestorObject(CredentialsStoreAction.class);
+                Stapler.getCurrentRequest2().findAncestorObject(CredentialsStoreAction.class);
         if (action != null) {
             return isScopeRelevant(action.getStore().getContext());
         }
@@ -221,7 +221,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
             return isScopeRelevant(wrapper.getStore().getContext());
         }
         CredentialsStoreAction action =
-                Stapler.getCurrentRequest().findAncestorObject(CredentialsStoreAction.class);
+                Stapler.getCurrentRequest2().findAncestorObject(CredentialsStoreAction.class);
         if (action != null) {
             return isScopeRelevant(action.getStore().getContext());
         }
@@ -301,7 +301,7 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
     }
 
     /**
-     * Attempts to resolve the credentials context from the {@link Stapler#getCurrentRequest()} (includes special
+     * Attempts to resolve the credentials context from the {@link Stapler#getCurrentRequest2()} (includes special
      * handling of the HTTP Referer to enable resolution from AJAX requests).
      *
      * @param type the type of context.
@@ -311,21 +311,21 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
      */
     @CheckForNull
     public static <T extends ModelObject> T findContextInPath(@NonNull Class<T> type) {
-        return findContextInPath(Stapler.getCurrentRequest(), type);
+        return findContextInPath(Stapler.getCurrentRequest2(), type);
     }
 
     /**
-     * Attempts to resolve the credentials context from the {@link StaplerRequest} (includes special
+     * Attempts to resolve the credentials context from the {@link StaplerRequest2} (includes special
      * handling of the HTTP Referer to enable resolution from AJAX requests).
      *
-     * @param request the {@link StaplerRequest}.
+     * @param request the {@link StaplerRequest2}.
      * @param type the type of context.
      * @param <T>  the type of context.
      * @return the context from the request
      * @since 2.1.5
      */
     @CheckForNull
-    public static <T extends ModelObject> T findContextInPath(@NonNull StaplerRequest request, @NonNull Class<T> type) {
+    public static <T extends ModelObject> T findContextInPath(@NonNull StaplerRequest2 request, @NonNull Class<T> type) {
         List<Ancestor> ancestors = request.getAncestors();
         for (int i = ancestors.size() - 1; i >= 0; i--) {
             Ancestor a = ancestors.get(i);

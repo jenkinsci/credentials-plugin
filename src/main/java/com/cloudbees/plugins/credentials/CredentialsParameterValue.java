@@ -115,7 +115,7 @@ public class CredentialsParameterValue extends ParameterValue {
         if (StringUtils.isBlank(value)) {
             return "";
         }
-        final Run run = Stapler.getCurrentRequest().findAncestorObject(Run.class);
+        final Run run = Stapler.getCurrentRequest2().findAncestorObject(Run.class);
         if (run == null) {
             throw new IllegalStateException("Should only be called from value.jelly");
         }
@@ -139,7 +139,7 @@ public class CredentialsParameterValue extends ParameterValue {
         if (StringUtils.isBlank(value)) {
             return "";
         }
-        final Run run = Stapler.getCurrentRequest().findAncestorObject(Run.class);
+        final Run run = Stapler.getCurrentRequest2().findAncestorObject(Run.class);
         if (run == null) {
             throw new IllegalStateException("Should only be called from value.jelly");
         }
@@ -163,7 +163,7 @@ public class CredentialsParameterValue extends ParameterValue {
         if (StringUtils.isBlank(value)) {
             return null;
         }
-        final Run run = Stapler.getCurrentRequest().findAncestorObject(Run.class);
+        final Run run = Stapler.getCurrentRequest2().findAncestorObject(Run.class);
         if (run == null) {
             throw new IllegalStateException("Should only be called from value.jelly");
         }

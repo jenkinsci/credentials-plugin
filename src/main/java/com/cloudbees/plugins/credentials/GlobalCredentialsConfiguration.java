@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -46,7 +46,7 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
@@ -133,7 +133,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
     @NonNull
     @Restricted(NoExternalUse.class)
     @SuppressWarnings("unused") // stapler web method binding
-    public synchronized HttpResponse doConfigure(@NonNull StaplerRequest req) throws IOException, ServletException,
+    public synchronized HttpResponse doConfigure(@NonNull StaplerRequest2 req) throws IOException, ServletException,
             FormException {
         Jenkins jenkins = Jenkins.get();
         jenkins.checkPermission(Jenkins.ADMINISTER);
@@ -158,7 +158,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
      * @return {@code false} to keep the client in the same config page.
      * @throws FormException if something goes wrong.
      */
-    private boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+    private boolean configure(StaplerRequest2 req, JSONObject json) throws FormException {
         // for compatibility reasons, the actual value is stored in Jenkins
         Jenkins j = Jenkins.get();
         j.checkPermission(Jenkins.ADMINISTER);
@@ -181,7 +181,7 @@ public class GlobalCredentialsConfiguration extends ManagementLink
      * @return {@code false} to keep the client in the same config page.
      * @throws FormException if something goes wrong.
      */
-    private boolean configureDescriptor(StaplerRequest req, JSONObject json, Descriptor<?> d) throws
+    private boolean configureDescriptor(StaplerRequest2 req, JSONObject json, Descriptor<?> d) throws
             FormException {
         // collapse the structure to remain backward compatible with the JSON structure before 1.
         String name = d.getJsonSafeClassName();
