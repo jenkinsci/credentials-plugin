@@ -127,49 +127,14 @@ window.credentials.addSubmit = function (_) {
     }
 };
 
-Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, function(e) {
-    var btn = e;
-    var menu = btn.nextElementSibling;
-    while (menu && !menu.matches('DIV.credentials-add-menu-items')) {
-        menu = menu.nextElementSibling;
-    }
-    if (menu) {
-        var menuAlign = (btn.getAttribute("menualign") || "tl-bl");
-
-        var menuButton = new YAHOO.widget.Button(btn, {
-            type: "menu",
-            menu: menu,
-            menualignment: menuAlign.split("-"),
-            menuminscrollheight: 250
-        });
-        // copy class names
-        for (var i = 0; i < btn.classList.length; i++) {
-            menuButton._button.classList.add(btn.classList.item(i));
-        }
-        menuButton._button.setAttribute("suffix", btn.getAttribute("suffix"));
-        menuButton.getMenu().clickEvent.subscribe(function (type, args, value) {
-            var item = args[1];
-            if (item.cfg.getProperty("disabled")) {
-                return;
-            }
-            window.credentials.add(item.srcElement.getAttribute('data-url'));
-        });
-        // YUI menu will not parse disabled when using DIV-LI only when using SELECT-OPTION
-        // but SELECT-OPTION doesn't support images, so we need to catch the rendering and roll our
-        // own disabled attribute support
-        menuButton.getMenu().beforeShowEvent.subscribe(function(type,args,value){
-            var items = this.getItems();
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].srcElement.getAttribute('disabled')) {
-                    items[i].cfg.setProperty('disabled', true);
-                }
-            }
-        });
-    }
-    e=null;
+Behaviour.specify("[data-type='credentials-add-store-item']", 'credentials-add-store-item', -99, function(e) {
+    e.addEventListener("click", function (event) {
+        window.credentials.add(event.target.dataset.url);
+    });
+    e = null;
 });
 Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
-    makeButton(e, e.disabled ? null : window.credentials.add);
+    e.addEventListener("click", window.credentials.add);
     e = null; // avoid memory leak
 });
 Behaviour.specify("DIV.credentials-select-control", 'credentials-select', 100, function (d) {
@@ -220,10 +185,14 @@ Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0,
     };
     // simpler version of f:helpLink using inline help text
     e.querySelector('span.help-btn').onclick = function (evt) {
-        var help = e.querySelector('.help-content');
-        help.hidden = !help.hidden;
+        var help = e.querySelector('.help');
+        help.style.display = help.style.display == "block" ? "" : "block";
+        return false;
     };
 });
+// prevent accidental removal of CSS by moving it to the head (https://issues.jenkins.io/browse/JENKINS-26578)
+var style = document.querySelector("body link[href$='credentials/select/select.css']");
+style && document.head.appendChild(style);
 window.setTimeout(function() {
     // HACK: can be removed once base version of Jenkins has fix of https://issues.jenkins-ci.org/browse/JENKINS-26578
     // need to apply the new behaviours to existing objects
