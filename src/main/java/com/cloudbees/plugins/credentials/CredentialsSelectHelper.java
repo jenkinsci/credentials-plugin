@@ -597,12 +597,6 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         @RequirePOST
         @Restricted(NoExternalUse.class)
         public JSONObject doAddCredentials(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
-            if (!store.isDomainsModifiable()) {
-                hudson.util.HttpResponses.status(400).generateResponse(req, rsp, null);
-                return new JSONObject()
-                        .element("message", "Domain is read-only")
-                        .element("notificationType", "ERROR");
-            }
             store.checkPermission(CredentialsStoreAction.CREATE);
             JSONObject data = req.getSubmittedForm();
             String domainName = data.getString("domain");
