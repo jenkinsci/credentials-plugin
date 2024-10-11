@@ -158,7 +158,7 @@ public class ContextMenuIconUtils {
         if (url == null) {
             return null;
         }
-        String contextPath = Stapler.getCurrentRequest().getContextPath();
+        String contextPath = Stapler.getCurrentRequest2().getContextPath();
         return (StringUtils.isBlank(contextPath)? "" : contextPath) + (url.startsWith("images/")
                 ? Functions.getResourcePath()
                 : "") + (url.startsWith("/") ? url : '/' + url);
