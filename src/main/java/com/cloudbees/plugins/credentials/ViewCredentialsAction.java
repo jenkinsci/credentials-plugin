@@ -60,8 +60,8 @@ import jenkins.model.TransientActionFactory;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.StaplerRequest2;
+import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.springframework.security.core.Authentication;
@@ -396,7 +396,7 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
     // In the general case we would implement ModelObjectWithChildren as the child actions could be viewed as children
     // but in this case we expose them in the sidebar, so they are more correctly part of the context menu.
     @Override
-    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
+    public ContextMenu doContextMenu(StaplerRequest2 request, StaplerResponse2 response) {
         ContextMenu menu = new ContextMenu();
         for (CredentialsStoreAction action : getStoreActions()) {
             ContextMenuIconUtils.addMenuItem(

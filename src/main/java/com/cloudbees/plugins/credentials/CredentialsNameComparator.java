@@ -30,7 +30,7 @@ import java.util.Comparator;
 import java.util.Locale;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * Comparator to alphabetically sort credentials drop down list in ascending order by Credential Name.
@@ -83,7 +83,7 @@ public class CredentialsNameComparator implements Comparator<Credentials>, Seria
      */
     public CredentialsNameComparator(@CheckForNull Locale locale, boolean ignoreCase) {
         if (locale == null) {
-            StaplerRequest req = Stapler.getCurrentRequest();
+            StaplerRequest2 req = Stapler.getCurrentRequest2();
             if (req != null) {
                 locale = req.getLocale();
             }
