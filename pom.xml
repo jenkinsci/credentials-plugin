@@ -161,6 +161,33 @@
       <artifactId>workflow-basic-steps</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>job-dsl</artifactId>
+        <version>1.81</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>command-launcher</artifactId>
+        <version>1.6</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>credentials-binding</artifactId>
+        <version>523.vd859a_4b_122e6</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>http_request</artifactId>
+        <!-- Note: testCertHttpRequestOnNodeRemote() fails for 1.16
+             unless CertificateCredentialsSnapshotTaker is functional
+         -->
+        <version>1.16</version>
+        <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
