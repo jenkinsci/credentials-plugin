@@ -57,6 +57,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Localizable;
+import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
@@ -608,8 +609,14 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                         .element("notificationType", "ERROR");
             }
             store.checkPermission(CredentialsStoreAction.CREATE);
-            Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
-            boolean credentialsWereAdded = store.addCredentials(wrapper.getDomain(), credentials);
+            boolean credentialsWereAdded;
+            try {
+                Credentials credentials = Descriptor.bindJSON(req, Credentials.class,
+                                                              data.getJSONObject("credentials"));
+                credentialsWereAdded = store.addCredentials(wrapper.getDomain(), credentials);
+            } catch (HttpResponses.HttpResponseException e) {
+                return new JSONObject().element("message", e.getMessage()).element("notificationType", "ERROR");
+            }
             if (credentialsWereAdded) {
                 return new JSONObject()
                         .element("message", "Credentials created")

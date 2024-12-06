@@ -42,8 +42,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
-import java.util.Objects;
-
 /**
  * Concrete implementation of {@link StandardUsernamePasswordCredentials}.
  *

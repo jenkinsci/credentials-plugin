@@ -123,6 +123,7 @@ window.credentials.addSubmit = function (_) {
             .catch((e) => {
                 // notificationBar.show(...) with logging ID could be handy here?
                 console.error("Could not add credentials:", e);
+                window.notificationBar.show("Credentials creation failed.", window.notificationBar["ERROR"]);
             })
     }
 };
