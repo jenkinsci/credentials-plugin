@@ -29,14 +29,16 @@ public class CertificateCredentialsImplFIPSTest {
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
 
-    String pemCert;
-    String pemKey;
+    private String pemCert;
+    private String pemKey;
+    private static final String VALID_PASSWORD = "passwordFipsCheck";
+    private static final String INVALID_PASSWORD = "foo";
 
     @Before
     public void setup() throws IOException {
-        pemCert = IOUtils.toString(CertificateCredentialsImplFIPSTest.class.getResource("FIPSCerts.pem"),
+        pemCert = IOUtils.toString(CertificateCredentialsImplFIPSTest.class.getResource("validCerts.pem"),
                                    StandardCharsets.UTF_8);
-        pemKey = IOUtils.toString(CertificateCredentialsImplFIPSTest.class.getResource("FIPSKey.pem"),
+        pemKey = IOUtils.toString(CertificateCredentialsImplFIPSTest.class.getResource("validKey.pem"),
                                   StandardCharsets.UTF_8);
     }
 
@@ -45,9 +47,9 @@ public class CertificateCredentialsImplFIPSTest {
         rule.then(r -> {
             CertificateCredentialsImpl.DescriptorImpl descriptor = ExtensionList.lookupSingleton(
                     CertificateCredentialsImpl.DescriptorImpl.class);
-            FormValidation result = descriptor.doCheckPassword("passwordFipsCheck");
+            FormValidation result = descriptor.doCheckPassword(VALID_PASSWORD);
             assertThat(result.kind, is(FormValidation.Kind.OK));
-            result = descriptor.doCheckPassword("foo");
+            result = descriptor.doCheckPassword(INVALID_PASSWORD);
             assertThat(result.kind, is(FormValidation.Kind.ERROR));
             assertThat(result.getMessage(),
                        is(StringEscapeUtils.escapeHtml4(Messages.CertificateCredentialsImpl_ShortPasswordFIPS())));
@@ -55,19 +57,22 @@ public class CertificateCredentialsImplFIPSTest {
     }
 
     @Test
-    public void invalidPEMKeyStoreTest() throws Throwable {
+    public void invalidPEMKeyStoreAndPasswordTest() throws Throwable {
         CertificateCredentialsImpl.PEMEntryKeyStoreSource storeSource = new CertificateCredentialsImpl.PEMEntryKeyStoreSource(
                 pemCert, pemKey);
         rule.then(r -> {
-            new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "certificate-validation",
-                                           "Validate the certificate credentials", "passwordFipsCheck", storeSource);
-
+            new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "valid-certificate-and-password-validation",
+                                           "Validate the certificate credentials", VALID_PASSWORD, storeSource);
             assertThrows(Descriptor.FormException.class,
-                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "certificate-validation",
-                                                              "Validate the certificate password", "foo", storeSource));
+                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "password-length-validation",
+                                                              "Validate the certificate password", "", storeSource));
             assertThrows(Descriptor.FormException.class,
-                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "certificate-validation",
-                                                              "Validate the certificate keyStore", "passwordFipsCheck",
+                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "password-length-validation",
+                                                              "Validate the certificate password", INVALID_PASSWORD,
+                                                              storeSource));
+            assertThrows(Descriptor.FormException.class,
+                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "invalid-certificate-validation",
+                                                              "Validate the certificate keyStore", VALID_PASSWORD,
                                                               new CertificateCredentialsImpl.PEMEntryKeyStoreSource(
                                                                       null, null)));
         });

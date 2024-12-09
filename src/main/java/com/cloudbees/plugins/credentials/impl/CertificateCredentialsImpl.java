@@ -132,7 +132,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                                       @NonNull KeyStoreSource keyStoreSource) throws Descriptor.FormException {
         super(scope, id, description);
         Objects.requireNonNull(keyStoreSource);
-        if (FIPS140.useCompliantAlgorithms() && StringUtils.isNotBlank(password) && password.length() < 14) {
+        if (FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
             throw new Descriptor.FormException(Messages.CertificateCredentialsImpl_ShortPasswordFIPS(), "password");
         }
         this.password = Secret.fromString(password);
