@@ -147,12 +147,10 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
      * Helper to convert a {@link Secret} password into a {@code char[]}
      *
      * @param password the password.
-     * @return a {@code char[]} containing the password or {@code null}
+     * @return a {@code char[]} containing the password
      */
-    @CheckForNull
     private static char[] toCharArray(@NonNull Secret password) {
-        String plainText = Util.fixEmpty(password.getPlainText());
-        return plainText == null ? null : plainText.toCharArray();
+        return password.getPlainText().toCharArray();
     }
 
     /**
@@ -248,7 +246,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 return FormValidation.error(Messages.CertificateCredentialsImpl_ShortPasswordFIPS());
             }
             if (pw.isEmpty()) {
-                return FormValidation.warning(Messages.CertificateCredentialsImpl_NoPassword());
+                return FormValidation.ok(Messages.CertificateCredentialsImpl_NoPassword());
             }
             if (pw.length() < 14) {
                 return FormValidation.warning(Messages.CertificateCredentialsImpl_ShortPassword());
@@ -624,9 +622,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException e) {
                     return FormValidation.warning(e, Messages.CertificateCredentialsImpl_LoadKeystoreFailed());
                 } finally {
-                    if (passwordChars != null) {
-                        Arrays.fill(passwordChars, ' ');
-                    }
+                    Arrays.fill(passwordChars, ' ');
                 }
             }
 
@@ -739,6 +735,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     List<PEMEncodable> pemEncodables = PEMEncodable.decodeAll(pemCerts, null);
                     long count = pemEncodables.stream().map(PEMEncodable::toCertificate).filter(Objects::nonNull).count();
                     if (count < 1) {
+                        if (Util.fixEmpty(value) == null) {
+                            return FormValidation.ok();
+                        }
                         return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoCertificates());
                     }
                     // ensure only certs are provided.
@@ -771,6 +770,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                     List<PEMEncodable> pemEncodables = PEMEncodable.decodeAll(key, toCharArray(Secret.fromString(password)));
                     long count = pemEncodables.stream().map(PEMEncodable::toPrivateKey).filter(Objects::nonNull).count();
                     if (count == 0) {
+                        if (Util.fixEmpty(value) == null) {
+                            return FormValidation.ok();
+                        }
                         return FormValidation.error(Messages.CertificateCredentialsImpl_PEMNoKeys());
                     }
                     if (count > 1) {
