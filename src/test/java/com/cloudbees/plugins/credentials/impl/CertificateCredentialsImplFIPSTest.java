@@ -24,8 +24,8 @@ import static org.junit.Assert.assertThrows;
 public class CertificateCredentialsImplFIPSTest {
 
     @Rule
-    public RealJenkinsRule rule = new RealJenkinsRule().javaOptions("-Djenkins.security.FIPS140.COMPLIANCE=true");
-
+    public RealJenkinsRule rule = new RealJenkinsRule().withFIPSEnabled().javaOptions("-Xmx512m");
+    
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
 

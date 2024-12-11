@@ -142,7 +142,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         try {
             keyStoreSource.toKeyStore(toCharArray(this.password));
         } catch (GeneralSecurityException | IOException e) {
-            LOGGER.log(Level.WARNING, Messages.CertificateCredentialsImpl_InvalidKeystore(), e);
+            LOGGER.log(Level.WARNING, "Failed to create CertificateCredentials", e);
             throw new Descriptor.FormException(Messages.CertificateCredentialsImpl_InvalidKeystore(), e,
                                                "keyStoreSource");
         }
