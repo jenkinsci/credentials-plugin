@@ -132,6 +132,9 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                                       @NonNull KeyStoreSource keyStoreSource) {
         super(scope, id, description);
         Objects.requireNonNull(keyStoreSource);
+        if (FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
+            throw new IllegalArgumentException(Messages.CertificateCredentialsImpl_ShortPasswordFIPS());
+        }
         this.password = Secret.fromString(password);
         this.keyStoreSource = keyStoreSource;
         // ensure the keySore is valid

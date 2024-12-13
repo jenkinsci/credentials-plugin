@@ -38,7 +38,9 @@ import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.AccessControlled;
 import hudson.security.Permission;
+
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -47,10 +49,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import jakarta.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -75,6 +81,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
      * Expose the {@link CredentialsProvider#CREATE} permission for Jelly.
      */
     public static final Permission CREATE = CredentialsProvider.CREATE;
+
+    private static final Logger LOGGER = Logger.getLogger(CredentialsSelectHelper.class.getName());
 
     /**
      * {@inheritDoc}
@@ -608,8 +616,30 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                         .element("notificationType", "ERROR");
             }
             store.checkPermission(CredentialsStoreAction.CREATE);
-            Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
-            boolean credentialsWereAdded = store.addCredentials(wrapper.getDomain(), credentials);
+            boolean credentialsWereAdded;
+            try {
+                Credentials credentials = Descriptor.bindJSON(req, Credentials.class,
+                                                              data.getJSONObject("credentials"));
+                credentialsWereAdded = store.addCredentials(wrapper.getDomain(), credentials);
+            } catch (LinkageError e) {
+                /*
+                 * Descriptor#newInstanceImpl throws a LinkageError if the constructor throws any exception other
+                 * than HTTP response exceptions such as Descriptor.FormException.
+                 *
+                 * This approach is taken to maintain backward compatibility, as throwing a FormException directly
+                 * from the constructor would result in a source-incompatible change, potentially breaking dependent plugins.
+                 *
+                 * Here, known exceptions are caught specifically to provide meaningful error response.
+                 */
+                Throwable rootCause = ExceptionUtils.getRootCause(e);
+                if (rootCause instanceof IOException || rootCause instanceof IllegalArgumentException
+                    || rootCause instanceof GeneralSecurityException) {
+                    LOGGER.log(Level.WARNING, "Failed to create Credentials", e);
+                    return new JSONObject().element("message", rootCause.getMessage()).element("notificationType",
+                                                                                               "ERROR");
+                }
+                throw e;
+            } 
             if (credentialsWereAdded) {
                 return new JSONObject()
                         .element("message", "Credentials created")
