@@ -32,6 +32,7 @@ import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.common.CertificateCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
+import hudson.util.FormValidation;
 import org.htmlunit.FormEncodingType;
 import org.htmlunit.HttpMethod;
 import org.htmlunit.Page;
@@ -130,14 +131,6 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_uploadedFileValid_butMissingPassword() throws Exception {
-        String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), "");
-        assertThat(content, containsString("warning"));
-        assertThat(content, containsString(Util.escape(Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword("1"))));
-    }
-
-    @Test
-    @Issue("JENKINS-64542")
     public void doCheckUploadedKeystore_uploadedFileValid_butInvalidPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), INVALID_PASSWORD);
         assertThat(content, containsString("warning"));
@@ -193,10 +186,11 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_keyStoreValid_butMissingPassword() throws Exception {
-        String content = getContentFrom_doCheckUploadedKeystore(getValidP12_secretBytes(), "", "");
-        assertThat(content, containsString("warning"));
-        assertThat(content, containsString(Util.escape(Messages.CertificateCredentialsImpl_LoadKeyFailedQueryEmptyPassword("1"))));
+    public void doCheckPassword_missing() {
+        CertificateCredentialsImpl.DescriptorImpl descriptor = r.jenkins.getDescriptorByType(CertificateCredentialsImpl.DescriptorImpl.class);
+        FormValidation formValidation = descriptor.doCheckPassword("");
+        assertThat(formValidation.kind, is(FormValidation.Kind.OK));
+        assertThat(formValidation.getMessage(), is(Messages.CertificateCredentialsImpl_NoPassword()));
     }
 
     @Test
