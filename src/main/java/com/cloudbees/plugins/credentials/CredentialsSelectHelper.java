@@ -38,9 +38,9 @@ import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.AccessControlled;
 import hudson.security.Permission;
-import hudson.util.HttpResponses;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -633,17 +633,13 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                  */
                 Throwable rootCause = ExceptionUtils.getRootCause(e);
                 if (rootCause instanceof IOException || rootCause instanceof IllegalArgumentException
-                    || rootCause instanceof IllegalStateException) {
+                    || rootCause instanceof GeneralSecurityException) {
                     LOGGER.log(Level.WARNING, "Failed to create Credentials", e);
                     return new JSONObject().element("message", rootCause.getMessage()).element("notificationType",
                                                                                                "ERROR");
                 }
                 throw e;
-            } catch (IOException | IllegalArgumentException | IllegalStateException |
-                     HttpResponses.HttpResponseException e) {
-                LOGGER.log(Level.WARNING, "Failed to create Credentials", e);
-                return new JSONObject().element("message", e.getMessage()).element("notificationType", "ERROR");
-            }
+            } 
             if (credentialsWereAdded) {
                 return new JSONObject()
                         .element("message", "Credentials created")
