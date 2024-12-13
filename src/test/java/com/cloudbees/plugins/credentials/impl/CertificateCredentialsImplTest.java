@@ -47,7 +47,6 @@ import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlRadioButtonInput;
 
 import hudson.Util;
-import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
 import hudson.security.ACL;
 import hudson.util.Secret;
@@ -107,7 +106,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
-    public void displayName() throws IOException, Descriptor.FormException {
+    public void displayName() throws IOException {
         SecretBytes uploadedKeystore = SecretBytes.fromBytes(Files.readAllBytes(p12.toPath()));
         CertificateCredentialsImpl.UploadedKeyStoreSource storeSource = new CertificateCredentialsImpl.UploadedKeyStoreSource(uploadedKeystore);
         assertEquals(EXPECTED_DISPLAY_NAME, CredentialsNameProvider.name(new CertificateCredentialsImpl(null, "abc123", null, "password", storeSource)));

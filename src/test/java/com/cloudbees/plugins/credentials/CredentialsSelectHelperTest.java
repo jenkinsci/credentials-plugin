@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
-import com.cloudbees.plugins.credentials.impl.Messages;
 import hudson.model.UnprotectedRootAction;
 import java.io.IOException;
 import java.util.List;
@@ -101,7 +100,6 @@ public class CredentialsSelectHelperTest {
             wc.waitForBackgroundJavaScript(4000);
             Page submit = HtmlFormUtil.submit(form);
             JSONObject responseJson = JSONObject.fromObject(submit.getWebResponse().getContentAsString());
-            assertThat(responseJson.getString("message"), is(Messages.CertificateCredentialsImpl_InvalidKeystore()));
             assertThat(responseJson.getString("notificationType"), is("ERROR"));
         }
     }

@@ -12,7 +12,6 @@ import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.RealJenkinsRule;
 
 import hudson.ExtensionList;
-import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -25,14 +24,15 @@ public class CertificateCredentialsImplFIPSTest {
 
     @Rule
     public RealJenkinsRule rule = new RealJenkinsRule().withFIPSEnabled().javaOptions("-Xmx512m");
-    
+
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
 
     private String pemCert;
     private String pemKey;
     private static final String VALID_PASSWORD = "passwordFipsCheck";
-    private static final String INVALID_PASSWORD = "foo";
+    private static final String INVALID_PASSWORD = "invalidPasswordFipsCheck";
+    private static final String SHORT_PASSWORD = "password";
 
     @Before
     public void setup() throws IOException {
@@ -49,7 +49,7 @@ public class CertificateCredentialsImplFIPSTest {
                     CertificateCredentialsImpl.DescriptorImpl.class);
             FormValidation result = descriptor.doCheckPassword(VALID_PASSWORD);
             assertThat(result.kind, is(FormValidation.Kind.OK));
-            result = descriptor.doCheckPassword(INVALID_PASSWORD);
+            result = descriptor.doCheckPassword(SHORT_PASSWORD);
             assertThat(result.kind, is(FormValidation.Kind.ERROR));
             assertThat(result.getMessage(),
                        is(StringEscapeUtils.escapeHtml4(Messages.CertificateCredentialsImpl_ShortPasswordFIPS())));
@@ -63,16 +63,22 @@ public class CertificateCredentialsImplFIPSTest {
         rule.then(r -> {
             new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "valid-certificate-and-password-validation",
                                            "Validate the certificate credentials", VALID_PASSWORD, storeSource);
-            assertThrows(Descriptor.FormException.class,
+            assertThrows(IllegalArgumentException.class,
+                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "empty-password-validation",
+                                                              "Validate the certificate empty password", "",
+                                                              storeSource));
+            assertThrows(IllegalArgumentException.class,
                          () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "password-length-validation",
-                                                              "Validate the certificate password", "", storeSource));
-            assertThrows(Descriptor.FormException.class,
-                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "password-length-validation",
+                                                              "Validate the certificate password length",
+                                                              SHORT_PASSWORD, storeSource));
+            assertThrows(IllegalArgumentException.class,
+                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "invalid-password-validation",
                                                               "Validate the certificate password", INVALID_PASSWORD,
                                                               storeSource));
-            assertThrows(Descriptor.FormException.class,
-                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "invalid-certificate-validation",
-                                                              "Validate the certificate keyStore", VALID_PASSWORD,
+            assertThrows(IllegalArgumentException.class,
+                         () -> new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "empty-keystore-validation",
+                                                              "Validate the invalid certificate keyStore",
+                                                              VALID_PASSWORD,
                                                               new CertificateCredentialsImpl.PEMEntryKeyStoreSource(
                                                                       null, null)));
         });

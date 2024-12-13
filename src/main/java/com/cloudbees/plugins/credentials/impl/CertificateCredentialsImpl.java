@@ -129,11 +129,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
     public CertificateCredentialsImpl(@CheckForNull CredentialsScope scope,
                                       @CheckForNull String id, @CheckForNull String description,
                                       @CheckForNull String password,
-                                      @NonNull KeyStoreSource keyStoreSource) throws Descriptor.FormException {
+                                      @NonNull KeyStoreSource keyStoreSource) {
         super(scope, id, description);
         Objects.requireNonNull(keyStoreSource);
         if (FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
-            throw new Descriptor.FormException(Messages.CertificateCredentialsImpl_ShortPasswordFIPS(), "password");
+            throw new IllegalArgumentException(Messages.CertificateCredentialsImpl_ShortPasswordFIPS());
         }
         this.password = Secret.fromString(password);
         this.keyStoreSource = keyStoreSource;
@@ -142,9 +142,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
         try {
             keyStoreSource.toKeyStore(toCharArray(this.password));
         } catch (GeneralSecurityException | IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to create CertificateCredentials", e);
-            throw new Descriptor.FormException(Messages.CertificateCredentialsImpl_InvalidKeystore(), e,
-                                               "keyStoreSource");
+            throw new IllegalArgumentException("KeyStore is not valid.", e);
         }
     }
 
