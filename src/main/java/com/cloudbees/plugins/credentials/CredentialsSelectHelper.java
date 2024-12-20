@@ -38,7 +38,6 @@ import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.AccessControlled;
 import hudson.security.Permission;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -623,8 +622,12 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 credentialsWereAdded = store.addCredentials(wrapper.getDomain(), credentials);
             } catch (LinkageError e) {
                 /*
-                 * Descriptor#newInstanceImpl throws a LinkageError if the constructor throws any exception other
-                 * than HTTP response exceptions such as Descriptor.FormException.
+                 * Descriptor#newInstanceImpl throws a LinkageError if the DataBoundConstructor or any DataBoundSetter
+                 * throw any exception other than RuntimeException implementing HttpResponse.
+                 *
+                 * Checked exceptions implementing HttpResponse like FormException are wrapped and
+                 * rethrown as HttpResponseException (a RuntimeException implementing HttpResponse) in
+                 * RequestImpl#invokeConstructor.
                  *
                  * This approach is taken to maintain backward compatibility, as throwing a FormException directly
                  * from the constructor would result in a source-incompatible change, potentially breaking dependent plugins.
