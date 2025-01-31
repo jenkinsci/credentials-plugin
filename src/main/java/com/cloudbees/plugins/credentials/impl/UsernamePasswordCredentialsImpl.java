@@ -30,11 +30,17 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.Util;
+import hudson.model.Descriptor;
+import hudson.util.FormValidation;
 import hudson.util.Secret;
 
+import jenkins.security.FIPS140;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * Concrete implementation of {@link StandardUsernamePasswordCredentials}.
@@ -73,9 +79,13 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
     @SuppressWarnings("unused") // by stapler
     public UsernamePasswordCredentialsImpl(@CheckForNull CredentialsScope scope,
                                            @CheckForNull String id, @CheckForNull String description,
-                                           @CheckForNull String username, @CheckForNull String password) {
+                                           @CheckForNull String username, @CheckForNull String password)
+            throws Descriptor.FormException {
         super(scope, id, description);
         this.username = Util.fixNull(username);
+        if(FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
+            throw new Descriptor.FormException(Messages.passwordTooShortFIPS(), "password");
+        }
         this.password = Secret.fromString(password);
     }
 
@@ -127,6 +137,14 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
         @Override
         public String getIconClassName() {
             return "symbol-id-card";
+        }
+
+        @RequirePOST
+        public FormValidation doCheckPassword(@QueryParameter String password) {
+            if(FIPS140.useCompliantAlgorithms() && StringUtils.length(password) < 14) {
+                return FormValidation.error(Messages.passwordTooShortFIPS());
+            }
+            return FormValidation.ok();
         }
     }
 }

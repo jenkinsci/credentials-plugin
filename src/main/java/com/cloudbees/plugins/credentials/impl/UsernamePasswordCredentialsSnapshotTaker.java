@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 
 import hudson.Extension;
+import hudson.model.Descriptor;
 import hudson.util.Secret;
 
 @Extension
@@ -25,8 +26,13 @@ public class UsernamePasswordCredentialsSnapshotTaker extends CredentialsSnapsho
         if (credentials instanceof UsernamePasswordCredentialsImpl) {
             return credentials;
         }
-        UsernamePasswordCredentialsImpl snapshot = new UsernamePasswordCredentialsImpl(credentials.getScope(), credentials.getId(), credentials.getDescription(), credentials.getUsername(), Secret.toString(credentials.getPassword()));
-        snapshot.setUsernameSecret(credentials.isUsernameSecret());
-        return snapshot;
+        try {
+            UsernamePasswordCredentialsImpl snapshot =
+                    new UsernamePasswordCredentialsImpl(credentials.getScope(), credentials.getId(), credentials.getDescription(), credentials.getUsername(), Secret.toString(credentials.getPassword()));
+            snapshot.setUsernameSecret(credentials.isUsernameSecret());
+            return snapshot;
+        } catch (Descriptor.FormException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

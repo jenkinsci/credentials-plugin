@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.domains.HostnameRequirement;
 import com.cloudbees.plugins.credentials.impl.DummyCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -19,7 +20,6 @@ import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.model.CNode;
 import io.jenkins.plugins.casc.model.Mapping;
-import org.acegisecurity.Authentication;
 import org.jenkinsci.Symbol;
 import org.junit.Rule;
 import org.junit.Test;
@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import org.springframework.security.core.Authentication;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -45,16 +46,16 @@ public class CredentialsProviderTest {
     @Test
     @ConfiguredWithCode("CredentialsProviderExtension.yaml")
     public void import_credentials_provider_extension_credentials() {
-        List<DummyCredentials> dummyCred = CredentialsProvider.lookupCredentials(
-                DummyCredentials.class, j.jenkins, ACL.SYSTEM,
+        List<DummyCredentials> dummyCred = CredentialsProvider.lookupCredentialsInItemGroup(
+                DummyCredentials.class, j.jenkins, ACL.SYSTEM2,
                 Collections.emptyList()
         );
         assertThat(dummyCred, hasSize(1));
         assertThat(dummyCred.get(0).getUsername(), equalTo("user1"));
 
         // the system provider works fine too
-        List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentials(
-                UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM,
+        List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentialsInItemGroup(
+                UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM2,
                 Collections.singletonList(new HostnameRequirement("api.test.com"))
         );
         assertThat(ups, hasSize(1));
@@ -84,7 +85,7 @@ public class CredentialsProviderTest {
 
         @NonNull
         @Override
-        public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication) {
+        public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type, @Nullable ItemGroup itemGroup, @Nullable Authentication authentication, @Nullable List<DomainRequirement> domainRequirements) {
             if (!type.equals(DummyCredentials.class)) {
                 return Collections.emptyList();
             }

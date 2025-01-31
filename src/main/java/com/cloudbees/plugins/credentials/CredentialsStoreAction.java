@@ -33,7 +33,6 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.thoughtworks.xstream.io.xml.XppDriver;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -73,8 +72,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamResult;
@@ -84,7 +83,6 @@ import jenkins.model.ModelObjectWithChildren;
 import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
-import org.acegisecurity.AccessDeniedException;
 import org.apache.commons.lang.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
@@ -92,12 +90,13 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.StaplerRequest2;
+import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.springframework.security.access.AccessDeniedException;
 import org.xml.sax.SAXException;
 
 import static com.cloudbees.plugins.credentials.ContextMenuIconUtils.getMenuItemIconUrlByClassSpec;
@@ -327,7 +326,7 @@ public abstract class CredentialsStoreAction
      * {@inheritDoc}
      */
     @Override
-    public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
+    public ContextMenu doContextMenu(StaplerRequest2 request, StaplerResponse2 response) {
         return getContextMenu("");
     }
 
@@ -335,8 +334,8 @@ public abstract class CredentialsStoreAction
      * {@inheritDoc}
      */
     @Override
-    public ContextMenu doChildrenContextMenu(StaplerRequest request,
-                                             StaplerResponse response) {
+    public ContextMenu doChildrenContextMenu(StaplerRequest2 request,
+                                             StaplerResponse2 response) {
         return getChildrenContextMenu("");
     }
 
@@ -398,7 +397,7 @@ public abstract class CredentialsStoreAction
     @Override
     public String getIconClassName() {
         return isVisible()
-                ? "symbol-key"
+                ? "symbol-credentials plugin-credentials"
                 : null;
     }
 
@@ -521,7 +520,7 @@ public abstract class CredentialsStoreAction
     @SuppressWarnings("unused") // stapler web method
     @Restricted(NoExternalUse.class)
     @RequirePOST
-    public HttpResponse doCreateDomain(StaplerRequest req) throws ServletException, IOException {
+    public HttpResponse doCreateDomain(StaplerRequest2 req) throws ServletException, IOException {
         getStore().checkPermission(MANAGE_DOMAINS);
         if (!getStore().isDomainsModifiable()) {
             return HttpResponses.status(HttpServletResponse.SC_BAD_REQUEST);
@@ -541,7 +540,7 @@ public abstract class CredentialsStoreAction
             }
 
             Domain domain = (Domain)
-                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                    Items.XSTREAM.unmarshal(XStream2.getDefaultDriver().createReader(new StringReader(out.toString())));
             if (getStore().addDomain(domain)) {
                 return HttpResponses.ok();
             } else {
@@ -787,7 +786,7 @@ public abstract class CredentialsStoreAction
         @RequirePOST
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public HttpResponse doCreateCredentials(StaplerRequest req) throws ServletException, IOException {
+        public HttpResponse doCreateCredentials(StaplerRequest2 req) throws ServletException, IOException {
             getStore().checkPermission(CREATE);
             String requestContentType = req.getContentType();
             if (requestContentType == null) {
@@ -804,7 +803,7 @@ public abstract class CredentialsStoreAction
                 }
 
                 Credentials credentials = (Credentials)
-                        Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                        Items.XSTREAM.unmarshal(XStream2.getDefaultDriver().createReader(new StringReader(out.toString())));
                 if (getStore().addCredentials(domain, credentials)) {
                     return HttpResponses.ok();
                 } else {
@@ -812,7 +811,7 @@ public abstract class CredentialsStoreAction
                 }
             } else {
                 JSONObject data = req.getSubmittedForm();
-                Credentials credentials = req.bindJSON(Credentials.class, data.getJSONObject("credentials"));
+                Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
                 getStore().addCredentials(domain, credentials);
                 return HttpResponses.redirectTo("../../domain/" + getUrlName());
             }
@@ -829,7 +828,7 @@ public abstract class CredentialsStoreAction
         @RequirePOST
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public HttpResponse doConfigSubmit(StaplerRequest req) throws ServletException, IOException {
+        public HttpResponse doConfigSubmit(StaplerRequest2 req) throws ServletException, IOException {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
             }
@@ -854,7 +853,7 @@ public abstract class CredentialsStoreAction
         @RequirePOST
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
+        public HttpResponse doDoDelete(StaplerRequest2 req) throws IOException {
             if (!getStore().isDomainsModifiable()) {
                 return HttpResponses.status(400);
             }
@@ -925,7 +924,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
+        public ContextMenu doContextMenu(StaplerRequest2 request, StaplerResponse2 response) {
             return getContextMenu("");
         }
 
@@ -933,8 +932,8 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public ContextMenu doChildrenContextMenu(StaplerRequest request,
-                                                 StaplerResponse response) {
+        public ContextMenu doChildrenContextMenu(StaplerRequest2 request,
+                                                 StaplerResponse2 response) {
             return getChildrenContextMenu("");
         }
 
@@ -949,7 +948,7 @@ public abstract class CredentialsStoreAction
         @WebMethod(name = "config.xml")
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp)
+        public void doConfigDotXml(StaplerRequest2 req, StaplerResponse2 rsp)
                 throws IOException {
             getStore().checkPermission(CredentialsProvider.MANAGE_DOMAINS);
             if (req.getMethod().equals("GET")) {
@@ -998,7 +997,7 @@ public abstract class CredentialsStoreAction
             }
 
             Domain replacement = (Domain)
-                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                    Items.XSTREAM.unmarshal(XStream2.getDefaultDriver().createReader(new StringReader(out.toString())));
             getStore().updateDomain(domain, replacement);
         }
 
@@ -1291,7 +1290,7 @@ public abstract class CredentialsStoreAction
         @RequirePOST
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public HttpResponse doDoDelete(StaplerRequest req) throws IOException {
+        public HttpResponse doDoDelete(StaplerRequest2 req) throws IOException {
             getStore().checkPermission(DELETE);
             if (getStore().removeCredentials(domain.getDomain(), credentials)) {
                 return HttpResponses.redirectTo("../..");
@@ -1310,7 +1309,7 @@ public abstract class CredentialsStoreAction
         @RequirePOST
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public HttpResponse doDoMove(StaplerRequest req, @QueryParameter String destination) throws IOException {
+        public HttpResponse doDoMove(StaplerRequest2 req, @QueryParameter String destination) throws IOException {
             if (getStore().getDomains().size() <= 1) {
                 return HttpResponses.status(400);
             }
@@ -1392,10 +1391,10 @@ public abstract class CredentialsStoreAction
         @RequirePOST
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public HttpResponse doUpdateSubmit(StaplerRequest req) throws ServletException, IOException {
+        public HttpResponse doUpdateSubmit(StaplerRequest2 req) throws ServletException, IOException {
             getStore().checkPermission(UPDATE);
             JSONObject data = req.getSubmittedForm();
-            Credentials credentials = req.bindJSON(Credentials.class, data);
+            Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data);
             if (!getStore().updateCredentials(this.domain.domain, this.credentials, credentials)) {
                 return HttpResponses.redirectTo("concurrentModification");
             }
@@ -1440,7 +1439,7 @@ public abstract class CredentialsStoreAction
          * {@inheritDoc}
          */
         @Override
-        public ContextMenu doContextMenu(StaplerRequest request, StaplerResponse response) {
+        public ContextMenu doContextMenu(StaplerRequest2 request, StaplerResponse2 response) {
             return getContextMenu("");
         }
 
@@ -1455,7 +1454,7 @@ public abstract class CredentialsStoreAction
         @WebMethod(name = "config.xml")
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
-        public void doConfigDotXml(StaplerRequest req, StaplerResponse rsp)
+        public void doConfigDotXml(StaplerRequest2 req, StaplerResponse2 rsp)
                 throws IOException {
             if (req.getMethod().equals("GET")) {
                 // read
@@ -1505,7 +1504,7 @@ public abstract class CredentialsStoreAction
             }
 
             Credentials credentials = (Credentials)
-                    Items.XSTREAM.unmarshal(new XppDriver().createReader(new StringReader(out.toString())));
+                    Items.XSTREAM.unmarshal(XStream2.getDefaultDriver().createReader(new StringReader(out.toString())));
             getStore().updateCredentials(domain.getDomain(), this.credentials, credentials);
         }
 
@@ -1561,4 +1560,5 @@ public abstract class CredentialsStoreAction
             }
         }
     }
+
 }

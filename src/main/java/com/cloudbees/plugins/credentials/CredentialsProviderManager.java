@@ -50,7 +50,7 @@ import jenkins.model.GlobalConfigurationCategory;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * Manages the various {@link CredentialsProvider} implementations in a {@link Jenkins}
@@ -422,7 +422,7 @@ public class CredentialsProviderManager extends DescriptorVisibilityFilter imple
          * {@inheritDoc}
          */
         @Override
-        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+        public boolean configure(StaplerRequest2 req, JSONObject json) throws FormException {
             if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                 if (!json.has("restrictions")) {
                     // JENKINS-36090 stapler "helpfully" does not submit the restrictions if there are none

@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
@@ -42,7 +43,7 @@ import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
-import hudson.security.AccessDeniedException2;
+import hudson.security.AccessDeniedException3;
 import hudson.security.Permission;
 import java.io.IOException;
 import java.net.URI;
@@ -59,12 +60,12 @@ import java.util.stream.Collectors;
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import net.sf.json.JSONObject;
-import org.acegisecurity.Authentication;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
+import org.springframework.security.core.Authentication;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.always;
 
@@ -118,27 +119,17 @@ public class UserCredentialsProvider extends CredentialsProvider {
      */
     @NonNull
     @Override
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type, @Nullable ItemGroup itemGroup,
-                                                          @Nullable Authentication authentication) {
-        return getCredentials(type, itemGroup, authentication, Collections.emptyList());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @NonNull
-    @Override
-    public <C extends Credentials> List<C> getCredentials(@NonNull Class<C> type,
-                                                          @Nullable ItemGroup itemGroup,
-                                                          @Nullable Authentication authentication,
-                                                          @NonNull List<DomainRequirement> domainRequirements) {
+    public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type,
+                                                                     @Nullable ItemGroup itemGroup,
+                                                                     @Nullable Authentication authentication,
+                                                                     @NonNull List<DomainRequirement> domainRequirements) {
         // ignore itemGroup, as per-user credentials are available on any object
         if (authentication == null) {
             // assume ACL#SYSTEM
-            authentication = ACL.SYSTEM;
+            authentication = ACL.SYSTEM2;
         }
-        if (!ACL.SYSTEM.equals(authentication)) {
-            User user = User.get(authentication);
+        if (!ACL.SYSTEM2.equals(authentication)) {
+            User user = User.get2(authentication);
             if (user != null) {
                 UserCredentialsProperty property = user.getProperty(UserCredentialsProperty.class);
                 if (property != null) {
@@ -404,6 +395,11 @@ public class UserCredentialsProvider extends CredentialsProvider {
             checkPermission(CredentialsProvider.UPDATE);
             Map<Domain, List<Credentials>> domainCredentialsMap = getDomainCredentialsMap();
             if (domainCredentialsMap.containsKey(domain)) {
+                if (current instanceof IdCredentials || replacement instanceof IdCredentials) {
+                    if (!current.equals(replacement)) {
+                        throw new IllegalArgumentException("Credentials' IDs do not match, will not update.");
+                    }
+                }
                 List<Credentials> list = domainCredentialsMap.get(domain);
                 int index = list.indexOf(current);
                 if (index == -1) {
@@ -425,7 +421,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
             if (user.equals(User.current())) {
                 user.checkPermission(p);
             } else {
-                throw new AccessDeniedException2(Jenkins.getAuthentication(), p);
+                throw new AccessDeniedException3(Jenkins.getAuthentication2(), p);
             }
         }
 
@@ -467,7 +463,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * {@inheritDoc}
          */
         @Override
-        public UserProperty reconfigure(StaplerRequest req, JSONObject form) {
+        public UserProperty reconfigure(StaplerRequest2 req, JSONObject form) {
             return this;
         }
 
@@ -671,8 +667,8 @@ public class UserCredentialsProvider extends CredentialsProvider {
          * {@inheritDoc}
          */
         @Override
-        public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
-            return getACL().hasPermission(a, permission);
+        public boolean hasPermission2(@NonNull Authentication a, @NonNull Permission permission) {
+            return getACL().hasPermission2(a, permission);
         }
 
         /**
@@ -683,8 +679,8 @@ public class UserCredentialsProvider extends CredentialsProvider {
         public ACL getACL() {
             return new ACL() {
                 @Override
-                public boolean hasPermission(@NonNull Authentication a, @NonNull Permission permission) {
-                    return user.equals(User.getById(a.getName(), true)) && user.getACL().hasPermission(a, permission);
+                public boolean hasPermission2(@NonNull Authentication a, @NonNull Permission permission) {
+                    return user.equals(User.getById(a.getName(), true)) && user.getACL().hasPermission2(a, permission);
                 }
             };
         }
@@ -765,7 +761,7 @@ public class UserCredentialsProvider extends CredentialsProvider {
          */
         @Override
         public String getRelativeLinkToContext() {
-            StaplerRequest request = Stapler.getCurrentRequest();
+            StaplerRequest2 request = Stapler.getCurrentRequest2();
             return URI.create(request.getContextPath() + "/" + user.getUrl() + "/").normalize().toString() ;
         }
 

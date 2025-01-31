@@ -27,51 +27,38 @@ window.credentials.init = function () {
         var div = document.createElement("DIV");
         document.body.appendChild(div);
         div.innerHTML = "<div id='credentialsDialog'><div class='bd'></div></div>";
-        window.credentials.body = $('credentialsDialog');
-        window.credentials.dialog = new YAHOO.widget.Panel(window.credentials.body, {
-            fixedcenter: true,
-            close: true,
-            draggable: true,
-            zindex: 1000,
-            modal: true,
-            visible: false,
-            keylisteners: [
-              new YAHOO.util.KeyListener(document, {keys:27}, {
-                fn:(function() {window.credentials.dialog.hide();}),
-                scope:document,
-                correctScope:false
-              })
-            ]
-        });
-        window.credentials.dialog.render();
+        window.credentials.body = document.getElementById('credentialsDialog');
     }
 };
 window.credentials.add = function (e) {
     window.credentials.init();
-    new Ajax.Request(e, {
-        method: 'get',
-        requestHeaders: {'Crumb': crumb},
-        onSuccess: function (t) {
-            window.credentials.body.innerHTML = t.responseText;
-            Behaviour.applySubtree(window.credentials.body, false);
-            window.credentials.form = $('credentials-dialog-form');
-            // window.credentials.form.action = e;
-            var r = YAHOO.util.Dom.getClientRegion();
-            window.credentials.dialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
-            window.credentials.dialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
-            window.credentials.dialog.center();
-            window.credentials.dialog.show();
+    fetch(e, {
+        method: 'GET',
+        headers: crumb.wrap({}),
+    }).then(rsp => {
+        if (rsp.ok) {
+            rsp.text().then((responseText) => {
+                // do not apply behaviour on parsed HTML, dialog.form does that later
+                // otherwise we have crumb and json fields twice
+                window.credentials.body.innerHTML = responseText;
+                window.credentials.form = document.getElementById('credentials-dialog-form');
+				const data = window.credentials.form.dataset;
+				const options = {'title': data['title'], 'okText': data['add'], 'submitButton':false, 'minWidth': '75vw'};
+				dialog.form(window.credentials.form, options)
+					.then(window.credentials.addSubmit);
+				window.credentials.form.querySelector('select').focus();
+            });
         }
     });
     return false;
 };
 window.credentials.refreshAll = function () {
-    $$('select.credentials-select').each(function (e) {
+    document.querySelectorAll('select.credentials-select').forEach(function (e) {
         var deps = [];
 
         function h() {
             var params = {};
-            deps.each(function (d) {
+            deps.forEach(function (d) {
                 params[d.name] = controlValue(d.control);
             });
             var value = e.value;
@@ -100,14 +87,11 @@ window.credentials.refreshAll = function () {
 
         var v = e.getAttribute("fillDependsOn");
         if (v != null) {
-            v.split(" ").each(function (name) {
+            v.split(" ").forEach(function (name) {
                 var c = findNearBy(e, name);
                 if (c == null) {
                     if (window.console != null) {
                         console.warn("Unable to find nearby " + name);
-                    }
-                    if (window.YUI != null) {
-                        YUI.log("Unable to find a nearby control of the name " + name, "warn")
                     }
                     return;
                 }
@@ -117,128 +101,63 @@ window.credentials.refreshAll = function () {
         h();
     });
 };
-window.credentials.addSubmit = function (e) {
-    var id;
-    var containerId = "container" + (iota++);
+window.credentials.addSubmit = function (_) {
+    const form = window.credentials.form;
+    // temporarily attach to DOM (avoid https://github.com/HtmlUnit/htmlunit/issues/740)
+    document.body.appendChild(form);
+    buildFormTree(form);
+    ajaxFormSubmit(form);
+    form.remove();
 
-    var responseDialog = new YAHOO.widget.Panel("wait" + (iota++), {
-        fixedcenter: true,
-        close: true,
-        draggable: true,
-        zindex: 4,
-        modal: true,
-        visible: false
-    });
-
-    responseDialog.setHeader("Error");
-    responseDialog.setBody("<div id='" + containerId + "'></div>");
-    responseDialog.render(document.body);
-    var target; // iframe
-
-    function attachIframeOnload(target, f) {
-        if (target.attachEvent) {
-            target.attachEvent("onload", f);
-        } else {
-            target.onload = f;
-        }
+    function ajaxFormSubmit(form) {
+        fetch(form.action, {
+            method: form.method,
+            headers: crumb.wrap({}),
+            body: new FormData(form)
+        })
+            .then(res => res.json())
+            .then(data => {
+                window.notificationBar.show(data.message, window.notificationBar[data.notificationType]);
+                window.credentials.refreshAll();
+            })
+            .catch((e) => {
+                // notificationBar.show(...) with logging ID could be handy here?
+                console.error("Could not add credentials:", e);
+                window.notificationBar.show("Credentials creation failed", window.notificationBar["ERROR"]);
+            })
     }
-
-    var f = $('credentials-dialog-form');
-    // create a throw-away IFRAME to avoid back button from loading the POST result back
-    id = "iframe" + (iota++);
-    target = document.createElement("iframe");
-    target.setAttribute("id", id);
-    target.setAttribute("name", id);
-    target.setAttribute("style", "height:100%; width:100%");
-    $(containerId).appendChild(target);
-
-    attachIframeOnload(target, function () {
-        if (target.contentWindow && target.contentWindow.applyCompletionHandler) {
-            // apply-aware server is expected to set this handler
-            target.contentWindow.applyCompletionHandler(window);
-        } else {
-            // otherwise this is possibly an error from the server, so we need to render the whole content.
-            var r = YAHOO.util.Dom.getClientRegion();
-            responseDialog.cfg.setProperty("width", r.width * 3 / 4 + "px");
-            responseDialog.cfg.setProperty("height", r.height * 3 / 4 + "px");
-            responseDialog.center();
-            responseDialog.show();
-        }
-        window.setTimeout(function () {// otherwise Firefox will fail to leave the "connecting" state
-            $(id).remove();
-        }, 0)
-    });
-
-    f.target = target.id;
-    try {
-        buildFormTree(f);
-        f.submit();
-    } finally {
-        f.target = null;
-    }
-    window.credentials.dialog.hide();
-    return false;
 };
-Behaviour.specify("BUTTON.credentials-add-menu", 'credentials-select', -99, function(e) {
-    var btn = $(e);
-    var menu = btn.next('DIV.credentials-add-menu-items');
-    if (menu) {
-        var menuAlign = (btn.getAttribute("menualign") || "tl-bl");
 
-        var menuButton = new YAHOO.widget.Button(btn, {
-            type: "menu",
-            menu: menu,
-            menualignment: menuAlign.split("-"),
-            menuminscrollheight: 250
-        });
-        $(menuButton._button).addClassName(btn.className);    // copy class names
-        $(menuButton._button).setAttribute("suffix", btn.getAttribute("suffix"));
-        menuButton.getMenu().clickEvent.subscribe(function (type, args, value) {
-            var item = args[1];
-            if (item.cfg.getProperty("disabled")) {
-                return;
-            }
-            window.credentials.add(item.srcElement.getAttribute('data-url'));
-        });
-        // YUI menu will not parse disabled when using DIV-LI only when using SELECT-OPTION
-        // but SELECT-OPTION doesn't support images, so we need to catch the rendering and roll our
-        // own disabled attribute support
-        menuButton.getMenu().beforeShowEvent.subscribe(function(type,args,value){
-            var items = this.getItems();
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].srcElement.getAttribute('disabled')) {
-                    items[i].cfg.setProperty('disabled', true);
-                }
-            }
-        });
-    }
-    e=null;
+Behaviour.specify("[data-type='credentials-add-store-item']", 'credentials-add-store-item', -99, function(e) {
+    e.addEventListener("click", function (event) {
+        window.credentials.add(event.target.dataset.url);
+    });
+    e = null;
 });
 Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
-    makeButton(e, e.disabled ? null : window.credentials.add);
+    e.addEventListener("click", window.credentials.add);
     e = null; // avoid memory leak
 });
 Behaviour.specify("DIV.credentials-select-control", 'credentials-select', 100, function (d) {
-    d = $(d);
-    var buttons = d.getElementsBySelector("INPUT.credentials-select-radio-control");
+    var buttons = Array.from(d.querySelectorAll("INPUT.credentials-select-radio-control"));
     var u = (function () {
         for (var i = 0; i < this.length; i++) {
             this[i]();
         }
-    }).bind(buttons.collect(function (x) {
+    }).bind(buttons.map(function (x) {
                 return (function () {
                     if (x.checked) {
-                        this.addClassName('credentials-select-content-active');
-                        this.removeClassName('credentials-select-content-inactive');
+                        this.classList.add('credentials-select-content-active');
+                        this.classList.remove('credentials-select-content-inactive');
                         this.removeAttribute('field-disabled');
                     } else if (this instanceof HTMLElement) {
-                        this.addClassName('credentials-select-content-inactive');
-                        this.removeClassName('credentials-select-content-active');
+                        this.classList.add('credentials-select-content-inactive');
+                        this.classList.remove('credentials-select-content-active');
                         this.setAttribute('field-disabled', 'true');
                     }
-                }).bind(d.getElementsBySelector(x.value == 'select'
+                }).bind(d.querySelector(x.value == 'select'
                                 ? "DIV.credentials-select-content-select"
-                                : "DIV.credentials-select-content-param")[0]);
+                                : "DIV.credentials-select-content-param"));
             }));
     u();
     for (var i = 0; i < buttons.length; i++) {
@@ -251,13 +170,13 @@ Behaviour.specify("DIV.credentials-select-control", 'credentials-select', 100, f
 Behaviour.specify("INPUT.credentials-select", 'credentials-select', -100, function (x) {
   x.onchange = x.oninput = x.onkeyup = (function() {
     if (!this.value.startsWith('${')) {
-      this.next().show();
+      this.nextElementSibling.style.display = '';
     } else if (this.value=='' || this.value=='${}' || this.value.indexOf('}')!=this.value.length-1) {
-      this.next().show();
+      this.nextElementSibling.style.display = '';
     } else {
-      this.next().hide();
+      this.nextElementSibling.style.display = 'none';
     }
-  }).bind($(x));
+  }).bind(x);
   x.onchange();
 });
 Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0, function (e) {
@@ -267,10 +186,14 @@ Behaviour.specify("DIV.include-user-credentials", 'include-user-credentials', 0,
     };
     // simpler version of f:helpLink using inline help text
     e.querySelector('span.help-btn').onclick = function (evt) {
-        var help = e.querySelector('.help-content');
-        help.hidden = !help.hidden;
+        var help = e.querySelector('.help');
+        help.style.display = help.style.display == "block" ? "" : "block";
+        return false;
     };
 });
+// prevent accidental removal of CSS by moving it to the head (https://issues.jenkins.io/browse/JENKINS-26578)
+var style = document.querySelector("body link[href$='credentials/select/select.css']");
+style && document.head.appendChild(style);
 window.setTimeout(function() {
     // HACK: can be removed once base version of Jenkins has fix of https://issues.jenkins-ci.org/browse/JENKINS-26578
     // need to apply the new behaviours to existing objects

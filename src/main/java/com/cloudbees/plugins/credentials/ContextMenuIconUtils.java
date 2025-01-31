@@ -28,8 +28,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Functions;
 import hudson.model.Action;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import jenkins.model.ModelObjectWithContextMenu;
 import org.apache.commons.jelly.JellyContext;
 import org.apache.commons.lang.StringUtils;
@@ -160,7 +158,7 @@ public class ContextMenuIconUtils {
         if (url == null) {
             return null;
         }
-        String contextPath = Stapler.getCurrentRequest().getContextPath();
+        String contextPath = Stapler.getCurrentRequest2().getContextPath();
         return (StringUtils.isBlank(contextPath)? "" : contextPath) + (url.startsWith("images/")
                 ? Functions.getResourcePath()
                 : "") + (url.startsWith("/") ? url : '/' + url);

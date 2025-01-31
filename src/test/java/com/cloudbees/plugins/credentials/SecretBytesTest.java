@@ -26,11 +26,10 @@ package com.cloudbees.plugins.credentials;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import jenkins.model.Jenkins;
-import jenkins.security.ConfidentialStoreRule;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -38,8 +37,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 public class SecretBytesTest {
-    @Rule
-    public ConfidentialStoreRule confidentialStore = new ConfidentialStoreRule();
 
     @Test
     public void encrypt() {
@@ -50,6 +47,15 @@ public class SecretBytesTest {
         assertThat(secret.getEncryptedData(), not(is("abc".getBytes())));
 
         assertThat(SecretBytes.fromBytes(secret.getEncryptedData()), is(secret));
+    }
+
+    @Issue("SECURITY-2495")
+    @Test
+    public void fromRawBytesNoPassThrough() {
+        SecretBytes secret = SecretBytes.fromRawBytes("aaaaaaaa\u0002ab".getBytes());
+        assertThat(secret.getPlainData(), is("aaaaaaaa\u0002ab".getBytes()));
+
+        assertThat(secret.getEncryptedData(), not(is("aaaaaaaa\u0002ab".getBytes())));
     }
 
     @Test
