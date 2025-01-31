@@ -28,6 +28,7 @@ import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.model.Descriptor;
+import hudson.model.Descriptor.FormException;
 import hudson.model.Node;
 import hudson.model.Result;
 import hudson.model.Slave;
@@ -611,7 +612,7 @@ public class CredentialsInPipelineTest {
     /////////////////////////////////////////////////////////////////
 
     // Partially from UsernamePasswordCredentialsImplTest setup()
-    private void prepareUsernamePassword() throws IOException {
+    private void prepareUsernamePassword() throws IOException, FormException {
         UsernamePasswordCredentialsImpl credentials =
                 new UsernamePasswordCredentialsImpl(null,
                         "abc123", "Bob’s laptop",
