@@ -8,9 +8,9 @@ import io.jenkins.plugins.casc.model.Mapping;
 
 import java.util.Objects;
 
-public class ConfigurationAsCodeCategoryRoot {
+class ConfigurationAsCodeCategoryRoot {
 
-    public static Mapping getConfiguration(ConfigurationContext context) throws Exception {
+    static Mapping getConfiguration(ConfigurationContext context) {
         GlobalCredentialsConfiguration.Category category = ExtensionList.lookupSingleton(GlobalCredentialsConfiguration.Category.class);
         GlobalConfigurationCategoryConfigurator configurator = new GlobalConfigurationCategoryConfigurator(category);
         return Objects.requireNonNull(configurator.describe(configurator.getTargetComponent(context), context)).asMapping();

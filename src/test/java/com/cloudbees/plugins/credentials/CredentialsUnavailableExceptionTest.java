@@ -62,11 +62,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -75,14 +76,15 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-public class CredentialsUnavailableExceptionTest {
+@WithJenkins
+class CredentialsUnavailableExceptionTest {
 
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+    private JenkinsRule r;
     private CredentialsStore systemStore;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp(JenkinsRule r) throws Exception {
+        this.r = r;
         SystemCredentialsProvider.ProviderImpl system = ExtensionList.lookup(CredentialsProvider.class).get(
                 SystemCredentialsProvider.ProviderImpl.class);
 
@@ -101,7 +103,7 @@ public class CredentialsUnavailableExceptionTest {
     }
 
     @Test
-    public void buildFailure() throws Exception {
+    void buildFailure() throws Exception {
         systemStore.addCredentials(Domain.global(), new UsernameUnavailablePasswordImpl("buildFailure", "test", "foo"));
         FreeStyleProject project = r.createFreeStyleProject();
         project.getBuildersList().add(new PasswordBuildStep("buildFailure"));
@@ -114,7 +116,7 @@ public class CredentialsUnavailableExceptionTest {
     }
 
     @Test
-    public void checkoutFailure() throws Exception {
+    void checkoutFailure() throws Exception {
         systemStore.addCredentials(Domain.global(), new UsernameUnavailablePasswordImpl("checkoutFailure", "test", "bar"));
         FreeStyleProject project = r.createFreeStyleProject();
         project.setScm(new PasswordSCM("checkoutFailure"));
@@ -127,7 +129,7 @@ public class CredentialsUnavailableExceptionTest {
     }
 
     @Test
-    public void pollingFailure() throws Exception {
+    void pollingFailure() throws Exception {
         UsernameUnavailablePasswordImpl credentials =
                 new UsernameUnavailablePasswordImpl("pollingFailure", "test", "manchu");
         systemStore.addCredentials(Domain.global(),
@@ -173,7 +175,7 @@ public class CredentialsUnavailableExceptionTest {
         assertThat("New build", project.getLastBuild().getNumber(), greaterThan(number));
     }
 
-    private SCMTrigger.SCMAction getScmAction(SCMTrigger trigger) {
+    private static SCMTrigger.SCMAction getScmAction(SCMTrigger trigger) {
         Collection<? extends Action> actions = trigger.getProjectActions();
         for (Action a : actions) {
             if (a instanceof SCMTrigger.SCMAction) {
@@ -183,7 +185,7 @@ public class CredentialsUnavailableExceptionTest {
         return null;
     }
 
-    public static class PasswordSCM extends SCM {
+    private static class PasswordSCM extends SCM {
 
         private final String id;
 
@@ -284,7 +286,7 @@ public class CredentialsUnavailableExceptionTest {
         }
     }
 
-    public static class PasswordBuildStep extends Builder {
+    private static class PasswordBuildStep extends Builder {
 
         private final String id;
 
@@ -318,7 +320,7 @@ public class CredentialsUnavailableExceptionTest {
         }
     }
 
-    public static class UsernameUnavailablePasswordImpl extends BaseStandardCredentials implements StandardUsernamePasswordCredentials {
+    private static class UsernameUnavailablePasswordImpl extends BaseStandardCredentials implements StandardUsernamePasswordCredentials {
 
         private final String username;
 
