@@ -52,7 +52,8 @@ import org.springframework.security.core.Authentication;
 /**
  * Analogue of <a href="https://github.com/jenkinsci/cloudbees-folder-plugin/blob/cloudbees-folder-4.2.3/src/main/java/com/cloudbees/hudson/plugins/folder/properties/FolderCredentialsProvider.java">{@code FolderCredentialsProvider}</a> for {@link MockFolder}.
  */
-@Extension public class MockFolderCredentialsProvider extends CredentialsProvider {
+@Extension
+public class MockFolderCredentialsProvider extends CredentialsProvider {
 
     private static final Map<MockFolder,FolderCredentialsProperty> properties = new java.util.WeakHashMap<>();
     private static synchronized FolderCredentialsProperty getProperty(MockFolder folder) {
@@ -86,9 +87,8 @@ import org.springframework.security.core.Authentication;
         List<C> result = new ArrayList<>();
         if (ACL.SYSTEM2.equals(authentication)) {
             while (itemGroup != null) {
-                if (itemGroup instanceof MockFolder) {
-                    final MockFolder folder = (MockFolder) itemGroup;
-                    FolderCredentialsProperty property = getProperty(folder);
+                if (itemGroup instanceof MockFolder folder) {
+	                FolderCredentialsProperty property = getProperty(folder);
                     result.addAll(DomainCredentials.getCredentials(
                             property.getDomainCredentialsMap(),
                             type,
@@ -107,9 +107,8 @@ import org.springframework.security.core.Authentication;
 
     @Override
     public CredentialsStore getStore(@CheckForNull ModelObject object) {
-        if (object instanceof MockFolder) {
-            final MockFolder folder = (MockFolder) object;
-            return getProperty(folder).getStore();
+        if (object instanceof MockFolder folder) {
+	        return getProperty(folder).getStore();
         }
         return null;
     }
@@ -301,7 +300,7 @@ import org.springframework.security.core.Authentication;
                 if (list == null || list.isEmpty()) {
                     return Collections.emptyList();
                 }
-                return Collections.unmodifiableList(new ArrayList<>(list));
+                return List.copyOf(list);
             }
             return Collections.emptyList();
         }
@@ -369,9 +368,7 @@ import org.springframework.security.core.Authentication;
             @NonNull
             @Override
             public List<Domain> getDomains() {
-                return Collections.unmodifiableList(new ArrayList<>(
-                        getDomainCredentialsMap().keySet()
-                ));
+                return List.copyOf(getDomainCredentialsMap().keySet());
             }
 
             /**

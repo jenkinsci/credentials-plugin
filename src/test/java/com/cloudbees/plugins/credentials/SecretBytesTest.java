@@ -28,7 +28,7 @@ import java.util.Random;
 import jenkins.model.Jenkins;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,10 +36,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-public class SecretBytesTest {
+class SecretBytesTest {
 
     @Test
-    public void encrypt() {
+    void encrypt() {
         SecretBytes secret = SecretBytes.fromBytes("abc".getBytes());
         assertThat(secret.getPlainData(), is("abc".getBytes()));
 
@@ -51,7 +51,7 @@ public class SecretBytesTest {
 
     @Issue("SECURITY-2495")
     @Test
-    public void fromRawBytesNoPassThrough() {
+    void fromRawBytesNoPassThrough() {
         SecretBytes secret = SecretBytes.fromRawBytes("aaaaaaaa\u0002ab".getBytes());
         assertThat(secret.getPlainData(), is("aaaaaaaa\u0002ab".getBytes()));
 
@@ -59,7 +59,7 @@ public class SecretBytesTest {
     }
 
     @Test
-    public void encryptedValuePattern() {
+    void encryptedValuePattern() {
         Random entropy = new Random();
         for (int i = 1; i < 100; i++) {
             String plaintext = Base64.encodeBase64String(RandomStringUtils.random(entropy.nextInt(i)).getBytes());
@@ -72,12 +72,12 @@ public class SecretBytesTest {
     }
 
     @Test
-    public void decrypt() {
+    void decrypt() {
         assertThat(SecretBytes.fromBytes("abc".getBytes()).getPlainData(), is("abc".getBytes()));
     }
 
     @Test
-    public void isSecretBytes() {
+    void isSecretBytes() {
         assertThat(SecretBytes.isSecretBytes(SecretBytes.fromBytes("abc".getBytes()).toString()), is(true));
         assertThat(SecretBytes.isSecretBytes(""), is(false));
         assertThat(SecretBytes.isSecretBytes("{}"), is(false));
@@ -101,7 +101,7 @@ public class SecretBytesTest {
     }
 
     @Test
-    public void noAccidentalDecrypt() {
+    void noAccidentalDecrypt() {
         // if this fails then you have magically picked up the secret key that this was generated from
         // running the test again should pass... but it is highly unlikely that you will ever get the
         // same key as I had wen I generated this value
@@ -110,7 +110,7 @@ public class SecretBytesTest {
     }
 
     @Test
-    public void serialization() {
+    void serialization() {
         SecretBytes s = SecretBytes.fromBytes("Mr.Jenkins".getBytes());
         String xml = Jenkins.XSTREAM.toXML(s);
         assertThat(xml, not(containsString(Base64.encodeBase64String("Mr.Jenkins".getBytes()))));
@@ -118,7 +118,7 @@ public class SecretBytesTest {
         assertThat(o, is(s));
     }
 
-    public static class Foo {
+    private static class Foo {
         SecretBytes password;
     }
 
@@ -126,7 +126,7 @@ public class SecretBytesTest {
      * Makes sure the serialization form is backward compatible with String.
      */
     @Test
-    public void testCompatibilityFromString() {
+    void testCompatibilityFromString() {
         String tagName = Foo.class.getName().replace("$", "_-");
         String xml = String.format("<%s><password>%s</password></%s>", tagName, Base64.encodeBase64String("secret".getBytes()), tagName);
         Foo foo = new Foo();
@@ -135,28 +135,28 @@ public class SecretBytesTest {
     }
 
     @Test
-    public void largeRawString__noChunking__noUrlSafe() {
+    void largeRawString__noChunking__noUrlSafe() {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
         assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, false, false), StandardCharsets.US_ASCII)).getPlainData(), is(data));
     }
 
     @Test
-    public void largeRawString__chunking__noUrlSafe() {
+    void largeRawString__chunking__noUrlSafe() {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
         assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, true, false), StandardCharsets.US_ASCII)).getPlainData(), is(data));
     }
 
     @Test
-    public void largeRawString__noChunking__urlSafe() {
+    void largeRawString__noChunking__urlSafe() {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
         assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, false, true), StandardCharsets.US_ASCII)).getPlainData(), is(data));
     }
 
     @Test
-    public void largeRawString__chunking__urlSafe() {
+    void largeRawString__chunking__urlSafe() {
         byte[] data = new byte[2048];
         new Random().nextBytes(data);
         assertThat(SecretBytes.fromString(new String(org.apache.commons.codec.binary.Base64.encodeBase64(data, true, true), StandardCharsets.US_ASCII)).getPlainData(), is(data));

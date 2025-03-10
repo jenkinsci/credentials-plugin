@@ -36,10 +36,11 @@ import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.util.FormValidation;
 import java.util.Iterator;
-import org.junit.Rule;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockFolder;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import static hudson.util.FormValidation.Kind.ERROR;
 import static hudson.util.FormValidation.Kind.OK;
@@ -47,24 +48,22 @@ import static hudson.util.FormValidation.Kind.WARNING;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BaseStandardCredentialsTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class BaseStandardCredentialsTest {
 
     @Test
-    public void doCheckIdSyntax() {
-        assertDoCheckId("", r.jenkins, OK);
-        assertDoCheckId(/* random UUID */IdCredentials.Helpers.fixEmptyId(null), r.jenkins, OK);
-        assertDoCheckId("blah-blah", r.jenkins, OK);
-        assertDoCheckId("definitely\nscary", r.jenkins, ERROR);
+    void doCheckIdSyntax(JenkinsRule r) {
+        assertDoCheckId(r, "", r.jenkins, OK);
+        assertDoCheckId(r, /* random UUID */IdCredentials.Helpers.fixEmptyId(null), r.jenkins, OK);
+        assertDoCheckId(r, "blah-blah", r.jenkins, OK);
+        assertDoCheckId(r, "definitely\nscary", r.jenkins, ERROR);
     }
 
     @Test
-    public void doCheckIdDuplication() throws Exception {
+    void doCheckIdDuplication(JenkinsRule r) throws Exception {
         // First set up two users, each of which has an existing credentials named ‘per-user’.
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         final User alice = User.getById("alice", true);
@@ -96,45 +95,45 @@ public class BaseStandardCredentialsTest {
 
         // Now as Alice we expect that duplications are checked in the current and parent contexts, plus the user if distinct.
         try (ACLContext ctx = ACL.as(alice)) {
-            assertDoCheckId("root", r.jenkins, ERROR);
-            assertDoCheckId("rootSystem", r.jenkins, ERROR);
-            assertDoCheckId("masked", r.jenkins, ERROR);
-            assertDoCheckId("top", r.jenkins, OK);
-            assertDoCheckId("bottom", r.jenkins, OK);
-            assertDoCheckId("alice", r.jenkins, WARNING);
-            assertDoCheckId("bob", r.jenkins, OK);
-            assertDoCheckId("per-user", r.jenkins, WARNING);
-            assertDoCheckId("root", top, WARNING);
-            assertDoCheckId("rootSystem", top, OK); // not exported to child contexts, so not a duplicate
-            assertDoCheckId("masked", top, ERROR);
-            assertDoCheckId("top", top, ERROR);
-            assertDoCheckId("bottom", top, OK);
-            assertDoCheckId("alice", top, WARNING);
-            assertDoCheckId("bob", top, OK);
-            assertDoCheckId("per-user", top, WARNING);
-            assertDoCheckId("root", bottom, WARNING);
-            assertDoCheckId("rootSystem", bottom, OK); // not exported to child contexts, so not a duplicate
-            assertDoCheckId("masked", bottom, ERROR);
-            assertDoCheckId("top", bottom, WARNING);
-            assertDoCheckId("bottom", bottom, ERROR);
-            assertDoCheckId("alice", bottom, WARNING);
-            assertDoCheckId("bob", bottom, OK);
-            assertDoCheckId("per-user", bottom, WARNING);
-            assertDoCheckId("root", alice, WARNING);
-            assertDoCheckId("rootSystem", alice, OK); // not exported to child contexts, so not a duplicate
-            assertDoCheckId("masked", alice, WARNING);
-            assertDoCheckId("top", alice, OK);
-            assertDoCheckId("bottom", alice, OK);
-            assertDoCheckId("alice", alice, ERROR);
-            assertDoCheckId("bob", alice, OK);
-            assertDoCheckId("per-user", alice, ERROR);
+            assertDoCheckId(r, "root", r.jenkins, ERROR);
+            assertDoCheckId(r, "rootSystem", r.jenkins, ERROR);
+            assertDoCheckId(r, "masked", r.jenkins, ERROR);
+            assertDoCheckId(r, "top", r.jenkins, OK);
+            assertDoCheckId(r, "bottom", r.jenkins, OK);
+            assertDoCheckId(r, "alice", r.jenkins, WARNING);
+            assertDoCheckId(r, "bob", r.jenkins, OK);
+            assertDoCheckId(r, "per-user", r.jenkins, WARNING);
+            assertDoCheckId(r, "root", top, WARNING);
+            assertDoCheckId(r, "rootSystem", top, OK); // not exported to child contexts, so not a duplicate
+            assertDoCheckId(r, "masked", top, ERROR);
+            assertDoCheckId(r, "top", top, ERROR);
+            assertDoCheckId(r, "bottom", top, OK);
+            assertDoCheckId(r, "alice", top, WARNING);
+            assertDoCheckId(r, "bob", top, OK);
+            assertDoCheckId(r, "per-user", top, WARNING);
+            assertDoCheckId(r, "root", bottom, WARNING);
+            assertDoCheckId(r, "rootSystem", bottom, OK); // not exported to child contexts, so not a duplicate
+            assertDoCheckId(r, "masked", bottom, ERROR);
+            assertDoCheckId(r, "top", bottom, WARNING);
+            assertDoCheckId(r, "bottom", bottom, ERROR);
+            assertDoCheckId(r, "alice", bottom, WARNING);
+            assertDoCheckId(r, "bob", bottom, OK);
+            assertDoCheckId(r, "per-user", bottom, WARNING);
+            assertDoCheckId(r, "root", alice, WARNING);
+            assertDoCheckId(r, "rootSystem", alice, OK); // not exported to child contexts, so not a duplicate
+            assertDoCheckId(r, "masked", alice, WARNING);
+            assertDoCheckId(r, "top", alice, OK);
+            assertDoCheckId(r, "bottom", alice, OK);
+            assertDoCheckId(r, "alice", alice, ERROR);
+            assertDoCheckId(r, "bob", alice, OK);
+            assertDoCheckId(r, "per-user", alice, ERROR);
         }
 
         // TODO could test the case that alice has Item.READ but not CredentialsProvider.VIEW on a folder, and mocks a web request passing that folder as context
     }
 
     @Test
-    public void noIDValidationMessageOnCredentialsUpdate() throws Exception {
+    void noIDValidationMessageOnCredentialsUpdate(JenkinsRule r) throws Exception {
         // create credentials with ID test
         CredentialsStore store = lookupStore(r.jenkins);
         addCreds(store, CredentialsScope.GLOBAL, "test");
@@ -143,12 +142,12 @@ public class BaseStandardCredentialsTest {
         HtmlPage htmlPage = webClient.goTo("credentials/store/system/domain/_/credential/test/update");
         assertThat(htmlPage.asNormalizedText(), not(containsString("This ID is already in use")));
     }
-    
+
     private static CredentialsStore lookupStore(ModelObject object) {
         Iterator<CredentialsStore> stores = CredentialsProvider.lookupStores(object).iterator();
         assertTrue(stores.hasNext());
         CredentialsStore store = stores.next();
-        assertEquals("we got the expected store", object, store.getContext());
+        assertEquals(object, store.getContext(), "we got the expected store");
         return store;
     }
 
@@ -157,7 +156,7 @@ public class BaseStandardCredentialsTest {
         store.addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(scope, id, null, "x", "y"));
     }
 
-    private void assertDoCheckId(String id, ModelObject context, FormValidation.Kind expectedResult) {
+    private static void assertDoCheckId(JenkinsRule r, String id, ModelObject context, FormValidation.Kind expectedResult) {
         assertEquals(expectedResult, r.jenkins.getDescriptorByType(UsernamePasswordCredentialsImpl.DescriptorImpl.class).doCheckId(
 
                 context, id

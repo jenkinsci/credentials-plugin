@@ -39,29 +39,31 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class CredentialsParameterBinderTest {
+@WithJenkins
+class CredentialsParameterBinderTest {
 
-    @ClassRule public static JenkinsRule j = new JenkinsRule();
+    private static JenkinsRule j;
+
     private static final String GLOBAL_CREDENTIALS_ID = "cred-id";
     private static final String USER_CREDENTIALS_ID = "alpha-cred-id";
     private static final String USER_ID = "alpha";
     private static final String PARAMETER_NAME = "cred";
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
+    private FreeStyleProject project;
+
+    @BeforeAll
+    static void setUpClass(JenkinsRule rule) throws Exception {
+        j = rule;
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
         CredentialsProvider.lookupStores(j.jenkins).iterator().next()
                 .addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, GLOBAL_CREDENTIALS_ID, "global credential", "root", "correct horse battery staple"));
@@ -72,22 +74,20 @@ public class CredentialsParameterBinderTest {
         }
     }
 
-    private FreeStyleProject project;
-
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         project = j.createFreeStyleProject();
     }
 
     @Test
-    public void getOrCreateIsEmptyWhenBuildHasNoParameters() throws Exception {
+    void getOrCreateIsEmptyWhenBuildHasNoParameters() throws Exception {
         final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0));
         final CredentialsParameterBinder binder = CredentialsParameterBinder.getOrCreate(build);
         assertTrue(binder.isEmpty());
     }
 
     @Test
-    public void getOrCreateCopiesParametersWhenBuildIsParameterized() throws Exception {
+    void getOrCreateCopiesParametersWhenBuildIsParameterized() throws Exception {
         addCredentialsParameterDefinition();
         final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0,
                 new Cause.UserIdCause(USER_ID), selectCredentialsById(GLOBAL_CREDENTIALS_ID)));
@@ -99,7 +99,7 @@ public class CredentialsParameterBinderTest {
     }
 
     @Test
-    public void forParameterNameReturnsNullUserIdWhenBuildLacksUserIdCause() throws Exception {
+    void forParameterNameReturnsNullUserIdWhenBuildLacksUserIdCause() throws Exception {
         addCredentialsParameterDefinition();
         final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0,
                 selectCredentialsById(USER_CREDENTIALS_ID)));
@@ -112,7 +112,7 @@ public class CredentialsParameterBinderTest {
     }
 
     @Test
-    public void forParameterNameReturnsTriggeringUser() throws Exception {
+    void forParameterNameReturnsTriggeringUser() throws Exception {
         addCredentialsParameterDefinition();
         final FreeStyleBuild build = j.assertBuildStatusSuccess(project.scheduleBuild2(0,
                 new Cause.UserIdCause(USER_ID), selectCredentialsById(USER_CREDENTIALS_ID)));

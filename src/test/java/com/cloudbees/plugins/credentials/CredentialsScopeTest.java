@@ -23,15 +23,16 @@
  */
 package com.cloudbees.plugins.credentials;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class CredentialsScopeTest {
+class CredentialsScopeTest {
+
     @Test
-    public void displayNameIsNotNull() {
+    void displayNameIsNotNull() {
         for (CredentialsScope scope : CredentialsScope.values()) {
-            assertNotNull("getDisplayName does not return null for " + scope, scope.getDisplayName());
+            assertNotNull(scope.getDisplayName(), "getDisplayName does not return null for " + scope);
         }
     }
 }

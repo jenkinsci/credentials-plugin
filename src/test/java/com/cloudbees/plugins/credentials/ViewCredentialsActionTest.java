@@ -9,19 +9,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ViewCredentialsActionTest {
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+@WithJenkins
+class ViewCredentialsActionTest {
 
     @Test
-    public void smokes() throws Exception {
+    void smokes(JenkinsRule j) throws Exception {
         SystemCredentialsProvider.ProviderImpl system = ExtensionList.lookup(CredentialsProvider.class).get(
                 SystemCredentialsProvider.ProviderImpl.class);
 

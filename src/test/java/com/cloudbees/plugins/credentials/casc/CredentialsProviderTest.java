@@ -18,11 +18,11 @@ import io.jenkins.plugins.casc.ConfigurationAsCode;
 import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
+import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
 import io.jenkins.plugins.casc.model.CNode;
 import io.jenkins.plugins.casc.model.Mapping;
 import org.jenkinsci.Symbol;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.TestExtension;
 
 import java.io.ByteArrayOutputStream;
@@ -38,14 +38,12 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.jvnet.hudson.test.JenkinsMatchers.hasPlainText;
 
-public class CredentialsProviderTest {
-
-    @Rule
-    public JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
+@WithJenkinsConfiguredWithCode
+class CredentialsProviderTest {
 
     @Test
     @ConfiguredWithCode("CredentialsProviderExtension.yaml")
-    public void import_credentials_provider_extension_credentials() {
+    void import_credentials_provider_extension_credentials(JenkinsConfiguredWithCodeRule j) {
         List<DummyCredentials> dummyCred = CredentialsProvider.lookupCredentialsInItemGroup(
                 DummyCredentials.class, j.jenkins, ACL.SYSTEM2,
                 Collections.emptyList()
@@ -65,7 +63,7 @@ public class CredentialsProviderTest {
 
     @Test
     @ConfiguredWithCode("CredentialsProviderExtension.yaml")
-    public void export_credentials_provider_extension_credentials() throws Exception {
+    void export_credentials_provider_extension_credentials(JenkinsConfiguredWithCodeRule j) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ConfigurationAsCode.get().export(out);
         assertThat(out.toString(), containsString("username: \"user1\""));
@@ -127,7 +125,7 @@ public class CredentialsProviderTest {
         }
 
         @Override
-        public CNode describe(TestCredentialsProvider instance, ConfigurationContext context) throws Exception {
+        public CNode describe(TestCredentialsProvider instance, ConfigurationContext context) {
             Mapping mapping = new Mapping();
             for (Attribute attribute : describe()) {
                 mapping.put(attribute.getName(), attribute.describe(instance, context));

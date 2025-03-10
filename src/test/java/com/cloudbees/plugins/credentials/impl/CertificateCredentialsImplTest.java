@@ -24,11 +24,8 @@
 
 package com.cloudbees.plugins.credentials.impl;
 
-import com.cloudbees.hudson.plugins.folder.Folder;
-import com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.common.CertificateCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
@@ -48,17 +45,16 @@ import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlRadioButtonInput;
 
 import hudson.Util;
-import hudson.model.ItemGroup;
 import hudson.security.ACL;
 import hudson.util.Secret;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,15 +68,16 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.CoreMatchers.*;
 
+@WithJenkins
 public class CertificateCredentialsImplTest {
 
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
-    @Rule
-    public TemporaryFolder tmp = new TemporaryFolder();
+    private JenkinsRule r;
+    @TempDir
+    private File tmp;
 
     private File p12;
     private File p12Invalid;
@@ -93,11 +90,12 @@ public class CertificateCredentialsImplTest {
     // BC uses a different format even though the file was converted from the pkcs12 file
     private static final String EXPECTED_DISPLAY_NAME_PEM = "C=US,ST=CA,L=SanFrancisco,O=Fort-Funston,CN=pkcs12,E=me@myhost.mydomain";
 
-    @Before
-    public void setup() throws IOException {
-        p12 = tmp.newFile("test.p12");
+    @BeforeEach
+    void setup(JenkinsRule r) throws IOException {
+        this.r = r;
+        p12 = File.createTempFile("test.p12", null, tmp);
         FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("test.p12"), p12);
-        p12Invalid = tmp.newFile("invalid.p12");
+        p12Invalid = File.createTempFile("invalid.p12", null, tmp);
         FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("invalid.p12"), p12Invalid);
 
         pemCert = IOUtils.toString(CertificateCredentialsImplTest.class.getResource("certs.pem"), StandardCharsets.UTF_8);
@@ -107,7 +105,7 @@ public class CertificateCredentialsImplTest {
     }
 
     @Test
-    public void displayName() throws IOException {
+    void displayName() throws IOException {
         SecretBytes uploadedKeystore = SecretBytes.fromBytes(Files.readAllBytes(p12.toPath()));
         CertificateCredentialsImpl.UploadedKeyStoreSource storeSource = new CertificateCredentialsImpl.UploadedKeyStoreSource(uploadedKeystore);
         assertEquals(EXPECTED_DISPLAY_NAME, CredentialsNameProvider.name(new CertificateCredentialsImpl(null, "abc123", null, "password", storeSource)));
@@ -115,7 +113,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_uploadedFileValid() throws Exception {
+    void doCheckUploadedKeystore_uploadedFileValid() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), VALID_PASSWORD);
         assertThat(content, containsString("ok"));
         assertThat(content, containsString(EXPECTED_DISPLAY_NAME));
@@ -123,7 +121,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_uploadedFileValid_encryptedPassword() throws Exception {
+    void doCheckUploadedKeystore_uploadedFileValid_encryptedPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), Secret.fromString(VALID_PASSWORD).getEncryptedValue());
         assertThat(content, containsString("ok"));
         assertThat(content, containsString(EXPECTED_DISPLAY_NAME));
@@ -131,7 +129,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_uploadedFileValid_butInvalidPassword() throws Exception {
+    void doCheckUploadedKeystore_uploadedFileValid_butInvalidPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getValidP12_base64(), INVALID_PASSWORD);
         assertThat(content, containsString("warning"));
         assertThat(content, containsString(Util.escape(Messages.CertificateCredentialsImpl_LoadKeystoreFailed())));
@@ -139,7 +137,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_uploadedFileInvalid() throws Exception {
+    void doCheckUploadedKeystore_uploadedFileInvalid() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", getInvalidP12_base64(), VALID_PASSWORD);
         assertThat(content, containsString("warning"));
         assertThat(content, containsString(Util.escape(Messages.CertificateCredentialsImpl_LoadKeystoreFailed())));
@@ -147,7 +145,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_keyStoreBlank() throws Exception {
+    void doCheckUploadedKeystore_keyStoreBlank() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", "", VALID_PASSWORD);
         assertThat(content, containsString("error"));
         assertThat(content, containsString(Util.escape(Messages.CertificateCredentialsImpl_NoCertificateUploaded())));
@@ -155,14 +153,14 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_keyStoreDefault() throws Exception {
+    void doCheckUploadedKeystore_keyStoreDefault() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(CertificateCredentialsImpl.UploadedKeyStoreSource.DescriptorImpl.DEFAULT_VALUE, "", VALID_PASSWORD);
         assertThat(content, not(allOf(containsString("warning"), containsString("error"))));
     }
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_keyStoreInvalidSecret() throws Exception {
+    void doCheckUploadedKeystore_keyStoreInvalidSecret() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore("", "", VALID_PASSWORD);
         assertThat(content, containsString("error"));
         assertThat(content, containsString(Util.escape(Messages.CertificateCredentialsImpl_NoCertificateUploaded())));
@@ -170,7 +168,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_keyStoreValid() throws Exception {
+    void doCheckUploadedKeystore_keyStoreValid() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(getValidP12_secretBytes(), "", VALID_PASSWORD);
         assertThat(content, containsString("ok"));
         assertThat(content, containsString(EXPECTED_DISPLAY_NAME));
@@ -178,7 +176,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_keyStoreValid_encryptedPassword() throws Exception {
+    void doCheckUploadedKeystore_keyStoreValid_encryptedPassword() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(getValidP12_secretBytes(), "", Secret.fromString(VALID_PASSWORD).getEncryptedValue());
         assertThat(content, containsString("ok"));
         assertThat(content, containsString(EXPECTED_DISPLAY_NAME));
@@ -186,7 +184,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckPassword_missing() {
+    void doCheckPassword_missing() {
         CertificateCredentialsImpl.DescriptorImpl descriptor = r.jenkins.getDescriptorByType(CertificateCredentialsImpl.DescriptorImpl.class);
         FormValidation formValidation = descriptor.doCheckPassword("");
         assertThat(formValidation.kind, is(FormValidation.Kind.OK));
@@ -195,7 +193,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-64542")
-    public void doCheckUploadedKeystore_keyStoreInvalid() throws Exception {
+    void doCheckUploadedKeystore_keyStoreInvalid() throws Exception {
         String content = getContentFrom_doCheckUploadedKeystore(getInvalidP12_secretBytes(), "", VALID_PASSWORD);
         assertThat(content, containsString("warning"));
         assertThat(content, containsString(Util.escape(Messages.CertificateCredentialsImpl_LoadKeystoreFailed())));
@@ -203,7 +201,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-63761")
-    public void fullSubmitOfUploadedKeystore() throws Exception {
+    void fullSubmitOfUploadedKeystore() throws Exception {
         String certificateDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.class).getDisplayName();
         String KeyStoreSourceDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.UploadedKeyStoreSource.class).getDisplayName();
 
@@ -213,9 +211,8 @@ public class CertificateCredentialsImplTest {
 
         DomNodeList<DomNode> allOptions = htmlPage.getDocumentElement().querySelectorAll("select.dropdownList option");
         boolean optionFound = allOptions.stream().anyMatch(domNode -> {
-            if (domNode instanceof HtmlOption) {
-                HtmlOption option = (HtmlOption) domNode;
-                if (option.getVisibleText().equals(certificateDisplayName)) {
+            if (domNode instanceof HtmlOption option) {
+	            if (option.getVisibleText().equals(certificateDisplayName)) {
                     try {
                         HtmlElementUtil.click(option);
                     } catch (IOException e) {
@@ -227,7 +224,7 @@ public class CertificateCredentialsImplTest {
 
             return false;
         });
-        assertTrue("The Certificate option was not found in the credentials type select", optionFound);
+        assertTrue(optionFound, "The Certificate option was not found in the credentials type select");
 
         List<HtmlRadioButtonInput> inputs = htmlPage.getDocumentElement().
                 getByXPath("//input[contains(@name, 'keyStoreSource') and following-sibling::label[contains(.,'"+KeyStoreSourceDisplayName+"')]]");
@@ -240,13 +237,13 @@ public class CertificateCredentialsImplTest {
         // for all the types of credentials
         newCredentialsForm.getInputsByName("_.password").forEach(input -> input.setValue(VALID_PASSWORD));
         htmlPage.getDocumentElement().querySelector("input[type=file][name=uploadedCertFile]");
-        
-        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
+
+        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(0));
-        
+
         r.submit(newCredentialsForm);
 
-        certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
+        certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(1));
 
         CertificateCredentials certificate = certificateCredentials.get(0);
@@ -256,7 +253,7 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-73335")
-    public void fullSubmitOfUploadedPEM() throws Exception {
+    void fullSubmitOfUploadedPEM() throws Exception {
         String certificateDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.class).getDisplayName();
         String KeyStoreSourceDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.PEMEntryKeyStoreSource.class).getDisplayName();
 
@@ -266,9 +263,8 @@ public class CertificateCredentialsImplTest {
 
         DomNodeList<DomNode> allOptions = htmlPage.getDocumentElement().querySelectorAll("select.dropdownList option");
         boolean optionFound = allOptions.stream().anyMatch(domNode -> {
-            if (domNode instanceof HtmlOption) {
-                HtmlOption option = (HtmlOption) domNode;
-                if (option.getVisibleText().equals(certificateDisplayName)) {
+            if (domNode instanceof HtmlOption option) {
+	            if (option.getVisibleText().equals(certificateDisplayName)) {
                     try {
                         HtmlElementUtil.click(option);
                     } catch (IOException e) {
@@ -280,7 +276,7 @@ public class CertificateCredentialsImplTest {
 
             return false;
         });
-        assertTrue("The Certificate option was not found in the credentials type select", optionFound);
+        assertTrue(optionFound, "The Certificate option was not found in the credentials type select");
 
         List<HtmlRadioButtonInput> inputs = htmlPage.getDocumentElement().
                 getByXPath("//input[contains(@name, 'keyStoreSource') and following-sibling::label[contains(.,'"+KeyStoreSourceDisplayName+"')]]");
@@ -300,12 +296,12 @@ public class CertificateCredentialsImplTest {
         // for all the types of credentials
         newCredentialsForm.getInputsByName("_.password").forEach(input -> input.setValue(VALID_PASSWORD));
 
-        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
+        List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(0));
-        
+
         r.submit(newCredentialsForm);
 
-        certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, (ItemGroup<?>) null, ACL.SYSTEM2);
+        certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(1));
 
         CertificateCredentials certificate = certificateCredentials.get(0);
@@ -335,9 +331,9 @@ public class CertificateCredentialsImplTest {
         WebRequest request = new WebRequest(new URL(r.getURL() + descriptorUrl + "/checkUploadedKeystore"), HttpMethod.POST);
         request.setEncodingType(FormEncodingType.URL_ENCODED);
         request.setRequestBody(
-                "value="+URLEncoder.encode(value, StandardCharsets.UTF_8.name())+
-                        "&certificateBase64="+URLEncoder.encode(uploadedCertFile, StandardCharsets.UTF_8.name())+
-                        "&password="+URLEncoder.encode(password, StandardCharsets.UTF_8.name())
+                "value="+URLEncoder.encode(value, StandardCharsets.UTF_8)+
+                        "&certificateBase64="+URLEncoder.encode(uploadedCertFile, StandardCharsets.UTF_8)+
+                        "&password="+URLEncoder.encode(password, StandardCharsets.UTF_8)
         );
 
         JenkinsRule.WebClient wc = r.createWebClient();
@@ -345,17 +341,4 @@ public class CertificateCredentialsImplTest {
 
         return page.getWebResponse().getContentAsString();
     }
-
-    private CredentialsStore getFolderStore(Folder f) {
-        Iterable<CredentialsStore> stores = CredentialsProvider.lookupStores(f);
-        CredentialsStore folderStore = null;
-        for (CredentialsStore s : stores) {
-            if (s.getProvider() instanceof FolderCredentialsProvider && s.getContext() == f) {
-                folderStore = s;
-                break;
-            }
-        }
-        return folderStore;
-    }
-
 }
