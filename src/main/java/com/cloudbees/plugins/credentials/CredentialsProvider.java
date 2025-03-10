@@ -472,7 +472,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #lookupCredentialsInItemGroup(Class, ItemGroup, Authentication)} or {@link #lookupCredentialsInItemGroup(Class, ItemGroup, Authentication, List)}.
+     * @deprecated use {@link #lookupCredentialsInItem(Class, Item, Authentication)} or {@link #lookupCredentialsInItem(Class, Item, Authentication, List)}.
      */
     @Deprecated
     @NonNull
@@ -1143,7 +1143,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #getCredentialsInItem(Class, Item, Authentication, List)} instead.
+     * @deprecated use {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List)} instead.
      */
     @NonNull
     @Deprecated
@@ -1154,7 +1154,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
-     * @deprecated use {@link #getCredentialsInItem(Class, Item, Authentication, List)} instead.
+     * @deprecated use {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List)} instead.
      */
     @Deprecated
     @NonNull
