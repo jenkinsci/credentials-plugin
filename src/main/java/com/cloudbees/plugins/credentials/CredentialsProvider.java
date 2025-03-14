@@ -32,7 +32,6 @@ import com.cloudbees.plugins.credentials.fingerprints.NodeCredentialsFingerprint
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.BulkChange;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionList;
@@ -211,7 +210,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * By default they are activated and thus allow the tracking of credentials usage.
      * In case of performance troubles in some weird situation, you can disable the behavior by setting it to {@code false}.
      */
-    @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "Accessible via System Groovy Scripts")
     @Restricted(NoExternalUse.class)
     /* package-protected */ static /* not final */ boolean FINGERPRINT_ENABLED = Boolean.parseBoolean(System.getProperty(FINGERPRINT_ENABLED_NAME, "true"));
     
