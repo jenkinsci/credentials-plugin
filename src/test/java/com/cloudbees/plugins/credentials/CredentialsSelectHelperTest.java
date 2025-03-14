@@ -3,12 +3,12 @@ package com.cloudbees.plugins.credentials;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
-import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
 
+import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
 import hudson.model.UnprotectedRootAction;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,25 +27,27 @@ import org.htmlunit.html.HtmlInput;
 import org.htmlunit.html.HtmlOption;
 import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlRadioButtonInput;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class CredentialsSelectHelperTest {
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+@WithJenkins
+class CredentialsSelectHelperTest {
+
+    private JenkinsRule j;
 
     private String pemCert;
     private String pemKey;
 
     private static final String VALID_PASSWORD = "password";
     private static final String INVALID_PASSWORD = "bla";
-    
-    @Before
-    public void setup() throws IOException {
+
+    @BeforeEach
+    void setup(JenkinsRule j) throws IOException {
+        this.j = j;
         pemCert = IOUtils.toString(CertificateCredentialsImplTest.class.getResource("certs.pem"),
                                    StandardCharsets.UTF_8);
         pemKey = IOUtils.toString(CertificateCredentialsImplTest.class.getResource("key.pem"),
@@ -54,7 +56,7 @@ public class CredentialsSelectHelperTest {
 
 
     @Test
-    public void doAddCredentialsFromPopupWorksAsExpected() throws Exception {
+    void doAddCredentialsFromPopupWorksAsExpected() throws Exception {
         try (JenkinsRule.WebClient wc = j.createWebClient()) {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
 
@@ -91,7 +93,7 @@ public class CredentialsSelectHelperTest {
 
     @Test
     @Issue("JENKINS-74964")
-    public void doAddCredentialsFromPopupForPEMCertificateKeystore() throws Exception {
+    void doAddCredentialsFromPopupForPEMCertificateKeystore() throws Exception {
 
         try (JenkinsRule.WebClient wc = j.createWebClient()) {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
@@ -107,7 +109,7 @@ public class CredentialsSelectHelperTest {
 
     @Test
     @Issue("JENKINS-74964")
-    public void doAddCredentialsFromPopupForPEMCertificateKeystore_missingKeyStore() throws Exception {
+    void doAddCredentialsFromPopupForPEMCertificateKeystore_missingKeyStore() throws Exception {
 
         try (JenkinsRule.WebClient wc = j.createWebClient()) {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
@@ -120,7 +122,7 @@ public class CredentialsSelectHelperTest {
 
     @Test
     @Issue("JENKINS-74964")
-    public void doAddCredentialsFromPopupForInvalidPEMCertificateKeystore_missingCert() throws Exception {
+    void doAddCredentialsFromPopupForInvalidPEMCertificateKeystore_missingCert() throws Exception {
 
         try (JenkinsRule.WebClient wc = j.createWebClient()) {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
@@ -136,7 +138,7 @@ public class CredentialsSelectHelperTest {
 
     @Test
     @Issue("JENKINS-74964")
-    public void doAddCredentialsFromPopupForInvalidPEMCertificateKeystore_missingPassword() throws Exception {
+    void doAddCredentialsFromPopupForInvalidPEMCertificateKeystore_missingPassword() throws Exception {
 
         try (JenkinsRule.WebClient wc = j.createWebClient()) {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
@@ -151,7 +153,7 @@ public class CredentialsSelectHelperTest {
 
     @Test
     @Issue("JENKINS-74964")
-    public void doAddCredentialsFromPopupForInvalidPEMCertificateKeystore_invalidPassword() throws Exception {
+    void doAddCredentialsFromPopupForInvalidPEMCertificateKeystore_invalidPassword() throws Exception {
 
         try (JenkinsRule.WebClient wc = j.createWebClient()) {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
@@ -181,7 +183,7 @@ public class CredentialsSelectHelperTest {
         DomNodeList<DomNode> allOptions = htmlPage.getDocumentElement().querySelectorAll(
                 "select.dropdownList option");
         boolean optionFound = selectOption(allOptions, certificateDisplayName);
-        assertTrue("The Certificate option was not found in the credentials type select", optionFound);
+        assertTrue(optionFound, "The Certificate option was not found in the credentials type select");
         List<HtmlRadioButtonInput> inputs = htmlPage.getDocumentElement().getByXPath(
                 "//input[contains(@name, 'keyStoreSource') and following-sibling::label[contains(.,'"
                 + KeyStoreSourceDisplayName + "')]]");
