@@ -43,7 +43,7 @@ window.credentials.add = function (e) {
                 window.credentials.body.innerHTML = responseText;
                 window.credentials.form = document.getElementById('credentials-dialog-form');
 				const data = window.credentials.form.dataset;
-				const options = {'title': data['title'], 'okText': data['add'], 'submitButton':false, 'minWidth': '75vw'};
+				const options = {'title': data['title'], 'okText': data['add'], 'submitButton':false, 'minWidth': 'min(1641px, 65vw)'};
 				dialog.form(window.credentials.form, options)
 					.then(window.credentials.addSubmit);
 				window.credentials.form.querySelector('select').focus();
