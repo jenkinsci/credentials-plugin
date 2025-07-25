@@ -8,9 +8,9 @@ import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
+import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
 import io.jenkins.plugins.casc.model.CNode;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
@@ -22,14 +22,12 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class CredentialsProviderManagerTest {
-
-    @ClassRule
-    @ConfiguredWithCode("credentialsProviderManager.yaml")
-    public static JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
+@WithJenkinsConfiguredWithCode
+class CredentialsProviderManagerTest {
 
     @Test
-    public void importConfig() {
+    @ConfiguredWithCode("credentialsProviderManager.yaml")
+    void importConfig(JenkinsConfiguredWithCodeRule j) {
         CredentialsProviderManager manager = CredentialsProviderManager.getInstance();
 
         assertThat(manager, notNullValue());
@@ -50,7 +48,8 @@ public class CredentialsProviderManagerTest {
     }
 
     @Test
-    public void exportConfig() throws Exception {
+    @ConfiguredWithCode("credentialsProviderManager.yaml")
+    void exportConfig(JenkinsConfiguredWithCodeRule j) throws Exception {
         ConfiguratorRegistry registry = ConfiguratorRegistry.get();
         ConfigurationContext context = new ConfigurationContext(registry);
         CNode yourAttribute = ConfigurationAsCodeCategoryRoot.getConfiguration(context).get("configuration");

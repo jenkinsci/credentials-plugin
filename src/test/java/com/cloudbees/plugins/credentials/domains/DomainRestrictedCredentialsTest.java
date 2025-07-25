@@ -31,9 +31,9 @@ import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import java.util.Collection;
 import java.util.List;
@@ -42,26 +42,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
-public class DomainRestrictedCredentialsTest {
-    // Allow for testing using JUnit4, instead of JUnit3.
-    @Rule
-    public JenkinsRule jenkins = new JenkinsRule();
-
-    public static class TestRestrictedCredentials extends BaseCredentials
-            implements DomainRestrictedCredentials {
-        public TestRestrictedCredentials(final boolean answer) {
-            this.answer = answer;
-        }
-
-        public boolean matches(@NonNull List<DomainRequirement> requirements) {
-            return answer;
-        }
-
-        private final boolean answer;
-    }
+@WithJenkins
+class DomainRestrictedCredentialsTest {
 
     @Test
-    public void testGetRestrictedCredentials() {
+    void testGetRestrictedCredentials(JenkinsRule jenkins) {
         Credentials trueCredentials = new TestRestrictedCredentials(true);
         Credentials falseCredentials = new TestRestrictedCredentials(false);
 
@@ -76,5 +61,18 @@ public class DomainRestrictedCredentialsTest {
 
         assertThat(matchingCredentials, hasItems(trueCredentials));
         assertThat(matchingCredentials, not(hasItems(falseCredentials)));
+    }
+
+    private static class TestRestrictedCredentials extends BaseCredentials
+            implements DomainRestrictedCredentials {
+        public TestRestrictedCredentials(final boolean answer) {
+            this.answer = answer;
+        }
+
+        public boolean matches(@NonNull List<DomainRequirement> requirements) {
+            return answer;
+        }
+
+        private final boolean answer;
     }
 }

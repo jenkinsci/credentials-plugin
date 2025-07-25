@@ -13,10 +13,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.Rule;
 import org.junit.Test;
-import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.RealJenkinsRule;
-
-import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -70,10 +67,6 @@ public class UsernamePasswordCredentialsImplFIPSTest {
             assertThat(cred, notNullValue());
             assertThat(cred.getPassword().getPlainText(), is("theaustraliancricketteamisthebest"));
         });
-    }
-
-    private static void checkInvalidKeyIsNotSavedInFIPSMode(JenkinsRule r) throws IOException {
-
     }
 
     @Test
