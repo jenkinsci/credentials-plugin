@@ -27,7 +27,7 @@ import com.cloudbees.plugins.credentials.Credentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.UUID;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Credentials that have an unique ID that assists in retrieving the specific credential from a collection of
