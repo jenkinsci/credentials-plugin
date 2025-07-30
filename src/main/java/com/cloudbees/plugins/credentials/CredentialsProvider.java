@@ -91,7 +91,7 @@ import jenkins.model.FingerprintFacet;
 import jenkins.model.Jenkins;
 import jenkins.util.Timer;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;

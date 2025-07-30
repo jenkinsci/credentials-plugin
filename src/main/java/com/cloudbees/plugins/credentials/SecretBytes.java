@@ -44,7 +44,6 @@ import java.util.regex.Pattern;
 import javax.crypto.Cipher;
 import jenkins.security.ConfidentialStore;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.IllegalClassException;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
@@ -382,7 +381,10 @@ public class SecretBytes implements Serializable {
             if (value instanceof SecretBytes) {
                 return (SecretBytes) value;
             }
-            throw new IllegalClassException(SecretBytes.class, value.getClass());
+            throw new IllegalArgumentException("Expected: "
+                    + SecretBytes.class.getName()
+                    + ", actual: "
+                    + value.getClass().getName());
         }
     }
 }
