@@ -30,7 +30,7 @@ import hudson.model.Action;
 import java.lang.reflect.Field;
 import jenkins.model.ModelObjectWithContextMenu;
 import org.apache.commons.jelly.JellyContext;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkins.ui.icon.Icon;
 import org.jenkins.ui.icon.IconSet;
 import org.jenkins.ui.icon.IconSpec;

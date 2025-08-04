@@ -74,7 +74,7 @@ import jenkins.model.Jenkins;
 import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;

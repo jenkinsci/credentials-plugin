@@ -43,7 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.Authentication;
 
 /**

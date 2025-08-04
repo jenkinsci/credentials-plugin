@@ -43,7 +43,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import hudson.util.XStream2;
 import jenkins.util.xml.XMLUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.SAXException;
 
 /**
