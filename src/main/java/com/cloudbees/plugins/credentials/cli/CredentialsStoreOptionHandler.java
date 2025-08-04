@@ -46,7 +46,6 @@ public class CredentialsStoreOptionHandler extends OptionHandler<CredentialsStor
      * @see CredentialsStoreOptionHandler
      * @see CredentialsStore
      * @see OptionHandler
-     * @see OptionHandler<T>#OptionHandler
      */
     public CredentialsStoreOptionHandler(CmdLineParser parser, OptionDef option,
                                          Setter<? super CredentialsStore> setter) {
