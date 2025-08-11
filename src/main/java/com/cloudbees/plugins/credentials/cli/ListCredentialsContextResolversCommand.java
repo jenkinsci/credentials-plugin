@@ -26,7 +26,7 @@ package com.cloudbees.plugins.credentials.cli;
 import com.cloudbees.plugins.credentials.CredentialsSelectHelper;
 import hudson.Extension;
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Lists the {@link CredentialsSelectHelper.ContextResolver} instances and the context objects they resolve.

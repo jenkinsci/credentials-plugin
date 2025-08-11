@@ -35,7 +35,7 @@ import hudson.util.FormValidation;
 import hudson.util.Secret;
 
 import jenkins.security.FIPS140;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -145,6 +145,19 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
                 return FormValidation.error(Messages.passwordTooShortFIPS());
             }
             return FormValidation.ok();
+        }
+
+        @RequirePOST
+        public FormValidation doCheckUsername(@QueryParameter String value, @QueryParameter boolean usernameSecret) {
+            if (value.isEmpty()) {
+                if (usernameSecret) {
+                    return FormValidation.warning(Messages.UsernamePasswordCredentialsImpl_a_blank_username_cannot_logically_be_con());
+                } else {
+                    return FormValidation.ok(Messages.UsernamePasswordCredentialsImpl_blank_username_did_you_mean_to_use_secre());
+                }
+            } else {
+                return FormValidation.ok();
+            }
         }
     }
 }

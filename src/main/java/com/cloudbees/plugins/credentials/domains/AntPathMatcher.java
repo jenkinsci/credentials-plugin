@@ -16,7 +16,7 @@
 
 package com.cloudbees.plugins.credentials.domains;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * PathMatcher implementation for Ant-style path patterns.
