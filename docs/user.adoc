@@ -905,7 +905,7 @@ domain/testing/api/json?tree=credentials[id]
 ----
 <1> Whitespace has been added to the response to make a more readable example
 
-===== Creating a credentials
+===== Creating credentials
 
 The URL for creating a domain is: `http://_jenkins root url_/_path to context_/credentials/store/_store id_/domain/_domain name_/createCredentials`.
 This URL expects a `POST` request with a `Content-Type` header of type `application/xml`.
@@ -935,6 +935,22 @@ $ cat > credential.xml <<EOF
   <username>wecoyote</username>
   <password>secret123</password>
 </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+EOF
+$ curl -X POST -H content-type:application/xml -d @credential.xml \
+https://jenkins.example.com/job/example-folder/credentials/store/folder/\
+domain/testing/createCredentials
+----
+
+.Example of adding a `secret text` credential.
+[source,bash]
+----
+$ cat > credential.xml <<EOF
+<org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl>
+  <scope>GLOBAL</scope>
+  <id>wecoyote</id>
+  <secret>secret123</secret>
+  <description>TEST</description>
+</org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl>
 EOF
 $ curl -X POST -H content-type:application/xml -d @credential.xml \
 https://jenkins.example.com/job/example-folder/credentials/store/folder/\
