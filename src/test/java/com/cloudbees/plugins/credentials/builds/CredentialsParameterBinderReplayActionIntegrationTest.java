@@ -43,26 +43,26 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.cps.replay.ReplayAction;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class CredentialsParameterBinderReplayActionIntegrationTest {
+@WithJenkins
+class CredentialsParameterBinderReplayActionIntegrationTest {
     private static final String PARAMETER_NAME = "parameterName";
 
-    @Rule public JenkinsRule j = new JenkinsRule();
+    private JenkinsRule j;
 
     private String credentialsId;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp(JenkinsRule j) throws Exception {
+        this.j = j;
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
         final User alpha = User.getById("alpha", true);
         try (ACLContext ignored = ACL.as(alpha)) {
@@ -74,7 +74,7 @@ public class CredentialsParameterBinderReplayActionIntegrationTest {
     }
 
     @Test
-    public void replayActionShouldNotCopyCredentialsParameterBindingUserIds() throws Exception {
+    void replayActionShouldNotCopyCredentialsParameterBindingUserIds() throws Exception {
         final WorkflowJob job = j.createProject(WorkflowJob.class);
         job.addProperty(new ParametersDefinitionProperty(new CredentialsParameterDefinition(
                 PARAMETER_NAME, null, null, IdCredentials.class.getName(), true)));

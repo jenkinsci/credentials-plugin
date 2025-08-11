@@ -44,25 +44,21 @@ import java.util.HashMap;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.Authentication;
 import org.apache.commons.io.FileUtils;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.jvnet.hudson.test.MockQueueItemAuthenticator;
 import org.jvnet.hudson.test.TestExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class SystemCredentialsProviderTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class SystemCredentialsProviderTest {
 
     @Test
-    public void saveAndLoad() throws Exception {
+    void saveAndLoad(JenkinsRule r) throws Exception {
         assertTrue(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
         SystemCredentialsProvider.getInstance().save();
         assertTrue(new SystemCredentialsProvider().getCredentials().isEmpty());
@@ -75,7 +71,7 @@ public class SystemCredentialsProviderTest {
     }
 
     @Test
-    public void malformedInput() throws Exception {
+    void malformedInput(JenkinsRule r) throws Exception {
         assertTrue(CredentialsProvider.lookupCredentials(Credentials.class).isEmpty());
         SystemCredentialsProvider.getInstance().getCredentials().add(
                 new DummyCredentials(CredentialsScope.SYSTEM, "foo", "bar"));
@@ -88,14 +84,14 @@ public class SystemCredentialsProviderTest {
     }
 
     @Test
-    public void smokes() {
+    void smokes(JenkinsRule r) {
         assertFalse(CredentialsProvider.allCredentialsDescriptors().isEmpty());
         assertNotNull(SystemCredentialsProvider.getInstance().getDescriptor());
         assertNotNull(SystemCredentialsProvider.getInstance().getCredentials());
     }
 
     @Test
-    public void given_globalScopeCredential_when_builtAsSystem_then_credentialFound() throws Exception {
+    void given_globalScopeCredential_when_builtAsSystem_then_credentialFound(JenkinsRule r) throws Exception {
         SystemCredentialsProvider.getInstance().getCredentials().add(
                 new DummyIdCredentials("foo-manchu", CredentialsScope.GLOBAL, "foo", "manchu", "Dr. Fu Manchu")
         );
@@ -105,7 +101,7 @@ public class SystemCredentialsProviderTest {
     }
 
     @Test
-    public void given_systemScopeCredential_when_builtAsSystem_then_credentialNotFound() throws Exception {
+    void given_systemScopeCredential_when_builtAsSystem_then_credentialNotFound(JenkinsRule r) throws Exception {
         SystemCredentialsProvider.getInstance().getCredentials().add(
                 new DummyIdCredentials("foo-manchu", CredentialsScope.SYSTEM, "foo", "manchu", "Dr. Fu Manchu")
         );
@@ -115,7 +111,7 @@ public class SystemCredentialsProviderTest {
     }
 
     @Test
-    public void given_globalScopeCredential_when_builtAsUserWithUseItem_then_credentialFound() throws Exception {
+    void given_globalScopeCredential_when_builtAsUserWithUseItem_then_credentialFound(JenkinsRule r) throws Exception {
         SystemCredentialsProvider.getInstance().getCredentials().add(
                 new DummyIdCredentials("foo-manchu", CredentialsScope.GLOBAL, "foo", "manchu", "Dr. Fu Manchu")
         );
@@ -141,7 +137,7 @@ public class SystemCredentialsProviderTest {
     }
 
     @Test
-    public void given_globalScopeCredential_when_builtAsUserWithoutUseItem_then_credentialNotFound() throws Exception {
+    void given_globalScopeCredential_when_builtAsUserWithoutUseItem_then_credentialNotFound(JenkinsRule r) throws Exception {
         SystemCredentialsProvider.getInstance().getCredentials().add(
                 new DummyIdCredentials("foo-manchu", CredentialsScope.GLOBAL, "foo", "manchu", "Dr. Fu Manchu")
         );
