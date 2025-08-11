@@ -116,7 +116,10 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
     }
 
     /**
-     * {@inheritDoc}
+     * User name and password credential, implementation.
+     *
+     * @see UsernamePasswordCredentialsImpl
+     * @see BaseStandardCredentialsDescriptor
      */
     @Extension(ordinal = 1)
     @Symbol("usernamePassword")

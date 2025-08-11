@@ -34,14 +34,22 @@ public class CredentialsUnavailableException extends RuntimeException {
     private final String property;
 
     /**
-     * {@inheritDoc}
+     * Constructor.
+     * Indicate that the requested property is unavailable.
+     *
+     * @see CredentialsUnavailableException
+     * @see RuntimeException#RuntimeException()
      */
     public CredentialsUnavailableException(String property) {
         this.property = property;
     }
 
     /**
-     * {@inheritDoc}
+     * Constructor.
+     * Indicate that the requested property is unavailable.
+     *
+     * @see CredentialsUnavailableException
+     * @see RuntimeException#RuntimeException(String)
      */
     public CredentialsUnavailableException(String property, String message) {
         super(message);
@@ -49,7 +57,11 @@ public class CredentialsUnavailableException extends RuntimeException {
     }
 
     /**
-     * {@inheritDoc}
+     * Constructor.
+     * Indicate that the requested property is unavailable.
+     *
+     * @see CredentialsUnavailableException
+     * @see RuntimeException#RuntimeException(String, Throwable)
      */
     public CredentialsUnavailableException(String property, String message, Throwable cause) {
         super(message, cause);
@@ -57,7 +69,11 @@ public class CredentialsUnavailableException extends RuntimeException {
     }
 
     /**
-     * {@inheritDoc}
+     * Constructor.
+     * Indicate that the requested property is unavailable.
+     *
+     * @see CredentialsUnavailableException
+     * @see RuntimeException#RuntimeException(Throwable)
      */
     public CredentialsUnavailableException(String property, Throwable cause) {
         super(cause);

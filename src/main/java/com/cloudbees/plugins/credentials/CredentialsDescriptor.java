@@ -555,7 +555,9 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
     public static class EnhancedCheckMethod extends FormValidation.CheckMethod {
 
         /**
-         * {@inheritDoc}
+         * Constructor.
+         *
+         * @see FormValidation.CheckMethod#CheckMethod(Descriptor, String)
          */
         public EnhancedCheckMethod(Descriptor descriptor, String fieldName) {
             super(descriptor, fieldName);

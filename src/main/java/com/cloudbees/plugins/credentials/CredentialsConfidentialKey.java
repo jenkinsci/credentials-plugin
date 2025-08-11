@@ -75,7 +75,11 @@ public class CredentialsConfidentialKey extends ConfidentialKey {
     private static final String CIPHER_ALG = "AES/CBC/PKCS5Padding";
 
     /**
-     * {@inheritDoc}
+     * Constructor.
+     *
+     * @param id     the credential ID.
+     *
+     * @see ConfidentialKey#ConfidentialKey(String)
      */
     public CredentialsConfidentialKey(String id) {
         super(id);
