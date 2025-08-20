@@ -26,9 +26,12 @@ package com.cloudbees.plugins.credentials.fingerprints;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
+import hudson.model.Computer;
 import hudson.model.Fingerprint;
 import hudson.model.Node;
 import jenkins.model.Jenkins;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 
 /**
  * Tracks usage of a credential by a {@link Node}.
@@ -91,6 +94,22 @@ public class NodeCredentialsFingerprintFacet extends AbstractCredentialsFingerpr
     @CheckForNull
     public Node getNode() {
         return nodeName.isEmpty() ? Jenkins.get() : Jenkins.get().getNode(nodeName);
+    }
+
+    /**
+     * Return the url of the {@link Node}.
+     *
+     * @return the url of the {@link Node} or {@code null} if either the node no longer exists or the current authentication
+     * does not have permission to access the node.
+     */
+    @Restricted(DoNotUse.class)
+    public String getNodeUrl() {
+        Node node = getNode();
+        if (node == null) {
+            return null;
+        }
+        Computer c = node.toComputer();
+        return c == null ? null : c.getUrl();
     }
 
     /**
