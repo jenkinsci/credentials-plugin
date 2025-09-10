@@ -10,23 +10,22 @@ import java.util.Base64;
 import java.util.Iterator;
 import jenkins.model.Jenkins;
 import org.htmlunit.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SecretBytesRedactionTest {
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+@WithJenkins
+class SecretBytesRedactionTest {
 
     @Test
-    public void testRedaction() throws Exception {
+    void testRedaction(JenkinsRule j) throws Exception {
         final String usernamePasswordPassword = "thisisthe_theuserpassword";
         final SecretBytes secretBytes = SecretBytes.fromString("thisis_theTestData");
 
@@ -62,12 +61,12 @@ public class SecretBytesRedactionTest {
         Iterator<CredentialsStore> stores = CredentialsProvider.lookupStores(object).iterator();
         assertTrue(stores.hasNext());
         CredentialsStore store = stores.next();
-        assertEquals("we got the expected store", object, store.getContext());
+        assertEquals(object, store.getContext(), "we got the expected store");
         return store;
     }
 
     // This would be nicer with a real credential like `FileCredentialsImpl` but another test falls over if we add `plain-credentials` to the test scope
-    public static class SecretBytesCredential extends BaseStandardCredentials {
+    private static class SecretBytesCredential extends BaseStandardCredentials {
         private final SecretBytes mySecretBytes;
 
         public SecretBytesCredential(CredentialsScope scope, String id, String description, SecretBytes bytes) {

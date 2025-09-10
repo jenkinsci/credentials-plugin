@@ -17,10 +17,10 @@ import java.util.Random;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.xmlunit.matchers.CompareMatcher;
 
 import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
@@ -29,22 +29,24 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assume.assumeThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public class CredentialsStoreActionTest {
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+@WithJenkins
+class CredentialsStoreActionTest {
+
+    private JenkinsRule j;
     private SystemCredentialsProvider.ProviderImpl system;
     private CredentialsStore systemStore;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp(JenkinsRule j) {
+        this.j = j;
         system = ExtensionList.lookup(CredentialsProvider.class).get(SystemCredentialsProvider.ProviderImpl.class);
         systemStore = system.getStore(j.getInstance());
     }
 
     @Test
-    public void smokes() throws Exception {
+    void smokes() throws Exception {
         List<Domain> domainList = new ArrayList<>(systemStore.getDomains());
         domainList.remove(Domain.global());
         for (Domain d : domainList) {
@@ -119,60 +121,66 @@ public class CredentialsStoreActionTest {
     }
 
     @Test
-    public void restCRUDSmokes() throws Exception {
+    void restCRUDSmokes() throws Exception {
         JenkinsRule.WebClient wc = j.createWebClient();
         j.getInstance().setCrumbIssuer(null);
         assertThat(systemStore.getDomainByName("smokes"), nullValue());
         // create domain
         HttpURLConnection con =
-                postCreateByXml(systemStore, "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+                postCreateByXml(systemStore, """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>smokes</name>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""");
         assertThat(con.getResponseCode(), is(200));
         assertThat(Items.XSTREAM2.toXML(systemStore.getDomainByName("smokes")), CompareMatcher.isIdenticalTo(
-                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>").ignoreWhitespace().ignoreComments());
+		        """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>smokes</name>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""").ignoreWhitespace().ignoreComments());
 
         // read domain
         WebResponse response = wc.goTo("credentials/store/system/domain/smokes/config.xml", "application/xml").getWebResponse();
         assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo(
-                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>").ignoreWhitespace().ignoreComments());
+		        """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>smokes</name>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""").ignoreWhitespace().ignoreComments());
 
         // update domain
-        con = postConfigDotXml(systemStore, "smokes", "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                + "<specifications>\n"
-                + "<com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
-                + "<includes>smokes.example.com</includes>\n"
-                + "<excludes/>\n"
-                + "</com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
-                + "</specifications>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+        con = postConfigDotXml(systemStore, "smokes", """
+                <com.cloudbees.plugins.credentials.domains.Domain>
+                  <name>smokes</name>
+                <specifications>
+                <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+                <includes>smokes.example.com</includes>
+                <excludes/>
+                </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+                </specifications>
+                </com.cloudbees.plugins.credentials.domains.Domain>""");
         assertThat(con.getResponseCode(), is(200));
         assertThat(Items.XSTREAM2.toXML(systemStore.getDomainByName("smokes")), CompareMatcher.isIdenticalTo(
-                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "<specifications>\n"
-                        + "<com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
-                        + "<includes>smokes.example.com</includes>\n"
-                        + "<excludes/>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
-                        + "</specifications>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>").ignoreWhitespace().ignoreComments());
+		        """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>smokes</name>
+                        <specifications>
+                        <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+                        <includes>smokes.example.com</includes>
+                        <excludes/>
+                        </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+                        </specifications>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""").ignoreWhitespace().ignoreComments());
 
         // create credential
         con = postCreateByXml(systemStore, "smokes",
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>GLOBAL</scope>\n"
-                        + "  <id>smokey-id</id>\n"
-                        + "  <description>created from xml</description>\n"
-                        + "  <username>example-com-deployer</username>\n"
-                        + "  <usernameSecret>false</usernameSecret>\n"
-                        + "  <password>super-secret</password>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
+		        """
+                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                          <scope>GLOBAL</scope>
+                          <id>smokey-id</id>
+                          <description>created from xml</description>
+                          <username>example-com-deployer</username>
+                          <usernameSecret>false</usernameSecret>
+                          <password>super-secret</password>
+                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>""");
         assertThat(con.getResponseCode(), is(200));
         List<Credentials> credentials = systemStore.getCredentials(systemStore.getDomainByName("smokes"));
         assertThat(credentials, notNullValue());
@@ -188,25 +196,27 @@ public class CredentialsStoreActionTest {
         // read credential
         response = wc.goTo("credentials/store/system/domain/smokes/credential/smokey-id/config.xml", "application/xml").getWebResponse();
         assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo(
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>GLOBAL</scope>\n"
-                        + "  <id>smokey-id</id>\n"
-                        + "  <description>created from xml</description>\n"
-                        + "  <username>example-com-deployer</username>\n"
-                        + "  <password><secret-redacted/></password>\n"
-                        + "  <usernameSecret>false</usernameSecret>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>").ignoreWhitespace().ignoreComments());
+		        """
+                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                          <scope>GLOBAL</scope>
+                          <id>smokey-id</id>
+                          <description>created from xml</description>
+                          <username>example-com-deployer</username>
+                          <password><secret-redacted/></password>
+                          <usernameSecret>false</usernameSecret>
+                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>""").ignoreWhitespace().ignoreComments());
 
         // update credentials
         con = postConfigDotXml(systemStore, "smokes", "smokey-id",
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>SYSTEM</scope>\n"
-                        + "  <id>smokey-id</id>\n"
-                        + "  <description>updated by xml</description>\n"
-                        + "  <username>example-org-deployer</username>\n"
-                        + "  <usernameSecret>false</usernameSecret>\n"
-                        + "  <password>super-duper-secret</password>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
+		        """
+                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                          <scope>SYSTEM</scope>
+                          <id>smokey-id</id>
+                          <description>updated by xml</description>
+                          <username>example-org-deployer</username>
+                          <usernameSecret>false</usernameSecret>
+                          <password>super-duper-secret</password>
+                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>""");
         assertThat(con.getResponseCode(), is(200));
         credentials = systemStore.getCredentials(systemStore.getDomainByName("smokes"));
         assertThat(credentials, notNullValue());
@@ -231,51 +241,56 @@ public class CredentialsStoreActionTest {
     }
 
     @Test
-    public void restCRUDNonHappy() throws Exception {
+    void restCRUDNonHappy() throws Exception {
         JenkinsRule.WebClient wc = j.createWebClient();
         j.getInstance().setCrumbIssuer(null);
         assertThat(systemStore.getDomainByName("smokes"), nullValue());
         // create domain
         HttpURLConnection con =
-                postCreateByXml(systemStore, "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
-        assumeThat(con.getResponseCode(), is(200));
-        con = postCreateByXml(systemStore, "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+                postCreateByXml(systemStore, """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>smokes</name>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""");
+        assumeTrue(con.getResponseCode() == 200);
+        con = postCreateByXml(systemStore, """
+                <com.cloudbees.plugins.credentials.domains.Domain>
+                  <name>smokes</name>
+                </com.cloudbees.plugins.credentials.domains.Domain>""");
         assertThat(con.getResponseCode(), is(HttpServletResponse.SC_CONFLICT));
 
         // update domain
-        con = postConfigDotXml(systemStore, "no-smokes", "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>no-smokes</name>\n"
-                + "<specifications>\n"
-                + "<com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
-                + "<includes>smokes.example.com</includes>\n"
-                + "<excludes/>\n"
-                + "</com.cloudbees.plugins.credentials.domains.HostnameSpecification>\n"
-                + "</specifications>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>");
+        con = postConfigDotXml(systemStore, "no-smokes", """
+                <com.cloudbees.plugins.credentials.domains.Domain>
+                  <name>no-smokes</name>
+                <specifications>
+                <com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+                <includes>smokes.example.com</includes>
+                <excludes/>
+                </com.cloudbees.plugins.credentials.domains.HostnameSpecification>
+                </specifications>
+                </com.cloudbees.plugins.credentials.domains.Domain>""");
         assertThat(con.getResponseCode(), is(404));
 
         // create credential
         con = postCreateByXml(systemStore, "smokes",
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>GLOBAL</scope>\n"
-                        + "  <id>smokey-id</id>\n"
-                        + "  <description>created from xml</description>\n"
-                        + "  <username>example-com-deployer</username>\n"
-                        + "  <password>super-secret</password>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
-        assumeThat(con.getResponseCode(), is(200));
+		        """
+                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                          <scope>GLOBAL</scope>
+                          <id>smokey-id</id>
+                          <description>created from xml</description>
+                          <username>example-com-deployer</username>
+                          <password>super-secret</password>
+                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>""");
+        assumeTrue(con.getResponseCode() == 200);
         con = postCreateByXml(systemStore, "smokes",
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>GLOBAL</scope>\n"
-                        + "  <id>smokey-id</id>\n"
-                        + "  <description>created from xml</description>\n"
-                        + "  <username>example-com-deployer</username>\n"
-                        + "  <password>super-secret</password>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>");
+		        """
+                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                          <scope>GLOBAL</scope>
+                          <id>smokey-id</id>
+                          <description>created from xml</description>
+                          <username>example-com-deployer</username>
+                          <password>super-secret</password>
+                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>""");
         assertThat(con.getResponseCode(), is(HttpServletResponse.SC_CONFLICT));
     }
 

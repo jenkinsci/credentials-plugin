@@ -34,30 +34,28 @@ import io.jenkins.plugins.casc.ConfigurationContext;
 import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
+import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
 import io.jenkins.plugins.casc.model.Mapping;
 import io.jenkins.plugins.casc.model.Sequence;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import jenkins.model.Jenkins;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class SystemCredentialsTest {
-
-    @ClassRule
-    @ConfiguredWithCode("SystemCredentialsTest.yaml")
-    public static JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
+@WithJenkinsConfiguredWithCode
+class SystemCredentialsTest {
 
     @Test
-    public void import_system_credentials() {
+    @ConfiguredWithCode("SystemCredentialsTest.yaml")
+    void import_system_credentials(JenkinsConfiguredWithCodeRule j) {
         List<UsernamePasswordCredentials> ups = CredentialsProvider.lookupCredentialsInItemGroup(
             UsernamePasswordCredentials.class, j.jenkins, ACL.SYSTEM2,
             Collections.singletonList(new HostnameRequirement("api.test.com"))
@@ -68,7 +66,8 @@ public class SystemCredentialsTest {
     }
 
     @Test
-    public void export_system_credentials() throws Exception {
+    @ConfiguredWithCode("SystemCredentialsTest.yaml")
+    void export_system_credentials(JenkinsConfiguredWithCodeRule j) throws Exception {
         CredentialsRootConfigurator root = Jenkins.get()
             .getExtensionList(CredentialsRootConfigurator.class).get(0);
 
