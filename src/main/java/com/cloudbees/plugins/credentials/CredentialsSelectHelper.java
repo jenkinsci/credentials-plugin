@@ -84,7 +84,10 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
     private static final Logger LOGGER = Logger.getLogger(CredentialsSelectHelper.class.getName());
 
     /**
-     * {@inheritDoc}
+     * Constructor.
+     *
+     * @see CredentialsSelectHelper
+     * @see Descriptor<CredentialsSelectHelper>#Descriptor()
      */
     public CredentialsSelectHelper() {
         super(CredentialsSelectHelper.class);
