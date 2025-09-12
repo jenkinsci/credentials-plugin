@@ -11,9 +11,9 @@ import hudson.security.ACL;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.apache.commons.text.StringEscapeUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.RealJenkinsRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.jvnet.hudson.test.junit.jupiter.RealJenkinsExtension;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -22,16 +22,17 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class UsernamePasswordCredentialsImplFIPSTest {
+class UsernamePasswordCredentialsImplFIPSTest {
 
-    @Rule public RealJenkinsRule rule = new RealJenkinsRule().javaOptions("-Djenkins.security.FIPS140.COMPLIANCE=true", "-Xmx512M")
+    @RegisterExtension
+    private final RealJenkinsExtension extension = new RealJenkinsExtension().javaOptions("-Djenkins.security.FIPS140.COMPLIANCE=true", "-Xmx512M")
             .withDebugPort(8000).withDebugServer(true).withDebugSuspend(true);
 
     @Test
-    public void nonCompliantLaunchExceptionTest() throws Throwable {
-        rule.then(r -> {
+    void nonCompliantLaunchExceptionTest() throws Throwable {
+        extension.then(r -> {
             new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "all-good-beer", "Best captain and player in the world",
                     "Pat Cummins", "theaustraliancricketteamisthebest");
             assertThrows(Descriptor.FormException.class, () -> new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "bad-foo", "someone",
@@ -44,9 +45,8 @@ public class UsernamePasswordCredentialsImplFIPSTest {
     }
 
     @Test
-    public void invalidIsNotSavedInFIPSModeTest() throws Throwable {
-        rule.then(r ->
-        {
+    void invalidIsNotSavedInFIPSModeTest() throws Throwable {
+        extension.then(r -> {
             UsernamePasswordCredentialsImpl entry = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "all-good", "Best captain and player in the world",
                     "Pat Cummins", "theaustraliancricketteamisthebest");
             CredentialsStore store = CredentialsProvider.lookupStores(Jenkins.get()).iterator().next();
@@ -70,8 +70,8 @@ public class UsernamePasswordCredentialsImplFIPSTest {
     }
 
     @Test
-    public void formValidationTest() throws Throwable {
-        rule.then(r -> {
+    void formValidationTest() throws Throwable {
+        extension.then(r -> {
             UsernamePasswordCredentialsImpl.DescriptorImpl descriptor = ExtensionList.lookupSingleton(UsernamePasswordCredentialsImpl.DescriptorImpl.class);
             FormValidation result = descriptor.doCheckPassword("theaustraliancricketteamisthebest");
             assertThat(result.getMessage(), nullValue());
