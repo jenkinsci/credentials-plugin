@@ -62,7 +62,6 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Localizable;
-import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -119,14 +118,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
     @CheckForNull
     @Restricted(NoExternalUse.class)
     public ModelObject resolveContext(Object context) {
-        if (context instanceof ModelObject) {
-            return (ModelObject) context;
-        }
-        StaplerRequest2 request = Stapler.getCurrentRequest2();
-        if (request != null) {
-            return request.findAncestorObject(ModelObject.class);
-        }
-        return null;
+        return context instanceof ModelObject mo ? mo : CredentialsDescriptor.findContextInPath(ModelObject.class);
     }
 
    /**
@@ -142,10 +134,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         Set<String> urls = new HashSet<>();
         List<StoreItem> result = new ArrayList<>();
         if (context == null) {
-            StaplerRequest2 request = Stapler.getCurrentRequest2();
-            if (request != null) {
-                context = request.findAncestorObject(ModelObject.class);
-            }
+            context = CredentialsDescriptor.findContextInPath(ModelObject.class);
         }
         if (context != null) {
             for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
@@ -203,10 +192,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             }
         }
         if (context == null) {
-            StaplerRequest2 request = Stapler.getCurrentRequest2();
-            if (request != null) {
-                context = request.findAncestorObject(ModelObject.class);
-            }
+            context = CredentialsDescriptor.findContextInPath(ModelObject.class);
         }
         for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
             if (store.hasPermission(CREATE)) {
