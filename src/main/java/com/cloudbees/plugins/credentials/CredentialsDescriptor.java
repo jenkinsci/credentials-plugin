@@ -337,111 +337,111 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
                 o = ((CredentialsStoreAction.CredentialsWrapper) o).getStore().getContext();
             } else if (o instanceof CredentialsStoreAction.DomainWrapper) {
                 o = ((CredentialsStoreAction.DomainWrapper) o).getStore().getContext();
-            } else if (o instanceof Descriptor && i == 1) { // URL is /descriptorByName/...
-                // TODO this is a https://issues.jenkins-ci.org/browse/JENKINS-19413 workaround
-
-                // we need to try an infer from the Referer as this is likely a doCheck or a doFill method
-                String referer = request.getReferer();
-                String rootPath = request.getRootPath();
-                if (referer != null && rootPath != null && referer.startsWith(rootPath)) {
-                    // strip out any query portion of the referer URL.
-                    String path = URI.create(referer.substring(rootPath.length())).getPath().substring(1);
-
-                    // TODO have Stapler expose a method that can walk a path and produce the ancestors and use that
-
-                    // what now follows is an example of a really evil hack, consequently this means...
-                    //
-                    //                         7..       ,
-                    //                      MMM.          MMM.
-                    //                     MMMMM        .MMMMMM
-                    //                    MMMM.           MMMMM.
-                    //                  OMMM                 MMZ
-                    //                  MMM                    MM
-                    //                .MMMM    $.     .       .MM,
-                    //                MMMMM    MMM   MM        MMM
-                    //               .MMMMM. MMMMD  8MMM.     MMMM
-                    //               MMMMMMM.MMMM    MMMMM.  MMMMMM
-                    //               MMMMMMMM.M .     MMM.  MMMMMMM
-                    //               MMMMMMMMM.            MMMMMMMM
-                    //               MMMMMMMMM . ..     MMMMMMMMMMM
-                    //               MMMMMMMM  IMMMM  Z.MMMMMMMMMM ,
-                    //               .MMMMMMM   .M:M   MMMMMMMMMMM M
-                    //              I MMMMMMM.         MMMMMMMMMO  M
-                    //           MMMM  MMMMMMM       .MMMMMMMMM.   .
-                    //         :MMMMMM.MMMMMMM.      MMMMMMMM   .MMMM
-                    //         MMMMMMMMMMMMMMMM      MMMMMMM   MMMMMMMM
-                    //        MMMMMMMMM.MMMMMMM      MMMMMMM MMMMMMMMMM.
-                    //        MMMMMMMMMMMMMMMM?      MMMMMM MMMMMMMMMMM
-                    //        MMMMMMMMMM  .  .       MMMMMIMMMMMMMMMMMM.
-                    //        MMMMMMMMMM               .. :MMMMMMMMMMMM.
-                    //        DMMMMMMMMMM                 MMMMMMMMMMMMM.
-                    //         MMMMMMMMMM.M.              MMMMMMMMMMMM.
-                    //           MMMMMM,                    ....
-                    //
-                    //                   I AM A SAD PANDA
-
-                    List<String> pathSegments = new ArrayList<>(Arrays.asList(StringUtils.split(path, "/")));
-                    // strip out any leading junk
-                    while (!pathSegments.isEmpty() && StringUtils.isBlank(pathSegments.get(0))) {
-                        pathSegments.remove(0);
-                    }
-                    if (pathSegments.size() >= 2) {
-                        String firstSegment = pathSegments.get(0);
-                        if ("user".equals(firstSegment)) {
-                            User user = User.getById(pathSegments.get(1), true);
-                            if (type.isInstance(user) && CredentialsProvider.hasStores(user)) {
-                                // we have a winner
-                                return type.cast(user);
-                            }
-                        } else if ("job".equals(firstSegment) || "item".equals(firstSegment) || "view"
-                                .equals(firstSegment)) {
-                            int index = 0;
-                            while (index < pathSegments.size()) {
-                                String segment = pathSegments.get(index);
-                                if ("view".equals(segment)) {
-                                    // remove the /view/
-                                    pathSegments.remove(index);
-                                    if (index < pathSegments.size()) {
-                                        // remove the /view/{name}
-                                        pathSegments.remove(index);
-                                    }
-                                } else if ("job".equals(segment) || "item".equals(segment)) {
-                                    // remove the /job/
-                                    pathSegments.remove(index);
-                                    // skip the name
-                                    index++;
-                                } else {
-                                    // we have gone as far as we can parse the item path structure
-                                    while (index < pathSegments.size()) {
-                                        // remove the remainder
-                                        pathSegments.remove(index);
-                                    }
-                                }
-                            }
-                            Jenkins jenkins = Jenkins.get();
-                            while (!pathSegments.isEmpty()) {
-                                String fullName = StringUtils.join(pathSegments, "/");
-                                Item item = jenkins.getItemByFullName(fullName);
-                                if (item != null) {
-                                    if (type.isInstance(item) && CredentialsProvider.hasStores(item)) {
-                                        // we have a winner
-                                        return type.cast(item);
-                                    }
-                                }
-                                // walk back up and try one level less deep
-                                pathSegments.remove(pathSegments.size() - 1);
-                            }
-                        }
-                    }
-                    // ok we give up, we are not thirsty for more, we'll let "normal" ancestor in path logic continue
-                }
             }
             if (type.isInstance(o) && o instanceof ModelObject && CredentialsProvider.hasStores((ModelObject) o)) {
                 return type.cast(o);
             }
         }
-        return null;
+        // TODO this is a https://issues.jenkins-ci.org/browse/JENKINS-19413 workaround
+        // we need to try an infer from the Referer as this is likely a doCheck or a doFill method or select.jelly from a lazy-load fragment
+        String referer = request.getReferer();
+        String rootPath = request.getRootPath();
+        if (referer != null && rootPath != null && referer.startsWith(rootPath)) {
+            // strip out any query portion of the referer URL.
+            String path = URI.create(referer.substring(rootPath.length())).getPath().substring(1);
 
+            // TODO have Stapler expose a method that can walk a path and produce the ancestors and use that
+
+            // what now follows is an example of a really evil hack, consequently this means...
+            //
+            //                         7..       ,
+            //                      MMM.          MMM.
+            //                     MMMMM        .MMMMMM
+            //                    MMMM.           MMMMM.
+            //                  OMMM                 MMZ
+            //                  MMM                    MM
+            //                .MMMM    $.     .       .MM,
+            //                MMMMM    MMM   MM        MMM
+            //               .MMMMM. MMMMD  8MMM.     MMMM
+            //               MMMMMMM.MMMM    MMMMM.  MMMMMM
+            //               MMMMMMMM.M .     MMM.  MMMMMMM
+            //               MMMMMMMMM.            MMMMMMMM
+            //               MMMMMMMMM . ..     MMMMMMMMMMM
+            //               MMMMMMMM  IMMMM  Z.MMMMMMMMMM ,
+            //               .MMMMMMM   .M:M   MMMMMMMMMMM M
+            //              I MMMMMMM.         MMMMMMMMMO  M
+            //           MMMM  MMMMMMM       .MMMMMMMMM.   .
+            //         :MMMMMM.MMMMMMM.      MMMMMMMM   .MMMM
+            //         MMMMMMMMMMMMMMMM      MMMMMMM   MMMMMMMM
+            //        MMMMMMMMM.MMMMMMM      MMMMMMM MMMMMMMMMM.
+            //        MMMMMMMMMMMMMMMM?      MMMMMM MMMMMMMMMMM
+            //        MMMMMMMMMM  .  .       MMMMMIMMMMMMMMMMMM.
+            //        MMMMMMMMMM               .. :MMMMMMMMMMMM.
+            //        DMMMMMMMMMM                 MMMMMMMMMMMMM.
+            //         MMMMMMMMMM.M.              MMMMMMMMMMMM.
+            //           MMMMMM,                    ....
+            //
+            //                   I AM A SAD PANDA
+
+            List<String> pathSegments = new ArrayList<>(Arrays.asList(StringUtils.split(path, "/")));
+            // strip out any leading junk
+            while (!pathSegments.isEmpty() && StringUtils.isBlank(pathSegments.get(0))) {
+                pathSegments.remove(0);
+            }
+            if (pathSegments.size() >= 2) {
+                String firstSegment = pathSegments.get(0);
+                if ("user".equals(firstSegment)) {
+                    User user = User.getById(pathSegments.get(1), true);
+                    if (type.isInstance(user) && CredentialsProvider.hasStores(user)) {
+                        // we have a winner
+                        return type.cast(user);
+                    }
+                } else if ("job".equals(firstSegment) || "item".equals(firstSegment) || "view"
+                        .equals(firstSegment)) {
+                    int index = 0;
+                    while (index < pathSegments.size()) {
+                        String segment = pathSegments.get(index);
+                        if ("view".equals(segment)) {
+                            // remove the /view/
+                            pathSegments.remove(index);
+                            if (index < pathSegments.size()) {
+                                // remove the /view/{name}
+                                pathSegments.remove(index);
+                            }
+                        } else if ("job".equals(segment) || "item".equals(segment)) {
+                            // remove the /job/
+                            pathSegments.remove(index);
+                            // skip the name
+                            index++;
+                        } else {
+                            // we have gone as far as we can parse the item path structure
+                            while (index < pathSegments.size()) {
+                                // remove the remainder
+                                pathSegments.remove(index);
+                            }
+                        }
+                    }
+                    Jenkins jenkins = Jenkins.get();
+                    while (!pathSegments.isEmpty()) {
+                        String fullName = StringUtils.join(pathSegments, "/");
+                        Item item = jenkins.getItemByFullName(fullName);
+                        if (item != null) {
+                            if (type.isInstance(item) && CredentialsProvider.hasStores(item)) {
+                                // we have a winner
+                                return type.cast(item);
+                            }
+                        }
+                        // walk back up and try one level less deep
+                        pathSegments.remove(pathSegments.size() - 1);
+                    }
+                }
+            }
+            // ok we give up, we are not thirsty for more
+        }
+        if (type.isAssignableFrom(Jenkins.class)) {
+            return type.cast(Jenkins.get());
+        }
+        return null;
     }
 
     /**
