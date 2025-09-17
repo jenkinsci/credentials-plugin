@@ -9,6 +9,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import java.io.Serial;
+
 /**
  * @author stephenc
  * @since 02/08/2013 12:54
@@ -37,6 +39,7 @@ public class DummyLegacyCredentials extends BaseCredentials implements UsernameP
         return password;
     }
 
+    @Serial
     private Object readResolve() {
         return new DummyCredentials(getScope(), username, password.getEncryptedValue());
     }

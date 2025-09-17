@@ -41,11 +41,11 @@ import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import java.util.Collections;
 import jenkins.model.Jenkins;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.xmlunit.matchers.CompareMatcher;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,14 +54,16 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-public class FingerprintTest {
+@WithJenkins
+class FingerprintTest {
 
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+    private JenkinsRule j;
+
     private CredentialsStore store = null;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp(JenkinsRule j) {
+        this.j = j;
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(
                 Collections.singletonMap(Domain.global(), Collections.emptyList()));
         for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.get())) {
@@ -75,7 +77,7 @@ public class FingerprintTest {
     }
 
     @Test
-    public void parameterizedBuildUsageTracked() throws Exception {
+    void parameterizedBuildUsageTracked() throws Exception {
         UsernamePasswordCredentialsImpl credentials =
                 new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "secret-id", "test credentials", "bob",
                         "secret");

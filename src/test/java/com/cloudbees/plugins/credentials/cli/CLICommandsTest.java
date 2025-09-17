@@ -36,16 +36,15 @@ import hudson.cli.CLICommand;
 import hudson.cli.CLICommandInvoker;
 import hudson.model.Items;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import jenkins.model.Jenkins;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.xmlunit.matchers.CompareMatcher;
 
 import static hudson.cli.CLICommandInvoker.Matcher.failedWith;
@@ -61,15 +60,18 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assume.assumeThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public class CLICommandsTest {
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class CLICommandsTest {
+
+    private JenkinsRule r;
+
     private CredentialsStore store = null;
 
-    @Before
-    public void clearCredentials() {
+    @BeforeEach
+    void clearCredentials(JenkinsRule r) {
+        this.r = r;
         SystemCredentialsProvider.getInstance().setDomainCredentialsMap(
                 Collections.singletonMap(Domain.global(), Collections.emptyList()));
         for (CredentialsStore s : CredentialsProvider.lookupStores(Jenkins.get())) {
@@ -82,28 +84,30 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void createSmokes() {
+    void createSmokes() {
         CLICommand cmd = new CreateCredentialsDomainByXmlCommand();
         CLICommandInvoker invoker = new CLICommandInvoker(r, cmd);
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
                 not(hasItem(hasProperty("name", is("smokes")))));
         assertThat(invoker.withStdin(asStream(
-                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>"))
+				        """
+                                <com.cloudbees.plugins.credentials.domains.Domain>
+                                  <name>smokes</name>
+                                </com.cloudbees.plugins.credentials.domains.Domain>"""))
                 .invokeWithArgs("system::system::jenkins"), succeededSilently());
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
                 hasItem(hasProperty("name", is("smokes"))));
         cmd = new CreateCredentialsByXmlCommand();
         invoker = new CLICommandInvoker(r, cmd);
         assertThat(invoker.withStdin(asStream(
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>GLOBAL</scope>\n"
-                        + "  <id>smokey-id</id>\n"
-                        + "  <description>created from xml</description>\n"
-                        + "  <username>example-com-deployer</username>\n"
-                        + "  <password>super-secret</password>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"))
+						        """
+                                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                                          <scope>GLOBAL</scope>
+                                          <id>smokey-id</id>
+                                          <description>created from xml</description>
+                                          <username>example-com-deployer</username>
+                                          <password>super-secret</password>
+                                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"""))
                         .invokeWithArgs("system::system::jenkins", "smokes"),
                 succeededSilently());
         Domain domain = null;
@@ -126,48 +130,51 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void createNonHappy() {
+    void createNonHappy() {
         CLICommand cmd = new CreateCredentialsDomainByXmlCommand();
         CLICommandInvoker invoker = new CLICommandInvoker(r, cmd);
         assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
                 not(hasItem(hasProperty("name", is("smokes")))));
-        assumeThat(invoker.withStdin(asStream(
-                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>"))
-                .invokeWithArgs("system::system::jenkins"), succeededSilently());
+        assumeTrue(succeededSilently().matches(invoker.withStdin(asStream(
+				        """
+                                <com.cloudbees.plugins.credentials.domains.Domain>
+                                  <name>smokes</name>
+                                </com.cloudbees.plugins.credentials.domains.Domain>"""))
+                .invokeWithArgs("system::system::jenkins")));
         assertThat(invoker.withStdin(asStream(
-                "<com.cloudbees.plugins.credentials.domains.Domain>\n"
-                        + "  <name>smokes</name>\n"
-                        + "</com.cloudbees.plugins.credentials.domains.Domain>"))
+				        """
+                                <com.cloudbees.plugins.credentials.domains.Domain>
+                                  <name>smokes</name>
+                                </com.cloudbees.plugins.credentials.domains.Domain>"""))
                 .invokeWithArgs("system::system::jenkins"), failedWith(1));
 
         cmd = new CreateCredentialsByXmlCommand();
         invoker = new CLICommandInvoker(r, cmd);
-        assumeThat(invoker.withStdin(asStream(
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>GLOBAL</scope>\n"
-                        + "  <id>smokey-id</id>\n"
-                        + "  <description>created from xml</description>\n"
-                        + "  <username>example-com-deployer</username>\n"
-                        + "  <password>super-secret</password>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"))
-                        .invokeWithArgs("system::system::jenkins", "smokes"),
-                succeededSilently());
+        assumeTrue(succeededSilently().matches(invoker.withStdin(asStream(
+						        """
+                                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                                          <scope>GLOBAL</scope>
+                                          <id>smokey-id</id>
+                                          <description>created from xml</description>
+                                          <username>example-com-deployer</username>
+                                          <password>super-secret</password>
+                                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"""))
+                        .invokeWithArgs("system::system::jenkins", "smokes")));
         assertThat(invoker.withStdin(asStream(
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>GLOBAL</scope>\n"
-                        + "  <id>smokey-id</id>\n"
-                        + "  <description>created from xml</description>\n"
-                        + "  <username>example-com-deployer</username>\n"
-                        + "  <password>super-secret</password>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"))
+						        """
+                                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                                          <scope>GLOBAL</scope>
+                                          <id>smokey-id</id>
+                                          <description>created from xml</description>
+                                          <username>example-com-deployer</username>
+                                          <password>super-secret</password>
+                                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"""))
                         .invokeWithArgs("system::system::jenkins", "smokes"),
                 failedWith(1));
     }
 
     @Test
-    public void readSmokes() throws Exception {
+    void readSmokes() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
                 Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
@@ -201,7 +208,7 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void listSmokes() throws Exception {
+    void listSmokes() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
                 Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
@@ -245,7 +252,7 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void updateSmokes() throws Exception {
+    void updateSmokes() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
                 Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
@@ -268,13 +275,14 @@ public class CLICommandsTest {
         ));
         invoker = new CLICommandInvoker(r, new UpdateCredentialsByXmlCommand());
         assertThat(invoker.withStdin(asStream(
-                "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>\n"
-                        + "  <scope>SYSTEM</scope>\n"
-                        + "  <id>smokes-id</id>\n"
-                        + "  <description>updated by xml</description>\n"
-                        + "  <username>soot</username>\n"
-                        + "  <password>vapour text</password>\n"
-                        + "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"))
+						        """
+                                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                                          <scope>SYSTEM</scope>
+                                          <id>smokes-id</id>
+                                          <description>updated by xml</description>
+                                          <username>soot</username>
+                                          <password>vapour text</password>
+                                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>"""))
                         .invokeWithArgs("system::system::jenkins", "smokes", "smokes-id"),
                 succeededSilently());
         assertThat(store.getCredentials(smokes).size(), is(1));
@@ -289,7 +297,7 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void deleteSmokes() throws Exception {
+    void deleteSmokes() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
                 Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
@@ -307,7 +315,7 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void listCredentialsAsXML() throws Exception {
+    void listCredentialsAsXML() throws Exception {
         Domain smokes = new Domain("smokes", "smoke test domain",
                 Collections.singletonList(new HostnameSpecification("smokes.example.com", null)));
         UsernamePasswordCredentialsImpl smokey =
@@ -340,7 +348,7 @@ public class CLICommandsTest {
     }
 
     @Test
-    public void importCredentialsAsXML() {
+    void importCredentialsAsXML() {
         InputStream input = this.getClass().getResourceAsStream("credentials-input.xml");
         CLICommandInvoker invoker = new CLICommandInvoker(r, new ImportCredentialsAsXmlCommand());
 

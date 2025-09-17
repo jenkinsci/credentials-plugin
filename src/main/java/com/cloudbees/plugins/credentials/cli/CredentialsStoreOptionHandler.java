@@ -41,7 +41,11 @@ import org.kohsuke.args4j.spi.Setter;
 @OptionHandlerExtension
 public class CredentialsStoreOptionHandler extends OptionHandler<CredentialsStore> {
     /**
-     * {@inheritDoc}
+     * Constructor.
+     *
+     * @see CredentialsStoreOptionHandler
+     * @see CredentialsStore
+     * @see OptionHandler
      */
     public CredentialsStoreOptionHandler(CmdLineParser parser, OptionDef option,
                                          Setter<? super CredentialsStore> setter) {

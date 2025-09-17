@@ -26,23 +26,24 @@ package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
-import java.util.logging.Level;
+
+import java.io.Serial;
 
 import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import org.junit.Rule;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.LoggerRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class UsernamePasswordCredentialsImplTest {
-    
-    @Rule public JenkinsRule r = new JenkinsRule(); // needed for Secret.fromString to work
-    @Rule public LoggerRule logging = new LoggerRule().record(CredentialsNameProvider.class, Level.FINE);
-    
-    @Test public void displayName() throws Exception {
+@WithJenkins
+class UsernamePasswordCredentialsImplTest {
+
+    @Test
+    void displayName(JenkinsRule r) throws Exception {
         UsernamePasswordCredentialsImpl creds = new UsernamePasswordCredentialsImpl(null, "abc123", "Bob’s laptop", "bob", "s3cr3t");
         assertEquals("bob/****** (Bob’s laptop)", CredentialsNameProvider.name(creds));
         creds.setUsernameSecret(true);
@@ -54,23 +55,30 @@ public class UsernamePasswordCredentialsImplTest {
     }
 
     @Issue("JENKINS-67132")
-    @Test public void subclassDeserialization() {
+    @Test
+    void subclassDeserialization(JenkinsRule r) {
         SpecialUsernamePasswordCredentialsImpl c = (SpecialUsernamePasswordCredentialsImpl) Jenkins.XSTREAM2.fromXML(
-            "<com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImplTest_-SpecialUsernamePasswordCredentialsImpl>\n" +
-            "  <scope>GLOBAL</scope>\n" +
-            "  <id>xxx</id>\n" +
-            "  <username>bob</username>\n" +
-            "  <password>s3cr3t</password>\n" +
-            "</com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImplTest_-SpecialUsernamePasswordCredentialsImpl>");
+                        """
+                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImplTest_-SpecialUsernamePasswordCredentialsImpl>
+                          <scope>GLOBAL</scope>
+                          <id>xxx</id>
+                          <username>bob</username>
+                          <password>s3cr3t</password>
+                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImplTest_-SpecialUsernamePasswordCredentialsImpl>
+                        """);
         assertTrue(c.initialized);
         assertEquals("bob", c.getUsername());
         assertTrue(c.isUsernameSecret());
     }
-    public static final class SpecialUsernamePasswordCredentialsImpl extends UsernamePasswordCredentialsImpl {
+
+    private static final class SpecialUsernamePasswordCredentialsImpl extends UsernamePasswordCredentialsImpl {
+
         public SpecialUsernamePasswordCredentialsImpl(CredentialsScope scope, String id, String description, String username, String password) throws Descriptor.FormException {
             super(scope, id, description, username, password);
         }
         transient boolean initialized;
+
+        @Serial
         private Object readResolve() {
             initialized = true;
             return this;
