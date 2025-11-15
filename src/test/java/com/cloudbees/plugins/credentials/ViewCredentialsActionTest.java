@@ -1,20 +1,26 @@
 package com.cloudbees.plugins.credentials;
 
-import com.cloudbees.plugins.credentials.domains.Domain;
-import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
-import org.htmlunit.WebResponse;
-import hudson.ExtensionList;
+import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import org.htmlunit.WebResponse;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
-import static org.hamcrest.MatcherAssert.assertThat;
+import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+
+import hudson.ExtensionList;
+import hudson.model.FreeStyleProject;
 
 @WithJenkins
 class ViewCredentialsActionTest {
@@ -105,6 +111,23 @@ class ViewCredentialsActionTest {
                 + "</system>"
                 + "</stores>"
                 + "</rootActionImpl>"));
+    }
+
+    @Test
+    void isVisibleShouldReturnFalseForRegularJobs(JenkinsRule j) throws Exception {
+        // For a FreeStyleProject (or any other regular job that is a TopLevelItem but not a folder)
+        FreeStyleProject job = j.createFreeStyleProject("test-job");
+        // And a ViewCredentialsAction attached to it
+        ViewCredentialsAction action = new ViewCredentialsAction(job);
+        assertTrue(CredentialsProvider.enabled(job).stream().anyMatch(CredentialsProvider::hasCredentialsDescriptors),
+            "Verify assumption of 'hasCredentialsDescriptors'");
+        assertTrue(CredentialsProvider.enabled(job).stream().noneMatch(p -> p.getStore(job) != null),
+            "Verify assumption of 'getStore != null' (jobs don't manage credentials)");
+
+        assertFalse(action.isVisible(),
+            "ViewCredentialsAction.isVisible() should return false for regular jobs (no credentials store)");
+        assertNull(action.getIconFileName(),
+            "getIconFileName() should return null when action is not visible");
     }
 
 }

@@ -231,8 +231,8 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         }
 
         for (CredentialsProvider p : CredentialsProvider.enabled(context)) {
-            if (p.hasCredentialsDescriptors()) {
-                // at least one provider must have the potential for at least one type
+            if (p.hasCredentialsDescriptors() && p.getStore(context) != null) {
+                // at least one provider must have descriptors AND a store for this context
                 return true;
             }
         }
