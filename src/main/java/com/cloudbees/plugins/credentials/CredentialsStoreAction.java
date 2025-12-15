@@ -38,6 +38,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
+import hudson.Functions;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Action;
@@ -573,6 +574,10 @@ public abstract class CredentialsStoreAction
     @Override
     public void checkPermission(@NonNull Permission permission) throws AccessDeniedException {
         getACL().checkPermission(permission);
+    }
+
+    public NewDomainLink getNewDomainLink() {
+        return new NewDomainLink();
     }
 
     /**
