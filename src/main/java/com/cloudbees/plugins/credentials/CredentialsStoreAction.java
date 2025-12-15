@@ -28,6 +28,9 @@ import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
+import com.cloudbees.plugins.credentials.links.DeleteDomainLink;
+import com.cloudbees.plugins.credentials.links.NewDomainLink;
+import com.cloudbees.plugins.credentials.links.UpdateDomainLink;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
@@ -38,7 +41,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
-import hudson.Functions;
 import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Action;
@@ -87,6 +89,7 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
@@ -576,6 +579,7 @@ public abstract class CredentialsStoreAction
         getACL().checkPermission(permission);
     }
 
+    @Restricted(DoNotUse.class) // jelly
     public NewDomainLink getNewDomainLink() {
         return new NewDomainLink();
     }
@@ -649,6 +653,16 @@ public abstract class CredentialsStoreAction
          */
         public CredentialsStoreAction getParent() {
             return parent;
+        }
+
+        @Restricted(DoNotUse.class) // jelly
+        public UpdateDomainLink getUpdateDomainLink() {
+            return new UpdateDomainLink();
+        }
+
+        @Restricted(DoNotUse.class) // jelly
+        public DeleteDomainLink getDeleteDomainLink() {
+            return new DeleteDomainLink();
         }
 
         /**
