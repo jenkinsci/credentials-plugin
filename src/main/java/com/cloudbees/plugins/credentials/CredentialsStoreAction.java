@@ -28,8 +28,12 @@ import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
+import com.cloudbees.plugins.credentials.links.DeleteCredentialsLink;
 import com.cloudbees.plugins.credentials.links.DeleteDomainLink;
+import com.cloudbees.plugins.credentials.links.MoveCredentialsLink;
+import com.cloudbees.plugins.credentials.links.NewCredentialsLink;
 import com.cloudbees.plugins.credentials.links.NewDomainLink;
+import com.cloudbees.plugins.credentials.links.UpdateCredentialsLink;
 import com.cloudbees.plugins.credentials.links.UpdateDomainLink;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -665,6 +669,11 @@ public abstract class CredentialsStoreAction
             return new DeleteDomainLink();
         }
 
+        @Restricted(DoNotUse.class) // jelly
+        public NewCredentialsLink getNewCredentialsLink() {
+            return new NewCredentialsLink();
+        }
+
         /**
          * Return the URL name.
          *
@@ -1176,6 +1185,22 @@ public abstract class CredentialsStoreAction
         public Api getApi() {
             return new Api(this);
         }
+
+        @Restricted(DoNotUse.class) // jelly
+        public UpdateCredentialsLink getUpdateLink() {
+            return new UpdateCredentialsLink();
+        }
+
+        @Restricted(DoNotUse.class) // jelly
+        public DeleteCredentialsLink getDeleteLink() {
+            return new DeleteCredentialsLink();
+        }
+
+        @Restricted(DoNotUse.class) // jelly
+        public MoveCredentialsLink getMoveLink() {
+            return new MoveCredentialsLink();
+        }
+
 
         /**
          * Gets the display name of the {@link Credentials}.
