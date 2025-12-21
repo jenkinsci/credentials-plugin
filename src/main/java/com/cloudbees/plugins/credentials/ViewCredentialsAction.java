@@ -31,7 +31,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.model.Action;
-import hudson.model.Actionable;
 import hudson.model.Api;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
@@ -264,13 +263,6 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
      */
     public Api getApi() {
         return new Api(this);
-    }
-
-    public Actionable getObject() {
-        if (context instanceof Actionable actionable) {
-            return actionable;
-        }
-        return null;
     }
 
     /**
