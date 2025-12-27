@@ -155,6 +155,14 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
                 .collect(Collectors.toList());
     }
 
+    public List<CredentialsStoreAction> getModifiableStoreActions() {
+        return streamStores()
+                .filter(s -> context == s.getContext() && s.hasPermission(CredentialsProvider.CREATE))
+                .map(CredentialsStore::getStoreAction)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     private Stream<CredentialsStore> streamStores() {
         return StreamSupport.stream(CredentialsProvider.lookupStores(getContext()).spliterator(), false);
     }
