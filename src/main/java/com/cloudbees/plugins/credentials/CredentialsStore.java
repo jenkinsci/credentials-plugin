@@ -532,7 +532,7 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
     }
 
     /**
-     * Returns the display name of the {@link #getContext()} of this {@link CredentialsStore}.
+     * Returns the icon class name of the {@link #getContext()} of this {@link CredentialsStore}.
      *
      * @return the icon class name for the store.
      * @since TODO
