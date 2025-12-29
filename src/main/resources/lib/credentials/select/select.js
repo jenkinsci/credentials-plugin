@@ -38,15 +38,19 @@ window.credentials.add = function (e) {
     }).then(rsp => {
         if (rsp.ok) {
             rsp.text().then((responseText) => {
-                // do not apply behaviour on parsed HTML, dialog.form does that later
-                // otherwise we have crumb and json fields twice
                 window.credentials.body.innerHTML = responseText;
                 window.credentials.form = document.getElementById('credentials-dialog-form');
-				const data = window.credentials.form.dataset;
-				const options = {'title': data['title'], 'okText': data['add'], 'submitButton':false, 'minWidth': 'min(1641px, 65vw)'};
-				dialog.form(window.credentials.form, options)
-					.then(window.credentials.addSubmit);
-				window.credentials.form.querySelector('select').focus();
+                const data = {
+                    title: 'Add credentials',
+                }
+				const options = {'title': data['title'],  minWidth: 'min(550px, 100vw)'};
+
+                Behaviour.applySubtree(window.credentials.form, false);
+                dialog.modal(window.credentials.form, options);
+
+                // dialog.form(window.credentials.form, options)
+				// 	.then(window.credentials.addSubmit);
+				// window.credentials.form.querySelector('select').focus();
             });
         }
     });

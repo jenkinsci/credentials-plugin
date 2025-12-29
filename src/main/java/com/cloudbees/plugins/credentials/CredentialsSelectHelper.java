@@ -43,13 +43,17 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import jakarta.servlet.ServletException;
 import jenkins.model.Jenkins;
@@ -119,6 +123,39 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
     @Restricted(NoExternalUse.class)
     public ModelObject resolveContext(Object context) {
         return context instanceof ModelObject mo ? mo : CredentialsDescriptor.findContextInPath(ModelObject.class);
+    }
+
+    /**
+     * TODO
+     * @return
+     */
+    @Restricted(NoExternalUse.class)
+    public Map<String, List<CredentialsStoreAction.DomainWrapper>> getModifiableStoreActions(ModelObject context, boolean includeUser) {
+//        if (context == null) {
+//            context = CredentialsDescriptor.findContextInPath(ModelObject.class);
+//        }
+
+        System.out.println("");
+        System.out.println("");
+        System.out.println("CONTEXT BELOW");
+        System.out.println(context);
+        System.out.println("");
+        System.out.println("");
+
+        ModelObject finalContext = context;
+        return StreamSupport.stream(CredentialsProvider.lookupStores(context).spliterator(), false)
+//                .filter(s -> finalContext == s.getContext() && s.hasPermission(CredentialsProvider.CREATE))
+                .map(CredentialsStore::getStoreAction)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        CredentialsStoreAction::getDisplayName,   // "store action name"
+                        store -> new ArrayList<>(store.getDomains().values()),       // "store.domains"
+                        (left, right) -> {
+                            left.addAll(right);
+                            return left;
+                            },
+                        LinkedHashMap::new
+                ));
     }
 
    /**
