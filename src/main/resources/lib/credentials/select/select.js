@@ -97,7 +97,8 @@ function navigateToNextPage(url, params) {
                 }
 
                 dialog.appendChild(form)
-                Behaviour.applySubtree(newDialog, false);
+
+                Behaviour.applySubtree(dialog, false);
             })
         }
     })
