@@ -47,6 +47,7 @@ function navigateToNextPage(url, params) {
                 Behaviour.applySubtree(newDialog, false);
 
                 const form = newDialog.querySelector("form");
+
                 if (form.method === 'get') {
                     form.addEventListener("submit", (e) => {
                         e.preventDefault();
@@ -66,7 +67,6 @@ function navigateToNextPage(url, params) {
                         });
 
                         var queryString = params.toString(); // "username=alice&password=secret"
-                        console.log(queryString);
 
                         navigateToNextPage(form.action, queryString);
                     })
