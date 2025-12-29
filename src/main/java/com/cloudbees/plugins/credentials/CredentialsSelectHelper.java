@@ -142,9 +142,8 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         System.out.println("");
         System.out.println("");
 
-        ModelObject finalContext = context;
         return StreamSupport.stream(CredentialsProvider.lookupStores(context).spliterator(), false)
-//                .filter(s -> finalContext == s.getContext() && s.hasPermission(CredentialsProvider.CREATE))
+                .filter(s -> s.hasPermission(CredentialsProvider.CREATE))
                 .map(CredentialsStore::getStoreAction)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(
