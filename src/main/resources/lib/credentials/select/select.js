@@ -30,32 +30,68 @@ window.credentials.init = function () {
         window.credentials.body = document.getElementById('credentialsDialog');
     }
 };
-window.credentials.add = function (e) {
-    window.credentials.init();
-    fetch(e, {
+
+function navigateToNextPage(url, params) {
+    const dialog = document.querySelector("dialog .jenkins-dialog__contents");
+
+    fetch(url + '?' + params, {
         method: 'GET',
         headers: crumb.wrap({}),
     }).then(rsp => {
         if (rsp.ok) {
             rsp.text().then((responseText) => {
-                window.credentials.body.innerHTML = responseText;
-                window.credentials.form = document.getElementById('credentials-dialog-form');
-                const data = {
-                    title: 'Add credentials',
+                dialog.querySelectorAll("& > form").forEach(form => form.remove());
+
+                const newDialog = document.createElement("div");
+                newDialog.innerHTML = responseText;
+                Behaviour.applySubtree(newDialog, false);
+
+                const form = newDialog.querySelector("form");
+                if (form.method === 'get') {
+                    form.addEventListener("submit", (e) => {
+                        e.preventDefault();
+
+                        var form = e.target;
+                        var fd = new FormData(form);
+                        var params = new URLSearchParams();
+
+                        fd.forEach(function (value, key) {
+                            // FormData can include File objects. Query strings cannot.
+                            if (value instanceof File) {
+                                // choose one:
+                                // params.append(key, value.name); // store filename only
+                                return; // or skip files entirely
+                            }
+                            params.append(key, String(value));
+                        });
+
+                        var queryString = params.toString(); // "username=alice&password=secret"
+                        console.log(queryString);
+
+                        navigateToNextPage(form.action, queryString);
+                    })
                 }
-				const options = {'title': data['title'],  minWidth: 'min(550px, 100vw)'};
 
-                Behaviour.applySubtree(window.credentials.form, false);
-                dialog.modal(window.credentials.form, options);
-
-                // dialog.form(window.credentials.form, options)
-				// 	.then(window.credentials.addSubmit);
-				// window.credentials.form.querySelector('select').focus();
-            });
+                dialog.appendChild(form)
+            })
         }
-    });
+    })
+}
+
+window.dialog2 = {
+    wizard: (initialUrl, options) => {
+        dialog.modal(document.createElement("template"), options);
+
+        navigateToNextPage(initialUrl, '');
+    }
+};
+
+window.credentials.add = function (e) {
+    window.credentials.init();
+    window.dialog2.wizard(e, { title: 'Add Credentials', minWidth: 'min(550px, 100vw)' });
     return false;
 };
+
 window.credentials.refreshAll = function () {
     document.querySelectorAll('select.credentials-select').forEach(function (e) {
         var deps = [];
