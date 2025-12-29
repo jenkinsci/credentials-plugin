@@ -44,7 +44,6 @@ function navigateToNextPage(url, params) {
 
                 const newDialog = document.createElement("div");
                 newDialog.innerHTML = responseText;
-                Behaviour.applySubtree(newDialog, false);
 
                 const form = newDialog.querySelector("form");
 
@@ -73,6 +72,7 @@ function navigateToNextPage(url, params) {
                 }
 
                 dialog.appendChild(form)
+                Behaviour.applySubtree(newDialog, false);
             })
         }
     })
