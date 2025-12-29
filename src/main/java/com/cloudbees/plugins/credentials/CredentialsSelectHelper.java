@@ -126,30 +126,17 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
     }
 
     /**
-     * TODO
-     * @return
+     * @return modifiable store actions for the context provided.
      */
     @Restricted(NoExternalUse.class)
-    public Map<String, List<CredentialsStoreAction.DomainWrapper>> getModifiableStoreActions(ModelObject context, boolean includeUser) {
-//        if (context == null) {
-//            context = CredentialsDescriptor.findContextInPath(ModelObject.class);
-//        }
-
-        System.out.println("");
-        System.out.println("");
-        System.out.println("CONTEXT BELOW");
-        System.out.println(context);
-        System.out.println("");
-        System.out.println("");
-
-        ModelObject finalContext = context;
+    public Map<String, List<CredentialsStoreAction.DomainWrapper>> getModifiableStoreActions(ModelObject context) {
         return StreamSupport.stream(CredentialsProvider.lookupStores(context).spliterator(), false)
-//                .filter(s -> finalContext == s.getContext() && s.hasPermission(CredentialsProvider.CREATE))
+                .filter(s -> s.hasPermission(CredentialsProvider.CREATE))
                 .map(CredentialsStore::getStoreAction)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(
-                        CredentialsStoreAction::getDisplayName,   // "store action name"
-                        store -> new ArrayList<>(store.getDomains().values()),       // "store.domains"
+                        CredentialsStoreAction::getDisplayName,
+                        store -> new ArrayList<>(store.getDomains().values()),
                         (left, right) -> {
                             left.addAll(right);
                             return left;
