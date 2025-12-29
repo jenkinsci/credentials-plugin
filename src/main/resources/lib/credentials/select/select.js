@@ -51,6 +51,26 @@ function showBackButtonInDialog() {
     })
 }
 
+/*
+ * Recreate script tags to ensure they are executed, as innerHTML does not execute scripts.
+ */
+function recreateScripts(form) {
+    const scripts = form.getElementsByTagName("script");
+    for (let i = 0; i < scripts.length; i++) {
+        const script = document.createElement("script");
+        if (scripts[i].text) {
+            script.text = scripts[i].text;
+        } else {
+            for (let j = 0; j < scripts[i].attributes.length; j++) {
+                if (scripts[i].attributes[j].name in HTMLScriptElement.prototype) {
+                    script[scripts[i].attributes[j].name] = scripts[i].attributes[j].value;
+                }
+            }
+        }
+        scripts[i].parentNode.replaceChild(script, scripts[i]);
+    }
+}
+
 function navigateToNextPage(url, params) {
     const dialog = document.querySelector(".jenkins-dialog .jenkins-dialog__contents");
 
@@ -74,9 +94,9 @@ function navigateToNextPage(url, params) {
                     form.addEventListener("submit", (e) => {
                         e.preventDefault();
 
-                        var form = e.target;
-                        var fd = new FormData(form);
-                        var params = new URLSearchParams();
+                        const form = e.target;
+                        const fd = new FormData(form);
+                        const params = new URLSearchParams();
 
                         fd.forEach(function (value, key) {
                             // FormData can include File objects. Query strings cannot.
@@ -88,7 +108,7 @@ function navigateToNextPage(url, params) {
                             params.append(key, String(value));
                         });
 
-                        var queryString = params.toString(); // "username=alice&password=secret"
+                        const queryString = params.toString(); // "username=alice&password=secret"
 
                         showBackButtonInDialog();
 
@@ -97,8 +117,11 @@ function navigateToNextPage(url, params) {
                 }
 
                 dialog.appendChild(form)
+                recreateScripts(form)
 
-                Behaviour.applySubtree(dialog, false);
+                setTimeout(() => {
+                    Behaviour.applySubtree(dialog, false);
+                }, 20)
             })
         }
     })
