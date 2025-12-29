@@ -31,8 +31,20 @@ window.credentials.init = function () {
     }
 };
 
+function showBackButtonInDialog() {
+    const dialog = document.querySelector(".jenkins-dialog");
+    const title = dialog.querySelector(".jenkins-dialog__title");
+    const backButton = document.createElement("button");
+    backButton.classList.add("jenkins-button");
+    backButton.classList.add("jenkins-dialog__back-button");
+    backButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M328 112L184 256l144 144"/></svg>`;
+    title.style.transition = "var(--standard-transition)";
+    title.style.marginLeft = "2.75rem";
+    dialog.appendChild(backButton);
+}
+
 function navigateToNextPage(url, params) {
-    const dialog = document.querySelector("dialog .jenkins-dialog__contents");
+    const dialog = document.querySelector(".jenkins-dialog .jenkins-dialog__contents");
 
     fetch(url + '?' + params, {
         method: 'GET',
@@ -46,6 +58,9 @@ function navigateToNextPage(url, params) {
                 newDialog.innerHTML = responseText;
 
                 const form = newDialog.querySelector("form");
+
+                const title = document.querySelector(".jenkins-dialog .jenkins-dialog__title");
+                title.textContent = rsp.headers.get("X-Wizard-Title");
 
                 if (form.method === 'get') {
                     form.addEventListener("submit", (e) => {
@@ -66,6 +81,8 @@ function navigateToNextPage(url, params) {
                         });
 
                         var queryString = params.toString(); // "username=alice&password=secret"
+
+                        showBackButtonInDialog();
 
                         navigateToNextPage(form.action, queryString);
                     })
@@ -88,7 +105,7 @@ window.dialog2 = {
 
 window.credentials.add = function (e) {
     window.credentials.init();
-    window.dialog2.wizard(e, { title: 'Add Credentials', minWidth: 'min(550px, 100vw)' });
+    window.dialog2.wizard(e, { title: '', minWidth: 'min(550px, 100vw)' });
     return false;
 };
 
