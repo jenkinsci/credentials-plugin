@@ -41,6 +41,14 @@ function showBackButtonInDialog() {
     title.style.transition = "var(--standard-transition)";
     title.style.marginLeft = "2.75rem";
     dialog.appendChild(backButton);
+
+    backButton.addEventListener("click", () => {
+        dialog.querySelector(".jenkins-dialog__contents form:first-of-type").classList.remove("jenkins-hidden");
+        dialog.querySelector(".jenkins-dialog__contents form:last-of-type").remove();
+        title.style.marginLeft = "0";
+        title.textContent = "Add Credentials";
+        backButton.remove();
+    })
 }
 
 function navigateToNextPage(url, params) {
@@ -52,7 +60,7 @@ function navigateToNextPage(url, params) {
     }).then(rsp => {
         if (rsp.ok) {
             rsp.text().then((responseText) => {
-                dialog.querySelectorAll("& > form").forEach(form => form.remove());
+                dialog.querySelectorAll("& > form").forEach(form => form.classList.add("jenkins-hidden"));
 
                 const newDialog = document.createElement("div");
                 newDialog.innerHTML = responseText;
