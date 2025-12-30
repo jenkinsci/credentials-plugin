@@ -671,7 +671,6 @@ public abstract class CredentialsStoreAction
         /**
          * {@inheritDoc}
          */
-        @Exported
         public String getIconClassName() {
             return isGlobal() ? "symbol-globe-outline plugin-ionicons-api" : "symbol-business-outline plugin-ionicons-api";
         }
