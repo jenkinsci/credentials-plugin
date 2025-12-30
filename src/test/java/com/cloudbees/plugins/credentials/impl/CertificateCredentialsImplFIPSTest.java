@@ -5,28 +5,24 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.jvnet.hudson.test.RealJenkinsRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import hudson.ExtensionList;
 import hudson.util.FormValidation;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import org.jvnet.hudson.test.junit.jupiter.RealJenkinsExtension;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class CertificateCredentialsImplFIPSTest {
+class CertificateCredentialsImplFIPSTest {
 
-    @Rule
-    public RealJenkinsRule rule = new RealJenkinsRule().withFIPSEnabled().javaOptions("-Xmx512m");
-
-    @Rule
-    public TemporaryFolder tmp = new TemporaryFolder();
+    @RegisterExtension
+    private final RealJenkinsExtension extension = new RealJenkinsExtension().withFIPSEnabled().javaOptions("-Xmx512m");
 
     private String pemCert;
     private String pemKey;
@@ -34,8 +30,8 @@ public class CertificateCredentialsImplFIPSTest {
     private static final String INVALID_PASSWORD = "invalidPasswordFipsCheck";
     private static final String SHORT_PASSWORD = "password";
 
-    @Before
-    public void setup() throws IOException {
+    @BeforeEach
+    void setup() throws IOException {
         pemCert = IOUtils.toString(CertificateCredentialsImplFIPSTest.class.getResource("validCerts.pem"),
                                    StandardCharsets.UTF_8);
         pemKey = IOUtils.toString(CertificateCredentialsImplFIPSTest.class.getResource("validKey.pem"),
@@ -43,8 +39,8 @@ public class CertificateCredentialsImplFIPSTest {
     }
 
     @Test
-    public void doCheckPasswordTest() throws Throwable {
-        rule.then(r -> {
+    void doCheckPasswordTest() throws Throwable {
+        extension.then(r -> {
             CertificateCredentialsImpl.DescriptorImpl descriptor = ExtensionList.lookupSingleton(
                     CertificateCredentialsImpl.DescriptorImpl.class);
             FormValidation result = descriptor.doCheckPassword(VALID_PASSWORD);
@@ -57,10 +53,10 @@ public class CertificateCredentialsImplFIPSTest {
     }
 
     @Test
-    public void invalidPEMKeyStoreAndPasswordTest() throws Throwable {
+    void invalidPEMKeyStoreAndPasswordTest() throws Throwable {
         CertificateCredentialsImpl.PEMEntryKeyStoreSource storeSource = new CertificateCredentialsImpl.PEMEntryKeyStoreSource(
                 pemCert, pemKey);
-        rule.then(r -> {
+        extension.then(r -> {
             new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "valid-certificate-and-password-validation",
                                            "Validate the certificate credentials", VALID_PASSWORD, storeSource);
             assertThrows(IllegalArgumentException.class,
