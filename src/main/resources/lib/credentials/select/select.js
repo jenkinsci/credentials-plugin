@@ -135,9 +135,9 @@ window.dialog2 = {
     }
 };
 
-window.credentials.add = function (e) {
+window.credentials.add = function (initialUrl) {
     window.credentials.init();
-    window.dialog2.wizard(e, { title: '', minWidth: 'min(550px, 100vw)' });
+    window.dialog2.wizard(initialUrl, { title: '', minWidth: 'min(550px, 100vw)' });
     return false;
 };
 
