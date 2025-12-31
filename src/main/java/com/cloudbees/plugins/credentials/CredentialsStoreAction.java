@@ -79,8 +79,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jenkins.model.Jenkins;
-import jenkins.model.ModelObjectWithChildren;
-import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
@@ -99,14 +97,12 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.springframework.security.access.AccessDeniedException;
 import org.xml.sax.SAXException;
 
-import static com.cloudbees.plugins.credentials.ContextMenuIconUtils.getMenuItemIconUrlByClassSpec;
-
 /**
  * An action for a {@link CredentialsStore}
  */
 @ExportedBean
 public abstract class CredentialsStoreAction
-        implements Action, IconSpec, AccessControlled, ModelObjectWithContextMenu, ModelObjectWithChildren {
+        implements Action, IconSpec, AccessControlled, ModelObject {
 
     /**
      * Expose {@link CredentialsProvider#VIEW} for Jelly.
@@ -275,68 +271,6 @@ public abstract class CredentialsStoreAction
             }
         }
         return null;
-    }
-
-    /**
-     * Creates the context menu with the supplied prefix to all URLs.
-     *
-     * @param prefix the prefix to prepend to relative urls.
-     * @return the {@link ContextMenu} or {@code null}
-     * @since 2.0
-     */
-    @CheckForNull
-    public ContextMenu getContextMenu(String prefix) {
-        ContextMenu menu = new ContextMenu();
-        if (getStore().isDomainsModifiable() && getStore().hasPermission(MANAGE_DOMAINS)) {
-            menu.add(ContextMenuIconUtils.buildUrl(prefix, "newDomain"),
-                    getMenuItemIconUrlByClassSpec("icon-credentials-new-domain icon-md"),
-                    Messages.CredentialsStoreAction_AddDomainAction()
-            );
-        }
-        for (Action action : getActions()) {
-            ContextMenuIconUtils.addMenuItem(menu, prefix, action);
-        }
-        return menu.items.isEmpty() ? null : menu;
-    }
-
-    /**
-     * Creates the children context menu with the supplied prefix to all URLs.
-     *
-     * @param prefix the prefix to prepend to relative urls.
-     * @return the {@link ContextMenu} or {@code null}
-     * @since 2.0
-     */
-    @CheckForNull
-    public ContextMenu getChildrenContextMenu(String prefix) {
-        ContextMenu menu = new ContextMenu();
-        for (Domain d : getStore().getDomains()) {
-            MenuItem item =
-                    new MenuItem(d.getUrl(), getMenuItemIconUrlByClassSpec("icon-credentials-domain icon-md"),
-                            d.isGlobal()
-                                    ? Messages.CredentialsStoreAction_GlobalDomainDisplayName()
-                                    : d.getName()
-                    );
-            item.subMenu = new DomainWrapper(this, d).getContextMenu(ContextMenuIconUtils.buildUrl(prefix, d.getUrl()));
-            menu.add(item);
-        }
-        return menu.items.isEmpty() ? null : menu;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ContextMenu doContextMenu(StaplerRequest2 request, StaplerResponse2 response) {
-        return getContextMenu("");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ContextMenu doChildrenContextMenu(StaplerRequest2 request,
-                                             StaplerResponse2 response) {
-        return getChildrenContextMenu("");
     }
 
     /**
@@ -588,7 +522,7 @@ public abstract class CredentialsStoreAction
      */
     @ExportedBean
     public static class DomainWrapper extends AbstractDescribableImpl<DomainWrapper> implements
-            ModelObjectWithContextMenu, ModelObjectWithChildren, AccessControlled, IconSpec {
+            ModelObject, AccessControlled, IconSpec {
 
         /**
          * The {@link CredentialsStoreAction} that we belong to.
@@ -872,79 +806,6 @@ public abstract class CredentialsStoreAction
         }
 
         /**
-         * Creates the context menu with the supplied prefix to all URLs.
-         *
-         * @param prefix the prefix to prepend to relative urls.
-         * @return the {@link ContextMenu} or {@code null}
-         * @since 2.0
-         */
-        @CheckForNull
-        public ContextMenu getContextMenu(String prefix) {
-            if (getStore().hasPermission(CREATE) || (getStore().hasPermission(MANAGE_DOMAINS) && !domain.isGlobal())) {
-                ContextMenu result = new ContextMenu();
-                if (getStore().hasPermission(CREATE)) {
-                    result.add(new MenuItem(
-                            ContextMenuIconUtils.buildUrl(prefix, "newCredentials"),
-                            getMenuItemIconUrlByClassSpec("icon-credentials-new-credential icon-md"),
-                            Messages.CredentialsStoreAction_AddCredentialsAction()
-                    ));
-                }
-                if (getStore().hasPermission(MANAGE_DOMAINS) && !domain.isGlobal()) {
-                    result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "configure"),
-                            getMenuItemIconUrlByClassSpec("icon-setting icon-md"),
-                            Messages.CredentialsStoreAction_ConfigureDomainAction()
-                    ));
-                    result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "delete"),
-                            getMenuItemIconUrlByClassSpec("icon-edit-delete icon-md"),
-                            Messages.CredentialsStoreAction_DeleteDomainAction()
-                    ));
-                }
-                return result.items.isEmpty() ? null : result;
-            }
-            return null;
-        }
-
-        /**
-         * Creates the children context menu with the supplied prefix to all URLs.
-         *
-         * @param prefix the prefix to prepend to relative urls.
-         * @return the {@link ContextMenu} or {@code null}
-         * @since 2.0
-         */
-        @CheckForNull
-        public ContextMenu getChildrenContextMenu(String prefix) {
-            ContextMenu menu = new ContextMenu();
-            for (Map.Entry<String, CredentialsWrapper> entry : getCredentials().entrySet()) {
-                String p = ContextMenuIconUtils.buildUrl(prefix, "credential", entry.getKey());
-                MenuItem item =
-                        new MenuItem(p,
-                                getMenuItemIconUrlByClassSpec(entry.getValue().getIconClassName() + " icon-md"),
-                                entry.getValue().getDisplayName()
-                        );
-                item.subMenu = entry.getValue().getContextMenu(p);
-                menu.add(item);
-            }
-            return menu.items.isEmpty() ? null : menu;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public ContextMenu doContextMenu(StaplerRequest2 request, StaplerResponse2 response) {
-            return getContextMenu("");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public ContextMenu doChildrenContextMenu(StaplerRequest2 request,
-                                                 StaplerResponse2 response) {
-            return getChildrenContextMenu("");
-        }
-
-        /**
          * Accepts {@literal config.xml} submission, as well as serve it.
          *
          * @param req the request
@@ -1097,7 +958,7 @@ public abstract class CredentialsStoreAction
      */
     @ExportedBean
     public static class CredentialsWrapper extends AbstractDescribableImpl<CredentialsWrapper>
-            implements IconSpec, ModelObjectWithContextMenu, AccessControlled {
+            implements IconSpec, ModelObject, AccessControlled {
 
         /**
          * Our {@link DomainWrapper}.
@@ -1406,48 +1267,6 @@ public abstract class CredentialsStoreAction
                 return HttpResponses.redirectTo("concurrentModification");
             }
             return HttpResponses.redirectToDot();
-        }
-
-        /**
-         * Creates the context menu with the supplied prefix to all URLs.
-         *
-         * @param prefix the prefix to prepend to relative urls.
-         * @return the {@link ContextMenu} or {@code null}
-         * @since 2.0
-         */
-        @CheckForNull
-        @Restricted(NoExternalUse.class)
-        public ContextMenu getContextMenu(String prefix) {
-            if (getStore().hasPermission(UPDATE) || getStore().hasPermission(DELETE)) {
-                ContextMenu result = new ContextMenu();
-                if (getStore().hasPermission(UPDATE)) {
-                    result.add(new MenuItem(
-                            ContextMenuIconUtils.buildUrl(prefix, "update"),
-                            getMenuItemIconUrlByClassSpec("icon-setting icon-md"),
-                            Messages.CredentialsStoreAction_UpdateCredentialAction()
-                    ));
-                }
-                if (getStore().hasPermission(DELETE)) {
-                    result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "delete"),
-                            getMenuItemIconUrlByClassSpec("icon-edit-delete icon-md"),
-                            Messages.CredentialsStoreAction_DeleteCredentialAction()
-                    ));
-                    result.add(new MenuItem(ContextMenuIconUtils.buildUrl(prefix, "move"),
-                            getMenuItemIconUrlByClassSpec("icon-credentials-move icon-md"),
-                            Messages.CredentialsStoreAction_MoveCredentialAction()
-                    ));
-                }
-                return result.items.isEmpty() ? null : result;
-            }
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public ContextMenu doContextMenu(StaplerRequest2 request, StaplerResponse2 response) {
-            return getContextMenu("");
         }
 
         /**

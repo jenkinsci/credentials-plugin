@@ -55,13 +55,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jenkins.model.Jenkins;
-import jenkins.model.ModelObjectWithContextMenu;
 import jenkins.model.TransientActionFactory;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.StaplerRequest2;
-import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.springframework.security.core.Authentication;
@@ -70,7 +67,7 @@ import org.springframework.security.core.Authentication;
  * An {@link Action} that lets you view the available credentials for any {@link ModelObject}.
  */
 @ExportedBean
-public class ViewCredentialsAction implements Action, IconSpec, AccessControlled, ModelObjectWithContextMenu {
+public class ViewCredentialsAction implements Action, IconSpec, AccessControlled, ModelObject {
 
     /**
      * Expose {@link CredentialsProvider#VIEW} for Jelly.
@@ -388,25 +385,6 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
                 return false;
             }
         };
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    // In the general case we would implement ModelObjectWithChildren as the child actions could be viewed as children
-    // but in this case we expose them in the sidebar, so they are more correctly part of the context menu.
-    @Override
-    public ContextMenu doContextMenu(StaplerRequest2 request, StaplerResponse2 response) {
-        ContextMenu menu = new ContextMenu();
-        for (CredentialsStoreAction action : getStoreActions()) {
-            ContextMenuIconUtils.addMenuItem(
-                    menu,
-                    "store",
-                    action,
-                    action.getContextMenu(ContextMenuIconUtils.buildUrl("store", action.getUrlName()))
-            );
-        }
-        return menu;
     }
 
     /**
