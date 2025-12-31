@@ -521,6 +521,11 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             return credentials instanceof IdCredentials ? ((IdCredentials) credentials).getId() : null;
         }
 
+        @SuppressWarnings("unused") // jelly
+        public boolean isEditable() {
+            return store.hasPermission(CredentialsProvider.UPDATE);
+        }
+
         /**
          * Returns the {@link Credentials#getScope()} of the {@link #credentials}.
          *
