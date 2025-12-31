@@ -522,7 +522,7 @@ public abstract class CredentialsStoreAction
      */
     @ExportedBean
     public static class DomainWrapper extends AbstractDescribableImpl<DomainWrapper> implements
-            ModelObject, AccessControlled {
+            ModelObject, AccessControlled, IconSpec {
 
         /**
          * The {@link CredentialsStoreAction} that we belong to.
@@ -600,6 +600,13 @@ public abstract class CredentialsStoreAction
         @Exported
         public String getDisplayName() {
             return isGlobal() ? Messages.CredentialsStoreAction_GlobalDomainDisplayName() : domain.getName();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public String getIconClassName() {
+            return isGlobal() ? "symbol-globe-outline plugin-ionicons-api" : "symbol-business-outline plugin-ionicons-api";
         }
 
         /**
