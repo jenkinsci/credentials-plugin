@@ -71,10 +71,25 @@ function recreateScripts(form) {
     }
 }
 
+function mergeUrlParams(url, params) {
+    const urlObj = new URL(url, window.location.origin);
+    // Merge existing params with new ones
+    if (params) {
+        // params is expected to be a query string (e.g., 'foo=bar&baz=qux')
+        const newParams = new URLSearchParams(params);
+        for (const [key, value] of newParams.entries()) {
+            urlObj.searchParams.set(key, value);
+        }
+    }
+    return urlObj.toString();
+}
+
 function navigateToNextPage(url, params) {
     const dialog = document.querySelector(".jenkins-dialog .jenkins-dialog__contents");
 
-    fetch(url + '?' + params, {
+    const finalUrl = mergeUrlParams(url, params);
+
+    fetch(finalUrl, {
         method: 'GET',
         headers: crumb.wrap({}),
     }).then(rsp => {

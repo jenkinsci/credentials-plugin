@@ -90,6 +90,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.WebMethod;
@@ -658,6 +659,12 @@ public abstract class CredentialsStoreAction
             return isGlobal() ? "_" : Util.rawEncode(domain.getName());
         }
 
+        @SuppressWarnings("unused") // jelly
+        @Restricted(NoExternalUse.class)
+        public boolean isReturnToAction() {
+            return "action".equals(Stapler.getCurrentRequest2().getParameter("return-to"));
+        }
+
         /**
          * Return the display name.
          *
@@ -820,6 +827,10 @@ public abstract class CredentialsStoreAction
                 JSONObject data = req.getSubmittedForm();
                 Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
                 getStore().addCredentials(domain, credentials);
+                boolean returnToAction = data.getBoolean("returnToAction");
+                if (returnToAction) {
+                    return HttpResponses.redirectTo("../../../../");
+                }
                 return HttpResponses.redirectTo("../../domain/" + getUrlName());
             }
         }
