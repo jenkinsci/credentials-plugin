@@ -216,6 +216,7 @@ window.credentials.refreshAll = function () {
 };
 window.credentials.addSubmit = function (_) {
     const form = window.credentials.form;
+    const shouldRefill = document.getElementById('credentials-dialog-refill')
     // temporarily attach to DOM (avoid https://github.com/HtmlUnit/htmlunit/issues/740)
     document.body.appendChild(form);
     buildFormTree(form);
@@ -233,7 +234,12 @@ window.credentials.addSubmit = function (_) {
                 window.notificationBar.show(result.data.message, window.notificationBar[result.data.notificationType]);
                 const dialog = document.querySelector(".jenkins-dialog");
                 dialog.dispatchEvent(new Event("cancel"));
-                window.credentials.refreshAll();
+                // when used in `c:select` we don't want a page reload but to instead refill existing select boxes
+                if (shouldRefill && shouldRefill.dataset.refill === 'true') {
+                    window.credentials.refreshAll();
+                } else {
+                    window.location.reload();
+                }
             })
             .catch((e) => {
                 // notificationBar.show(...) with logging ID could be handy here?

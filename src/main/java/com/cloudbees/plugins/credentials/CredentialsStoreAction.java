@@ -90,7 +90,6 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.WebMethod;
@@ -657,12 +656,6 @@ public abstract class CredentialsStoreAction
                             justification = "isGlobal() check implies that domain.getName() is null")
         public String getUrlName() {
             return isGlobal() ? "_" : Util.rawEncode(domain.getName());
-        }
-
-        @SuppressWarnings("unused") // jelly
-        @Restricted(NoExternalUse.class)
-        public boolean isReturnToAction() {
-            return "action".equals(Stapler.getCurrentRequest2().getParameter("return-to"));
         }
 
         /**
