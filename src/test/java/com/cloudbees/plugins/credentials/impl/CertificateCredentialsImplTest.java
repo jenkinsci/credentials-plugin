@@ -26,6 +26,7 @@ package com.cloudbees.plugins.credentials.impl;
 
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SecretBytes;
 import com.cloudbees.plugins.credentials.common.CertificateCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
@@ -45,6 +46,7 @@ import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlRadioButtonInput;
 
 import hudson.Util;
+import hudson.model.Node;
 import hudson.security.ACL;
 import hudson.util.Secret;
 import org.apache.commons.io.FileUtils;
@@ -65,6 +67,8 @@ import java.nio.file.Files;
 import java.security.KeyStore;
 import java.util.Base64;
 import java.util.List;
+
+import jenkins.security.MasterToSlaveCallable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -308,6 +312,33 @@ public class CertificateCredentialsImplTest {
         KeyStore ks = certificate.getKeyStore();
         String displayName = StandardCertificateCredentials.NameProvider.getSubjectDN(certificate.getKeyStore());
         assertEquals(EXPECTED_DISPLAY_NAME_PEM, displayName);
+    }
+
+    /** Helper for {@link #useCertificateCredentialsImplOnAgent} test case */
+    private static class ReadCertificateCredentialsOnAgent extends MasterToSlaveCallable<String, Throwable> {
+        private final CertificateCredentialsImpl credentials;
+
+        public ReadCertificateCredentialsOnAgent(CertificateCredentialsImpl credentials) {
+            this.credentials = credentials;
+        }
+
+        @Override
+        public String call() throws Throwable {
+            KeyStore keyStore = credentials.getKeyStore();
+            // KeyStore is not Serializable, so we just return the DN.
+            return StandardCertificateCredentials.NameProvider.getSubjectDN(keyStore);
+        }
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void useCertificateCredentialsImplOnAgent() throws Throwable {
+        SecretBytes uploadedKeystore = SecretBytes.fromBytes(Files.readAllBytes(p12.toPath()));
+        CertificateCredentialsImpl.UploadedKeyStoreSource storeSource = new CertificateCredentialsImpl.UploadedKeyStoreSource(null, uploadedKeystore);
+        CertificateCredentialsImpl credentials = new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "my-credentials", "description", VALID_PASSWORD, storeSource);
+
+        Node node = r.createOnlineSlave();
+        assertEquals(EXPECTED_DISPLAY_NAME, node.getChannel().call(new ReadCertificateCredentialsOnAgent(credentials)));
     }
 
     private String getValidP12_base64() throws Exception {
