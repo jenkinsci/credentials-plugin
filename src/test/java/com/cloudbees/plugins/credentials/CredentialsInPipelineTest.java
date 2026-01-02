@@ -41,13 +41,13 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -56,9 +56,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assume.assumeThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+@WithJenkins
 public class CredentialsInPipelineTest {
     /**
      * The CredentialsInPipelineTest suite prepares pipeline scripts to
@@ -74,14 +74,13 @@ public class CredentialsInPipelineTest {
     //   mvn test -Dtest="CredentialsInPipelineTest"
     private boolean verbosePipelines = false;
 
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+    private JenkinsRule r;
 
     // Data for build agent setup
-    @Rule
-    public TemporaryFolder tmpAgent = new TemporaryFolder();
-    @Rule
-    public TemporaryFolder tmpWorker = new TemporaryFolder();
+    @TempDir
+    private File tmpAgent;
+    @TempDir
+    private File tmpWorker;
     // Where did we save that file?..
     private File agentJar = null;
     // Can this be reused for many test cases?
@@ -90,16 +89,17 @@ public class CredentialsInPipelineTest {
     private Boolean agentUsable = null;
 
     // From CertificateCredentialImplTest
-    @Rule
-    public TemporaryFolder tmp = new TemporaryFolder();
+    @TempDir
+    private File tmp;
     private File p12;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup(JenkinsRule r) throws IOException {
+        this.r = r;
         r.jenkins.setCrumbIssuer(null);
     }
 
-    Boolean isAvailableAgent() {
+    private Boolean isAvailableAgent() {
         // Can be used to skip optional tests if we know we could not set up an agent
         if (agentJar == null)
             return false;
@@ -108,7 +108,7 @@ public class CredentialsInPipelineTest {
         return agentUsable;
     }
 
-    Boolean setupAgent() throws IOException, InterruptedException, OutOfMemoryError {
+    private Boolean setupAgent() throws IOException, InterruptedException, OutOfMemoryError, FormException {
         // Note we anticipate this might fail; it should not block the whole test suite from running
         // Loosely inspired by
         // https://docs.cloudbees.com/docs/cloudbees-ci-kb/latest/client-and-managed-masters/create-agent-node-from-groovy
@@ -121,7 +121,7 @@ public class CredentialsInPipelineTest {
         if (agentJar == null) {
             try {
                 URL url = new URL(r.jenkins.getRootUrl() + "jnlpJars/agent.jar");
-                agentJar = tmpAgent.newFile("agent.jar");
+                agentJar = new File(tmpAgent, "agent.jar");
                 FileOutputStream out = new FileOutputStream(agentJar);
                 out.write(url.openStream().readAllBytes());
                 out.close();
@@ -140,14 +140,14 @@ public class CredentialsInPipelineTest {
         // (including spaces in directory names) and Unix/Linux
         ComputerLauncher launcher = new CommandLauncher(
                 "\"" + System.getProperty("java.home") + File.separator + "bin" +
-                File.separator + "java\" -jar \"" + agentJar.getAbsolutePath().toString() + "\""
+                File.separator + "java\" -jar \"" + agentJar.getAbsolutePath() + "\""
         );
 
         try {
             // Define a "Permanent Agent"
             agent = new DumbSlave(
                     "worker",
-                    tmpWorker.getRoot().getAbsolutePath().toString(),
+                    tmpWorker.getAbsolutePath(),
                     launcher);
             agent.setNodeDescription("Worker in another JVM, remoting used");
             agent.setNumExecutors(1);
@@ -190,7 +190,7 @@ public class CredentialsInPipelineTest {
         return agentUsable;
     }
 
-    String getLogAsStringPlaintext(WorkflowRun f) throws java.io.IOException {
+    private String getLogAsStringPlaintext(WorkflowRun f) throws java.io.IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         f.getLogText().writeLogTo(0, baos);
         return baos.toString();
@@ -209,7 +209,7 @@ public class CredentialsInPipelineTest {
         if (p12 == null) {
             // Contains a private key + openvpn certs,
             // as alias named "1" (according to keytool)
-            p12 = tmp.newFile("test.p12");
+            p12 = File.createTempFile("test.p12", null, tmp);
             FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("test.p12"), p12);
         }
 
@@ -220,7 +220,7 @@ public class CredentialsInPipelineTest {
         SystemCredentialsProvider.getInstance().save();
     }
 
-    String cpsScriptCredentialTestImports() {
+    private String cpsScriptCredentialTestImports() {
         return  "import com.cloudbees.plugins.credentials.CredentialsMatchers;\n" +
                 "import com.cloudbees.plugins.credentials.CredentialsProvider;\n" +
                 "import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;\n" +
@@ -238,11 +238,11 @@ public class CredentialsInPipelineTest {
     // Certificate credentials retrievability in (trusted) pipeline
     /////////////////////////////////////////////////////////////////
 
-    String cpsScriptCertCredentialTestScriptedPipeline(String runnerTag) {
+    private String cpsScriptCertCredentialTestScriptedPipeline(String runnerTag) {
         return cpsScriptCertCredentialTestScriptedPipeline("myCert", "password", "1", runnerTag);
     }
 
-    String cpsScriptCertCredentialTestScriptedPipeline(String id, String password, String alias, String runnerTag) {
+    private String cpsScriptCertCredentialTestScriptedPipeline(String id, String password, String alias, String runnerTag) {
         return  "def authentication='" + id + "';\n" +
                 "def password='" + password + "';\n" +
                 "def alias='" + alias + "';\n" +
@@ -281,7 +281,7 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testCertKeyStoreReadableOnController() throws Exception {
+    void testCertKeyStoreReadableOnController() throws Exception {
         // Check that credentials are usable with pipeline script
         // running without a node{}
         prepareUploadedKeystore();
@@ -304,7 +304,7 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testCertKeyStoreReadableOnNodeLocal() throws Exception {
+    void testCertKeyStoreReadableOnNodeLocal() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a node{} (provided by the controller)
         prepareUploadedKeystore();
@@ -329,11 +329,11 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testCertKeyStoreReadableOnNodeRemote() throws Exception {
+    void testCertKeyStoreReadableOnNodeRemote() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a remote node{} with separate JVM (check
         // that remoting/snapshot work properly)
-        assumeThat("This test needs a separate build agent", this.setupAgent(), is(true));
+        assumeTrue(this.setupAgent() == true, "This test needs a separate build agent");
 
         prepareUploadedKeystore();
 
@@ -359,7 +359,7 @@ public class CredentialsInPipelineTest {
     // Certificate credentials retrievability by withCredentials() step
     /////////////////////////////////////////////////////////////////
 
-    String cpsScriptCertCredentialTestGetKeyValue() {
+    private String cpsScriptCertCredentialTestGetKeyValue() {
         return  "@NonCPS\n" +
                 "def getKeyValue(def keystoreName, def keystoreFormat, def keyPassword, def alias) {\n" +
                 "    def p12file = new FileInputStream(keystoreName)\n" +
@@ -372,11 +372,11 @@ public class CredentialsInPipelineTest {
                 "\n";
     }
 
-    String cpsScriptCertCredentialTestWithCredentials(String runnerTag) {
+    private String cpsScriptCertCredentialTestWithCredentials(String runnerTag) {
         return cpsScriptCertCredentialTestWithCredentials("myCert", "password", "1", runnerTag);
     }
 
-    String cpsScriptCertCredentialTestWithCredentials(String id, String password, String alias, String runnerTag) {
+    private String cpsScriptCertCredentialTestWithCredentials(String id, String password, String alias, String runnerTag) {
         // Note: does not pass a(ny) useful (env?.)myKeyAlias to closure
         // https://issues.jenkins.io/browse/JENKINS-59331
         // https://github.com/jenkinsci/credentials-binding-plugin/blob/fcd22059ac48b87d0924ef17d5b351a3b7a89a97/src/main/java/org/jenkinsci/plugins/credentialsbinding/impl/CertificateMultiBinding.java#L80-L81
@@ -402,9 +402,9 @@ public class CredentialsInPipelineTest {
     }
 
     @Test
-    @Ignore("Work with keystore file requires a node")
+    @Disabled("Work with keystore file requires a node")
     @Issue("JENKINS-70101")
-    public void testCertWithCredentialsOnController() throws Exception {
+    void testCertWithCredentialsOnController() throws Exception {
         // Check that credentials are usable with pipeline script
         // running without a node{}
         prepareUploadedKeystore();
@@ -428,7 +428,7 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testCertWithCredentialsOnNodeLocal() throws Exception {
+    void testCertWithCredentialsOnNodeLocal() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a node{} (provided by the controller)
         prepareUploadedKeystore();
@@ -454,11 +454,11 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testCertWithCredentialsOnNodeRemote() throws Exception {
+    void testCertWithCredentialsOnNodeRemote() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a remote node{} with separate JVM (check
         // that remoting/snapshot work properly)
-        assumeThat("This test needs a separate build agent", this.setupAgent(), is(true));
+        assumeTrue(this.setupAgent() == true, "This test needs a separate build agent");
 
         prepareUploadedKeystore();
 
@@ -485,11 +485,11 @@ public class CredentialsInPipelineTest {
     // Certificate credentials retrievability by http-request-plugin
     /////////////////////////////////////////////////////////////////
 
-    String cpsScriptCertCredentialTestHttpRequest(String runnerTag) {
+    private String cpsScriptCertCredentialTestHttpRequest(String runnerTag) {
         return cpsScriptCredentialTestHttpRequest("myCert", runnerTag, true);
     }
 
-    String cpsScriptCredentialTestHttpRequest(String id, String runnerTag, Boolean withLocalCertLookup) {
+    private String cpsScriptCredentialTestHttpRequest(String id, String runnerTag, Boolean withLocalCertLookup) {
         // Note: we accept any outcome (for the plugin, unresolved host is HTTP-404)
         // but it may not crash making use of the credential
         // Note: cases withLocalCertLookup also need cpsScriptCredentialTestImports()
@@ -533,7 +533,7 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testCertHttpRequestOnController() throws Exception {
+    void testCertHttpRequestOnController() throws Exception {
         // Check that credentials are usable with pipeline script
         // running without a node{}
         prepareUploadedKeystore();
@@ -556,7 +556,7 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testCertHttpRequestOnNodeLocal() throws Exception {
+    void testCertHttpRequestOnNodeLocal() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a node{} (provided by the controller)
         prepareUploadedKeystore();
@@ -581,11 +581,11 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testCertHttpRequestOnNodeRemote() throws Exception {
+    void testCertHttpRequestOnNodeRemote() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a remote node{} with separate JVM (check
         // that remoting/snapshot work properly)
-        assumeThat("This test needs a separate build agent", this.setupAgent(), is(true));
+        assumeTrue(this.setupAgent() == true, "This test needs a separate build agent");
 
         prepareUploadedKeystore();
 
@@ -621,13 +621,13 @@ public class CredentialsInPipelineTest {
         SystemCredentialsProvider.getInstance().save();
     }
 
-    String cpsScriptUsernamePasswordCredentialTestHttpRequest(String runnerTag) {
+    private String cpsScriptUsernamePasswordCredentialTestHttpRequest(String runnerTag) {
         return cpsScriptCredentialTestHttpRequest("abc123", runnerTag, false);
     }
 
     @Test
     @Issue("JENKINS-70101")
-    public void testUsernamePasswordHttpRequestOnController() throws Exception {
+    void testUsernamePasswordHttpRequestOnController() throws Exception {
         // Check that credentials are usable with pipeline script
         // running without a node{}
         prepareUsernamePassword();
@@ -649,7 +649,7 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testUsernamePasswordHttpRequestOnNodeLocal() throws Exception {
+    void testUsernamePasswordHttpRequestOnNodeLocal() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a node{} (provided by the controller)
         prepareUsernamePassword();
@@ -674,11 +674,11 @@ public class CredentialsInPipelineTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void testUsernamePasswordHttpRequestOnNodeRemote() throws Exception {
+    void testUsernamePasswordHttpRequestOnNodeRemote() throws Exception {
         // Check that credentials are usable with pipeline script
         // running on a remote node{} with separate JVM (check
         // that remoting/snapshot work properly)
-        assumeThat("This test needs a separate build agent", this.setupAgent(), is(true));
+        assumeTrue(this.setupAgent() == true, "This test needs a separate build agent");
 
         prepareUsernamePassword();
 
