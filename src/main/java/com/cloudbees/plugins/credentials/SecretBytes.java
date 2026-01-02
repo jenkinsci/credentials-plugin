@@ -72,7 +72,10 @@ public class SecretBytes implements Serializable {
      */
     private static final long serialVersionUID = 1L;
     /**
-     * The key that encrypts the data on disk.
+     * The key that encrypts the data on disk.<br/>
+     *
+     * NOTE: Unique per JVM run-time, so different value on a
+     * Jenkins controller and remote agents or across restarts!
      */
     private static final CredentialsConfidentialKey KEY = new CredentialsConfidentialKey(SecretBytes.class, "KEY");
     /**
@@ -80,7 +83,7 @@ public class SecretBytes implements Serializable {
      */
     private static final Logger LOGGER = Logger.getLogger(SecretBytes.class.getName());
     /**
-     * The unencrypted bytes.
+     * The encrypted bytes.
      */
     @NonNull
     private final byte[] value;
