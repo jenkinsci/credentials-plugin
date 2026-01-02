@@ -52,7 +52,9 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * salt and padding so no two invocations of {@link #getEncryptedData()} will return the same result, but all will
  * decrypt to the same {@link #getPlainData()}. XStream serialization and Stapler form-binding will assume that
  * the {@link #toString()} representation is used (i.e. the Base64 encoded secret bytes wrapped with <code>{</code>
- * and <code>}</code>. If the string representation fails to decrypt (and is not wrapped
+ * and <code>}</code>). If the string representation fails to decrypt (and is not wrapped) the {@link #fromString}
+ * method returns a {@link SecretBytes} representation of an empty array, and {@link #isSecretBytes} method
+ * returns {@code false}.
  *
  * @since 2.1.5
  */
