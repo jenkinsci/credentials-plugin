@@ -108,6 +108,11 @@ public class CredentialsInPipelineTest {
         return agentUsable;
     }
 
+    /** FIXME: Refactor in favor of JenkinsRule.createOnlineSlave - per
+     *   https://github.com/jenkinsci/credentials-plugin/pull/391#discussion_r1049548368
+     *   this method is more of a historical accident than a clever hack
+     *   that solves something uniquely.
+     */
     private Boolean setupAgent() throws IOException, InterruptedException, OutOfMemoryError, FormException {
         // Note we anticipate this might fail; it should not block the whole test suite from running
         // Loosely inspired by
@@ -140,7 +145,7 @@ public class CredentialsInPipelineTest {
         // (including spaces in directory names) and Unix/Linux
         ComputerLauncher launcher = new CommandLauncher(
                 "\"" + System.getProperty("java.home") + File.separator + "bin" +
-                File.separator + "java\" -jar \"" + agentJar.getAbsolutePath() + "\""
+                File.separator + "java\" -Xmx1024m -jar \"" + agentJar.getAbsolutePath() + "\""
         );
 
         try {
