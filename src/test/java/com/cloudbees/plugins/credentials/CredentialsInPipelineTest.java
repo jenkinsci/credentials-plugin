@@ -115,7 +115,7 @@ public class CredentialsInPipelineTest {
             agent.setNodeDescription("Worker in another JVM, remoting used");
             agent.setNumExecutors(1);
             agent.setMode(Node.Mode.EXCLUSIVE);
-            agent.setRetentionStrategy(new RetentionStrategy.Always());
+            ///agent.setRetentionStrategy(new RetentionStrategy.Always());
 
 /*
             // Add node envvars
