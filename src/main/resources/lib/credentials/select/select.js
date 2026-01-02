@@ -318,3 +318,10 @@ window.setTimeout(function() {
         Behaviour.applySubtree(controls[i], true);
     }
 },1);
+
+// Enable the "Next" button when a radio button is selected
+Behaviour.specify(".jenkins-choice-list__item input[type='radio']", 'choice-radio', 0, function (e) {
+    e.addEventListener("change", function () {
+        e.closest("form").querySelector("button").disabled = false;
+    })
+});
