@@ -803,9 +803,12 @@ public abstract class CredentialsStoreAction
         public HttpResponse doCreateCredentials(StaplerRequest2 req) throws ServletException, IOException {
             getStore().checkPermission(CREATE);
             String requestContentType = req.getContentType();
+
+            String acceptHeader = req.getHeader("Accept");
             if (requestContentType == null) {
                 throw new Failure("No Content-Type header set");
             }
+            boolean jsonResponse = acceptHeader != null && acceptHeader.contains("application/json");
 
             if (requestContentType.startsWith("application/xml") || requestContentType.startsWith("text/xml")) {
                 final StringWriter out = new StringWriter();
@@ -826,10 +829,19 @@ public abstract class CredentialsStoreAction
             } else {
                 JSONObject data = req.getSubmittedForm();
                 Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
-                getStore().addCredentials(domain, credentials);
-                boolean returnToAction = data.getBoolean("returnToAction");
-                if (returnToAction) {
-                    return HttpResponses.redirectTo("../../../../");
+                boolean credentialsWereAdded = getStore().addCredentials(domain, credentials);
+
+                if (jsonResponse) {
+                    if (credentialsWereAdded) {
+                        return HttpResponses.okJSON(new JSONObject()
+                                .element("message", "Credentials created")
+                                .element("notificationType", "SUCCESS"));
+                    } else {
+                        return HttpResponses.okJSON(new JSONObject()
+                                .element("message", "Credentials with specified ID already exist")
+                                // TODO: or domain does not exist at all?
+                                .element("notificationType", "ERROR"));
+                    }
                 }
                 return HttpResponses.redirectTo("../../domain/" + getUrlName());
             }

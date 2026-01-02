@@ -129,6 +129,12 @@ function navigateToNextPage(url, params) {
 
                         navigateToNextPage(form.action, queryString);
                     })
+                } else {
+                    form.addEventListener("submit", (e) => {
+                        e.preventDefault();
+                        window.credentials.form = document.getElementById('credentials-dialog-form');
+                        window.credentials.addSubmit();
+                    })
                 }
 
                 dialog.appendChild(form)
@@ -136,6 +142,9 @@ function navigateToNextPage(url, params) {
 
                 setTimeout(() => {
                     Behaviour.applySubtree(dialog, false);
+                    if (form.method !== 'get') {
+                        form.onsubmit = null; // clear any existing handler
+                    }
                 }, 20)
             })
         }
@@ -216,12 +225,14 @@ window.credentials.addSubmit = function (_) {
     function ajaxFormSubmit(form) {
         fetch(form.action, {
             method: form.method,
-            headers: crumb.wrap({}),
+            headers: crumb.wrap({"Accept": "application/json"}),
             body: new FormData(form)
         })
             .then(res => res.json())
-            .then(data => {
-                window.notificationBar.show(data.message, window.notificationBar[data.notificationType]);
+            .then(result => {
+                window.notificationBar.show(result.data.message, window.notificationBar[result.data.notificationType]);
+                const dialog = document.querySelector(".jenkins-dialog");
+                dialog.dispatchEvent(new Event("cancel"));
                 window.credentials.refreshAll();
             })
             .catch((e) => {
