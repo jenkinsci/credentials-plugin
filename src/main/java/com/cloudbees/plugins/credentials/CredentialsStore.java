@@ -50,6 +50,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import hudson.tasks.UserAvatarResolver;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.Stapler;
@@ -527,6 +529,21 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
             return null;
         }
         return relativeLink + domain.getUrl();
+    }
+
+    /**
+     * Returns the icon class name of the {@link #getContext()} of this {@link CredentialsStore}.
+     *
+     * @return the icon class name for the store.
+     * @since TODO
+     */
+    public final String getIconClassName() {
+        ModelObject context = getContext();
+        if (context instanceof User user) {
+            return UserAvatarResolver.resolve(user, "96x96");
+        } else {
+            return getProviderOrDie().getIconClassName();
+        }
     }
 
     /**
