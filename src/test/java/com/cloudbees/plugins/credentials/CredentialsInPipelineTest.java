@@ -29,12 +29,10 @@ import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import hudson.model.Descriptor;
 import hudson.model.Descriptor.FormException;
+import hudson.model.Label;
 import hudson.model.Node;
 import hudson.model.Result;
 import hudson.model.Slave;
-import hudson.slaves.CommandLauncher;
-import hudson.slaves.ComputerLauncher;
-import hudson.slaves.DumbSlave;
 import hudson.slaves.RetentionStrategy;
 import org.apache.commons.io.FileUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -51,41 +49,38 @@ import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+/**
+ * The CredentialsInPipelineTest suite prepares pipeline scripts to
+ * retrieve some previously saved credentials, on the controller,
+ * on a node provided by it, and on a worker agent in separate JVM.
+ * This picks known-working test cases and their setup from other
+ * test classes which address those credential types in more detail.
+ * Initially tied to JENKINS-70101 research.
+ */
 @WithJenkins
 public class CredentialsInPipelineTest {
-    /**
-     * The CredentialsInPipelineTest suite prepares pipeline scripts to
-     * retrieve some previously saved credentials, on the controller,
-     * on a node provided by it, and on a worker agent in separate JVM.
-     * This picks known-working test cases and their setup from other
-     * test classes which address those credential types in more detail.
-     * Initially tied to JENKINS-70101 research.
+    /** For developers: set to `true` so that pipeline console logs show
+     * up in System.out (and/or System.err) of the plugin test run by
+     * <pre>
+     *   mvn test -Dtest="CredentialsInPipelineTest"
+     * </pre>
      */
-
-    // For developers: set to `true` so that pipeline console logs show
-    // up in System.out (and/or System.err) of the plugin test run by
-    //   mvn test -Dtest="CredentialsInPipelineTest"
     private boolean verbosePipelines = false;
 
     private JenkinsRule r;
 
     // Data for build agent setup
-    @TempDir
-    private File tmpAgent;
-    @TempDir
-    private File tmpWorker;
-    // Where did we save that file?..
-    private File agentJar = null;
+    /** Build agent label expected by test cases for remote logic execution
+     * and data transfer */
+    private final static String agentLabelString = "cred-test-worker";
     // Can this be reused for many test cases?
     private Slave agent = null;
-    // Unknown/started/not usable
+    /** Tri-state Unknown/started/not usable */
     private Boolean agentUsable = null;
 
     // From CertificateCredentialImplTest
@@ -101,62 +96,24 @@ public class CredentialsInPipelineTest {
 
     private Boolean isAvailableAgent() {
         // Can be used to skip optional tests if we know we could not set up an agent
-        if (agentJar == null)
-            return false;
         if (agent == null)
             return false;
         return agentUsable;
     }
 
-    /** FIXME: Refactor in favor of JenkinsRule.createOnlineSlave - per
-     *   https://github.com/jenkinsci/credentials-plugin/pull/391#discussion_r1049548368
-     *   this method is more of a historical accident than a clever hack
-     *   that solves something uniquely.
-     */
-    private Boolean setupAgent() throws IOException, InterruptedException, OutOfMemoryError, FormException {
-        // Note we anticipate this might fail; it should not block the whole test suite from running
-        // Loosely inspired by
-        // https://docs.cloudbees.com/docs/cloudbees-ci-kb/latest/client-and-managed-masters/create-agent-node-from-groovy
+    private Boolean setupAgent() throws OutOfMemoryError, Exception {
+        if (isAvailableAgent())
+            return true;
 
-        // Is it known-impossible to start the agent?
-        if (agentUsable != null && agentUsable == false)
-            return agentUsable; // quickly for re-runs
-
-        // Did we download this file for earlier test cases?
-        if (agentJar == null) {
-            try {
-                URL url = new URL(r.jenkins.getRootUrl() + "jnlpJars/agent.jar");
-                agentJar = new File(tmpAgent, "agent.jar");
-                FileOutputStream out = new FileOutputStream(agentJar);
-                out.write(url.openStream().readAllBytes());
-                out.close();
-            } catch (IOException | OutOfMemoryError e) {
-                agentJar = null;
-                agentUsable = false;
-
-                System.out.println("Failed to download agent.jar from test instance: " +
-                        e.toString());
-
-                return agentUsable;
-            }
-        }
-
-        // This CLI spelling and quoting should play well with both Windows
-        // (including spaces in directory names) and Unix/Linux
-        ComputerLauncher launcher = new CommandLauncher(
-                "\"" + System.getProperty("java.home") + File.separator + "bin" +
-                File.separator + "java\" -Xmx1024m -jar \"" + agentJar.getAbsolutePath() + "\""
-        );
-
+        // Note we anticipate this might fail e.g. due to system resources;
+        // it should not block the whole test suite from running
+        // (we would just dynamically skip certain test cases)
         try {
             // Define a "Permanent Agent"
-            agent = new DumbSlave(
-                    "worker",
-                    tmpWorker.getAbsolutePath(),
-                    launcher);
+            Label agentLabel = Label.get(agentLabelString);
+            agent = r.createOnlineSlave(agentLabel);
             agent.setNodeDescription("Worker in another JVM, remoting used");
             agent.setNumExecutors(1);
-            agent.setLabelString("worker");
             agent.setMode(Node.Mode.EXCLUSIVE);
             agent.setRetentionStrategy(new RetentionStrategy.Always());
 
@@ -168,8 +125,6 @@ public class CredentialsInPipelineTest {
             EnvironmentVariablesNodeProperty envPro = new EnvironmentVariablesNodeProperty(env);
             agent.getNodeProperties().add(envPro);
 */
-
-            r.jenkins.addNode(agent);
 
             String agentLog = null;
             agentUsable = false;
@@ -345,7 +300,7 @@ public class CredentialsInPipelineTest {
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
-                "node(\"worker\") {\n" +
+                "node(\"" + agentLabelString + "\") {\n" +
                 cpsScriptCertCredentialTestScriptedPipeline("REMOTE NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
@@ -471,7 +426,7 @@ public class CredentialsInPipelineTest {
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
                 cpsScriptCertCredentialTestGetKeyValue() +
-                "node(\"worker\") {\n" +
+                "node(\"" + agentLabelString + "\") {\n" +
                 cpsScriptCertCredentialTestWithCredentials("REMOTE NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
@@ -597,7 +552,7 @@ public class CredentialsInPipelineTest {
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script = cpsScriptCredentialTestImports() +
-                "node(\"worker\") {\n" +
+                "node(\"" + agentLabelString + "\") {\n" +
                 cpsScriptCertCredentialTestHttpRequest("REMOTE NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
@@ -690,7 +645,7 @@ public class CredentialsInPipelineTest {
         // Configure the build to use the credential
         WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
         String script =
-                "node(\"worker\") {\n" +
+                "node(\"" + agentLabelString + "\") {\n" +
                 cpsScriptUsernamePasswordCredentialTestHttpRequest("REMOTE NODE") +
                 "}\n";
         proj.setDefinition(new CpsFlowDefinition(script, false));
