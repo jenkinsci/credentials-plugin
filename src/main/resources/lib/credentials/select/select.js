@@ -22,14 +22,6 @@
  * THE SOFTWARE.
  */
 window.credentials = window.credentials || {'dialog': null, 'body': null};
-window.credentials.init = function () {
-    if (!(window.credentials.dialog)) {
-        var div = document.createElement("DIV");
-        document.body.appendChild(div);
-        div.innerHTML = "<div id='credentialsDialog'><div class='bd'></div></div>";
-        window.credentials.body = document.getElementById('credentialsDialog');
-    }
-};
 
 function showBackButtonInDialog() {
     const dialog = document.querySelector(".jenkins-dialog");
@@ -160,7 +152,6 @@ window.dialog2 = {
 };
 
 window.credentials.add = function (initialUrl) {
-    window.credentials.init();
     window.dialog2.wizard(initialUrl, { title: '', minWidth: 'min(550px, 100vw)' });
     return false;
 };
