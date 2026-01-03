@@ -314,7 +314,8 @@ public class CertificateCredentialsImplTest {
         assertEquals(EXPECTED_DISPLAY_NAME_PEM, displayName);
     }
 
-    /** Helper for {@link #useCertificateCredentialsImplOnAgent} test case */
+    /** Helper for {@link #useCertificateCredentialsImplOnBuiltinAgent}
+     * and {@link #useCertificateCredentialsImplOnRemoteAgent} test cases */
     private static class ReadCertificateCredentialsOnAgent extends MasterToSlaveCallable<String, Throwable> {
         private final CertificateCredentialsImpl credentials;
 
@@ -332,11 +333,23 @@ public class CertificateCredentialsImplTest {
 
     @Test
     @Issue("JENKINS-70101")
-    public void useCertificateCredentialsImplOnAgent() throws Throwable {
+    public void useCertificateCredentialsImplOnBuiltinAgent() throws Throwable {
         SecretBytes uploadedKeystore = SecretBytes.fromBytes(Files.readAllBytes(p12.toPath()));
         CertificateCredentialsImpl.UploadedKeyStoreSource storeSource = new CertificateCredentialsImpl.UploadedKeyStoreSource(null, uploadedKeystore);
         CertificateCredentialsImpl credentials = new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "my-credentials", "description", VALID_PASSWORD, storeSource);
 
+        // There should be no trouble without transfer to another JVM:
+        assertEquals(EXPECTED_DISPLAY_NAME, r.jenkins.getChannel().call(new ReadCertificateCredentialsOnAgent(credentials)));
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    public void useCertificateCredentialsImplOnRemoteAgent() throws Throwable {
+        SecretBytes uploadedKeystore = SecretBytes.fromBytes(Files.readAllBytes(p12.toPath()));
+        CertificateCredentialsImpl.UploadedKeyStoreSource storeSource = new CertificateCredentialsImpl.UploadedKeyStoreSource(null, uploadedKeystore);
+        CertificateCredentialsImpl credentials = new CertificateCredentialsImpl(CredentialsScope.GLOBAL, "my-credentials", "description", VALID_PASSWORD, storeSource);
+
+        // Check for trouble with transfer to another JVM (should be fixed by a solution to JENKINS-70101):
         Node node = r.createOnlineSlave();
         assertEquals(EXPECTED_DISPLAY_NAME, node.getChannel().call(new ReadCertificateCredentialsOnAgent(credentials)));
     }
