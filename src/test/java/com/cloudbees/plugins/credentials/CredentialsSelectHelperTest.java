@@ -9,7 +9,9 @@ import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
+import hudson.model.Item;
 import hudson.model.UnprotectedRootAction;
+import hudson.security.ACL;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -33,6 +35,7 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
+import org.w3c.dom.html.HTMLDivElement;
 
 @WithJenkins
 class CredentialsSelectHelperTest {
@@ -61,14 +64,18 @@ class CredentialsSelectHelperTest {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
 
             HtmlButton addCredentialsButton = htmlPage.querySelector(".credentials-add-menu");
-            // The 'click' event doesn't fire a 'mouseenter' event causing the menu not to show, so let's fire one
             addCredentialsButton.fireEvent("mouseenter");
             addCredentialsButton.click();
 
             HtmlButton jenkinsCredentialsOption = htmlPage.querySelector(".jenkins-dropdown__item");
-            jenkinsCredentialsOption.click();
+            htmlPage = (HtmlPage) HtmlElementUtil.click(jenkinsCredentialsOption);
+            
+            HtmlRadioButtonInput item = htmlPage.querySelector(".jenkins-choice-list__item input");
+            HtmlElementUtil.click(item);
 
-            wc.waitForBackgroundJavaScript(4000);
+            HtmlButton formSubmitButton = htmlPage.querySelector("#cr-dialog-next");
+            HtmlElementUtil.click(formSubmitButton);
+
             HtmlForm form = htmlPage.querySelector("#credentials-dialog-form");
 
             HtmlInput username = form.querySelector("input[name='_.username']");
@@ -78,12 +85,12 @@ class CredentialsSelectHelperTest {
             HtmlInput id = form.querySelector("input[name='_.id']");
             id.setValue("test");
 
-            HtmlButton formSubmitButton = htmlPage.querySelector(".jenkins-button[data-id='ok']");
-            formSubmitButton.fireEvent("click");
-            wc.waitForBackgroundJavaScript(5000);
+            formSubmitButton = htmlPage.querySelector("#cr-dialog-submit");
+            formSubmitButton.click();
+            HtmlElementUtil.click(formSubmitButton);
 
             // check if credentials were added
-            List<UsernamePasswordCredentials> creds = CredentialsProvider.lookupCredentials(UsernamePasswordCredentials.class);
+            List<UsernamePasswordCredentials> creds = CredentialsProvider.lookupCredentialsInItem(UsernamePasswordCredentials.class, null, ACL.SYSTEM2);
             assertThat(creds, Matchers.hasSize(1));
             UsernamePasswordCredentials cred = creds.get(0);
             assertThat(cred.getUsername(), is("bob"));
