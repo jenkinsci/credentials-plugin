@@ -169,7 +169,7 @@ public class CredentialsInPipelineTest {
         if (p12 == null) {
             // Contains a private key + openvpn certs,
             // as alias named "1" (according to keytool)
-            p12 = File.createTempFile("test.p12", null, tmp);
+            p12 = File.createTempFile("test-keystore-", ".p12", tmp);
             FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("test.p12"), p12);
         }
 

@@ -97,9 +97,9 @@ public class CertificateCredentialsImplTest {
     @BeforeEach
     void setup(JenkinsRule r) throws IOException {
         this.r = r;
-        p12 = File.createTempFile("test.p12", null, tmp);
+        p12 = File.createTempFile("test-keystore-", ".p12", tmp);
         FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("test.p12"), p12);
-        p12Invalid = File.createTempFile("invalid.p12", null, tmp);
+        p12Invalid = File.createTempFile("invalid-keystore-", ".p12", tmp);
         FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("invalid.p12"), p12Invalid);
 
         pemCert = IOUtils.toString(CertificateCredentialsImplTest.class.getResource("certs.pem"), StandardCharsets.UTF_8);
