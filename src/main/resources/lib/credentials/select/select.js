@@ -87,7 +87,9 @@ function navigateToNextPage(url, params) {
     }).then(rsp => {
         if (rsp.ok) {
             rsp.text().then((responseText) => {
-                dialog.querySelectorAll("& > form").forEach(form => form.classList.add("jenkins-hidden"));
+                Array.from(dialog.children)
+                    .filter(el => el.tagName === "FORM")
+                    .forEach(form => form.classList.add("jenkins-hidden"));
 
                 const newDialog = document.createElement("div");
                 newDialog.innerHTML = responseText;
