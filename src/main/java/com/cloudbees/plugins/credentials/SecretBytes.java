@@ -52,7 +52,9 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * salt and padding so no two invocations of {@link #getEncryptedData()} will return the same result, but all will
  * decrypt to the same {@link #getPlainData()}. XStream serialization and Stapler form-binding will assume that
  * the {@link #toString()} representation is used (i.e. the Base64 encoded secret bytes wrapped with <code>{</code>
- * and <code>}</code>. If the string representation fails to decrypt (and is not wrapped
+ * and <code>}</code>). If the string representation fails to decrypt (and is not wrapped) the {@link #fromString}
+ * method returns a {@link SecretBytes} representation of an empty array, and {@link #isSecretBytes} method
+ * returns {@code false}.
  *
  * @since 2.1.5
  */
@@ -70,7 +72,10 @@ public class SecretBytes implements Serializable {
      */
     private static final long serialVersionUID = 1L;
     /**
-     * The key that encrypts the data on disk.
+     * The key that encrypts the data on disk.<br/>
+     *
+     * NOTE: Unique per JVM run-time, so different value on a
+     * Jenkins controller and remote agents or across restarts!
      */
     private static final CredentialsConfidentialKey KEY = new CredentialsConfidentialKey(SecretBytes.class, "KEY");
     /**
@@ -78,7 +83,7 @@ public class SecretBytes implements Serializable {
      */
     private static final Logger LOGGER = Logger.getLogger(SecretBytes.class.getName());
     /**
-     * The unencrypted bytes.
+     * The encrypted bytes.
      */
     @NonNull
     private final byte[] value;
