@@ -62,19 +62,16 @@ class CredentialsSelectHelperTest {
             HtmlPage htmlPage = wc.goTo("credentials-selection");
 
             HtmlButton addCredentialsButton = htmlPage.querySelector(".credentials-add-menu");
-            addCredentialsButton.fireEvent("mouseenter");
             addCredentialsButton.click();
 
             HtmlButton jenkinsCredentialsOption = htmlPage.querySelector(".jenkins-dropdown__item");
-            htmlPage = (HtmlPage) HtmlElementUtil.click(jenkinsCredentialsOption);
-            
+            HtmlElementUtil.click(jenkinsCredentialsOption);
+
             HtmlRadioButtonInput item = htmlPage.querySelector(".jenkins-choice-list__item input");
             HtmlElementUtil.click(item);
 
             HtmlButton formSubmitButton = htmlPage.querySelector("#cr-dialog-next");
             HtmlElementUtil.click(formSubmitButton);
-
-            wc.waitForBackgroundJavaScript(3000);
 
             HtmlForm form = htmlPage.querySelector("#credentials-dialog-form");
 
@@ -176,14 +173,12 @@ class CredentialsSelectHelperTest {
 
     private HtmlForm selectPEMCertificateKeyStore(HtmlPage htmlPage, JenkinsRule.WebClient wc) throws IOException {
         HtmlButton addCredentialsButton = htmlPage.querySelector(".credentials-add-menu");
-        addCredentialsButton.fireEvent("mouseenter");
         addCredentialsButton.click();
 
         HtmlButton jenkinsCredentialsOption = htmlPage.querySelector(".jenkins-dropdown__item");
         jenkinsCredentialsOption.click();
 
-        wc.waitForBackgroundJavaScript(4000);
-        HtmlForm form = htmlPage.querySelector("#credentials-dialog-form");
+        HtmlForm form = htmlPage.getFormByName("dialog");
         String certificateDisplayName = j.jenkins.getDescriptor(CertificateCredentialsImpl.class).getDisplayName();
         String KeyStoreSourceDisplayName = j.jenkins.getDescriptor(
                 CertificateCredentialsImpl.PEMEntryKeyStoreSource.class).getDisplayName();
