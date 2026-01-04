@@ -99,7 +99,7 @@ function navigateToNextPage(url, params) {
                 const title = document.querySelector(".jenkins-dialog .jenkins-dialog__title");
                 title.textContent = rsp.headers.get("X-Wizard-Title");
 
-                if (form.method === 'get') {
+                if (form.method.toLowerCase() === 'get') {
                     form.addEventListener("submit", (e) => {
                         e.preventDefault();
 

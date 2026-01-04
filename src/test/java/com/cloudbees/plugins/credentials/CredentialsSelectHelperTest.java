@@ -76,7 +76,12 @@ class CredentialsSelectHelperTest {
             HtmlButton formSubmitButton = htmlPage.querySelector("#cr-dialog-next");
             HtmlElementUtil.click(formSubmitButton);
 
-            HtmlForm form = htmlPage.querySelector("#credentials-dialog-form");
+            HtmlForm form = htmlPage.getFormByName("dialog");
+            form.fireEvent("submit");
+
+            wc.waitForBackgroundJavaScript(3000);
+
+            form = htmlPage.querySelector("#credentials-dialog-form");
 
             HtmlInput username = form.querySelector("input[name='_.username']");
             username.setValue("bob");
@@ -88,6 +93,9 @@ class CredentialsSelectHelperTest {
             formSubmitButton = htmlPage.querySelector("#cr-dialog-submit");
             formSubmitButton.click();
             HtmlElementUtil.click(formSubmitButton);
+
+            // button isn't displayed for some reason
+            formSubmitButton.isDisplayed();
 
             // check if credentials were added
             List<UsernamePasswordCredentials> creds = CredentialsProvider.lookupCredentialsInItem(UsernamePasswordCredentials.class, null, ACL.SYSTEM2);
