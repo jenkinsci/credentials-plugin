@@ -35,6 +35,7 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
+import hudson.remoting.Channel;
 import hudson.util.Secret;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
@@ -143,7 +144,12 @@ public class SecretBytes implements Serializable {
             Cipher cipher = KEY.decrypt(salt);
             return cipher.doFinal(encryptedBytes);
         } catch (GeneralSecurityException e) {
-            throw new Error(e);
+            if (Channel.current() == null) {
+                // Local JVM of the Jenkins controller
+                throw new Error(e);
+            } else {
+                throw new Error("Failed to access secret data by remote agent", e);
+            }
         }
     }
 
