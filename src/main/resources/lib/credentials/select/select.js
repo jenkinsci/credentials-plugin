@@ -104,12 +104,6 @@ function navigateToNextPage(url, params) {
                         e.preventDefault();
 
                         const form = e.target;
-                        if (form.dataset.submitted === 'true') {
-                            return ; // prevent double submission
-                        }
-
-                        form.dataset.submitted = 'true'
-
                         const fd = new FormData(form);
                         const params = new URLSearchParams();
 
