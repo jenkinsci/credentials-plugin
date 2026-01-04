@@ -539,7 +539,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
                 throw new IllegalStateException(className + " is not FIPS compliant and can not be used when Jenkins is in FIPS mode. " +
                                                 "An issue should be filed against the plugin " + pluginName + " to ensure it is adapted to be able to work in this mode");
             }
-            // legacy behaviour that assumed all KeyStoreSources where in the non compliant PKCS12 format
+            // legacy behaviour that assumed all KeyStoreSources were in the non FIPS compliant PKCS12 format
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
             keyStore.load(new ByteArrayInputStream(getKeyStoreBytes()), password);
             return keyStore;
