@@ -9,7 +9,6 @@ import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
-import hudson.model.Item;
 import hudson.model.UnprotectedRootAction;
 import hudson.security.ACL;
 import java.io.IOException;
@@ -35,7 +34,6 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
-import org.w3c.dom.html.HTMLDivElement;
 
 @WithJenkins
 class CredentialsSelectHelperTest {
@@ -76,12 +74,9 @@ class CredentialsSelectHelperTest {
             HtmlButton formSubmitButton = htmlPage.querySelector("#cr-dialog-next");
             HtmlElementUtil.click(formSubmitButton);
 
-            HtmlForm form = htmlPage.getFormByName("dialog");
-            form.fireEvent("submit");
-
             wc.waitForBackgroundJavaScript(3000);
 
-            form = htmlPage.querySelector("#credentials-dialog-form");
+            HtmlForm form = htmlPage.querySelector("#credentials-dialog-form");
 
             HtmlInput username = form.querySelector("input[name='_.username']");
             username.setValue("bob");

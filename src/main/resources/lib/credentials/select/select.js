@@ -130,10 +130,9 @@ function navigateToNextPage(url, params) {
                         navigateToNextPage(form.action, queryString);
                     })
                 } else {
+                    window.credentials.form = form
                     form.addEventListener("submit", (e) => {
                         e.preventDefault();
-                        window.credentials.form = document.getElementById('credentials-dialog-form');
-                        console.log("window.credentials.form", window.credentials.form)
                         window.credentials.addSubmit();
                     })
                 }
@@ -224,8 +223,6 @@ window.credentials.addSubmit = function (_) {
     form.remove();
 
     function ajaxFormSubmit(form) {
-        console.log("FORM IS", form)
-        console.log('FORM111111', form.action, form.method, form)
         fetch(form.action, {
             method: form.method,
             headers: crumb.wrap({"Accept": "application/json"}),
