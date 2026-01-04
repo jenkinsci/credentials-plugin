@@ -104,6 +104,12 @@ function navigateToNextPage(url, params) {
                         e.preventDefault();
 
                         const form = e.target;
+                        if (form.dataset.submitted === 'true') {
+                            return ; // prevent double submission
+                        }
+
+                        form.dataset.submitted = 'true'
+
                         const fd = new FormData(form);
                         const params = new URLSearchParams();
 
@@ -127,6 +133,7 @@ function navigateToNextPage(url, params) {
                     form.addEventListener("submit", (e) => {
                         e.preventDefault();
                         window.credentials.form = document.getElementById('credentials-dialog-form');
+                        console.log("window.credentials.form", window.credentials.form)
                         window.credentials.addSubmit();
                     })
                 }
@@ -217,6 +224,8 @@ window.credentials.addSubmit = function (_) {
     form.remove();
 
     function ajaxFormSubmit(form) {
+        console.log("FORM IS", form)
+        console.log('FORM111111', form.action, form.method, form)
         fetch(form.action, {
             method: form.method,
             headers: crumb.wrap({"Accept": "application/json"}),

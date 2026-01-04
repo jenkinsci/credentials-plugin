@@ -94,9 +94,6 @@ class CredentialsSelectHelperTest {
             formSubmitButton.click();
             HtmlElementUtil.click(formSubmitButton);
 
-            // button isn't displayed for some reason
-            formSubmitButton.isDisplayed();
-
             // check if credentials were added
             List<UsernamePasswordCredentials> creds = CredentialsProvider.lookupCredentialsInItem(UsernamePasswordCredentials.class, null, ACL.SYSTEM2);
             assertThat(creds, Matchers.hasSize(1));
