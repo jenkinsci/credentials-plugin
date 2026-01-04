@@ -21,6 +21,7 @@ import org.htmlunit.Page;
 import org.htmlunit.html.DomNode;
 import org.htmlunit.html.DomNodeList;
 import org.htmlunit.html.HtmlButton;
+import org.htmlunit.html.HtmlDivision;
 import org.htmlunit.html.HtmlElementUtil;
 import org.htmlunit.html.HtmlForm;
 import org.htmlunit.html.HtmlFormUtil;
@@ -176,14 +177,15 @@ class CredentialsSelectHelperTest {
         addCredentialsButton.click();
 
         HtmlButton jenkinsCredentialsOption = htmlPage.querySelector(".jenkins-dropdown__item");
-        jenkinsCredentialsOption.click();
+        HtmlElementUtil.click(jenkinsCredentialsOption);
 
         HtmlForm form = htmlPage.getFormByName("dialog");
         String certificateDisplayName = j.jenkins.getDescriptor(CertificateCredentialsImpl.class).getDisplayName();
         String KeyStoreSourceDisplayName = j.jenkins.getDescriptor(
                 CertificateCredentialsImpl.PEMEntryKeyStoreSource.class).getDisplayName();
-        DomNodeList<DomNode> allOptions = htmlPage.getDocumentElement().querySelectorAll(
-                "select.dropdownList option");
+
+        DomNodeList<DomNode> allOptions = form.querySelectorAll(".jenkins-choice-list__item");
+
         boolean optionFound = selectOption(allOptions, certificateDisplayName);
         assertTrue(optionFound, "The Certificate option was not found in the credentials type select");
         List<HtmlRadioButtonInput> inputs = htmlPage.getDocumentElement().getByXPath(
@@ -197,10 +199,12 @@ class CredentialsSelectHelperTest {
 
     private static boolean selectOption(DomNodeList<DomNode> allOptions, String optionName) {
         return allOptions.stream().anyMatch(domNode -> {
-            if (domNode instanceof HtmlOption option) {
-                if (option.getVisibleText().equals(optionName)) {
+            if (domNode instanceof HtmlDivision option) {
+                if (option.getVisibleText().contains(optionName)) {
                     try {
-                        HtmlElementUtil.click(option);
+                        HtmlRadioButtonInput item = domNode.querySelector(".jenkins-choice-list__item input");
+                        HtmlElementUtil.click(item);
+
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
