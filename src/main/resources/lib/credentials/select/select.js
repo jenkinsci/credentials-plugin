@@ -142,7 +142,7 @@ function navigateToNextPage(url, params) {
 
                 setTimeout(() => {
                     Behaviour.applySubtree(dialog, false);
-                    if (form.method !== 'get') {
+                    if (form.method.toLowerCase() !== 'get') {
                         form.onsubmit = null; // clear any existing handler
                     }
                 }, 20)
