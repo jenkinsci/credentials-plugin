@@ -64,16 +64,14 @@ function recreateScripts(form) {
 }
 
 function mergeUrlParams(url, params) {
-    const urlObj = new URL(url, window.location.origin);
-    // Merge existing params with new ones
+    const base = new URL(url, window.location.href);
     if (params) {
-        // params is expected to be a query string (e.g., 'foo=bar&baz=qux')
         const newParams = new URLSearchParams(params);
         for (const [key, value] of newParams.entries()) {
-            urlObj.searchParams.set(key, value);
+            base.searchParams.set(key, value);
         }
     }
-    return urlObj.toString();
+    return base.toString();
 }
 
 function navigateToNextPage(url, params) {
