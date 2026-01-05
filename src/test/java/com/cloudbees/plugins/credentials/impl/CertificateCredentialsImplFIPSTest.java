@@ -22,7 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class CertificateCredentialsImplFIPSTest {
 
     @RegisterExtension
-    private final RealJenkinsExtension extension = new RealJenkinsExtension().withFIPSEnabled().javaOptions("-Xmx512m");
+    private final RealJenkinsExtension extension = new RealJenkinsExtension().withFIPSEnabled()
+        .javaOptions("-Xmx512m", "-Djava.security.debug=\"provider\"");
 
     private String pemCert;
     private String pemKey;
