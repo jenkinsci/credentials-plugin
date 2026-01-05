@@ -867,6 +867,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     /**
      * @deprecated Use {@link #findCredentialById(String, Class, Run, List)} instead.
      */
+    @Deprecated
     public static <C extends IdCredentials> C findCredentialById(@NonNull String id, @NonNull Class<C> type,
                                                                  @NonNull Run<?, ?> run,
                                                                  DomainRequirement... domainRequirements) {
