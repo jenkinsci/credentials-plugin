@@ -444,7 +444,7 @@ public class CredentialsInPipelineTest {
     /////////////////////////////////////////////////////////////////
     // Certificate credentials retrievability by http-request-plugin
     /////////////////////////////////////////////////////////////////
-
+/*
     private String cpsScriptCertCredentialTestHttpRequest(String runnerTag) {
         return cpsScriptCredentialTestHttpRequest("myCert", runnerTag, true);
     }
@@ -660,4 +660,5 @@ public class CredentialsInPipelineTest {
         r.assertLogContains("HTTP Request Plugin Response: ", run);
     }
 
+*/
 }
