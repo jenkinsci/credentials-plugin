@@ -872,14 +872,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
-                try {
-                    C credential = provider.getCredentialByIdInItemGroup(id, type, itemGroup, authentication, domainRequirements);
-                    if (credential != null) {
-                        return credential;
-                    }
-                } catch (NoClassDefFoundError e) {
-                    LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
-                            + " likely due to missing optional dependency", e);
+                C credential = provider.getCredentialByIdInItemGroup(id, type, itemGroup, authentication, domainRequirements);
+                if (credential != null) {
+                    return credential;
                 }
             }
         }
@@ -917,14 +912,9 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
 
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
-                try {
-                    C credential = provider.getCredentialByIdInItem(id, type, item, authentication, domainRequirements);
-                    if (credential != null) {
-                        return credential;
-                    }
-                } catch (NoClassDefFoundError e) {
-                    LOGGER.log(Level.FINE, "Could not retrieve provider credentials from " + provider
-                            + " likely due to missing optional dependency", e);
+                C credential = provider.getCredentialByIdInItem(id, type, item, authentication, domainRequirements);
+                if (credential != null) {
+                    return credential;
                 }
             }
         }
