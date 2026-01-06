@@ -34,7 +34,6 @@ import hudson.security.ACL;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import jenkins.model.Jenkins;
 import org.springframework.security.core.Authentication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -77,7 +76,7 @@ final class ByIdTest {
         LazyProvider3.resetCounters();
 
         // Search for early credential
-        IdCredentials result = CredentialsProvider.findCredentialById(
+        IdCredentials result = CredentialsProvider.findCredentialByIdInItemGroup(
                 "early-cred",
                 IdCredentials.class,
                 (ItemGroup) null,
@@ -104,7 +103,7 @@ final class ByIdTest {
         LazyProvider3.resetCounters();
 
         // Search for lazy2 credential
-        IdCredentials result = CredentialsProvider.findCredentialById(
+        IdCredentials result = CredentialsProvider.findCredentialByIdInItemGroup(
                 "lazy2-cred",
                 IdCredentials.class,
                 (ItemGroup) null,
@@ -133,7 +132,7 @@ final class ByIdTest {
         LazyProvider3.resetCounters();
 
         // Search for lazy3 credential
-        IdCredentials result = CredentialsProvider.findCredentialById(
+        IdCredentials result = CredentialsProvider.findCredentialByIdInItemGroup(
                 "lazy3-cred",
                 IdCredentials.class,
                 (ItemGroup) null,
@@ -161,7 +160,7 @@ final class ByIdTest {
         LazyProvider3.resetCounters();
 
         // Search for nonexistent credential
-        IdCredentials result = CredentialsProvider.findCredentialById(
+        IdCredentials result = CredentialsProvider.findCredentialByIdInItemGroup(
                 "nonexistent",
                 IdCredentials.class,
                 (ItemGroup) null,
@@ -185,12 +184,13 @@ final class ByIdTest {
             return "ZZZ Lazy Provider #1";
         }
 
+        @SuppressWarnings("rawtypes") // historical mistake
         @Override
         @NonNull
         public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type,
-                                                                          @NonNull ItemGroup itemGroup,
-                                                                          @NonNull Authentication authentication,
-                                                                          @NonNull List<DomainRequirement> domainRequirements) {
+                                                                         @NonNull ItemGroup itemGroup,
+                                                                         @NonNull Authentication authentication,
+                                                                         @NonNull List<DomainRequirement> domainRequirements) {
             return Collections.emptyList();
         }
 
@@ -220,11 +220,11 @@ final class ByIdTest {
 
         @Override
         @CheckForNull
-        public <C extends IdCredentials> C getCredentialById(@NonNull String id,
-                                                              @NonNull Class<C> type,
-                                                              @NonNull ItemGroup itemGroup,
-                                                              @NonNull Authentication authentication,
-                                                              @NonNull List<DomainRequirement> domainRequirements) {
+        public <C extends IdCredentials> C getCredentialByIdInItemGroup(@NonNull String id,
+                                                                        @NonNull Class<C> type,
+                                                                        @NonNull ItemGroup<?> itemGroup,
+                                                                        @NonNull Authentication authentication,
+                                                                        @NonNull List<DomainRequirement> domainRequirements) {
             getByIdCalls.incrementAndGet();
             for (IdCredentials cred : credentials) {
                 if (cred.getId().equals(id) && type.isInstance(cred)) {
@@ -236,11 +236,11 @@ final class ByIdTest {
 
         @Override
         @CheckForNull
-        public <C extends IdCredentials> C getCredentialById(@NonNull String id,
-                                                              @NonNull Class<C> type,
-                                                              @NonNull Item item,
-                                                              @NonNull Authentication authentication,
-                                                              @NonNull List<DomainRequirement> domainRequirements) {
+        public <C extends IdCredentials> C getCredentialByIdInItem(@NonNull String id,
+                                                                   @NonNull Class<C> type,
+                                                                   @NonNull Item item,
+                                                                   @NonNull Authentication authentication,
+                                                                   @NonNull List<DomainRequirement> domainRequirements) {
             getByIdCalls.incrementAndGet();
             for (IdCredentials cred : credentials) {
                 if (cred.getId().equals(id) && type.isInstance(cred)) {
@@ -250,12 +250,13 @@ final class ByIdTest {
             return null;
         }
 
+        @SuppressWarnings("rawtypes") // historical mistake
         @Override
         @NonNull
         public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type,
-                                                                          @NonNull ItemGroup itemGroup,
-                                                                          @NonNull Authentication authentication,
-                                                                          @NonNull List<DomainRequirement> domainRequirements) {
+                                                                         @NonNull ItemGroup itemGroup,
+                                                                         @NonNull Authentication authentication,
+                                                                         @NonNull List<DomainRequirement> domainRequirements) {
             listCalls.incrementAndGet();
             List<C> result = new java.util.ArrayList<>();
             for (IdCredentials cred : credentials) {
@@ -288,12 +289,13 @@ final class ByIdTest {
             return "ZZZ Lazy Provider #3 (Unoptimized)";
         }
 
+        @SuppressWarnings("rawtypes") // historical mistake
         @Override
         @NonNull
         public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type,
-                                                                          @NonNull ItemGroup itemGroup,
-                                                                          @NonNull Authentication authentication,
-                                                                          @NonNull List<DomainRequirement> domainRequirements) {
+                                                                         @NonNull ItemGroup itemGroup,
+                                                                         @NonNull Authentication authentication,
+                                                                         @NonNull List<DomainRequirement> domainRequirements) {
             listCalls.incrementAndGet();
             List<C> result = new java.util.ArrayList<>();
             for (IdCredentials cred : credentials) {

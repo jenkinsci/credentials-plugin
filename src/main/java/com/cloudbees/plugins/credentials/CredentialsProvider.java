@@ -857,14 +857,13 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param domainRequirements the credential domains to match (if {@code null} assume empty list).
      * @param <C>                the credentials type.
      * @return the credential or {@code null} if no credential with the specified ID is found.
-     * @since TODO
      */
     @CheckForNull
-    public static <C extends IdCredentials> C findCredentialById(@NonNull String id,
-                                                                 @NonNull Class<C> type,
-                                                                 @Nullable ItemGroup itemGroup,
-                                                                 @Nullable Authentication authentication,
-                                                                 @Nullable List<DomainRequirement> domainRequirements) {
+    public static <C extends IdCredentials> C findCredentialByIdInItemGroup(@NonNull String id,
+                                                                            @NonNull Class<C> type,
+                                                                            @Nullable ItemGroup<?> itemGroup,
+                                                                            @Nullable Authentication authentication,
+                                                                            @Nullable List<DomainRequirement> domainRequirements) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(type);
         itemGroup = itemGroup == null ? Jenkins.get() : itemGroup;
@@ -874,7 +873,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 try {
-                    C credential = provider.getCredentialById(id, type, itemGroup, authentication, domainRequirements);
+                    C credential = provider.getCredentialByIdInItemGroup(id, type, itemGroup, authentication, domainRequirements);
                     if (credential != null) {
                         return credential;
                     }
@@ -898,21 +897,20 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param domainRequirements the credential domains to match (if {@code null} assume empty list).
      * @param <C>                the credentials type.
      * @return the credential or {@code null} if no credential with the specified ID is found.
-     * @since TODO
      */
     @CheckForNull
-    public static <C extends IdCredentials> C findCredentialById(@NonNull String id,
-                                                                 @NonNull Class<C> type,
-                                                                 @Nullable Item item,
-                                                                 @Nullable Authentication authentication,
-                                                                 @Nullable List<DomainRequirement> domainRequirements) {
+    public static <C extends IdCredentials> C findCredentialByIdInItem(@NonNull String id,
+                                                                       @NonNull Class<C> type,
+                                                                       @Nullable Item item,
+                                                                       @Nullable Authentication authentication,
+                                                                       @Nullable List<DomainRequirement> domainRequirements) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(type);
         if (item == null) {
-            return findCredentialById(id, type, Jenkins.get(), authentication, domainRequirements);
+            return findCredentialByIdInItemGroup(id, type, Jenkins.get(), authentication, domainRequirements);
         }
         if (item instanceof ItemGroup) {
-            return findCredentialById(id, type, (ItemGroup) item, authentication, domainRequirements);
+            return findCredentialByIdInItemGroup(id, type, (ItemGroup) item, authentication, domainRequirements);
         }
         authentication = authentication == null ? ACL.SYSTEM2 : authentication;
         domainRequirements = domainRequirements == null ? Collections.emptyList() : domainRequirements;
@@ -920,7 +918,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 try {
-                    C credential = provider.getCredentialById(id, type, item, authentication, domainRequirements);
+                    C credential = provider.getCredentialByIdInItem(id, type, item, authentication, domainRequirements);
                     if (credential != null) {
                         return credential;
                     }
@@ -1014,10 +1012,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // as you would have no way to configure it
             Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf2(run.getParent());
             // we want the credentials available to the user the build is running as
-            C credential = findCredentialById(id, type, run.getParent(), runAuth, domainRequirements);
+            C credential = findCredentialByIdInItem(id, type, run.getParent(), runAuth, domainRequirements);
             // if that user can use the item's credentials, try those too
             if (credential == null && runAuth != ACL.SYSTEM2 && run.hasPermission2(runAuth, CredentialsProvider.USE_ITEM)) {
-                credential = findCredentialById(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements);
+                credential = findCredentialByIdInItem(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements);
             }
             // TODO should this be calling track?
             return contextualize(type, credential, run);
@@ -1030,14 +1028,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // the user triggered this job directly and they are allowed to supply their own credentials, so
             // search those first. We do not want to follow the chain for the user's authentication
             // though, as there is no way to limit how far the passed-through parameters can be used
-            result = findCredentialById(id, type, run.getParent(), a, domainRequirements);
+            result = findCredentialByIdInItem(id, type, run.getParent(), a, domainRequirements);
         }
         if (result == null && inputUserId != null) {
             final User inputUser = User.getById(inputUserId, false);
             if (inputUser != null) {
                 final Authentication inputAuth = inputUser.impersonate2();
                 if (run.hasPermission2(inputAuth, CredentialsProvider.USE_OWN)) {
-                    result = findCredentialById(id, type, run.getParent(), inputAuth, domainRequirements);
+                    result = findCredentialByIdInItem(id, type, run.getParent(), inputAuth, domainRequirements);
                 }
             }
         }
@@ -1048,10 +1046,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // as you would have no way to configure it
             Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf2(run.getParent());
             // we want the credentials available to the user the build is running as
-            result = findCredentialById(id, type, run.getParent(), runAuth, domainRequirements);
+            result = findCredentialByIdInItem(id, type, run.getParent(), runAuth, domainRequirements);
             // if that user can use the item's credentials, try those too
             if (result == null && runAuth != ACL.SYSTEM2 && run.hasPermission2(runAuth, CredentialsProvider.USE_ITEM)) {
-                result = findCredentialById(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements);
+                result = findCredentialByIdInItem(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements);
             }
         }
         // if the run has not completed yet then we can safely assume that the credential is being used for this run
@@ -1306,14 +1304,13 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param authentication     the authentication.
      * @param domainRequirements the credential domain to match.
      * @return the credential or {@code null} if no credential with the specified ID is found.
-     * @since TODO
      */
     @CheckForNull
-    public <C extends IdCredentials> C getCredentialById(@NonNull String id,
-                                                          @NonNull Class<C> type,
-                                                          @NonNull ItemGroup itemGroup,
-                                                          @NonNull Authentication authentication,
-                                                          @NonNull List<DomainRequirement> domainRequirements) {
+    public <C extends IdCredentials> C getCredentialByIdInItemGroup(@NonNull String id,
+                                                                    @NonNull Class<C> type,
+                                                                    @NonNull ItemGroup<?> itemGroup,
+                                                                    @NonNull Authentication authentication,
+                                                                    @NonNull List<DomainRequirement> domainRequirements) {
         return CredentialsMatchers.firstOrNull(
                 getCredentialsInItemGroup(type, itemGroup, authentication, domainRequirements),
                 CredentialsMatchers.withId(id)
@@ -1336,14 +1333,13 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * @param authentication     the authentication.
      * @param domainRequirements the credential domain to match.
      * @return the credential or {@code null} if no credential with the specified ID is found.
-     * @since TODO
      */
     @CheckForNull
-    public <C extends IdCredentials> C getCredentialById(@NonNull String id,
-                                                          @NonNull Class<C> type,
-                                                          @NonNull Item item,
-                                                          @NonNull Authentication authentication,
-                                                          @NonNull List<DomainRequirement> domainRequirements) {
+    public <C extends IdCredentials> C getCredentialByIdInItem(@NonNull String id,
+                                                               @NonNull Class<C> type,
+                                                               @NonNull Item item,
+                                                               @NonNull Authentication authentication,
+                                                               @NonNull List<DomainRequirement> domainRequirements) {
         return CredentialsMatchers.firstOrNull(
                 getCredentialsInItem(type, item, authentication, domainRequirements),
                 CredentialsMatchers.withId(id)
