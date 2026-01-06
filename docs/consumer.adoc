@@ -281,26 +281,6 @@ We leverage the https://plugins.jenkins.io/authentication-tokens[Authentication 
 This means that we can use the `AuthenticationTokens.matcher(Class)` to restrict the list of credentials to the subset that can be converted.
 Alternatively, more complex conversion contexts can be handled with `AuthenticationTokens.matcher(AuthenticationTokenContext)`
 
-* We want to let the user select the credentials to toggle the deployment state of a blue/green deployment for a completed build.
-+
-[source,java]
-----
-CredentialsProvider.listCredentialsInItem(
-    StandardCredentials.class, // <1>
-    job,
-    Jenkins.getAuthentication2(), // <2>
-    URIRequirementBuilder.fromUri(loadBalancerUrl),
-    CredentialsMatchers.allOf(
-      AuthenticationTokens.matcher(LoadBalancerAuthentication.class),
-      CredentialsMatchers.withProperty("permission", "lb.switch") // <3>
-    )
-)
-----
-<1> There are different credential types that can be used to authenticate with the load balancer, this is the common base class.
-<2> This is an immediate action performed by the user.
-<3> In this case there may be multiple credentials available to the user, we only want the ones with `"lb.switch".equals(credential.getPermission())`.
-Any credentials that do not have a `getPermission()` method will be excluded as well as any that do not have the corresponding return value.
-
 * We want to let the user specify the credentials used to update the post commit receive hooks of a source control system for any corresponding jobs configured in Jenkins.
 +
 [NOTE]

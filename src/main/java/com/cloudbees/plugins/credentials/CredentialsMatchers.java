@@ -23,14 +23,8 @@
  */
 package com.cloudbees.plugins.credentials;
 
-import com.cloudbees.plugins.credentials.common.UsernameCredentials;
 import com.cloudbees.plugins.credentials.matchers.AllOfMatcher;
 import com.cloudbees.plugins.credentials.matchers.AnyOfMatcher;
-import com.cloudbees.plugins.credentials.matchers.BeanPropertyMatcher;
-import com.cloudbees.plugins.credentials.matchers.CQLBaseListener;
-import com.cloudbees.plugins.credentials.matchers.CQLLexer;
-import com.cloudbees.plugins.credentials.matchers.CQLParser;
-import com.cloudbees.plugins.credentials.matchers.CQLSyntaxException;
 import com.cloudbees.plugins.credentials.matchers.ConstantMatcher;
 import com.cloudbees.plugins.credentials.matchers.IdMatcher;
 import com.cloudbees.plugins.credentials.matchers.InstanceOfMatcher;
@@ -39,32 +33,17 @@ import com.cloudbees.plugins.credentials.matchers.ScopeMatcher;
 import com.cloudbees.plugins.credentials.matchers.UsernameMatcher;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EmptyStackException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.misc.Interval;
-import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * Some standard matchers and filtering utility methods.
@@ -179,20 +158,6 @@ public class CredentialsMatchers {
     @NonNull
     public static CredentialsMatcher withUsername(@NonNull String username) {
         return new UsernameMatcher(username);
-    }
-
-    /**
-     * Creates a matcher that matches a named Java Bean property against the supplied expected value.
-     *
-     * @param name     the name of the property to match.
-     * @param expected the expected value of the property.
-     * @param <T>      the type of expected value.
-     * @return a matcher that matches a named Java Bean property against the supplied expected value.
-     * @since 2.1.0
-     */
-    public static <T extends Serializable> CredentialsMatcher withProperty(@NonNull String name,
-                                                                           @CheckForNull T expected) {
-        return new BeanPropertyMatcher<>(name, expected);
     }
 
     /**
@@ -396,248 +361,5 @@ public class CredentialsMatchers {
                                                         @NonNull CredentialsMatcher matcher) {
         return firstOrDefault(credentials, matcher, null);
     }
-
-    /**
-     * Attempts to describe the supplied {@link CredentialsMatcher} in terms of a Credentials Query Language. The basic
-     * form of the query language should follow Java expression syntax assuming that there is one variable in scope,
-     * namely the credential. The Java Bean style properties will be exposed as variables in the context. Example:
-     * {@code (instanceof com.cloudbees.plugins.credentials.common.UsernameCredentials) && !(username == "bob")}
-     * will match all instances of {@link com.cloudbees.plugins.credentials.common.UsernameCredentials} with
-     * {@link UsernameCredentials#getUsername()} not equal to {@literal bob}.
-     * See also {@link CQLParser}.
-     *
-     * @param matcher the {@link CredentialsMatcher} to describe.
-     * @return the CQL description or {@code null} if the {@link CredentialsMatcher} cannot be mapped to CQL.
-     * @since 2.1.0
-     */
-    @CheckForNull
-    public static String describe(CredentialsMatcher matcher) {
-        return matcher instanceof CredentialsMatcher.CQL ? ((CredentialsMatcher.CQL) matcher).describe() : null;
-    }
-
-    /**
-     * Attempts to parse a Credentials Query Language expression and construct the corresponding matcher.
-     *
-     * @param cql the Credentials Query Language expression to parse.
-     * @return a {@link CredentialsMatcher} for this expression.
-     * @throws CQLSyntaxException if the expression could not be parsed.
-     * @since 2.1.0
-     */
-    @NonNull
-    public static CredentialsMatcher parse(final String cql) {
-
-        if (StringUtils.isEmpty(cql)) {
-            return always();
-        }
-
-        CQLLexer lexer = new CQLLexer(CharStreams.fromString(cql));
-
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-
-        CQLParser parser = new CQLParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(new BaseErrorListener() {
-            @Override
-            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
-                                    int charPositionInLine,
-                                    String msg, RecognitionException e) {
-                StringBuilder expression = new StringBuilder(cql.length() + msg.length() + charPositionInLine + 256);
-                String[] lines = StringUtils.split(cql, '\n');
-                for (int i = 0; i < line; i++) {
-                    expression.append("    ").append(lines[i]).append('\n');
-                }
-                expression.append("    ").append(StringUtils.repeat(" ", charPositionInLine)).append("^ ").append(msg);
-                for (int i = line; i < lines.length; i++) {
-                    expression.append("\n    ").append(lines[i]);
-                }
-                throw new CQLSyntaxException(
-                        String.format("CQL syntax error: line %d:%d%n%s", line, charPositionInLine, expression),
-                        charPositionInLine);
-            }
-        });
-
-        CQLParser.ExpressionContext expressionContext = parser.expression();
-
-        ParseTreeWalker walker = new ParseTreeWalker();
-
-        MatcherBuildingListener listener = new MatcherBuildingListener();
-
-        try {
-            walker.walk(listener, expressionContext);
-
-            return listener.getMatcher();
-        } catch (EmptyStackException e) {
-            throw new IllegalStateException("There should not be an empty stack when starting from an expression", e);
-        } catch (CQLSyntaxError e) {
-            throw new CQLSyntaxException(
-                    String.format("CQL syntax error:%n    %s%n    %s%s unexpected symbol %s", cql,
-                            StringUtils.repeat(" ", e.interval.a),
-                            StringUtils.repeat("^", e.interval.length()),
-                            e.text
-                    ), e.interval.a);
-        }
-    }
-
-    /**
-     * A listener to build the matcher.
-     */
-    private static class MatcherBuildingListener extends CQLBaseListener {
-        /**
-         * The current primary value.
-         */
-        private CredentialsMatcher primary;
-        /**
-         * The current literal value.
-         */
-        private Serializable literal;
-        /**
-         * The stack of expressions.
-         */
-        private Stack<CredentialsMatcher> expression = new Stack<>();
-
-        /**
-         * Returns the {@link CredentialsMatcher}.
-         *
-         * @return the {@link CredentialsMatcher}.
-         */
-        private CredentialsMatcher getMatcher() {
-            return expression.pop();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void exitExpression(CQLParser.ExpressionContext ctx) {
-            if (ctx.AND() != null) {
-                CredentialsMatcher second = expression.pop();
-                CredentialsMatcher first = expression.pop();
-                expression.push(CredentialsMatchers.allOf(first, second));
-            } else if (ctx.OR() != null) {
-                CredentialsMatcher second = expression.pop();
-                CredentialsMatcher first = expression.pop();
-                expression.push(CredentialsMatchers.anyOf(first, second));
-            } else {
-                expression.push(primary);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void exitConstantTest(CQLParser.ConstantTestContext ctx) {
-            primary = new ConstantMatcher(Boolean.parseBoolean(ctx.BooleanLiteral().getSymbol().getText()));
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void exitPropertyTest(CQLParser.PropertyTestContext ctx) {
-            primary = new BeanPropertyMatcher<>(ctx.Identifier().getText(), literal);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void exitNegativeTest(CQLParser.NegativeTestContext ctx) {
-            primary = new NotMatcher(primary);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void exitInstanceOfTest(CQLParser.InstanceOfTestContext ctx) {
-            try {
-                primary = new InstanceOfMatcher(Class.forName(ctx.qualifiedName().getText()));
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void exitGroupedTest(CQLParser.GroupedTestContext ctx) {
-            primary = expression.pop();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void exitLiteral(CQLParser.LiteralContext ctx) {
-            if (ctx.BooleanLiteral() != null) {
-                literal = Boolean.valueOf(ctx.BooleanLiteral().getText());
-            } else if (ctx.StringLiteral() != null) {
-                String text = ctx.StringLiteral().getText();
-                literal = StringEscapeUtils.unescapeJava(text.substring(1, text.length() - 1));
-            } else if (ctx.CharacterLiteral() != null) {
-                String text = ctx.StringLiteral().getText();
-                literal = StringEscapeUtils.unescapeJava(text.substring(1, text.length() - 1)).charAt(0);
-            } else if (ctx.IntegerLiteral() != null) {
-                literal = Integer.valueOf(ctx.IntegerLiteral().getText());
-            } else if (ctx.FloatingPointLiteral() != null) {
-                literal = Double.valueOf(ctx.FloatingPointLiteral().getText());
-            } else if (ctx.NullLiteral() != null) {
-                literal = null;
-            } else if (ctx.enumLiteral() != null) {
-                String enumClass = ctx.enumLiteral().qualifiedName().getText();
-                String enumConst = ctx.enumLiteral().Identifier().getText();
-                try {
-                    Class<?> enumClazz = Class.forName(enumClass);
-                    Field field = enumClazz.getDeclaredField(enumConst);
-                    literal = (Serializable) field.get(null);
-                } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void visitErrorNode(ErrorNode node) {
-            throw new CQLSyntaxError(node);
-        }
-    }
-
-    /**
-     * Internal exception to track an error not caught during the parse.
-     *
-     * @since 2.1.0
-     */
-    private static class CQLSyntaxError extends RuntimeException {
-        /**
-         * The error node's text.
-         */
-        private final String text;
-        /**
-         * The error node's location.
-         */
-        private final Interval interval;
-
-        /**
-         * Constructor.
-         *
-         * @param node the error node.
-         */
-        private CQLSyntaxError(ErrorNode node) {
-            this.text = node.getText();
-            int offset = 0;
-            ParseTree n = node;
-            while (n != null) {
-                offset += n.getSourceInterval().a;
-                n = n.getParent();
-            }
-            this.interval = new Interval(offset + node.getSourceInterval().a, offset + node.getSourceInterval().b);
-        }
-    }
-
 
 }

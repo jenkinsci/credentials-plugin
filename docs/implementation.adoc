@@ -576,7 +576,6 @@ The `CredentialsProvider` extension point is perhaps one of the more complicated
 * Where the backing store is remote from Jenkins then:
 
 ** potentially has to be able to either instantiate `java.lang.reflect.Proxy` implementations for credentials, or create on-demand implementation classes using http://asm.ow2.org/[ASM] (or similar).
-** potentially has to deal with parsing the `CredentialsMatcher` query language in order to minimize transfer of information over the network.
 ** may need to store Jenkins specific state in Jenkins in order to provide credentials domain support.
 
 * Where the backing store is local to Jenkins but contextual to a specific Jenkins model object and not covered by the three existing credentials providers: System, User and Folder, then replication of that code will likely be required.
@@ -597,7 +596,6 @@ These existing examples are probably not good as reference examples as they have
 +
 A good reference implementation would be clean of such distractions.
 * [ ] Provide links to some other implementations of credentials providers for other use cases.
-* [ ] Provide some details on how the Credentials Query Language can be used to limit querying credentials from the remote service
 
 ====
 

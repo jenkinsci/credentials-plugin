@@ -27,7 +27,6 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.common.UsernameCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.Objects;
 
@@ -37,7 +36,7 @@ import java.util.Objects;
  *
  * @since 1.5
  */
-public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
+public class UsernameMatcher implements CredentialsMatcher {
     /**
      * Standardize serialization.
      *
@@ -65,14 +64,6 @@ public class UsernameMatcher implements CredentialsMatcher, CredentialsMatcher.C
      */
     public boolean matches(@NonNull Credentials item) {
         return item instanceof UsernameCredentials && username.equals(((UsernameCredentials) item).getUsername());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String describe() {
-        return String.format("(username == \"%s\")", StringEscapeUtils.escapeJava(username));
     }
 
     /**
