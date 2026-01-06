@@ -866,10 +866,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                             @Nullable List<DomainRequirement> domainRequirements) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(type);
-        itemGroup = itemGroup == null ? Jenkins.get() : itemGroup;
-        authentication = authentication == null ? ACL.SYSTEM2 : authentication;
-        domainRequirements = domainRequirements == null ? Collections.emptyList() : domainRequirements;
-
+        if (itemGroup == null) {
+            itemGroup = Jenkins.get();
+        }
+        if (authentication == null) {
+            authentication = ACL.SYSTEM2;
+        }
+        if (domainRequirements == null) {
+            domainRequirements = List.of();
+        }
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
                 C credential = provider.getCredentialByIdInItemGroup(id, type, itemGroup, authentication, domainRequirements);
@@ -904,12 +909,15 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (item == null) {
             return findCredentialByIdInItemGroup(id, type, Jenkins.get(), authentication, domainRequirements);
         }
-        if (item instanceof ItemGroup) {
-            return findCredentialByIdInItemGroup(id, type, (ItemGroup) item, authentication, domainRequirements);
+        if (item instanceof ItemGroup<?> group) {
+            return findCredentialByIdInItemGroup(id, type, group, authentication, domainRequirements);
         }
-        authentication = authentication == null ? ACL.SYSTEM2 : authentication;
-        domainRequirements = domainRequirements == null ? Collections.emptyList() : domainRequirements;
-
+        if (authentication == null) {
+            authentication = ACL.SYSTEM2;
+        }
+        if (domainRequirements == null) {
+            domainRequirements = List.of();
+        }
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 C credential = provider.getCredentialByIdInItem(id, type, item, authentication, domainRequirements);
