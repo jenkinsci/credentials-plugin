@@ -877,14 +877,19 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (domainRequirements == null) {
             domainRequirements = List.of();
         }
+        var g = itemGroup;
+        LOGGER.fine(() -> "looking for " + id + " of " + type + " in " + g);
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
+                LOGGER.fine(() -> "checking " + provider + " for " + id);
                 C credential = provider.getCredentialByIdInItemGroup(id, type, itemGroup, authentication, domainRequirements);
                 if (credential != null) {
+                    LOGGER.fine(() -> "found " + credential + " in " + provider);
                     return credential;
                 }
             }
         }
+        LOGGER.fine(() -> "did not find " + id);
         return null;
     }
 
@@ -920,14 +925,18 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (domainRequirements == null) {
             domainRequirements = List.of();
         }
+        LOGGER.fine(() -> "looking for " + id + " of " + type + " in " + item);
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
+                LOGGER.fine(() -> "checking " + provider + " for " + id);
                 C credential = provider.getCredentialByIdInItem(id, type, item, authentication, domainRequirements);
                 if (credential != null) {
+                    LOGGER.fine(() -> "found " + credential + " in " + provider);
                     return credential;
                 }
             }
         }
+        LOGGER.fine(() -> "did not find " + id);
         return null;
     }
 
