@@ -383,12 +383,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         Set<String> ids = new HashSet<>();
         for (CredentialsProvider provider : all()) {
             if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
+                LOGGER.fine(() -> "checking " + provider + " for " + type);
                 try {
                     for (C c : provider.getCredentialsInItemGroup(type, itemGroup, authentication, domainRequirements)) {
                         if (!(c instanceof IdCredentials) || ids.add(((IdCredentials) c).getId())) {
                             // if IdCredentials, only add if we haven't added already
                             // if not IdCredentials, always add
                             result.add(c);
+                            LOGGER.fine(() -> "got " + c + " from " + provider);
                         }
                     }
                 } catch (NoClassDefFoundError e) {
