@@ -129,7 +129,8 @@ public class CredentialsMatchers {
      * @param id the {@link com.cloudbees.plugins.credentials.common.IdCredentials#getId()} to match.
      * @return a matcher that matches {@link com.cloudbees.plugins.credentials.common.IdCredentials} with the
      * supplied {@link com.cloudbees.plugins.credentials.common.IdCredentials#getId()}
-     * @see TODO link to new CredentialsProvider methods
+     * @see CredentialsProvider#findCredentialById(String, Class, Item, org.springframework.security.core.Authentication, java.util.List)
+     * @see CredentialsProvider#findCredentialById(String, Class, hudson.model.ItemGroup, org.springframework.security.core.Authentication, java.util.List)
      */
     @NonNull
     public static CredentialsMatcher withId(@NonNull String id) {
