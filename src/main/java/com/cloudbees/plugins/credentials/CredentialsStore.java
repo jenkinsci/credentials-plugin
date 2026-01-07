@@ -54,6 +54,9 @@ import java.util.stream.Collectors;
 import hudson.tasks.UserAvatarResolver;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
+import org.jenkins.ui.icon.IconSpec;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.springframework.security.core.Authentication;
@@ -535,9 +538,12 @@ public abstract class CredentialsStore implements AccessControlled, Saveable {
      * Returns the icon class name of the {@link #getContext()} of this {@link CredentialsStore}.
      *
      * @return the icon class name for the store.
-     * @since TODO
      */
-    public final String getIconClassName() {
+    @Restricted(DoNotUse.class) // Jelly
+    public final String getContextIconClassName() {
+        if (this instanceof IconSpec iconSpec) {
+            return iconSpec.getIconClassName();
+        }
         ModelObject context = getContext();
         if (context instanceof User user) {
             return UserAvatarResolver.resolve(user, "96x96");
