@@ -28,8 +28,6 @@ import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
-import com.cloudbees.plugins.credentials.links.DeleteCredentialsLink;
-import com.cloudbees.plugins.credentials.links.DeleteDomainLink;
 import com.cloudbees.plugins.credentials.links.MoveCredentialsLink;
 import com.cloudbees.plugins.credentials.links.NewCredentialsLink;
 import com.cloudbees.plugins.credentials.links.NewDomainLink;
@@ -599,11 +597,6 @@ public abstract class CredentialsStoreAction
         }
 
         @Restricted(DoNotUse.class) // jelly
-        public DeleteDomainLink getDeleteDomainLink() {
-            return new DeleteDomainLink();
-        }
-
-        @Restricted(DoNotUse.class) // jelly
         public NewCredentialsLink getNewCredentialsLink() {
             return new NewCredentialsLink();
         }
@@ -1057,11 +1050,6 @@ public abstract class CredentialsStoreAction
         @Restricted(DoNotUse.class) // jelly
         public UpdateCredentialsLink getUpdateLink() {
             return new UpdateCredentialsLink();
-        }
-
-        @Restricted(DoNotUse.class) // jelly
-        public DeleteCredentialsLink getDeleteLink() {
-            return new DeleteCredentialsLink();
         }
 
         @Restricted(DoNotUse.class) // jelly
