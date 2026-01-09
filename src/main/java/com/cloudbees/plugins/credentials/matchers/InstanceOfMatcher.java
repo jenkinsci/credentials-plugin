@@ -34,7 +34,7 @@ import java.util.Objects;
  *
  * @since 1.5
  */
-public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
+public class InstanceOfMatcher implements CredentialsMatcher {
     /**
      * Standardize serialization.
      *
@@ -62,14 +62,6 @@ public class InstanceOfMatcher implements CredentialsMatcher, CredentialsMatcher
      */
     public boolean matches(@NonNull Credentials item) {
         return clazz.isInstance(item);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String describe() {
-        return String.format("(instanceof %s)", clazz.getName());
     }
 
     /**

@@ -1361,10 +1361,8 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
      * specified {@link DomainRequirement}s.
      * <strong>NOTE:</strong> implementations are recommended to override this method if the actual secret information
      * is being stored external from Jenkins and the non-secret information can be accessed with lesser traceability
-     * requirements. The default implementation just uses {@link #getCredentialsInItem(Class, Item, Authentication, List)}
-     * to build the {@link ListBoxModel}. Handling the {@link CredentialsMatcher} may require standing up a proxy
-     * instance to apply the matcher against if {@link CredentialsMatchers#describe(CredentialsMatcher)} returns
-     * {@code null}
+     * requirements. The default implementation just uses {@link #getCredentialsInItemGroup}
+     * to build the {@link ListBoxModel}.
      *
      * @param <C>                the credentials type.
      * @param type               the type of credentials to return.
