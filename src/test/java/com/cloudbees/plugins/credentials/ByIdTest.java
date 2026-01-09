@@ -26,14 +26,13 @@ package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.ExtensionList;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
-import hudson.security.ACL;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.security.core.Authentication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -49,272 +48,129 @@ import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 /**
  * Exercises {@link CredentialsProvider} searches for {@link IdCredentials}.
  */
+@SuppressWarnings("rawtypes") // historical mistake with ItemGroup
 @WithJenkins
 final class ByIdTest {
 
-    @Test void providerOrder(JenkinsRule r) {
-        CredentialsProvider.all().forEach(System.out::println);
-        // Verify that our test providers are at the end of the list (they start with "ZZZ")
-        assertThat(CredentialsProvider.all().get(CredentialsProvider.all().size() - 1), instanceOf(LazyProvider3.class));
-        assertThat(CredentialsProvider.all().get(CredentialsProvider.all().size() - 2), instanceOf(LazyProvider2.class));
+    private LazyProvider2 lp2;
+    private LazyProvider3 lp3;
+
+    private void setUp() throws Exception {
+        // Verify that our test providers are at the end of the list (they start with "ZZZ"); will be after folder, system, mock, user
         assertThat(CredentialsProvider.all().get(CredentialsProvider.all().size() - 3), instanceOf(LazyProvider1.class));
+        assertThat(CredentialsProvider.all().get(CredentialsProvider.all().size() - 2), instanceOf(LazyProvider2.class));
+        assertThat(CredentialsProvider.all().get(CredentialsProvider.all().size() - 1), instanceOf(LazyProvider3.class));
+
+        lp2 = ExtensionList.lookupSingleton(LazyProvider2.class);
+        lp3 = ExtensionList.lookupSingleton(LazyProvider3.class);
+
+        // Add credentials to lazy providers
+        lp2.credentials.add(new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "lazy2-cred", null, "user", "pass"));
+        lp3.credentials.add(new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "lazy3-cred", null, "user", "pass"));
+
+        // Reset counters
+        lp2.getByIdCalls = 0;
+        lp2.listCalls = 0;
+        lp3.listCalls = 0;
     }
 
     @Test void lazyEvaluationWithEarlyMatch(JenkinsRule r) throws Exception {
+        setUp();
+
         // Add a credential to the system store (early provider)
-        SystemCredentialsProvider.getInstance().getCredentials().add(
-                new DummyIdCredentials(CredentialsScope.GLOBAL, "early-cred", "Early Credential")
-        );
+        SystemCredentialsProvider.getInstance().getCredentials().add(new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "early-cred", null, "user", "pass"));
         SystemCredentialsProvider.getInstance().save();
 
-        // Add credentials to lazy providers
-        LazyProvider2.addCredential(new DummyIdCredentials(CredentialsScope.GLOBAL, "lazy2-cred", "Lazy2 Credential"));
-        LazyProvider3.addCredential(new DummyIdCredentials(CredentialsScope.GLOBAL, "lazy3-cred", "Lazy3 Credential"));
-
-        // Reset counters
-        LazyProvider2.resetCounters();
-        LazyProvider3.resetCounters();
-
         // Search for early credential
-        IdCredentials result = CredentialsProvider.findCredentialByIdInItemGroup(
-                "early-cred",
-                IdCredentials.class,
-                (ItemGroup) null,
-                ACL.SYSTEM2,
-                Collections.emptyList()
-        );
+        var result = CredentialsProvider.findCredentialByIdInItemGroup("early-cred", IdCredentials.class, null, null, null);
 
         assertThat(result, notNullValue());
         assertThat(result.getId(), is("early-cred"));
 
         // Verify lazy providers were not consulted
-        assertEquals(0, LazyProvider2.getByIdCalls.get(), "LazyProvider2.getCredentialById should not be called");
-        assertEquals(0, LazyProvider2.listCalls.get(), "LazyProvider2.getCredentialsInItemGroup should not be called");
-        assertEquals(0, LazyProvider3.listCalls.get(), "LazyProvider3.getCredentialsInItemGroup should not be called");
+        assertEquals(0, lp2.getByIdCalls, "LazyProvider2.getCredentialById should not be called");
+        assertEquals(0, lp2.listCalls, "LazyProvider2.getCredentialsInItemGroup should not be called");
+        assertEquals(0, lp3.listCalls, "LazyProvider3.getCredentialsInItemGroup should not be called");
     }
 
-    @Test void lazyEvaluationWithOptimizedProvider(JenkinsRule r) {
-        // Add credentials to lazy providers
-        LazyProvider2.addCredential(new DummyIdCredentials(CredentialsScope.GLOBAL, "lazy2-cred", "Lazy2 Credential"));
-        LazyProvider3.addCredential(new DummyIdCredentials(CredentialsScope.GLOBAL, "lazy3-cred", "Lazy3 Credential"));
-
-        // Reset counters
-        LazyProvider2.resetCounters();
-        LazyProvider3.resetCounters();
-
-        // Search for lazy2 credential
-        IdCredentials result = CredentialsProvider.findCredentialByIdInItemGroup(
-                "lazy2-cred",
-                IdCredentials.class,
-                (ItemGroup) null,
-                ACL.SYSTEM2,
-                Collections.emptyList()
-        );
-
+    @Test void lazyEvaluationWithOptimizedProvider(JenkinsRule r) throws Exception {
+        setUp();
+        var result = CredentialsProvider.findCredentialByIdInItemGroup("lazy2-cred", IdCredentials.class, null, null, null);
         assertThat(result, notNullValue());
         assertThat(result.getId(), is("lazy2-cred"));
-
-        // Verify LazyProvider2's optimized method was called
-        assertEquals(1, LazyProvider2.getByIdCalls.get(), "LazyProvider2.getCredentialById should be called once");
-        // Verify LazyProvider2's list method was NOT called (optimized path)
-        assertEquals(0, LazyProvider2.listCalls.get(), "LazyProvider2.getCredentialsInItemGroup should not be called");
-        // Verify LazyProvider3 was not consulted at all
-        assertEquals(0, LazyProvider3.listCalls.get(), "LazyProvider3.getCredentialsInItemGroup should not be called");
+        assertEquals(1, lp2.getByIdCalls, "LazyProvider2.getCredentialById should be called once");
+        assertEquals(0, lp2.listCalls, "LazyProvider2.getCredentialsInItemGroup should not be called");
+        assertEquals(0, lp3.listCalls, "LazyProvider3.getCredentialsInItemGroup should not be called");
     }
 
-    @Test void lazyEvaluationWithUnoptimizedProvider(JenkinsRule r) {
-        // Add credentials to lazy providers
-        LazyProvider2.addCredential(new DummyIdCredentials(CredentialsScope.GLOBAL, "lazy2-cred", "Lazy2 Credential"));
-        LazyProvider3.addCredential(new DummyIdCredentials(CredentialsScope.GLOBAL, "lazy3-cred", "Lazy3 Credential"));
-
-        // Reset counters
-        LazyProvider2.resetCounters();
-        LazyProvider3.resetCounters();
-
-        // Search for lazy3 credential
-        IdCredentials result = CredentialsProvider.findCredentialByIdInItemGroup(
-                "lazy3-cred",
-                IdCredentials.class,
-                (ItemGroup) null,
-                ACL.SYSTEM2,
-                Collections.emptyList()
-        );
-
+    @Test void lazyEvaluationWithUnoptimizedProvider(JenkinsRule r) throws Exception {
+        setUp();
+        var result = CredentialsProvider.findCredentialByIdInItemGroup("lazy3-cred", IdCredentials.class, null, null, null);
         assertThat(result, notNullValue());
         assertThat(result.getId(), is("lazy3-cred"));
-
-        // Verify LazyProvider2 was consulted but didn't find it
-        assertEquals(1, LazyProvider2.getByIdCalls.get(), "LazyProvider2.getCredentialById should be called once");
-        assertEquals(0, LazyProvider2.listCalls.get(), "LazyProvider2.getCredentialsInItemGroup should not be called (uses optimized path)");
-        // Verify LazyProvider3's list method WAS called (unoptimized, uses default implementation)
-        assertEquals(1, LazyProvider3.listCalls.get(), "LazyProvider3.getCredentialsInItemGroup should be called once");
+        assertEquals(1, lp2.getByIdCalls, "LazyProvider2.getCredentialById should be called once");
+        assertEquals(0, lp2.listCalls, "LazyProvider2.getCredentialsInItemGroup should not be called (uses optimized path)");
+        assertEquals(1, lp3.listCalls, "LazyProvider3.getCredentialsInItemGroup should be called once");
     }
 
-    @Test void lazyEvaluationWithNonexistentCredential(JenkinsRule r) {
-        // Add credentials to lazy providers
-        LazyProvider2.addCredential(new DummyIdCredentials(CredentialsScope.GLOBAL, "lazy2-cred", "Lazy2 Credential"));
-        LazyProvider3.addCredential(new DummyIdCredentials(CredentialsScope.GLOBAL, "lazy3-cred", "Lazy3 Credential"));
-
-        // Reset counters
-        LazyProvider2.resetCounters();
-        LazyProvider3.resetCounters();
-
-        // Search for nonexistent credential
-        IdCredentials result = CredentialsProvider.findCredentialByIdInItemGroup(
-                "nonexistent",
-                IdCredentials.class,
-                (ItemGroup) null,
-                ACL.SYSTEM2,
-                Collections.emptyList()
-        );
-
+    @Test void lazyEvaluationWithNonexistentCredential(JenkinsRule r) throws Exception {
+        setUp();
+        var result = CredentialsProvider.findCredentialByIdInItemGroup("nonexistent", IdCredentials.class, null, null, null);
         assertThat(result, nullValue());
-
-        // Verify both lazy providers were consulted
-        assertEquals(1, LazyProvider2.getByIdCalls.get(), "LazyProvider2.getCredentialById should be called once");
-        assertEquals(0, LazyProvider2.listCalls.get(), "LazyProvider2.getCredentialsInItemGroup should not be called (uses optimized path)");
-        assertEquals(1, LazyProvider3.listCalls.get(), "LazyProvider3.getCredentialsInItemGroup should be called once");
+        assertEquals(1, lp2.getByIdCalls, "LazyProvider2.getCredentialById should be called once");
+        assertEquals(0, lp2.listCalls, "LazyProvider2.getCredentialsInItemGroup should not be called (uses optimized path)");
+        assertEquals(1, lp3.listCalls, "LazyProvider3.getCredentialsInItemGroup should be called once");
     }
 
     @TestExtension public static final class LazyProvider1 extends CredentialsProvider {
-
         // @TestExtension lacks ordinal, and CredentialsProvider.getDisplayName uses Class.simpleName,
         // so to sort CredentialsProvider.all we must use a special nested class name or override this:
         @Override public String getDisplayName() {
             return "ZZZ Lazy Provider #1";
         }
-
-        @SuppressWarnings("rawtypes") // historical mistake
-        @Override
-        @NonNull
-        public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type,
-                                                                         @NonNull ItemGroup itemGroup,
-                                                                         @NonNull Authentication authentication,
-                                                                         @NonNull List<DomainRequirement> domainRequirements) {
-            return Collections.emptyList();
+        @Override public <C extends Credentials> List<C> getCredentialsInItemGroup(Class<C> type, ItemGroup itemGroup, Authentication authentication, List<DomainRequirement> domainRequirements) {
+            return List.of();
         }
-
     }
 
-    /**
-     * A lazy provider that implements the optimized getCredentialById methods.
-     */
     @TestExtension public static final class LazyProvider2 extends CredentialsProvider {
-
-        private static final List<IdCredentials> credentials = new java.util.concurrent.CopyOnWriteArrayList<>();
-        static final AtomicInteger getByIdCalls = new AtomicInteger(0);
-        static final AtomicInteger listCalls = new AtomicInteger(0);
-
-        static void addCredential(IdCredentials credential) {
-            credentials.add(credential);
-        }
-
-        static void resetCounters() {
-            getByIdCalls.set(0);
-            listCalls.set(0);
-        }
-
+        final List<IdCredentials> credentials = new ArrayList<>();
+        int getByIdCalls = 0;
+        int listCalls = 0;
         @Override public String getDisplayName() {
             return "ZZZ Lazy Provider #2 (Optimized)";
         }
-
-        @Override
-        @CheckForNull
-        public <C extends IdCredentials> C getCredentialByIdInItemGroup(@NonNull String id,
-                                                                        @NonNull Class<C> type,
-                                                                        @NonNull ItemGroup<?> itemGroup,
-                                                                        @NonNull Authentication authentication,
-                                                                        @NonNull List<DomainRequirement> domainRequirements) {
-            getByIdCalls.incrementAndGet();
-            for (IdCredentials cred : credentials) {
-                if (cred.getId().equals(id) && type.isInstance(cred)) {
-                    return type.cast(cred);
-                }
-            }
-            return null;
+        @Override public <C extends IdCredentials> C getCredentialByIdInItemGroup(String id, Class<C> type, ItemGroup<?> itemGroup, Authentication authentication, List<DomainRequirement> domainRequirements) {
+            getByIdCalls++;
+            return find(id, type);
         }
-
-        @Override
-        @CheckForNull
-        public <C extends IdCredentials> C getCredentialByIdInItem(@NonNull String id,
-                                                                   @NonNull Class<C> type,
-                                                                   @NonNull Item item,
-                                                                   @NonNull Authentication authentication,
-                                                                   @NonNull List<DomainRequirement> domainRequirements) {
-            getByIdCalls.incrementAndGet();
-            for (IdCredentials cred : credentials) {
-                if (cred.getId().equals(id) && type.isInstance(cred)) {
-                    return type.cast(cred);
-                }
-            }
-            return null;
+        @Override public <C extends IdCredentials> C getCredentialByIdInItem(String id, Class<C> type, Item item, Authentication authentication, List<DomainRequirement> domainRequirements) {
+            getByIdCalls++;
+            return find(id, type);
         }
-
-        @SuppressWarnings("rawtypes") // historical mistake
-        @Override
-        @NonNull
-        public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type,
-                                                                         @NonNull ItemGroup itemGroup,
-                                                                         @NonNull Authentication authentication,
-                                                                         @NonNull List<DomainRequirement> domainRequirements) {
-            listCalls.incrementAndGet();
-            List<C> result = new java.util.ArrayList<>();
-            for (IdCredentials cred : credentials) {
-                if (type.isInstance(cred)) {
-                    result.add(type.cast(cred));
-                }
-            }
-            return result;
+        private <C extends IdCredentials> @CheckForNull C find(String id, Class<C> type) {
+            return type.cast(credentials.stream().filter(cred -> cred.getId().equals(id) && type.isInstance(cred)).findAny().orElse(null));
+        }
+        @Override public <C extends Credentials> List<C> getCredentialsInItemGroup(Class<C> type, ItemGroup itemGroup, Authentication authentication, List<DomainRequirement> domainRequirements) {
+            listCalls++;
+            return filter(type, credentials);
         }
     }
 
-    /**
-     * A lazy provider that does NOT implement optimized getCredentialById methods,
-     * relying on default implementations.
-     */
     @TestExtension public static final class LazyProvider3 extends CredentialsProvider {
-
-        private static final List<IdCredentials> credentials = new java.util.concurrent.CopyOnWriteArrayList<>();
-        static final AtomicInteger listCalls = new AtomicInteger(0);
-
-        static void addCredential(IdCredentials credential) {
-            credentials.add(credential);
-        }
-
-        static void resetCounters() {
-            listCalls.set(0);
-        }
-
+        final List<IdCredentials> credentials = new ArrayList<>();
+        int listCalls = 0;
         @Override public String getDisplayName() {
             return "ZZZ Lazy Provider #3 (Unoptimized)";
         }
-
-        @SuppressWarnings("rawtypes") // historical mistake
-        @Override
-        @NonNull
-        public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type,
-                                                                         @NonNull ItemGroup itemGroup,
-                                                                         @NonNull Authentication authentication,
-                                                                         @NonNull List<DomainRequirement> domainRequirements) {
-            listCalls.incrementAndGet();
-            List<C> result = new java.util.ArrayList<>();
-            for (IdCredentials cred : credentials) {
-                if (type.isInstance(cred)) {
-                    result.add(type.cast(cred));
-                }
-            }
-            return result;
+        @Override public <C extends Credentials> List<C> getCredentialsInItemGroup(Class<C> type, ItemGroup itemGroup, Authentication authentication, List<DomainRequirement> domainRequirements) {
+            listCalls++;
+            return filter(type, credentials);
         }
     }
 
-    /**
-     * Simple test credential with ID.
-     */
-    private static class DummyIdCredentials extends com.cloudbees.plugins.credentials.impl.BaseStandardCredentials {
-
-        DummyIdCredentials(CredentialsScope scope, String id, String description) {
-            super(scope, id, description);
-        }
+    private static <C extends Credentials> List<C> filter(Class<C> type, List<IdCredentials> credentials) {
+        return credentials.stream().filter(type::isInstance).map(type::cast).toList();
     }
 
 }
