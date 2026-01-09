@@ -1110,8 +1110,6 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         return null;
     }
 
-    // TODO static + abstract variants taking credentialsId but Item or ItemGroup rather than Run
-
     /**
      * Returns the list of all {@link CredentialsProvider}.
      *
