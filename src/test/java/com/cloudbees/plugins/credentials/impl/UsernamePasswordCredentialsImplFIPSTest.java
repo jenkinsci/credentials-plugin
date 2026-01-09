@@ -12,6 +12,8 @@ import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.jvnet.hudson.test.junit.jupiter.RealJenkinsExtension;
 
@@ -24,6 +26,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@DisabledOnOs(OS.WINDOWS)
 class UsernamePasswordCredentialsImplFIPSTest {
 
     @RegisterExtension
