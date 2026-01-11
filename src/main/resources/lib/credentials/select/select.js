@@ -48,6 +48,10 @@ function showBackButtonInDialog() {
  */
 function recreateScripts(form) {
     const scripts = form.getElementsByTagName("script");
+    if (scripts.length === 0) {
+        Behaviour.applySubtree(form, true);
+        return;
+    }
     for (let i = 0; i < scripts.length; i++) {
         const script = document.createElement("script");
         if (scripts[i].text) {
@@ -59,6 +63,17 @@ function recreateScripts(form) {
                 }
             }
         }
+
+        // only attach the load listener to the last script to avoid multiple calls to Behaviour.applySubtree
+        if (i === (scripts.length - 1)) {
+            script.addEventListener("load", () => {
+                Behaviour.applySubtree(form, true);
+                if (form.method.toLowerCase() !== 'get') {
+                    form.onsubmit = null; // clear any existing handler
+                }
+            })
+        }
+
         scripts[i].parentNode.replaceChild(script, scripts[i]);
     }
 }
@@ -131,13 +146,6 @@ function navigateToNextPage(url, params) {
 
                 dialog.appendChild(form)
                 recreateScripts(form)
-
-                setTimeout(() => {
-                    Behaviour.applySubtree(dialog, false);
-                    if (form.method.toLowerCase() !== 'get') {
-                        form.onsubmit = null; // clear any existing handler
-                    }
-                }, 20)
             })
         }
     })
