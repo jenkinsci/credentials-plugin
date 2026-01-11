@@ -34,7 +34,7 @@ import java.util.Objects;
  *
  * @since 1.5
  */
-public class NotMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
+public class NotMatcher implements CredentialsMatcher {
     /**
      * Standardize serialization.
      *
@@ -62,15 +62,6 @@ public class NotMatcher implements CredentialsMatcher, CredentialsMatcher.CQL {
      */
     public boolean matches(@NonNull Credentials item) {
         return !matcher.matches(item);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String describe() {
-        String description = matcher instanceof CQL ? ((CQL) matcher).describe() : null;
-        return description == null ? null : description.startsWith("(") && description.endsWith(")") ? "!" + description : String.format("!(%s)", description);
     }
 
     /**
