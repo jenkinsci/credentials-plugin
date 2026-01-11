@@ -14,3 +14,7 @@ work/
 build/
 
 /nb-configuration.xml
+.vscode/
+COMPONENT_ANALYSIS.md
+domainhelp.md
+sync-with-upstream.sh
