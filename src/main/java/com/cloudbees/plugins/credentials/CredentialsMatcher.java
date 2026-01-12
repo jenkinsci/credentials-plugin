@@ -27,11 +27,20 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.Serializable;
 
 /**
- * Something that matches credentials. Best practice is to
+ * Something that matches credentials. Best practice is to use Java records,
+ * which automatically provide
+ * {@code equals()}, {@code hashCode()}, and {@code toString()} implementations.
+ * When using records, ensure
+ * the canonical constructor maintains binary compatibility with existing code
+ * that may instantiate matchers directly.
+ * <p>
+ * For legacy implementations using classes instead of records:
  * <ul>
  * <li>Implement {@link Object#toString()}</li>
- * <li>Implement {@link Object#equals(Object)} and {@link Object#hashCode()}</li>
- * <li>Define a {@code serialVersionUID} field to ensure consistent serialization</li>
+ * <li>Implement {@link Object#equals(Object)} and
+ * {@link Object#hashCode()}</li>
+ * <li>Define a {@code serialVersionUID} field to ensure consistent
+ * serialization</li>
  * </ul>
  *
  * @since 1.5
