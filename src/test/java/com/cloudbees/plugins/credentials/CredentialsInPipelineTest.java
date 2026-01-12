@@ -1,0 +1,664 @@
+/*
+ * The MIT License
+ *
+ * Copyright 2022 Jim Klimov.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+package com.cloudbees.plugins.credentials;
+
+import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
+import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import hudson.model.Descriptor;
+import hudson.model.Descriptor.FormException;
+import hudson.model.Label;
+import hudson.model.Node;
+import hudson.model.Result;
+import hudson.model.Slave;
+import hudson.slaves.RetentionStrategy;
+import org.apache.commons.io.FileUtils;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.jvnet.hudson.test.Issue;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+/**
+ * The CredentialsInPipelineTest suite prepares pipeline scripts to
+ * retrieve some previously saved credentials, on the controller,
+ * on a node provided by it, and on a worker agent in separate JVM.
+ * This picks known-working test cases and their setup from other
+ * test classes which address those credential types in more detail.
+ * Initially tied to JENKINS-70101 research.
+ */
+@WithJenkins
+public class CredentialsInPipelineTest {
+    /** For developers: set to `true` so that pipeline console logs show
+     * up in System.out (and/or System.err) of the plugin test run by
+     * <pre>
+     *   mvn test -Dtest="CredentialsInPipelineTest"
+     * </pre>
+     */
+    private boolean verbosePipelines = false;
+
+    private JenkinsRule r;
+
+    // Data for build agent setup
+    /** Build agent label expected by test cases for remote logic execution
+     * and data transfer */
+    private final static String agentLabelString = "cred-test-worker";
+    // Can this be reused for many test cases?
+    private Slave agent = null;
+    /** Tri-state Unknown/started/not usable */
+    private Boolean agentUsable = null;
+
+    // From CertificateCredentialImplTest
+    @TempDir
+    private File tmp;
+    private File p12;
+
+    @BeforeEach
+    void setup(JenkinsRule r) throws IOException {
+        this.r = r;
+        r.jenkins.setCrumbIssuer(null);
+    }
+
+    private Boolean isAvailableAgent() {
+        // Can be used to skip optional tests if we know we could not set up an agent
+        if (agent == null)
+            return false;
+        return agentUsable;
+    }
+
+    private Boolean setupAgent() throws OutOfMemoryError, Exception {
+        if (isAvailableAgent())
+            return true;
+
+        // Note we anticipate this might fail e.g. due to system resources;
+        // it should not block the whole test suite from running
+        // (we would just dynamically skip certain test cases)
+        try {
+            // Define a "Permanent Agent"
+            Label agentLabel = Label.get(agentLabelString);
+            agent = r.createOnlineSlave(agentLabel);
+            agent.setNodeDescription("Worker in another JVM, remoting used");
+            agent.setNumExecutors(1);
+            agent.setMode(Node.Mode.EXCLUSIVE);
+            ///agent.setRetentionStrategy(new RetentionStrategy.Always());
+
+/*
+            // Add node envvars
+            List<Entry> env = new ArrayList<Entry>();
+            env.add(new Entry("key1","value1"));
+            env.add(new Entry("key2","value2"));
+            EnvironmentVariablesNodeProperty envPro = new EnvironmentVariablesNodeProperty(env);
+            agent.getNodeProperties().add(envPro);
+*/
+
+            String agentLog = null;
+            agentUsable = false;
+            for (long i = 0; i < 5; i++) {
+                Thread.sleep(1000);
+                agentLog = agent.getComputer().getLog();
+                if (i == 2 && (agentLog == null || agentLog.isEmpty())) {
+                    // Give it a little time to autostart, then kick it up if needed:
+                    agent.getComputer().connect(true); // "always" should have started it; avoid duplicate runs
+                }
+                if (agentLog != null && agentLog.contains("Agent successfully connected and online")) {
+                    agentUsable = true;
+                    break;
+                }
+            }
+            System.out.println("Spawned build agent " +
+                    "usability: " + agentUsable.toString() +
+                    "; connection log:" + (agentLog == null ? " <null>" : "\n" + agentLog));
+        } catch (Descriptor.FormException | NullPointerException e) {
+            agentUsable = false;
+        }
+
+        return agentUsable;
+    }
+
+    private String getLogAsStringPlaintext(WorkflowRun f) throws java.io.IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        f.getLogText().writeLogTo(0, baos);
+        return baos.toString();
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Certificate credentials tests
+    /////////////////////////////////////////////////////////////////
+
+    // Partially from CertificateCredentialImplTest setup()
+    private void prepareUploadedKeystore() throws IOException {
+        prepareUploadedKeystore("myCert", "password");
+    }
+
+    private void prepareUploadedKeystore(String id, String password) throws IOException {
+        if (p12 == null) {
+            // Contains a private key + openvpn certs,
+            // as alias named "1" (according to keytool)
+            p12 = File.createTempFile("test-keystore-", ".p12", tmp);
+            FileUtils.copyURLToFile(CertificateCredentialsImplTest.class.getResource("test.p12"), p12);
+        }
+
+        SecretBytes uploadedKeystore = SecretBytes.fromBytes(Files.readAllBytes(p12.toPath()));
+        CertificateCredentialsImpl.UploadedKeyStoreSource storeSource = new CertificateCredentialsImpl.UploadedKeyStoreSource(uploadedKeystore);
+        CertificateCredentialsImpl credentials = new CertificateCredentialsImpl(null, id, null, password, storeSource);
+        SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+        SystemCredentialsProvider.getInstance().save();
+    }
+
+    private String cpsScriptCredentialTestImports() {
+        return  "import com.cloudbees.plugins.credentials.CredentialsMatchers;\n" +
+                "import com.cloudbees.plugins.credentials.CredentialsProvider;\n" +
+                "import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;\n" +
+                "import com.cloudbees.plugins.credentials.common.StandardCredentials;\n" +
+                "import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;\n" +
+                "import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;\n" +
+                "import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;\n" +
+                "import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl.KeyStoreSource;\n" +
+                "import hudson.security.ACL;\n" +
+                "import java.security.KeyStore;\n" +
+                "\n";
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Certificate credentials retrievability in (trusted) pipeline
+    /////////////////////////////////////////////////////////////////
+
+    private String cpsScriptCertCredentialTestScriptedPipeline(String runnerTag) {
+        return cpsScriptCertCredentialTestScriptedPipeline("myCert", "password", "1", runnerTag);
+    }
+
+    private String cpsScriptCertCredentialTestScriptedPipeline(String id, String password, String alias, String runnerTag) {
+        return  "def authentication='" + id + "';\n" +
+                "def password='" + password + "';\n" +
+                "def alias='" + alias + "';\n" +
+                "StandardCredentials credential = CredentialsMatchers.firstOrNull(\n" +
+                "    CredentialsProvider.lookupCredentials(\n" +
+                "        StandardCredentials.class,\n" +
+                "        Jenkins.instance, null, null),\n" +
+                "    CredentialsMatchers.withId(authentication));\n" +
+                "StandardCredentials credentialSnap = CredentialsProvider.snapshot(credential);\n\n" +
+                "\n" +
+                "echo \"CRED ON " + runnerTag + ":\"\n" +
+                "echo credential.toString()\n" +
+                "KeyStore keyStore = credential.getKeyStore();\n" +
+                "KeyStoreSource kss = ((CertificateCredentialsImpl) credential).getKeyStoreSource();\n" +
+                "echo \"KSS: \" + kss.toString()\n" +
+                "byte[] kssb = kss.getKeyStoreBytes();\n" +
+                "echo \"KSS bytes (len): \" + kssb.length\n" +
+                "String keyValue = keyStore.getKey(alias, password.toCharArray()).getEncoded().encodeBase64().toString()\n" +
+                "echo  \"-----BEGIN PRIVATE KEY-----\"\n" +
+                "echo keyValue\n" +
+                "echo \"-----END PRIVATE KEY-----\"\n" +
+                "\n" +
+                "echo \"CRED-SNAP ON " + runnerTag + ":\"\n" +
+                "echo credentialSnap.toString()\n" +
+                "KeyStore keyStoreSnap = credentialSnap.getKeyStore();\n" +
+                "KeyStoreSource kssSnap = ((CertificateCredentialsImpl) credentialSnap).getKeyStoreSource();\n" +
+                "echo \"KSS-SNAP: \" + kssSnap.toString()\n" +
+                "byte[] kssbSnap = kssSnap.getKeyStoreBytes();\n" +
+                "echo \"KSS-SNAP bytes (len): \" + kssbSnap.length\n" +
+                "String keyValueSnap = keyStoreSnap.getKey(alias, password.toCharArray()).getEncoded().encodeBase64().toString()\n" +
+                "echo  \"-----BEGIN PRIVATE KEY-----\"\n" +
+                "echo keyValueSnap\n" +
+                "echo \"-----END PRIVATE KEY-----\"\n" +
+                "\n";
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testCertKeyStoreReadableOnController() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running without a node{}
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCertCredentialTestScriptedPipeline("CONTROLLER BUILT-IN");
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("KSS-SNAP bytes", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testCertKeyStoreReadableOnNodeLocal() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a node{} (provided by the controller)
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                "node {\n" +
+                cpsScriptCertCredentialTestScriptedPipeline("CONTROLLER NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("KSS-SNAP bytes", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testCertKeyStoreReadableOnNodeRemote() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a remote node{} with separate JVM (check
+        // that remoting/snapshot work properly)
+        assumeTrue(this.setupAgent() == true, "This test needs a separate build agent");
+
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                "node(\"" + agentLabelString + "\") {\n" +
+                cpsScriptCertCredentialTestScriptedPipeline("REMOTE NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("KSS-SNAP bytes", run);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Certificate credentials retrievability by withCredentials() step
+    /////////////////////////////////////////////////////////////////
+
+    private String cpsScriptCertCredentialTestGetKeyValue() {
+        return  "@NonCPS\n" +
+                "def getKeyValue(def keystoreName, def keystoreFormat, def keyPassword, def alias) {\n" +
+                "    def p12file = new FileInputStream(keystoreName)\n" +
+                "    def keystore = KeyStore.getInstance(keystoreFormat)\n" +
+                "    keystore.load(p12file, keyPassword.toCharArray())\n" +
+                "    p12file.close()\n" +
+                "    def key = keystore.getKey(alias, keyPassword.toCharArray())\n" +
+                "    return key.getEncoded().encodeBase64().toString()\n" +
+                "}\n" +
+                "\n";
+    }
+
+    private String cpsScriptCertCredentialTestWithCredentials(String runnerTag) {
+        return cpsScriptCertCredentialTestWithCredentials("myCert", "password", "1", runnerTag);
+    }
+
+    private String cpsScriptCertCredentialTestWithCredentials(String id, String password, String alias, String runnerTag) {
+        // Note: does not pass a(ny) useful (env?.)myKeyAlias to closure
+        // https://issues.jenkins.io/browse/JENKINS-59331
+        // https://github.com/jenkinsci/credentials-binding-plugin/blob/fcd22059ac48b87d0924ef17d5b351a3b7a89a97/src/main/java/org/jenkinsci/plugins/credentialsbinding/impl/CertificateMultiBinding.java#L80-L81
+        return  "def authentication='" + id + "';\n" +
+                "def password='" + password + "';\n" +
+                "def alias='" + alias + "';\n" +
+                "echo \"WITH-CREDENTIALS ON " + runnerTag + ":\"\n" +
+                "withCredentials([certificate(\n" +
+                "        credentialsId: authentication,\n" +
+                "        keystoreVariable: 'keystoreName',\n" +
+                "        passwordVariable: 'keyPassword',\n" +
+                "        aliasVariable: 'myKeyAlias')\n" +
+                "]) {\n" +
+                "    echo \"Keystore bytes (len): \" + (new File(keystoreName)).length()\n" +
+                "    echo \"Got expected key pass? ${keyPassword == password}\"\n" +
+                "    def keystoreFormat = \"PKCS12\"\n" +
+                "    def keyValue = getKeyValue(keystoreName, keystoreFormat, keyPassword, (env?.myKeyAlias ? env?.myKeyAlias : alias))\n" +
+                "    println \"-----BEGIN PRIVATE KEY-----\"\n" +
+                "    println keyValue\n" +
+                "    println \"-----END PRIVATE KEY-----\"\n" +
+                "}\n" +
+                "\n";
+    }
+
+    @Test
+    @Disabled("Work with keystore file requires a node")
+    @Issue("JENKINS-70101")
+    void testCertWithCredentialsOnController() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running without a node{}
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCertCredentialTestGetKeyValue() +
+                cpsScriptCertCredentialTestWithCredentials("CONTROLLER BUILT-IN");
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("END PRIVATE KEY", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testCertWithCredentialsOnNodeLocal() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a node{} (provided by the controller)
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCertCredentialTestGetKeyValue() +
+                "node {\n" +
+                cpsScriptCertCredentialTestWithCredentials("CONTROLLER NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("END PRIVATE KEY", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testCertWithCredentialsOnNodeRemote() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a remote node{} with separate JVM (check
+        // that remoting/snapshot work properly)
+        assumeTrue(this.setupAgent() == true, "This test needs a separate build agent");
+
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCertCredentialTestGetKeyValue() +
+                "node(\"" + agentLabelString + "\") {\n" +
+                cpsScriptCertCredentialTestWithCredentials("REMOTE NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("END PRIVATE KEY", run);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Certificate credentials retrievability by http-request-plugin
+    /////////////////////////////////////////////////////////////////
+/*
+    private String cpsScriptCertCredentialTestHttpRequest(String runnerTag) {
+        return cpsScriptCredentialTestHttpRequest("myCert", runnerTag, true);
+    }
+
+    private String cpsScriptCredentialTestHttpRequest(String id, String runnerTag, Boolean withLocalCertLookup) {
+        // Note: we accept any outcome (for the plugin, unresolved host is HTTP-404)
+        // but it may not crash making use of the credential
+        // Note: cases withLocalCertLookup also need cpsScriptCredentialTestImports()
+        return  "def authentication='" + id + "';\n"
+                + "\n"
+                + "def msg\n"
+                + (withLocalCertLookup ? (
+                  "if (true) { // scoping\n"
+                + "  msg = \"Finding credential...\"\n"
+                + "  echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
+                + "  StandardCredentials credential = CredentialsMatchers.firstOrNull(\n"
+                + "    CredentialsProvider.lookupCredentials(\n"
+                + "        StandardCredentials.class,\n"
+                + "        Jenkins.instance, null, null),\n"
+                + "    CredentialsMatchers.withId(authentication));\n"
+                + "  msg = \"Getting keystore...\"\n"
+                + "  echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
+                + "  KeyStore keyStore = credential.getKeyStore();\n"
+                + "  msg = \"Getting keystore source...\"\n"
+                + "  echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
+                + "  KeyStoreSource kss = ((CertificateCredentialsImpl) credential).getKeyStoreSource();\n"
+                + "  msg = \"Getting keystore source bytes...\"\n"
+                + "  echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
+                + "  byte[] kssb = kss.getKeyStoreBytes();\n"
+                + "}\n" )
+                  : "" )
+                + "\n"
+                + "msg = \"Querying HTTPS with cert...\"\n"
+                + "echo msg;" + (verbosePipelines ? " System.out.println(msg); System.err.println(msg)" : "" ) + ";\n"
+                + "def response = httpRequest(url: 'https://github.xcom/api/v3',\n"
+                + "                 httpMode: 'GET',\n"
+                + "                 authentication: authentication,\n"
+                + "                 consoleLogResponseBody: true,\n"
+                + "                 contentType : 'APPLICATION_FORM',\n"
+                + "                 validResponseCodes: '100:599',\n"
+                + "                 quiet: false)\n"
+                + "println('HTTP Request Plugin Status: '+ response.getStatus())\n"
+                + "println('HTTP Request Plugin Response: '+ response.getContent())\n"
+                + "\n";
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testCertHttpRequestOnController() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running without a node{}
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                cpsScriptCertCredentialTestHttpRequest("CONTROLLER BUILT-IN");
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testCertHttpRequestOnNodeLocal() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a node{} (provided by the controller)
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                "node {\n" +
+                cpsScriptCertCredentialTestHttpRequest("CONTROLLER NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testCertHttpRequestOnNodeRemote() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a remote node{} with separate JVM (check
+        // that remoting/snapshot work properly)
+        assumeTrue(this.setupAgent() == true, "This test needs a separate build agent");
+
+        prepareUploadedKeystore();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptCredentialTestImports() +
+                "node(\"" + agentLabelString + "\") {\n" +
+                cpsScriptCertCredentialTestHttpRequest("REMOTE NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // User/pass credentials tests
+    /////////////////////////////////////////////////////////////////
+
+    // Partially from UsernamePasswordCredentialsImplTest setup()
+    private void prepareUsernamePassword() throws IOException, FormException {
+        UsernamePasswordCredentialsImpl credentials =
+                new UsernamePasswordCredentialsImpl(null,
+                        "abc123", "Bob’s laptop",
+                        "bob", "s3cr3t");
+        SystemCredentialsProvider.getInstance().getCredentials().add(credentials);
+        SystemCredentialsProvider.getInstance().save();
+    }
+
+    private String cpsScriptUsernamePasswordCredentialTestHttpRequest(String runnerTag) {
+        return cpsScriptCredentialTestHttpRequest("abc123", runnerTag, false);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testUsernamePasswordHttpRequestOnController() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running without a node{}
+        prepareUsernamePassword();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script = cpsScriptUsernamePasswordCredentialTestHttpRequest("CONTROLLER BUILT-IN");
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testUsernamePasswordHttpRequestOnNodeLocal() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a node{} (provided by the controller)
+        prepareUsernamePassword();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script =
+                "node {\n" +
+                cpsScriptUsernamePasswordCredentialTestHttpRequest("CONTROLLER NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+    @Test
+    @Issue("JENKINS-70101")
+    void testUsernamePasswordHttpRequestOnNodeRemote() throws Exception {
+        // Check that credentials are usable with pipeline script
+        // running on a remote node{} with separate JVM (check
+        // that remoting/snapshot work properly)
+        assumeTrue(this.setupAgent() == true, "This test needs a separate build agent");
+
+        prepareUsernamePassword();
+
+        // Configure the build to use the credential
+        WorkflowJob proj = r.jenkins.createProject(WorkflowJob.class, "proj");
+        String script =
+                "node(\"" + agentLabelString + "\") {\n" +
+                cpsScriptUsernamePasswordCredentialTestHttpRequest("REMOTE NODE") +
+                "}\n";
+        proj.setDefinition(new CpsFlowDefinition(script, false));
+
+        // Execute the build
+        WorkflowRun run = proj.scheduleBuild2(0).get();
+        if (verbosePipelines) System.out.println(getLogAsStringPlaintext(run));
+
+        // Check expectations
+        r.assertBuildStatus(Result.SUCCESS, run);
+        // Got to the end?
+        r.assertLogContains("HTTP Request Plugin Response: ", run);
+    }
+
+*/
+}
