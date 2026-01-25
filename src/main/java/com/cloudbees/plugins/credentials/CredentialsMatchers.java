@@ -108,6 +108,8 @@ public class CredentialsMatchers {
      * @param id the {@link com.cloudbees.plugins.credentials.common.IdCredentials#getId()} to match.
      * @return a matcher that matches {@link com.cloudbees.plugins.credentials.common.IdCredentials} with the
      * supplied {@link com.cloudbees.plugins.credentials.common.IdCredentials#getId()}
+     * @see CredentialsProvider#findCredentialByIdInItem
+     * @see CredentialsProvider#findCredentialByIdInItemGroup
      */
     @NonNull
     public static CredentialsMatcher withId(@NonNull String id) {
