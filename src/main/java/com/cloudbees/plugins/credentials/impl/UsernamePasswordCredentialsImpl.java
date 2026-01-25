@@ -136,8 +136,7 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
 
         @Override
         public String getDescription() {
-            // TODO - this is ChatGPT content
-            return "Use for basic auth (username and password) to services like Git, APIs, or registries.";
+            return Messages.UsernamePasswordCredentialsImpl_description();
         }
 
         /**

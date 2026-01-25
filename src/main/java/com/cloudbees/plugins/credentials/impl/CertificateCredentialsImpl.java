@@ -234,8 +234,7 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
 
         @Override
         public String getDescription() {
-            // TODO - this is ChatGPT content
-            return "Upload a file and store it securely (for example, a key file, config file, or license file).";
+            return Messages.CertificateCredentialsImpl_description();
         }
 
         /**
