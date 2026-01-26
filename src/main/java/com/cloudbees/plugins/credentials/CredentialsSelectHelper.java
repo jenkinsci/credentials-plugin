@@ -135,7 +135,7 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
                 .map(CredentialsStore::getStoreAction)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(
-                        CredentialsStoreAction::getDisplayName,
+                        CredentialsStoreAction::getFullDisplayName,
                         store -> new ArrayList<>(store.getDomains().values()),
                         (left, right) -> {
                             left.addAll(right);
