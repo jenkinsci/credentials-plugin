@@ -25,7 +25,8 @@ window.credentials = window.credentials || {'dialog': null, 'body': null};
 
 function showBackButtonInDialog() {
     const dialog = document.querySelector(".jenkins-dialog");
-    const title = dialog.querySelector(".jenkins-dialog__title");
+    // Remove the latter selector after baseline is higher than https://github.com/jenkinsci/jenkins/pull/26033
+    const title = dialog.querySelector(".jenkins-dialog__title > span") || dialog.querySelector(".jenkins-dialog__title");
     const backButton = document.createElement("button");
     backButton.classList.add("jenkins-button");
     backButton.classList.add("jenkins-dialog__back-button");
@@ -112,7 +113,8 @@ function navigateToNextPage(url, params) {
 
                 const form = newDialog.querySelector("form");
 
-                const title = document.querySelector(".jenkins-dialog .jenkins-dialog__title");
+                // Remove the latter selector after baseline is higher than https://github.com/jenkinsci/jenkins/pull/26033
+                const title = document.querySelector(".jenkins-dialog .jenkins-dialog__title > span") || document.querySelector(".jenkins-dialog .jenkins-dialog__title");
                 title.textContent = rsp.headers.get("X-Wizard-Title");
 
                 if (form.method.toLowerCase() === 'get') {
@@ -163,7 +165,7 @@ window.dialog2 = {
 };
 
 window.credentials.add = function (initialUrl) {
-    window.dialog2.wizard(initialUrl, { title: '', minWidth: 'min(550px, 100vw)' });
+    window.dialog2.wizard(initialUrl, { title: '', minWidth: 'min(550px, 100vw)', preventCloseOnOutsideClick: true });
     return false;
 };
 
