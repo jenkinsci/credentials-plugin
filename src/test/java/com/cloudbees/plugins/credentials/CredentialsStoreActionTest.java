@@ -294,6 +294,74 @@ class CredentialsStoreActionTest {
         assertThat(con.getResponseCode(), is(HttpServletResponse.SC_CONFLICT));
     }
 
+    @Test
+    void moveCredential() throws Exception {
+        JenkinsRule.WebClient wc = j.createWebClient();
+        j.getInstance().setCrumbIssuer(null);
+
+        assertThat(systemStore.getDomainByName("smokes"), nullValue());
+
+        // create domain
+        HttpURLConnection con =
+                postCreateByXml(systemStore, """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>smokes</name>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""");
+        assertThat(con.getResponseCode(), is(200));
+
+        // create domain
+        con = postCreateByXml(systemStore, """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>domain with spaces, ", ), characters</name>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""");
+        assertThat(con.getResponseCode(), is(200));
+
+        // create credential
+        con = postCreateByXml(systemStore, "smokes",
+                """
+                        <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
+                          <scope>GLOBAL</scope>
+                          <id>smokey-id</id>
+                          <description>created from xml</description>
+                          <username>example-com-deployer</username>
+                          <password>super-secret</password>
+                        </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>""");
+        assertThat(con.getResponseCode(), is(200));
+
+        // read domain
+        WebResponse response = wc.goTo("credentials/store/system/domain/smokes/config.xml", "application/xml").getWebResponse();
+        assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo(
+                """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>smokes</name>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""").ignoreWhitespace().ignoreComments());
+
+        // move credential
+        con = postMove(systemStore, "smokes", "smokey-id", "domain with spaces, \", ), characters");
+        assertThat(con.getResponseCode(), is(200));
+
+        // read domain
+        response = wc.goTo("credentials/store/system/domain/domain with spaces, \", ), characters/config.xml", "application/xml").getWebResponse();
+        assertThat(response.getContentAsString(), CompareMatcher.isIdenticalTo(
+                """
+                        <com.cloudbees.plugins.credentials.domains.Domain>
+                          <name>domain with spaces, ", ), characters</name>
+                        </com.cloudbees.plugins.credentials.domains.Domain>""").ignoreWhitespace().ignoreComments());
+    }
+
+    private HttpURLConnection postMove(CredentialsStore store, String domainName, String credentialsId, String targetDomain)
+            throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
+                        .rawEncode(StringUtils.defaultIfBlank(domainName, "_"))+ "/credential/" + Util
+                        .rawEncode(credentialsId) + "/doMove").openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        con.setDoOutput(true);
+        con.getOutputStream().write(Util.rawEncode("destination=system/" + Util.rawEncode(targetDomain) + "&Submit").getBytes(StandardCharsets.UTF_8));
+        return con;
+    }
+
     private HttpURLConnection postCreateByXml(CredentialsStore store, String xml)
             throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
