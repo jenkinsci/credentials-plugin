@@ -29,6 +29,7 @@ function showBackButtonInDialog() {
     const backButton = document.createElement("button");
     backButton.classList.add("jenkins-button");
     backButton.classList.add("jenkins-dialog__back-button");
+    backButton.ariaLabel = "Back";
     backButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M328 112L184 256l144 144"/></svg>`;
     title.style.transition = "var(--standard-transition)";
     title.style.marginLeft = "2.75rem";
