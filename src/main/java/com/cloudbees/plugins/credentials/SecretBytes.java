@@ -78,7 +78,7 @@ public class SecretBytes implements Serializable {
      */
     private static final Logger LOGGER = Logger.getLogger(SecretBytes.class.getName());
     /**
-     * The unencrypted bytes.
+     * The encrypted bytes.
      */
     @NonNull
     private final byte[] value;
