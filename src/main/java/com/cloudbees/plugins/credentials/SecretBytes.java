@@ -35,7 +35,9 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
+import hudson.remoting.Channel;
 import hudson.util.Secret;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
@@ -78,7 +80,8 @@ public class SecretBytes implements Serializable {
      */
     private static final Logger LOGGER = Logger.getLogger(SecretBytes.class.getName());
     /**
-     * The encrypted bytes.
+     * The (usually) encrypted bytes.
+     * Will be in plain text during remoting calls.
      */
     @NonNull
     private final byte[] value;
@@ -117,6 +120,14 @@ public class SecretBytes implements Serializable {
                 throw new Error(e); // impossible
             }
         }
+    }
+
+    /**
+     * Construct a SecretBytes with the specified value (that may or may not be encrypted) that is used raw without any transformation.
+     * @param value explicit value to use for the data.  No encryption or dencryption is performed on this value and it is used as is.
+     */
+    private SecretBytes(@NonNull byte[] value) {
+        this.value = value;
     }
 
     /**
@@ -341,6 +352,23 @@ public class SecretBytes implements Serializable {
      */
     public static String toString(SecretBytes s) {
         return s == null ? "" : s.toString();
+    }
+
+    protected Object writeReplace() throws ObjectStreamException {
+        if (Channel.current() == null) {
+            return this;
+        }
+        // we need plain text during remoting serialisation as the remote side will not have the confidential key
+        return new SecretBytes(this.getPlainData());
+    }
+
+    protected Object readResolve() throws ObjectStreamException {
+        if (Channel.current() == null) {
+            return this;
+        }
+        // re-encrypt the byte array after serialisation.
+        // The remote side may have its own confidential key (for Jenkins to Jenkins remoting, or will use the mock key for an agent)
+        return SecretBytes.fromRawBytes(value);
     }
 
     /**
