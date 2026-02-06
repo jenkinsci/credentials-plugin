@@ -88,6 +88,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.WebMethod;
@@ -572,6 +573,31 @@ public abstract class CredentialsStoreAction
         }
 
         /**
+         * Used to get the path for the action for new credentials.
+         * Stapler can't figure out the right URL from the dialog, so it needs injecting to it.
+         * @return
+         */
+        @SuppressWarnings("unused")
+        @Restricted(NoExternalUse.class)
+        public String getRelativePath() {
+            String relativePath = Stapler.getCurrentRequest2().getParameter("relativePath");
+            if (relativePath == null) {
+                return null;
+            }
+            // Validate the relative path as a security hardening
+            // There is no known attack vector here, but just in case as it does control what the form action is.
+            if (!relativePath.startsWith("/")) {
+                return null;
+            }
+            // Prevent protocol-relative URLs
+            if (relativePath.startsWith("//")) {
+                return null;
+            }
+
+            return relativePath;
+        }
+
+        /**
          * Expose the parent {@link CredentialsStoreAction}.
          *
          * @return the parent {@link CredentialsStoreAction}.
@@ -730,9 +756,12 @@ public abstract class CredentialsStoreAction
         public HttpResponse doCreateCredentials(StaplerRequest2 req) throws ServletException, IOException {
             getStore().checkPermission(CREATE);
             String requestContentType = req.getContentType();
+
+            String acceptHeader = req.getHeader("Accept");
             if (requestContentType == null) {
                 throw new Failure("No Content-Type header set");
             }
+            boolean jsonResponse = acceptHeader != null && acceptHeader.contains("application/json");
 
             if (requestContentType.startsWith("application/xml") || requestContentType.startsWith("text/xml")) {
                 final StringWriter out = new StringWriter();
@@ -753,7 +782,20 @@ public abstract class CredentialsStoreAction
             } else {
                 JSONObject data = req.getSubmittedForm();
                 Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
-                getStore().addCredentials(domain, credentials);
+                boolean credentialsWereAdded = getStore().addCredentials(domain, credentials);
+
+                if (jsonResponse) {
+                    if (credentialsWereAdded) {
+                        return HttpResponses.okJSON(new JSONObject()
+                                .element("message", "Credentials created")
+                                .element("notificationType", "SUCCESS"));
+                    } else {
+                        return HttpResponses.okJSON(new JSONObject()
+                                .element("message", "Credentials with specified ID already exist")
+                                // TODO: or domain does not exist at all?
+                                .element("notificationType", "ERROR"));
+                    }
+                }
                 return HttpResponses.redirectTo("../../domain/" + getUrlName());
             }
         }

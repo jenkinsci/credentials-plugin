@@ -134,6 +134,11 @@ public class UsernamePasswordCredentialsImpl extends BaseStandardCredentials imp
             return Messages.UsernamePasswordCredentialsImpl_DisplayName();
         }
 
+        @Override
+        public String getDescription() {
+            return Messages.UsernamePasswordCredentialsImpl_description();
+        }
+
         /**
          * {@inheritDoc}
          */
