@@ -1216,7 +1216,7 @@ public abstract class CredentialsStoreAction
             for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
                 if (store.getContext() == context) {
                     for (Domain d : store.getDomains()) {
-                        if (domainName.equals("_") ? d.getName() == null : domainName.equals(d.getName())) {
+                        if (isDomainEqual(domainName, d)) {
                             destinationStore = store;
                             destinationDomain = d;
                             break;
@@ -1246,6 +1246,17 @@ public abstract class CredentialsStoreAction
                 }
             }
             return HttpResponses.redirectToDot();
+        }
+
+        private boolean isDomainEqual(String domainName, Domain d){
+            final var name = d.getName();
+            if (domainName.equals("_")) {
+                return name == null;
+            }
+            if (name == null){
+                return false;
+            }
+            return domainName.equals(Util.rawEncode(name));
         }
 
         /**
