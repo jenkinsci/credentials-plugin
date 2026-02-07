@@ -34,68 +34,21 @@ import java.util.Objects;
  *
  * @since 1.5
  */
-public class NotMatcher implements CredentialsMatcher {
-    /**
-     * Standardize serialization.
-     *
-     * @since 2.1.0
-     */
-    private static final long serialVersionUID = 3301127941013284754L;
-    /**
-     * The matchers to match.
-     */
-    @NonNull
-    private final CredentialsMatcher matcher;
-
+public record NotMatcher(@NonNull CredentialsMatcher matcher) implements CredentialsMatcher {
     /**
      * Creates a new instance.
      *
      * @param matcher the matcher to invert the match of.
      */
-    public NotMatcher(@NonNull CredentialsMatcher matcher) {
+    public NotMatcher {
         Objects.requireNonNull(matcher);
-        this.matcher = matcher;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean matches(@NonNull Credentials item) {
         return !matcher.matches(item);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return matcher.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        NotMatcher that = (NotMatcher) o;
-
-        return matcher.equals(that.matcher);
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "NotMatcher{" + "matcher=" + matcher +
-                '}';
     }
 }
