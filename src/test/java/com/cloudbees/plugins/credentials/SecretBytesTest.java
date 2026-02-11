@@ -23,13 +23,17 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import hudson.slaves.DumbSlave;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import jenkins.model.Jenkins;
+import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -163,4 +167,29 @@ class SecretBytesTest {
     }
 
 
+    @WithJenkins
+    @Test
+    public void serialisationOverRemoting(JenkinsRule r) throws Exception {
+        final byte[] data = new byte[] {0x01,0x02,0x03,0x04,0x05};
+        final SecretBytes localSecretBytes  = SecretBytes.fromRawBytes(data);
+        DumbSlave onlineSlave = r.createOnlineSlave();
+        onlineSlave.getChannel().call(new CheckSecretBytesCallable(localSecretBytes,data));
+    }
+
+    private static class CheckSecretBytesCallable extends MasterToSlaveCallable<Void, AssertionError> {
+
+        private SecretBytes sb;
+        private byte[] expectedUnencryptedValue;
+
+        CheckSecretBytesCallable(SecretBytes sb, byte[] expectedUnencryptedValue) {
+            this.sb = sb;
+            this.expectedUnencryptedValue = expectedUnencryptedValue;
+        }
+
+        @Override
+        public Void call() throws AssertionError {
+            assertThat(sb.getPlainData(), is(expectedUnencryptedValue));
+            return null;
+        }
+    }
 }

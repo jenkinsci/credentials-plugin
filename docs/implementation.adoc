@@ -696,6 +696,8 @@ Listing credentials operations are normally restricted to the population of cred
 Such requests are AJAX requests, so we have the option to block without affecting the rest of the Jenkins UI.
 
 Blocking for more than between 5 and 10 seconds, however, will cause user frustration, thus for this type of request we try to serve the response live and fall-back to the cache if the live response takes too long.
+
+Runtime lookups of credentials is normally limited to loading a specific credential by id, so consider overriding the methods which take an id argument.
 ====
 
 These different caching concerns are addresses at different points in the credentials API:
