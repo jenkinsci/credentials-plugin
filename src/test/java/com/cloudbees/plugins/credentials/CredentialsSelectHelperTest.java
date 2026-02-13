@@ -39,7 +39,7 @@ import org.jvnet.hudson.test.TestExtension;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 @WithJenkins
-class CredentialsSelectHelperTest {
+public class CredentialsSelectHelperTest {
 
     private JenkinsRule j;
 
@@ -223,7 +223,7 @@ class CredentialsSelectHelperTest {
         return form;
     }
 
-    private static boolean selectOption(DomNodeList<DomNode> allOptions, String optionName) {
+    public static boolean selectOption(DomNodeList<DomNode> allOptions, String optionName) {
         return allOptions.stream().anyMatch(domNode -> {
             if (domNode instanceof HtmlDivision option) {
                 if (option.getVisibleText().contains(optionName)) {
