@@ -68,6 +68,7 @@ import java.security.KeyStore;
 import java.util.Base64;
 import java.util.List;
 
+import static com.cloudbees.plugins.credentials.CredentialsSelectHelperTest.selectOption;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -308,24 +309,6 @@ public class CertificateCredentialsImplTest {
         KeyStore ks = certificate.getKeyStore();
         String displayName = StandardCertificateCredentials.NameProvider.getSubjectDN(certificate.getKeyStore());
         assertEquals(EXPECTED_DISPLAY_NAME_PEM, displayName);
-    }
-
-    private static boolean selectOption(DomNodeList<DomNode> allOptions, String optionDisplayName) {
-        return allOptions.stream().anyMatch(domNode -> {
-            if (domNode instanceof HtmlDivision option) {
-                if (option.getVisibleText().contains(optionDisplayName)) {
-                    try {
-                        HtmlRadioButtonInput item = domNode.querySelector(".jenkins-choice-list__item input");
-                        HtmlElementUtil.click(item);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    return true;
-                }
-            }
-
-            return false;
-        });
     }
 
     private String getValidP12_base64() throws Exception {

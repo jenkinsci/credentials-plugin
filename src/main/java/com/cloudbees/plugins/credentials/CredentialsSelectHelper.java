@@ -125,6 +125,12 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         return context instanceof ModelObject mo ? mo : CredentialsDescriptor.findContextInPath(ModelObject.class);
     }
 
+    @Restricted(NoExternalUse.class)
+    public boolean hasOneDomain(Map<String, List<CredentialsStoreAction.DomainWrapper>> storeActions) {
+        // Count the number of domain wrappers across all store actions. If there is only one, return true else false
+        return storeActions.values().stream().mapToInt(List::size).sum() == 1;
+    }
+
     /**
      * @return modifiable store actions for the context provided.
      */
