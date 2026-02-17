@@ -31,72 +31,26 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.Objects;
 
 /**
- * Matches credentials that are {@link IdCredentials} and have the specified {@link IdCredentials#getId()}.
+ * Matches credentials that are {@link IdCredentials} and have the specified
+ * {@link IdCredentials#getId()}.
  *
  * @since 1.5
  */
-public class IdMatcher implements CredentialsMatcher {
-    /**
-     * Standardize serialization.
-     *
-     * @since 2.1.0
-     */
-    private static final long serialVersionUID = -2400504567993839126L;
-    /**
-     * The id to match.
-     */
-    @NonNull
-    private final String id;
-
+public record IdMatcher(@NonNull String id) implements CredentialsMatcher {
     /**
      * Constructs a new instance.
      *
      * @param id the id to match.
      */
-    public IdMatcher(@NonNull String id) {
+    public IdMatcher {
         Objects.requireNonNull(id);
-        this.id = id;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean matches(@NonNull Credentials item) {
-        return item instanceof IdCredentials && id.equals(((IdCredentials) item).getId());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        IdMatcher idMatcher = (IdMatcher) o;
-
-        return id.equals(idMatcher.id);
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "IdMatcher{" + "id='" + id + '\'' +
-                '}';
+        return item instanceof IdCredentials idc && id.equals(idc.getId());
     }
 }

@@ -26,7 +26,6 @@ package com.cloudbees.plugins.credentials.matchers;
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.common.IdCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,22 +35,19 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Matches credentials that are {@link IdCredentials} and have the specified {@link CredentialsScope}(s).
+ * Matches credentials that have the specified {@link CredentialsScope}(s).
  *
  * @since 1.5
  */
-public class ScopeMatcher implements CredentialsMatcher {
+public record ScopeMatcher(@NonNull Set<CredentialsScope> scopes) implements CredentialsMatcher {
     /**
-     * Standardize serialization.
+     * Constructs a new instance.
      *
-     * @since 2.1.0
+     * @param scopes the scopes to match.
      */
-    private static final long serialVersionUID = -7786779595366393177L;
-    /**
-     * The scopes to match.
-     */
-    @NonNull
-    private final Set<CredentialsScope> scopes;
+    public ScopeMatcher {
+        Objects.requireNonNull(scopes);
+    }
 
     /**
      * Constructs a new instance.
@@ -59,8 +55,7 @@ public class ScopeMatcher implements CredentialsMatcher {
      * @param scope the scope to match.
      */
     public ScopeMatcher(@NonNull CredentialsScope scope) {
-        Objects.requireNonNull(scope);
-        this.scopes = Collections.singleton(scope);
+        this(Collections.singleton(Objects.requireNonNull(scope)));
     }
 
     /**
@@ -69,7 +64,7 @@ public class ScopeMatcher implements CredentialsMatcher {
      * @param scopes the scopes to match.
      */
     public ScopeMatcher(@NonNull CredentialsScope... scopes) {
-        this.scopes = EnumSet.copyOf(Arrays.asList(scopes));
+        this(EnumSet.copyOf(Arrays.asList(scopes)));
     }
 
     /**
@@ -78,48 +73,14 @@ public class ScopeMatcher implements CredentialsMatcher {
      * @param scopes the scopes to match.
      */
     public ScopeMatcher(@NonNull Collection<CredentialsScope> scopes) {
-        this.scopes = EnumSet.copyOf(scopes);
+        this(EnumSet.copyOf(scopes));
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean matches(@NonNull Credentials item) {
         return scopes.contains(item.getScope());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return scopes.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ScopeMatcher that = (ScopeMatcher) o;
-
-        return scopes.equals(that.scopes);
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "ScopeMatcher{" + "scopes=" + scopes +
-                '}';
     }
 }

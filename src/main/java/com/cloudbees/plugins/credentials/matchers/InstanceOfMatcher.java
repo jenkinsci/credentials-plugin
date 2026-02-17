@@ -34,68 +34,21 @@ import java.util.Objects;
  *
  * @since 1.5
  */
-public class InstanceOfMatcher implements CredentialsMatcher {
-    /**
-     * Standardize serialization.
-     *
-     * @since 2.1.0
-     */
-    private static final long serialVersionUID = 7841840317353807524L;
-    /**
-     * The type that the credentials must implement
-     */
-    @NonNull
-    private final Class clazz;
-
+public record InstanceOfMatcher(@NonNull Class clazz) implements CredentialsMatcher {
     /**
      * Constructs a new instance.
      *
      * @param clazz the type that credentials must implement.
      */
-    public InstanceOfMatcher(@NonNull Class clazz) {
+    public InstanceOfMatcher {
         Objects.requireNonNull(clazz);
-        this.clazz = clazz;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean matches(@NonNull Credentials item) {
         return clazz.isInstance(item);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return clazz.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        InstanceOfMatcher that = (InstanceOfMatcher) o;
-
-        return clazz.equals(that.clazz);
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "InstanceOfMatcher{" + "clazz=" + clazz +
-                '}';
     }
 }

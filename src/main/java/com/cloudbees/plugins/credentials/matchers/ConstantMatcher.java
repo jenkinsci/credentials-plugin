@@ -32,66 +32,12 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *
  * @since 1.5
  */
-public class ConstantMatcher implements CredentialsMatcher {
-    /**
-     * Standardize serialization.
-     *
-     * @since 2.1.0
-     */
-    private static final long serialVersionUID = 8270819649776908382L;
-    /**
-     * Whether to match.
-     */
-    private final boolean match;
-
-    /**
-     * Constructs a new instance.
-     *
-     * @param match whether to match or not.
-     */
-    public ConstantMatcher(boolean match) {
-        this.match = match;
-    }
-
+public record ConstantMatcher(boolean match) implements CredentialsMatcher {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean matches(@NonNull Credentials item) {
         return match;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return (match ? 1 : 0);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ConstantMatcher that = (ConstantMatcher) o;
-
-        return match == that.match;
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "ConstantMatcher{" + "match=" + match +
-                '}';
     }
 }
