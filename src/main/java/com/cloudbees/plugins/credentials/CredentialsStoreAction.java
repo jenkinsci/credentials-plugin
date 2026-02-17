@@ -586,7 +586,7 @@ public abstract class CredentialsStoreAction
             }
             // Validate the relative path as a security hardening
             // There is no known attack vector here, but just in case as it does control what the form action is.
-            if (!relativePath.startsWith("/")) {
+            if (!(relativePath.startsWith("/") || relativePath.startsWith("../"))) {
                 return null;
             }
             // Prevent protocol-relative URLs
