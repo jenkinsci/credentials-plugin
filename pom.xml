@@ -69,7 +69,7 @@
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
     <jenkins.baseline>2.528</jenkins.baseline>
-    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
+    <jenkins.version>2.544</jenkins.version>
     <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
     <hpi.compatibleSinceVersion>1372</hpi.compatibleSinceVersion>
   </properties>

@@ -29,10 +29,12 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.model.Action;
 import hudson.model.Api;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
+import hudson.model.ManagementLink;
 import hudson.model.ModelObject;
 import hudson.model.RootAction;
 import hudson.model.TopLevelItem;
@@ -58,6 +60,7 @@ import jenkins.model.Jenkins;
 import jenkins.model.TransientActionFactory;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
@@ -234,6 +237,11 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             }
         }
         return false;
+    }
+
+    @Restricted(DoNotUse.class) // for jelly
+    public ManagementLink getManagementLink() {
+        return ExtensionList.lookupSingleton(ManageCredentialsConfiguration.class);
     }
 
     /**
