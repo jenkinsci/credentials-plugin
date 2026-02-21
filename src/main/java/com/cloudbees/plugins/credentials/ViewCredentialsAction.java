@@ -515,6 +515,16 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         }
 
         /**
+         * Description is useful for select drop down in the name but not in the credentials list.
+         * So remove the description so we have more control over how its displayed.
+         */
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // jelly
+        public String getCleanedName() throws IOException {
+            return getName().replace("(" + getDescription() + ")", "");
+        }
+
+        /**
          * Returns the {@link StandardCredentials#getDescription()} of the {@link #credentials}.
          *
          * @return the {@link StandardCredentials#getDescription()} of the {@link #credentials}.
