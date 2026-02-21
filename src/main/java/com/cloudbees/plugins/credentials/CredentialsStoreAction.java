@@ -1079,6 +1079,16 @@ public abstract class CredentialsStoreAction
         }
 
         /**
+         * Description is useful for select drop down in the name but not in the credentials list.
+         * So remove the description so we have more control over how its displayed.
+         */
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // jelly
+        public String getCleanedName() throws IOException {
+            return getDisplayName().replace("(" + getDescription() + ")", "");
+        }
+
+        /**
          * Gets the display name of the {@link CredentialsDescriptor}.
          *
          * @return the display name of the {@link CredentialsDescriptor}.
