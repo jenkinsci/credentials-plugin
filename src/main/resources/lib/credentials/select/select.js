@@ -113,6 +113,13 @@ function navigateToNextPage(url, params) {
 
                 const form = newDialog.querySelector("form");
 
+                // Resolve relative form action against the fetch URL, not the current page URL,
+                // since the dialog HTML is inserted into the current page's DOM
+                const formAction = form.getAttribute("action");
+                if (formAction && !formAction.startsWith("/") && !formAction.startsWith("http")) {
+                    form.action = new URL(formAction, finalUrl).toString();
+                }
+
                 // Remove the latter selector after baseline is higher than https://github.com/jenkinsci/jenkins/pull/26033
                 const title = document.querySelector(".jenkins-dialog .jenkins-dialog__title > span") || document.querySelector(".jenkins-dialog .jenkins-dialog__title");
                 title.textContent = rsp.headers.get("X-Wizard-Title");
@@ -145,7 +152,7 @@ function navigateToNextPage(url, params) {
                     window.credentials.form = form
                     form.addEventListener("submit", (e) => {
                         e.preventDefault();
-                        window.credentials.addSubmit();
+                        window.credentials.dialogSubmit();
                     })
                 }
 
@@ -221,43 +228,78 @@ window.credentials.refreshAll = function () {
 window.credentials.addSubmit = function (_) {
     const form = window.credentials.form;
     const shouldRefill = document.getElementById('credentials-dialog-refill')
-    // temporarily attach to DOM (avoid https://github.com/HtmlUnit/htmlunit/issues/740)
-    document.body.appendChild(form);
-    buildFormTree(form);
-    ajaxFormSubmit(form);
-    form.remove();
+    window.credentials.submitDialog(form, "Credentials creation failed", function () {
+        // when used in `c:select` we don't want a page reload but to instead refill existing select boxes
+        if (shouldRefill && shouldRefill.dataset.refill === 'true') {
+            window.credentials.refreshAll();
+        } else {
+            window.location.reload();
+        }
+    });
+};
 
-    function ajaxFormSubmit(form) {
-        fetch(form.action, {
-            method: form.method,
-            headers: crumb.wrap({"Accept": "application/json"}),
-            body: new FormData(form)
-        })
-            .then(res => res.json())
-            .then(result => {
-                window.notificationBar.show(result.data.message, window.notificationBar[result.data.notificationType]);
-                const dialog = document.querySelector(".jenkins-dialog");
-                dialog.dispatchEvent(new Event("cancel"));
-                // when used in `c:select` we don't want a page reload but to instead refill existing select boxes
-                if (shouldRefill && shouldRefill.dataset.refill === 'true') {
-                    window.credentials.refreshAll();
-                } else {
-                    window.location.reload();
-                }
-            })
-            .catch((e) => {
-                // notificationBar.show(...) with logging ID could be handy here?
-                console.error("Could not add credentials:", e);
-                window.notificationBar.show("Credentials creation failed", window.notificationBar["ERROR"]);
-            })
+window.credentials.dialogSubmit = function () {
+    const form = window.credentials.form;
+    const shouldRefill = document.getElementById('credentials-dialog-refill');
+    if (shouldRefill) {
+        window.credentials.addSubmit();
+    } else {
+        window.credentials.submitDialog(form, "Operation failed", function () {
+            window.location.reload();
+        });
     }
 };
 
-Behaviour.specify("[data-type='credentials-add-store-item']", 'credentials-add-store-item', -99, function(e) {
-    e.addEventListener("click", function (event) {
-        window.credentials.add(event.target.closest('button').dataset.url);
-    });
-    e = null;
+window.credentials.submitDialog = function (form, errorMessage, onSuccess) {
+    // temporarily attach to DOM (avoid https://github.com/HtmlUnit/htmlunit/issues/740)
+    document.body.appendChild(form);
+    buildFormTree(form);
+
+    fetch(form.action, {
+        method: form.method,
+        headers: crumb.wrap({"Accept": "application/json"}),
+        body: new FormData(form)
+    })
+        .then(res => res.json())
+        .then(result => {
+            window.notificationBar.show(result.data.message, window.notificationBar[result.data.notificationType]);
+            const dialog = document.querySelector(".jenkins-dialog");
+            dialog.dispatchEvent(new Event("cancel"));
+            if (result.data.redirectUrl) {
+                window.location.href = result.data.redirectUrl;
+            } else if (onSuccess) {
+                onSuccess();
+            }
+        })
+        .catch((e) => {
+            console.error(errorMessage, e);
+            window.notificationBar.show(errorMessage, window.notificationBar["ERROR"]);
+        })
+        .finally(() => {
+            form.remove();
+        });
+};
+
+window.credentials.openDialog = function (url) {
+    window.dialog2.wizard(url, { title: '', minWidth: 'min(550px, 100vw)', preventCloseOnOutsideClick: true });
+    return false;
+};
+
+// Use event delegation for all credentials dialog triggers so that dynamically
+// created elements (e.g. dropdown menu items) are handled correctly
+document.addEventListener("click", function (event) {
+    const trigger = event.target.closest("[data-type^='credentials-']");
+    if (!trigger) {
+        return;
+    }
+    const type = trigger.dataset.type;
+    if (type === "credentials-add-store-item") {
+        window.credentials.add(trigger.dataset.url);
+    } else if (type === "credentials-move" || type === "credentials-update"
+            || type === "credentials-new-domain" || type === "credentials-configure-domain"
+            || type === "credentials-delete") {
+        window.credentials.openDialog(trigger.dataset.url);
+    }
 });
 Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
     e.addEventListener("click", window.credentials.add);
