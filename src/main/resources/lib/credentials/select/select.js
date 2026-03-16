@@ -255,7 +255,8 @@ window.credentials.submitDialog = function (form, errorMessage, onSuccess) {
     document.body.appendChild(form);
     buildFormTree(form);
 
-    fetch(form.action, {
+    const formAction = form.action;
+    fetch(formAction, {
         method: form.method,
         headers: crumb.wrap({"Accept": "application/json"}),
         body: new FormData(form)
@@ -266,7 +267,10 @@ window.credentials.submitDialog = function (form, errorMessage, onSuccess) {
             const dialog = document.querySelector(".jenkins-dialog");
             dialog.dispatchEvent(new Event("cancel"));
             if (result.data.redirectUrl) {
-                window.location.href = result.data.redirectUrl;
+                // Resolve relative redirectUrl against the form action URL
+                window.location.href = new URL(result.data.redirectUrl, formAction).toString();
+            } else if (window.credentials._pendingRedirect) {
+                window.location.href = window.credentials._pendingRedirect;
             } else if (onSuccess) {
                 onSuccess();
             }
@@ -276,6 +280,7 @@ window.credentials.submitDialog = function (form, errorMessage, onSuccess) {
             window.notificationBar.show(errorMessage, window.notificationBar["ERROR"]);
         })
         .finally(() => {
+            window.credentials._pendingRedirect = null;
             form.remove();
         });
 };
@@ -296,8 +301,8 @@ document.addEventListener("click", function (event) {
     if (type === "credentials-add-store-item") {
         window.credentials.add(trigger.dataset.url);
     } else if (type === "credentials-move" || type === "credentials-update"
-            || type === "credentials-new-domain" || type === "credentials-configure-domain"
-            || type === "credentials-delete") {
+            || type === "credentials-new-domain" || type === "credentials-configure-domain") {
+        window.credentials._pendingRedirect = trigger.dataset.redirect || null;
         window.credentials.openDialog(trigger.dataset.url);
     }
 });

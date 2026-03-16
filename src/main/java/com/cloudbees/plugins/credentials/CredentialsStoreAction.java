@@ -1243,8 +1243,7 @@ public abstract class CredentialsStoreAction
                 if (jsonResponse) {
                     return HttpResponses.okJSON(new JSONObject()
                             .element("message", "Credentials deleted")
-                            .element("notificationType", "SUCCESS")
-                            .element("redirectUrl", "../../"));
+                            .element("notificationType", "SUCCESS"));
                 }
                 return HttpResponses.redirectTo("../..");
             }
@@ -1323,11 +1322,13 @@ public abstract class CredentialsStoreAction
             Domain destinationDomain = null;
             for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
                 if (store.getContext() == context) {
-                    for (Domain d : store.getDomains()) {
-                        if (domainName.equals("_") ? d.getName() == null : domainName.equals(d.getName())) {
-                            destinationStore = store;
-                            destinationDomain = d;
-                            break;
+                    if (store.getStoreAction().getUrlName().equals(domain.getParent().getUrlName())) {
+                        for (Domain d : store.getDomains()) {
+                            if (domainName.equals("_") ? d.getName() == null : domainName.equals(d.getName())) {
+                                destinationStore = store;
+                                destinationDomain = d;
+                                break;
+                            }
                         }
                     }
                     if (destinationDomain != null) {
@@ -1363,13 +1364,17 @@ public abstract class CredentialsStoreAction
 
             if (destinationStore.addCredentials(destinationDomain, credentials)) {
                 if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+                    String destDomainUrlName = destinationDomain.getName() == null
+                            ? "_" : Util.rawEncode(destinationDomain.getName());
+                    String redirectUrl = "../../../" + destDomainUrlName
+                            + "/credential/" + getUrlName();
                     if (jsonResponse) {
                         return HttpResponses.okJSON(new JSONObject()
                                 .element("message", "Credentials moved")
                                 .element("notificationType", "SUCCESS")
-                                .element("redirectUrl", "../../"));
+                                .element("redirectUrl", redirectUrl));
                     }
-                    return HttpResponses.redirectTo("../..");
+                    return HttpResponses.redirectTo(redirectUrl);
                 } else {
                     destinationStore.removeCredentials(destinationDomain, credentials);
                 }
