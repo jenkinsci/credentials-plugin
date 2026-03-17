@@ -1365,8 +1365,9 @@ public abstract class CredentialsStoreAction
 
             if (destinationStore.addCredentials(destinationDomain, credentials)) {
                 if (getStore().removeCredentials(domain.getDomain(), credentials)) {
-                    String destDomainUrlName = destinationDomain.getName() == null
-                            ? "_" : Util.rawEncode(destinationDomain.getName());
+                    String name = destinationDomain.getName();
+                    String destDomainUrlName = name == null
+                            ? "_" : Util.rawEncode(name);
                     String redirectUrl = "../../../" + destDomainUrlName
                             + "/credential/" + getUrlName();
                     if (jsonResponse) {
