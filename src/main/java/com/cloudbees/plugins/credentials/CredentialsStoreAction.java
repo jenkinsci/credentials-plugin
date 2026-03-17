@@ -1322,7 +1322,8 @@ public abstract class CredentialsStoreAction
             Domain destinationDomain = null;
             for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
                 if (store.getContext() == context) {
-                    if (store.getStoreAction().getUrlName().equals(domain.getParent().getUrlName())) {
+                    String urlName = store.getStoreAction() != null ? store.getStoreAction().getUrlName() : null;
+                    if (urlName != null && urlName.equals(domain.getParent().getUrlName())) {
                         for (Domain d : store.getDomains()) {
                             if (domainName.equals("_") ? d.getName() == null : domainName.equals(d.getName())) {
                                 destinationStore = store;
