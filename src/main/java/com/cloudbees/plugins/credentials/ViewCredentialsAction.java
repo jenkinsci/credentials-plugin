@@ -504,6 +504,11 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             return store.hasPermission(CredentialsProvider.UPDATE);
         }
 
+        @Restricted(NoExternalUse.class)
+        public boolean isMoveable() {
+            return store.getDomains().size() > 1;
+        }
+
         /**
          * Returns the {@link Credentials#getScope()} of the {@link #credentials}.
          *
@@ -520,6 +525,16 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
          */
         public String getName() {
             return CredentialsNameProvider.name(credentials);
+        }
+
+        /**
+         * Description is useful for select drop down in the name but not in the credentials list.
+         * So remove the description so we have more control over how its displayed.
+         */
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // jelly
+        public String getCleanedName() throws IOException {
+            return getName().replace("(" + getDescription() + ")", "");
         }
 
         /**
