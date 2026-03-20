@@ -84,7 +84,6 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
