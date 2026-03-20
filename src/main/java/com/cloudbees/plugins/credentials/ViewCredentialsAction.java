@@ -239,11 +239,6 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
         return false;
     }
 
-    @Restricted(DoNotUse.class) // for jelly
-    public ManagementLink getManagementLink() {
-        return ExtensionList.lookupSingleton(ManageCredentialsConfiguration.class);
-    }
-
     /**
      * Administrator's view credentials from 'Manage Jenkins'.
      * @param accessControlled an access controlled object.
