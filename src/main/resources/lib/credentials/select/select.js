@@ -263,9 +263,13 @@ window.credentials.submitDialog = function (form, errorMessage, onSuccess) {
     })
         .then(res => res.json())
         .then(result => {
-            window.notificationBar.show(result.data.message, window.notificationBar[result.data.notificationType]);
+            const notificationType = result.data.notificationType;
+            window.notificationBar.show(result.data.message, window.notificationBar[notificationType]);
             const dialog = document.querySelector(".jenkins-dialog");
             dialog.dispatchEvent(new Event("cancel"));
+            if (notificationType !== "SUCCESS") {
+                return;
+            }
             if (result.data.redirectUrl) {
                 // Resolve relative redirectUrl against the form action URL
                 window.location.href = new URL(result.data.redirectUrl, formAction).toString();
