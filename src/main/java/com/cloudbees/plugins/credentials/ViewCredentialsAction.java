@@ -496,6 +496,11 @@ public class ViewCredentialsAction implements Action, IconSpec, AccessControlled
             return store.hasPermission(CredentialsProvider.UPDATE);
         }
 
+        @Restricted(NoExternalUse.class)
+        public boolean isMoveable() {
+            return store.getDomains().size() > 1;
+        }
+
         /**
          * Returns the {@link Credentials#getScope()} of the {@link #credentials}.
          *
