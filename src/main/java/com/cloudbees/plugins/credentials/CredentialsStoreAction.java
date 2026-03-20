@@ -1487,6 +1487,11 @@ public abstract class CredentialsStoreAction
             return getACL().hasPermission(permission);
         }
 
+        @Restricted(NoExternalUse.class)
+        public boolean isMoveable() {
+            return getDomain().getParent().getDomains().size() > 1;
+        }
+
         /**
          * Our {@link Descriptor}.
          */
