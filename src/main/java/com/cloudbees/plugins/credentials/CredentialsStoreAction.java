@@ -88,7 +88,6 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.WebMethod;
@@ -582,31 +581,6 @@ public abstract class CredentialsStoreAction
          */
         public Domain getDomain() {
             return domain;
-        }
-
-        /**
-         * Used to get the path for the action for new credentials.
-         * Stapler can't figure out the right URL from the dialog, so it needs injecting to it.
-         * @return
-         */
-        @SuppressWarnings("unused")
-        @Restricted(NoExternalUse.class)
-        public String getRelativePath() {
-            String relativePath = Stapler.getCurrentRequest2().getParameter("relativePath");
-            if (relativePath == null) {
-                return null;
-            }
-            // Validate the relative path as a security hardening
-            // There is no known attack vector here, but just in case as it does control what the form action is.
-            if (!(relativePath.startsWith("/") || relativePath.startsWith("../"))) {
-                return null;
-            }
-            // Prevent protocol-relative URLs
-            if (relativePath.startsWith("//")) {
-                return null;
-            }
-
-            return relativePath;
         }
 
         /**
