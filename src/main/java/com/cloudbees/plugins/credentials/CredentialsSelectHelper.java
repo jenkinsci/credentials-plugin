@@ -34,6 +34,7 @@ import hudson.model.ComputerSet;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Item;
+import hudson.model.ManageJenkinsAction;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.AccessControlled;
@@ -66,6 +67,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Localizable;
+import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -385,6 +387,22 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         }
         providerByName.values().removeIf(p -> p == CredentialsProvider.NONE);
         return providerByName;
+    }
+
+    /**
+     * If {@link ManageJenkinsAction} is the context of the view, return true, else false
+     */
+    @Restricted(NoExternalUse.class)
+    public boolean hasManageJenkinsAncestor() {
+        return Stapler.getCurrentRequest2().findAncestorObject(ManageJenkinsAction.class) != null;
+    }
+
+    /**
+     * If a {@link User} is the context of the view, return the user for context, else null
+     */
+    @Restricted(NoExternalUse.class)
+    public User getUserAncestor() {
+        return Stapler.getCurrentRequest2().findAncestorObject(User.class);
     }
 
     /**
