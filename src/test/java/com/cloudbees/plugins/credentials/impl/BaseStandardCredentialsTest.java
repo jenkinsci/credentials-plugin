@@ -24,9 +24,11 @@
 
 package com.cloudbees.plugins.credentials.impl;
 
+import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import org.htmlunit.html.HtmlButton;
@@ -53,6 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WithJenkins
@@ -63,6 +66,8 @@ class BaseStandardCredentialsTest {
         assertDoCheckId(r, "", r.jenkins, OK);
         assertDoCheckId(r, /* random UUID */IdCredentials.Helpers.fixEmptyId(null), r.jenkins, OK);
         assertDoCheckId(r, "blah-blah", r.jenkins, OK);
+        assertDoCheckId(r, "contains space", r.jenkins, ERROR);
+        assertDoCheckId(r, "nested/path", r.jenkins, ERROR);
         assertDoCheckId(r, "definitely\nscary", r.jenkins, ERROR);
     }
 
@@ -134,6 +139,21 @@ class BaseStandardCredentialsTest {
         }
 
         // TODO could test the case that alice has Item.READ but not CredentialsProvider.VIEW on a folder, and mocks a web request passing that folder as context
+    }
+
+    @Test
+    void keepsLegacyStoredIdUntouched(JenkinsRule r) throws Exception {
+        CredentialsStore store = lookupStore(r.jenkins);
+        String legacyId = "legacy/id";
+        store.addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, legacyId, null, "x", "y"));
+
+        Credentials legacy = CredentialsMatchers.firstOrNull(
+                store.getCredentials(Domain.global()),
+                CredentialsMatchers.withId(legacyId)
+        );
+        assertNotNull(legacy, "legacy credential ID should remain stored and readable");
+
+        assertDoCheckId(r, legacyId, r.jenkins, ERROR);
     }
 
     @Test
