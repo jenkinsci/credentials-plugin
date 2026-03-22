@@ -66,6 +66,8 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Localizable;
+import org.kohsuke.stapler.Ancestor;
+import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -385,6 +387,14 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         }
         providerByName.values().removeIf(p -> p == CredentialsProvider.NONE);
         return providerByName;
+    }
+
+    /**
+     * If a {@link User} is the context of the view, return the user, else null
+     */
+    @Restricted(NoExternalUse.class)
+    public User getUserAncestor() {
+        return Stapler.getCurrentRequest2().findAncestorObject(User.class);
     }
 
     /**
