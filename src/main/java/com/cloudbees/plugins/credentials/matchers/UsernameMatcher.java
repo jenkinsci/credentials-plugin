@@ -31,73 +31,27 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.Objects;
 
 /**
- * Matches credentials that are {@link UsernameCredentials} and have the specified {@link
+ * Matches credentials that are {@link UsernameCredentials} and have the
+ * specified {@link
  * UsernameCredentials#getUsername()}
  *
  * @since 1.5
  */
-public class UsernameMatcher implements CredentialsMatcher {
-    /**
-     * Standardize serialization.
-     *
-     * @since 2.1.0
-     */
-    private static final long serialVersionUID = -2166795904091485580L;
-    /**
-     * The username to match.
-     */
-    @NonNull
-    private final String username;
-
+public record UsernameMatcher(@NonNull String username) implements CredentialsMatcher {
     /**
      * Constructs a new instance.
      *
      * @param username the username to match.
      */
-    public UsernameMatcher(@NonNull String username) {
+    public UsernameMatcher {
         Objects.requireNonNull(username);
-        this.username = username;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean matches(@NonNull Credentials item) {
-        return item instanceof UsernameCredentials && username.equals(((UsernameCredentials) item).getUsername());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return username.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        UsernameMatcher that = (UsernameMatcher) o;
-
-        return username.equals(that.username);
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "UsernameMatcher{" + "username='" + username + '\'' +
-                '}';
+        return item instanceof UsernameCredentials uc && username.equals(uc.getUsername());
     }
 }
