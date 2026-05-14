@@ -46,10 +46,8 @@ class MatchersTest {
     // ---- AllOfMatcher ----
 
     @Test
-    void allOfMatcherHandlesNullList() {
-        AllOfMatcher matcher = new AllOfMatcher(null);
-        assertNotNull(matcher.matchers());
-        assertTrue(matcher.matchers().isEmpty());
+    void allOfMatcherRejectsNullList() {
+        assertThrows(NullPointerException.class, () -> new AllOfMatcher(null));
     }
 
     @Test
@@ -83,10 +81,8 @@ class MatchersTest {
     // ---- AnyOfMatcher ----
 
     @Test
-    void anyOfMatcherHandlesNullList() {
-        AnyOfMatcher matcher = new AnyOfMatcher(null);
-        assertNotNull(matcher.matchers());
-        assertTrue(matcher.matchers().isEmpty());
+    void anyOfMatcherRejectsNullList() {
+        assertThrows(NullPointerException.class, () -> new AnyOfMatcher(null));
     }
 
     @Test

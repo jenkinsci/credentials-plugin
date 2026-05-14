@@ -29,6 +29,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Matches all of the supplied matchers.
@@ -44,10 +45,11 @@ public record AllOfMatcher(@NonNull List<CredentialsMatcher> matchers) implement
     private static final long serialVersionUID = 2161005681083022432L;
 
     /**
-     * Compact constructor that normalizes the list.
+     * Compact constructor that defensively copies and makes the list unmodifiable.
      */
     public AllOfMatcher {
-        matchers = matchers == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(matchers));
+        Objects.requireNonNull(matchers);
+        matchers = Collections.unmodifiableList(new ArrayList<>(matchers));
     }
 
     /**
