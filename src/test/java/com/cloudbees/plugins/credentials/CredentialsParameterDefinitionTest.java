@@ -187,12 +187,19 @@ class CredentialsParameterDefinitionTest {
 
         static final String PROXY_CREDENTIALS_ID = "proxy-credentials-id";
 
-        private static final StandardUsernamePasswordCredentials PROXY_CREDENTIALS =
-                (StandardUsernamePasswordCredentials) Proxy.newProxyInstance(
+        private static final StandardUsernamePasswordCredentials PROXY_CREDENTIALS = createProxyCredentials();
+
+        private static StandardUsernamePasswordCredentials createProxyCredentials() {
+            try {
+                return (StandardUsernamePasswordCredentials) Proxy.newProxyInstance(
                         CredentialsParameterDefinitionTest.class.getClassLoader(),
                         new Class<?>[]{StandardUsernamePasswordCredentials.class},
                         new DelegatingInvocationHandler(new UsernamePasswordCredentialsImpl(
                                 CredentialsScope.GLOBAL, PROXY_CREDENTIALS_ID, "proxy credentials", "user", "secret")));
+            } catch (Descriptor.FormException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         @NonNull
         @Override
