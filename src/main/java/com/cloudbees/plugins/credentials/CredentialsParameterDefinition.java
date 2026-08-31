@@ -14,7 +14,6 @@ import hudson.security.ACL;
 import hudson.util.ListBoxModel;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
@@ -139,7 +138,11 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             return result;
         }
 
-        private Class<? extends StandardCredentials> decodeType(String credentialType) {
+        /**
+         * Resolves the {@link CredentialsDescriptor} whose concrete implementation class name matches the
+         * supplied {@code credentialType}, or {@code null} if the type could not be resolved (e.g. {@code "Any"}).
+         */
+        private CredentialsDescriptor decodeTypeDescriptor(String credentialType) {
             for (Descriptor<Credentials> d : CredentialsProvider.allCredentialsDescriptors()) {
                 if (!(d instanceof CredentialsDescriptor)) {
                     continue;
@@ -149,31 +152,62 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
                     continue;
                 }
                 if (credentialType.equals(descriptor.clazz.getName())) {
-                    return descriptor.clazz.asSubclass(StandardCredentials.class);
+                    return descriptor;
                 }
             }
-            return StandardCredentials.class;
+            return null;
         }
 
-        private boolean match(Set<Class<? extends StandardCredentials>> allowed, StandardCredentials instance) {
-            for (Class<? extends StandardCredentials> b : allowed) {
-                if (b.isInstance(instance)) {
-                    return true;
-                }
+        /**
+         * Builds a {@link CredentialsMatcher} for the supplied {@code credentialType} that matches credentials
+         * which either are an instance of the concrete implementation class or, for external providers that
+         * return credentials backed by e.g. a {@link java.lang.reflect.Proxy} of the public API interfaces,
+         * whose {@link Descriptor} is the one associated with the requested type. This ensures that such
+         * proxy-backed credentials are not excluded purely because they do not extend the concrete
+         * implementation class.
+         */
+        private CredentialsMatcher decodeTypeMatcher(String credentialType) {
+            CredentialsDescriptor descriptor = decodeTypeDescriptor(credentialType);
+            if (descriptor == null) {
+                return CredentialsMatchers.always();
             }
-            return false;
+            return CredentialsMatchers.anyOf(
+                    CredentialsMatchers.instanceOf(descriptor.clazz),
+                    new DescriptorMatcher(descriptor)
+            );
+        }
+
+        /**
+         * A {@link CredentialsMatcher} that matches credentials whose {@link Descriptor} is the supplied
+         * {@link CredentialsDescriptor}. This allows matching credentials that do not extend the concrete
+         * implementation class associated with the descriptor, such as {@link java.lang.reflect.Proxy} backed
+         * credentials returned by external credential providers.
+         */
+        private static class DescriptorMatcher implements CredentialsMatcher {
+            private static final long serialVersionUID = 1L;
+            private final CredentialsDescriptor descriptor;
+
+            DescriptorMatcher(CredentialsDescriptor descriptor) {
+                this.descriptor = descriptor;
+            }
+
+            @Override
+            public boolean matches(@NonNull Credentials item) {
+                return descriptor.equals(item.getDescriptor());
+            }
         }
 
         public StandardListBoxModel doFillDefaultValueItems(@AncestorInPath Item context,
                                                             @QueryParameter(required = true) String credentialType) {
             Jenkins jenkins = Jenkins.get();
             final ACL acl = context == null ? jenkins.getACL() : context.getACL();
-            final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
+            final CredentialsMatcher matcher = decodeTypeMatcher(credentialType);
             final List<DomainRequirement> domainRequirements = Collections.emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
             result.includeEmptyValue();
             if (acl.hasPermission(CredentialsProvider.USE_ITEM)) {
-                result.includeAs(CredentialsProvider.getDefaultAuthenticationOf2(context), context, typeClass, domainRequirements);
+                result.includeMatchingAs(CredentialsProvider.getDefaultAuthenticationOf2(context), context,
+                        StandardCredentials.class, domainRequirements, matcher);
             }
             return result;
         }
@@ -188,18 +222,18 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             final Authentication authentication = Jenkins.getAuthentication2();
             final Authentication itemAuthentication = CredentialsProvider.getDefaultAuthenticationOf2(context);
             final boolean isSystem = ACL.SYSTEM2.equals(authentication);
-            final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
+            final CredentialsMatcher matcher = decodeTypeMatcher(credentialType);
             final List<DomainRequirement> domainRequirements = Collections.emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
             if (!required) {
                 result.includeEmptyValue();
             }
             if (!isSystem && acl.hasPermission(CredentialsProvider.USE_OWN) && includeUser) {
-                result.includeAs(authentication, context, typeClass, domainRequirements);
+                result.includeMatchingAs(authentication, context, StandardCredentials.class, domainRequirements, matcher);
             }
             if (acl.hasPermission(CredentialsProvider.USE_ITEM) || isSystem || itemAuthentication
                     .equals(authentication)) {
-                result.includeAs(itemAuthentication, context, typeClass, domainRequirements);
+                result.includeMatchingAs(itemAuthentication, context, StandardCredentials.class, domainRequirements, matcher);
             }
             result.includeCurrentValue(value);
             return result;
