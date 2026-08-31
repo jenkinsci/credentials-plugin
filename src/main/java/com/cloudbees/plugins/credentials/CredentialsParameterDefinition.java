@@ -173,27 +173,30 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
             }
             return CredentialsMatchers.anyOf(
                     CredentialsMatchers.instanceOf(descriptor.clazz),
-                    new DescriptorMatcher(descriptor)
+                    new DescriptorMatcher(descriptor.getClass().getName())
             );
         }
 
         /**
-         * A {@link CredentialsMatcher} that matches credentials whose {@link Descriptor} is the supplied
-         * {@link CredentialsDescriptor}. This allows matching credentials that do not extend the concrete
+         * A {@link CredentialsMatcher} that matches credentials whose {@link Descriptor} class name equals the
+         * supplied descriptor class name. This allows matching credentials that do not extend the concrete
          * implementation class associated with the descriptor, such as {@link java.lang.reflect.Proxy} backed
-         * credentials returned by external credential providers.
+         * credentials returned by external credential providers. The descriptor class name (a {@link String}) is
+         * retained rather than the {@link CredentialsDescriptor} itself so that this matcher remains safely
+         * {@link java.io.Serializable}.
          */
         private static class DescriptorMatcher implements CredentialsMatcher {
             private static final long serialVersionUID = 1L;
-            private final CredentialsDescriptor descriptor;
+            private final String descriptorClassName;
 
-            DescriptorMatcher(CredentialsDescriptor descriptor) {
-                this.descriptor = descriptor;
+            DescriptorMatcher(String descriptorClassName) {
+                this.descriptorClassName = descriptorClassName;
             }
 
             @Override
             public boolean matches(@NonNull Credentials item) {
-                return descriptor.equals(item.getDescriptor());
+                Descriptor<?> itemDescriptor = item.getDescriptor();
+                return itemDescriptor != null && descriptorClassName.equals(itemDescriptor.getClass().getName());
             }
         }
 
