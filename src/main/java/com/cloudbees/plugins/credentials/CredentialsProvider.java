@@ -1027,7 +1027,7 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                 credential = findCredentialByIdInItem(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements);
             }
             // TODO should this be calling track?
-            return contextualize(type, credential, run);
+            return contextualize(type, credential, run, domainRequirements);
         }
         // this is a parameter and not the default value, we need to determine who triggered the build
         final Map.Entry<User, Run<?, ?>> triggeredBy = triggeredBy(run);
@@ -1066,17 +1066,17 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
         if (run.isLogUpdated()) {
             track(run, result);
         }
-        return contextualize(type, result, run);
+        return contextualize(type, result, run, domainRequirements);
     }
 
     @CheckForNull
-    private static <C extends Credentials> C contextualize(@NonNull Class<C> type, @CheckForNull C credentials, @NonNull Run<?, ?> run) {
+    private static <C extends Credentials> C contextualize(@NonNull Class<C> type, @CheckForNull C credentials, @NonNull Run<?, ?> run, @Nullable List<DomainRequirement> domainRequirements) {
         if (credentials != null) {
-            Credentials contextualized = credentials.forRun(run);
+            Credentials contextualized = credentials.forContext(run, domainRequirements != null ? domainRequirements : List.of());
             if (type.isInstance(contextualized)) {
                 return type.cast(contextualized);
             } else {
-                LOGGER.warning(() -> "Ignoring " + contextualized.getClass().getName() + " return value of " + credentials.getClass().getName() + ".forRun since it is not assignable to " + type.getName());
+                LOGGER.warning(() -> "Ignoring " + contextualized.getClass().getName() + " return value of " + credentials.getClass().getName() + ".forContext since it is not assignable to " + type.getName());
             }
         }
         return credentials;

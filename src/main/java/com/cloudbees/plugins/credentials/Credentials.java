@@ -23,12 +23,14 @@
  */
 package com.cloudbees.plugins.credentials;
 
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionPoint;
 import hudson.model.Describable;
 import hudson.model.Run;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * A generic type of credentials. In general please extend from {@link BaseCredentials} rather than implement this
@@ -57,14 +59,24 @@ public interface Credentials extends Describable<Credentials>, Serializable, Ext
     CredentialsDescriptor getDescriptor();
 
     /**
-     * Optionally produce a special value when used in the context of a particular build.
-     * @param context a build wishing to consume these credentials
-     * @return contextualized credentials, preferably implementing the same interfaces (if not of the same concrete type); by default, {@code this}
-     * @see CredentialsProvider#findCredentialById(java.lang.String, java.lang.Class, hudson.model.Run, com.cloudbees.plugins.credentials.domains.DomainRequirement...)
+     * @deprecated rather implement {@link #forContext}
      */
+    @Deprecated
     @NonNull
     default Credentials forRun(@NonNull Run<?, ?> context) {
         return this;
+    }
+
+    /**
+     * Optionally produce a special value when used in the context of a particular build and domain.
+     * @param build a build wishing to consume these credentials
+     * @param domainRequirements expressed domain requirements, which may be used to infer for example a Git repository
+     * @return contextualized credentials, preferably implementing the same interfaces (if not of the same concrete type); by default, {@link #forRun}
+     * @see CredentialsProvider#findCredentialById(java.lang.String, java.lang.Class, hudson.model.Run, com.cloudbees.plugins.credentials.domains.DomainRequirement...)
+     */
+    @NonNull
+    default Credentials forContext(@NonNull Run<?, ?> build, @NonNull List<DomainRequirement> domainRequirements) {
+        return forRun(build);
     }
 
 }
