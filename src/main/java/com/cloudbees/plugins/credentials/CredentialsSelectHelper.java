@@ -34,6 +34,7 @@ import hudson.model.ComputerSet;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Item;
+import hudson.model.ManageJenkinsAction;
 import hudson.model.ModelObject;
 import hudson.model.User;
 import hudson.security.AccessControlled;
@@ -43,13 +44,17 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import jakarta.servlet.ServletException;
 import jenkins.model.Jenkins;
@@ -62,6 +67,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Localizable;
+import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.StaplerResponse2;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -119,6 +125,32 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
     @Restricted(NoExternalUse.class)
     public ModelObject resolveContext(Object context) {
         return context instanceof ModelObject mo ? mo : CredentialsDescriptor.findContextInPath(ModelObject.class);
+    }
+
+    @Restricted(NoExternalUse.class)
+    public boolean hasOneDomain(Map<String, List<CredentialsStoreAction.DomainWrapper>> storeActions) {
+        // Count the number of domain wrappers across all store actions. If there is only one, return true else false
+        return storeActions.values().stream().mapToInt(List::size).sum() == 1;
+    }
+
+    /**
+     * @return modifiable store actions for the context provided.
+     */
+    @Restricted(NoExternalUse.class)
+    public Map<String, List<CredentialsStoreAction.DomainWrapper>> getModifiableStoreActions(ModelObject context) {
+        return StreamSupport.stream(CredentialsProvider.lookupStores(context).spliterator(), false)
+                .filter(s -> s.hasPermission(CredentialsProvider.CREATE))
+                .map(CredentialsStore::getStoreAction)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        CredentialsStoreAction::getFullDisplayName,
+                        store -> new ArrayList<>(store.getDomains().values()),
+                        (left, right) -> {
+                            left.addAll(right);
+                            return left;
+                            },
+                        LinkedHashMap::new
+                ));
     }
 
    /**
@@ -355,6 +387,22 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
         }
         providerByName.values().removeIf(p -> p == CredentialsProvider.NONE);
         return providerByName;
+    }
+
+    /**
+     * If {@link ManageJenkinsAction} is the context of the view, return true, else false
+     */
+    @Restricted(NoExternalUse.class)
+    public boolean hasManageJenkinsAncestor() {
+        return Stapler.getCurrentRequest2().findAncestorObject(ManageJenkinsAction.class) != null;
+    }
+
+    /**
+     * If a {@link User} is the context of the view, return the user for context, else null
+     */
+    @Restricted(NoExternalUse.class)
+    public User getUserAncestor() {
+        return Stapler.getCurrentRequest2().findAncestorObject(User.class);
     }
 
     /**

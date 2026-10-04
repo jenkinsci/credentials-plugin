@@ -1,14 +1,18 @@
 package com.cloudbees.plugins.credentials;
 
 import com.cloudbees.plugins.credentials.domains.Domain;
+import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import org.htmlunit.WebResponse;
 import hudson.ExtensionList;
 import hudson.Util;
 import hudson.model.Items;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,11 +20,13 @@ import java.util.List;
 import java.util.Random;
 import jakarta.servlet.http.HttpServletResponse;
 
+import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
+import org.jvnet.hudson.test.Issue;
 import org.xmlunit.matchers.CompareMatcher;
 
 import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
@@ -64,11 +70,10 @@ class CredentialsStoreActionTest {
                 + "<domains>"
                 + "<_>"
                 + "<description>"
-                + "Credentials that should be available irrespective of domain specification to requirements "
-                + "matching."
+                + "Credentials that should be available everywhere."
                 + "</description>"
-                + "<displayName>Global credentials (unrestricted)</displayName>"
-                + "<fullDisplayName>System » Global credentials (unrestricted)</fullDisplayName>"
+                + "<displayName>Global</displayName>"
+                + "<fullDisplayName>System » Global</fullDisplayName>"
                 + "<fullName>system/_</fullName>"
                 + "<global>true</global>"
                 + "<urlName>_</urlName>"
@@ -90,11 +95,10 @@ class CredentialsStoreActionTest {
                 + "<domains>"
                 + "<_>"
                 + "<description>"
-                + "Credentials that should be available irrespective of domain specification to requirements "
-                + "matching."
+                + "Credentials that should be available everywhere."
                 + "</description>"
-                + "<displayName>Global credentials (unrestricted)</displayName>"
-                + "<fullDisplayName>System » Global credentials (unrestricted)</fullDisplayName>"
+                + "<displayName>Global</displayName>"
+                + "<fullDisplayName>System » Global</fullDisplayName>"
                 + "<fullName>system/_</fullName>"
                 + "<global>true</global>"
                 + "<urlName>_</urlName>"
@@ -292,6 +296,58 @@ class CredentialsStoreActionTest {
                           <password>super-secret</password>
                         </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>""");
         assertThat(con.getResponseCode(), is(HttpServletResponse.SC_CONFLICT));
+    }
+
+    @Test
+    @Issue("JENKINS-74964")
+    void createCredentialsWithInvalidPEMCertificateReturnsJsonError() throws Exception {
+        j.getInstance().setCrumbIssuer(null);
+
+        String invalidPem = "this is not a valid PEM certificate or key";
+
+        JSONObject keyStoreSource = new JSONObject()
+                .element("stapler-class", CertificateCredentialsImpl.PEMEntryKeyStoreSource.class.getName())
+                .element("certChain", invalidPem)
+                .element("privateKey", invalidPem);
+
+        JSONObject credentials = new JSONObject()
+                .element("stapler-class", CertificateCredentialsImpl.class.getName())
+                .element("scope", "GLOBAL")
+                .element("id", "test-invalid-cert-" + new Random().nextInt(Integer.MAX_VALUE))
+                .element("description", "Invalid certificate test")
+                .element("password", "secret")
+                .element("keyStoreSource", keyStoreSource);
+
+        JSONObject form = new JSONObject()
+                .element("credentials", credentials);
+
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/system/domain/_/createCredentials").openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+        con.setRequestProperty("Accept", "application/json");
+        con.setDoOutput(true);
+        con.getOutputStream().write(
+                ("json=" + URLEncoder.encode(form.toString(), "UTF-8")).getBytes(StandardCharsets.UTF_8));
+
+        assertThat(con.getResponseCode(), is(HttpServletResponse.SC_OK));
+        JSONObject response = JSONObject.fromObject(readResponseBody(con));
+        assertThat(response.getString("status"), is("ok"));
+        JSONObject data = response.getJSONObject("data");
+        assertThat(data.getString("notificationType"), is("ERROR"));
+        assertThat(data.getString("message"), notNullValue());
+    }
+
+    private static String readResponseBody(HttpURLConnection con) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        try (InputStream is = con.getInputStream()) {
+            while ((n = is.read(buf)) >= 0) {
+                baos.write(buf, 0, n);
+            }
+        }
+        return new String(baos.toByteArray(), StandardCharsets.UTF_8);
     }
 
     private HttpURLConnection postCreateByXml(CredentialsStore store, String xml)

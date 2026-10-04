@@ -37,6 +37,8 @@ import org.htmlunit.WebRequest;
 import org.htmlunit.html.DomNode;
 import org.htmlunit.html.DomNodeList;
 import org.htmlunit.html.HtmlButton;
+import org.htmlunit.html.HtmlDivision;
+import org.htmlunit.html.HtmlElement;
 import org.htmlunit.html.HtmlElementUtil;
 import org.htmlunit.html.HtmlFileInput;
 import org.htmlunit.html.HtmlForm;
@@ -66,6 +68,7 @@ import java.security.KeyStore;
 import java.util.Base64;
 import java.util.List;
 
+import static com.cloudbees.plugins.credentials.CredentialsSelectHelperTest.selectOption;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -206,25 +209,24 @@ public class CertificateCredentialsImplTest {
         String KeyStoreSourceDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.UploadedKeyStoreSource.class).getDisplayName();
 
         JenkinsRule.WebClient wc = r.createWebClient();
-        HtmlPage htmlPage = wc.goTo("credentials/store/system/domain/_/newCredentials");
-        HtmlForm newCredentialsForm = htmlPage.getFormByName("newCredentials");
+        HtmlPage htmlPage = wc.goTo("credentials/store/system/domain/_/");
 
-        DomNodeList<DomNode> allOptions = htmlPage.getDocumentElement().querySelectorAll("select.dropdownList option");
-        boolean optionFound = allOptions.stream().anyMatch(domNode -> {
-            if (domNode instanceof HtmlOption option) {
-	            if (option.getVisibleText().equals(certificateDisplayName)) {
-                    try {
-                        HtmlElementUtil.click(option);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    return true;
-                }
-            }
+        HtmlButton button = (HtmlButton) htmlPage
+                .getDocumentElement()
+                .getElementsByAttribute("button", "data-type", "credentials-add-store-item").get(0);
+        HtmlElementUtil.click(button);
 
-            return false;
-        });
+        HtmlForm form = htmlPage.getFormByName("dialog");
+
+        DomNodeList<DomNode> allOptions = form.querySelectorAll(".jenkins-choice-list__item");
+        boolean optionFound = selectOption(allOptions, certificateDisplayName);
+
         assertTrue(optionFound, "The Certificate option was not found in the credentials type select");
+
+        HtmlButton formSubmitButton = htmlPage.querySelector("#cr-dialog-next");
+        HtmlElementUtil.click(formSubmitButton);
+
+        HtmlForm newCredentialsForm = htmlPage.getFormByName("newCredentials");
 
         List<HtmlRadioButtonInput> inputs = htmlPage.getDocumentElement().
                 getByXPath("//input[contains(@name, 'keyStoreSource') and following-sibling::label[contains(.,'"+KeyStoreSourceDisplayName+"')]]");
@@ -241,7 +243,8 @@ public class CertificateCredentialsImplTest {
         List<CertificateCredentials> certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(0));
 
-        r.submit(newCredentialsForm);
+        formSubmitButton = htmlPage.querySelector("#cr-dialog-submit");
+        HtmlElementUtil.click(formSubmitButton);
 
         certificateCredentials = CredentialsProvider.lookupCredentialsInItemGroup(CertificateCredentials.class, null, ACL.SYSTEM2);
         assertThat(certificateCredentials, hasSize(1));
@@ -258,25 +261,23 @@ public class CertificateCredentialsImplTest {
         String KeyStoreSourceDisplayName = r.jenkins.getDescriptor(CertificateCredentialsImpl.PEMEntryKeyStoreSource.class).getDisplayName();
 
         JenkinsRule.WebClient wc = r.createWebClient();
-        HtmlPage htmlPage = wc.goTo("credentials/store/system/domain/_/newCredentials");
-        HtmlForm newCredentialsForm = htmlPage.getFormByName("newCredentials");
+        HtmlPage htmlPage = wc.goTo("credentials/store/system/domain/_/");
 
-        DomNodeList<DomNode> allOptions = htmlPage.getDocumentElement().querySelectorAll("select.dropdownList option");
-        boolean optionFound = allOptions.stream().anyMatch(domNode -> {
-            if (domNode instanceof HtmlOption option) {
-	            if (option.getVisibleText().equals(certificateDisplayName)) {
-                    try {
-                        HtmlElementUtil.click(option);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    return true;
-                }
-            }
+        HtmlButton button = (HtmlButton) htmlPage
+                .getDocumentElement()
+                .getElementsByAttribute("button", "data-type", "credentials-add-store-item").get(0);
+        HtmlElementUtil.click(button);
 
-            return false;
-        });
+        HtmlForm form = htmlPage.getFormByName("dialog");
+
+        DomNodeList<DomNode> allOptions = form.querySelectorAll(".jenkins-choice-list__item");
+        boolean optionFound = selectOption(allOptions, certificateDisplayName);
         assertTrue(optionFound, "The Certificate option was not found in the credentials type select");
+
+        HtmlButton formSubmitButton = htmlPage.querySelector("#cr-dialog-next");
+        HtmlElementUtil.click(formSubmitButton);
+
+        HtmlForm newCredentialsForm = htmlPage.getFormByName("newCredentials");
 
         List<HtmlRadioButtonInput> inputs = htmlPage.getDocumentElement().
                 getByXPath("//input[contains(@name, 'keyStoreSource') and following-sibling::label[contains(.,'"+KeyStoreSourceDisplayName+"')]]");
@@ -284,10 +285,10 @@ public class CertificateCredentialsImplTest {
         HtmlElementUtil.click(inputs.get(0));
 
         // enable entry of the secret (HACK just click all the Add buttons)
-        List<HtmlButton> buttonsByName =  htmlPage.getDocumentElement().getByXPath("//button[contains(.,'Add')]");
+        DomNodeList<DomNode> buttonsByName =  newCredentialsForm.querySelectorAll(".secret-update-btn");
         assertThat("I need 2 buttons", buttonsByName, hasSize(2));
-        for (HtmlButton b : buttonsByName) {
-            HtmlElementUtil.click(b);
+        for (DomNode b : buttonsByName) {
+            HtmlElementUtil.click((HtmlElement) b);
         }
 
         newCredentialsForm.getTextAreaByName("_.certChain").setTextContent(pemCert);

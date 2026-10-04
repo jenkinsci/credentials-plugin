@@ -605,4 +605,10 @@ public abstract class CredentialsDescriptor extends Descriptor<Credentials> impl
         }
     }
 
+    /**
+     * @return the description of this credential descriptor.
+     */
+    public String getDescription() {
+        return null;
+    }
 }

@@ -359,24 +359,21 @@ If we have a job, "foobar", and we configure a credentials parameter on that job
 
 If you are working outside the context of a `Run` then you will not have to deal with the complexities of credentials expressions.
 
-In most cases the retrieval will just be a call to one of the `CredentialsProvider.lookupCredentialsInItem(...)`/`CredentialsProvider.lookupCredentialsInItemGroup(...)` wrapped within `CredentialsMatchers.firstOrNull(..., CredentialsMatchers.withId(...))`, for example:
+In most cases the retrieval will just be a call to `CredentialsProvider.findCredentialByIdInItemGroup` or `CredentialsProvider.findCredentialByIdInItem`:
 
 [source,java]
 ----
-StandardCredentials c = CredentialsMatchers.firstOrNull(
-  CredentialsProvider.lookupCredentialsInItem(
+StandardCredentials c = CredentialsProvider.findCredentialByIdInItem(
+    credentialsId,
     StandardCredentials.class, // <1>
     job, // <1>
     job instanceof Queue.Task // <1>
       ? Tasks.getAuthenticationOf((Queue.Task)job))
       : ACL.SYSTEM2,
     URIRequirementBuilder.fromUri(...) // <1>
-  ),
-  CredentialsMatchers.withId(credentialsId) // <2>
-);
+  );
 ----
 <1> These should be the same as your call to `CredentialsProvider.listCredentialsInItem(...)`/`CredentialsProvider.listCredentialsInItemGroup(...)`/`StandardListBoxModel.includeMatchingAs(...)` in order to ensure that we get the same credential instance back.
-<2> If you had additional `CredentialsMatcher` expressions in your call to `CredentialsProvider.listCredentialsInItem(...)`/`CredentialsProvider.listCredentialsInItemGroup(...)`/`StandardListBoxModel.includeMatchingAs(...)` then you should merge them here with a `CredentialsMatchers.allOf(...)`
 
 Once you have retrieved a non-null credentials instance, all non-secret properties can be assumed as eager-fetch immutable.
 
@@ -392,20 +389,18 @@ The recommended way to use a credential is through the https://plugins.jenkins.i
 
 [source,java]
 ----
-StandardCredentials c = CredentialsMatchers.firstOrNull( // <1>
-    CredentialsProvider.listCredentialsInItem(
+StandardCredentials c = CredentialsProvider.findCredentialByIdInItem( // <1>
+      credentialsId,
       StandardCredentials.class,
       job,
       job instanceof Queue.Task
         ? Tasks.getAuthenticationOf2((Queue.Task)job))
         : ACL.SYSTEM2,
       URIRequirementBuilder.fromUri(issueTrackerUrl)
-    ),
-    CredentialsMatchers.allOf(
-      CredentialsMatchers.withId(credentialsId),
-      AuthenticationTokens.matcher(IssueTrackerAuthentication.class) // <2>
-    )
-  );
+    );
+if (c != null && !AuthenticationTokens.matcher(IssueTrackerAuthentication.class).matches(c)) {
+  c = null;
+}
 IssueTrackerAuthentication auth = AuthenticationTokens.convert(
   IssueTrackerAuthentication.class, // <2>
   c // <3>
@@ -427,32 +422,6 @@ To track usage, just pass the credentials instance and the context object to the
 StandardCredentials c = ...;
 ...
 CredentialsProvider.track(job, c);
-----
-
-In most cases we can avoid holding object references longer than necessary by combining all these methods together:
-
-[source,java]
-----
-IssueTrackerAuthentication auth = AuthenticationTokens.convert(
-  IssueTrackerAuthentication.class,
-  CredentialsProvider.track(
-    job,
-    CredentialsMatchers.firstOrNull(
-      CredentialsProvider.listCredentialsInItem(
-        StandardCredentials.class,
-        job,
-        job instanceof Queue.Task
-          ? Tasks.getAuthenticationOf2((Queue.Task)job))
-          : ACL.SYSTEM2,
-        URIRequirementBuilder.fromUri(issueTrackerUrl)
-      ),
-      CredentialsMatchers.allOf(
-        CredentialsMatchers.withId(credentialsId),
-        AuthenticationTokens.matcher(IssueTrackerAuthentication.class)
-      )
-    )
-  )
-);
 ----
 
 === Binding user supplied credentials parameters to builds

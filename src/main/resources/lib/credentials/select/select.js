@@ -22,36 +22,160 @@
  * THE SOFTWARE.
  */
 window.credentials = window.credentials || {'dialog': null, 'body': null};
-window.credentials.init = function () {
-    if (!(window.credentials.dialog)) {
-        var div = document.createElement("DIV");
-        document.body.appendChild(div);
-        div.innerHTML = "<div id='credentialsDialog'><div class='bd'></div></div>";
-        window.credentials.body = document.getElementById('credentialsDialog');
+
+function showBackButtonInDialog() {
+    const dialog = document.querySelector(".jenkins-dialog");
+    // Remove the latter selector after baseline is higher than https://github.com/jenkinsci/jenkins/pull/26033
+    const title = dialog.querySelector(".jenkins-dialog__title > span") || dialog.querySelector(".jenkins-dialog__title");
+    const backButton = document.createElement("button");
+    backButton.classList.add("jenkins-button");
+    backButton.classList.add("jenkins-dialog__back-button");
+    backButton.ariaLabel = "Back";
+    backButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M328 112L184 256l144 144"/></svg>`;
+    title.style.transition = "var(--standard-transition)";
+    title.style.marginLeft = "2.75rem";
+    dialog.appendChild(backButton);
+
+    backButton.addEventListener("click", () => {
+        dialog.querySelector(".jenkins-dialog__contents form:first-of-type").classList.remove("jenkins-hidden");
+        dialog.querySelector(".jenkins-dialog__contents form:last-of-type").remove();
+        title.style.marginLeft = "0";
+        title.textContent = "Add Credentials";
+        backButton.remove();
+    })
+}
+
+/*
+ * Recreate script tags to ensure they are executed, as innerHTML does not execute scripts.
+ */
+function recreateScripts(form) {
+    const scripts = form.getElementsByTagName("script");
+    if (scripts.length === 0) {
+        Behaviour.applySubtree(form, true);
+        return;
     }
-};
-window.credentials.add = function (e) {
-    window.credentials.init();
-    fetch(e, {
+    for (let i = 0; i < scripts.length; i++) {
+        const script = document.createElement("script");
+        if (scripts[i].text) {
+            script.text = scripts[i].text;
+        } else {
+            for (let j = 0; j < scripts[i].attributes.length; j++) {
+                if (scripts[i].attributes[j].name in HTMLScriptElement.prototype) {
+                    script[scripts[i].attributes[j].name] = scripts[i].attributes[j].value;
+                }
+            }
+        }
+
+        // only attach the load listener to the last script to avoid multiple calls to Behaviour.applySubtree
+        if (i === (scripts.length - 1)) {
+            script.addEventListener("load", () => {
+                setTimeout(() => {
+                    Behaviour.applySubtree(form, true);
+                    if (form.method.toLowerCase() !== 'get') {
+                        form.onsubmit = null; // clear any existing handler
+                    }
+                }, 50);
+            })
+        }
+
+        scripts[i].parentNode.replaceChild(script, scripts[i]);
+    }
+}
+
+function mergeUrlParams(url, params) {
+    const base = new URL(url, window.location.href);
+    if (params) {
+        const newParams = new URLSearchParams(params);
+        for (const [key, value] of newParams.entries()) {
+            base.searchParams.set(key, value);
+        }
+    }
+    return base.toString();
+}
+
+function navigateToNextPage(url, params) {
+    const dialog = document.querySelector(".jenkins-dialog .jenkins-dialog__contents");
+
+    const finalUrl = mergeUrlParams(url, params);
+
+    fetch(finalUrl, {
         method: 'GET',
         headers: crumb.wrap({}),
     }).then(rsp => {
         if (rsp.ok) {
             rsp.text().then((responseText) => {
-                // do not apply behaviour on parsed HTML, dialog.form does that later
-                // otherwise we have crumb and json fields twice
-                window.credentials.body.innerHTML = responseText;
-                window.credentials.form = document.getElementById('credentials-dialog-form');
-				const data = window.credentials.form.dataset;
-				const options = {'title': data['title'], 'okText': data['add'], 'submitButton':false, 'minWidth': 'min(1641px, 65vw)'};
-				dialog.form(window.credentials.form, options)
-					.then(window.credentials.addSubmit);
-				window.credentials.form.querySelector('select').focus();
-            });
+                Array.from(dialog.children)
+                    .filter(el => el.tagName === "FORM")
+                    .forEach(form => form.classList.add("jenkins-hidden"));
+
+                const newDialog = document.createElement("div");
+                newDialog.innerHTML = responseText;
+
+                const form = newDialog.querySelector("form");
+
+                // Resolve relative form action against the fetch URL, not the current page URL,
+                // since the dialog HTML is inserted into the current page's DOM
+                const formAction = form.getAttribute("action");
+                if (formAction && !formAction.startsWith("/") && !formAction.startsWith("http")) {
+                    form.action = new URL(formAction, finalUrl).toString();
+                }
+
+                // Remove the latter selector after baseline is higher than https://github.com/jenkinsci/jenkins/pull/26033
+                const title = document.querySelector(".jenkins-dialog .jenkins-dialog__title > span") || document.querySelector(".jenkins-dialog .jenkins-dialog__title");
+                title.textContent = rsp.headers.get("X-Wizard-Title");
+
+                if (form.method.toLowerCase() === 'get') {
+                    form.addEventListener("submit", (e) => {
+                        e.preventDefault();
+
+                        const form = e.target;
+                        const fd = new FormData(form);
+                        const params = new URLSearchParams();
+
+                        fd.forEach(function (value, key) {
+                            // FormData can include File objects. Query strings cannot.
+                            if (value instanceof File) {
+                                // choose one:
+                                // params.append(key, value.name); // store filename only
+                                return; // or skip files entirely
+                            }
+                            params.append(key, String(value));
+                        });
+
+                        const queryString = params.toString(); // "username=alice&password=secret"
+
+                        showBackButtonInDialog();
+
+                        navigateToNextPage(form.action, queryString);
+                    })
+                } else {
+                    window.credentials.form = form
+                    form.addEventListener("submit", (e) => {
+                        e.preventDefault();
+                        window.credentials.dialogSubmit();
+                    })
+                }
+
+                dialog.appendChild(form)
+                recreateScripts(form)
+            })
         }
-    });
+    })
+}
+
+window.dialog2 = {
+    wizard: (initialUrl, options) => {
+        dialog.modal(document.createElement("template"), options);
+
+        navigateToNextPage(initialUrl, '');
+    }
+};
+
+window.credentials.add = function (initialUrl) {
+    window.dialog2.wizard(initialUrl, { title: '', minWidth: 'min(550px, 100vw)', preventCloseOnOutsideClick: true });
     return false;
 };
+
 window.credentials.refreshAll = function () {
     document.querySelectorAll('select.credentials-select').forEach(function (e) {
         var deps = [];
@@ -103,36 +227,88 @@ window.credentials.refreshAll = function () {
 };
 window.credentials.addSubmit = function (_) {
     const form = window.credentials.form;
-    // temporarily attach to DOM (avoid https://github.com/HtmlUnit/htmlunit/issues/740)
-    document.body.appendChild(form);
-    buildFormTree(form);
-    ajaxFormSubmit(form);
-    form.remove();
+    const shouldRefill = document.getElementById('credentials-dialog-refill')
+    window.credentials.submitDialog(form, "Credentials creation failed", function () {
+        // when used in `c:select` we don't want a page reload but to instead refill existing select boxes
+        if (shouldRefill && shouldRefill.dataset.refill === 'true') {
+            window.credentials.refreshAll();
+        } else {
+            window.location.reload();
+        }
+    });
+};
 
-    function ajaxFormSubmit(form) {
-        fetch(form.action, {
-            method: form.method,
-            headers: crumb.wrap({}),
-            body: new FormData(form)
-        })
-            .then(res => res.json())
-            .then(data => {
-                window.notificationBar.show(data.message, window.notificationBar[data.notificationType]);
-                window.credentials.refreshAll();
-            })
-            .catch((e) => {
-                // notificationBar.show(...) with logging ID could be handy here?
-                console.error("Could not add credentials:", e);
-                window.notificationBar.show("Credentials creation failed", window.notificationBar["ERROR"]);
-            })
+window.credentials.dialogSubmit = function () {
+    const form = window.credentials.form;
+    const shouldRefill = document.getElementById('credentials-dialog-refill');
+    if (shouldRefill) {
+        window.credentials.addSubmit();
+    } else {
+        window.credentials.submitDialog(form, "Operation failed", function () {
+            window.location.reload();
+        });
     }
 };
 
-Behaviour.specify("[data-type='credentials-add-store-item']", 'credentials-add-store-item', -99, function(e) {
-    e.addEventListener("click", function (event) {
-        window.credentials.add(event.target.dataset.url);
-    });
-    e = null;
+window.credentials.submitDialog = function (form, errorMessage, onSuccess) {
+    // temporarily attach to DOM (avoid https://github.com/HtmlUnit/htmlunit/issues/740)
+    document.body.appendChild(form);
+    buildFormTree(form);
+
+    const formAction = form.action;
+    fetch(formAction, {
+        method: form.method,
+        headers: crumb.wrap({"Accept": "application/json"}),
+        body: new FormData(form)
+    })
+        .then(res => res.json())
+        .then(result => {
+            const notificationType = result.data.notificationType;
+            window.notificationBar.show(result.data.message, window.notificationBar[notificationType]);
+            const dialog = document.querySelector(".jenkins-dialog");
+            dialog.dispatchEvent(new Event("cancel"));
+            if (notificationType !== "SUCCESS") {
+                return;
+            }
+            if (result.data.redirectUrl) {
+                // Resolve relative redirectUrl against the form action URL
+                window.location.href = new URL(result.data.redirectUrl, formAction).toString();
+            } else if (window.credentials._pendingRedirect) {
+                window.location.href = window.credentials._pendingRedirect;
+            } else if (onSuccess) {
+                onSuccess();
+            }
+        })
+        .catch((e) => {
+            console.error(errorMessage, e);
+            window.notificationBar.show(errorMessage, window.notificationBar["ERROR"]);
+        })
+        .finally(() => {
+            window.credentials._pendingRedirect = null;
+            form.remove();
+        });
+};
+
+window.credentials.openDialog = function (url) {
+    window.dialog2.wizard(url, { title: '', minWidth: 'min(550px, 100vw)', preventCloseOnOutsideClick: true });
+    return false;
+};
+
+// Use event delegation for all credentials dialog triggers so that dynamically
+// created elements (e.g. dropdown menu items) are handled correctly
+document.addEventListener("click", function (event) {
+    const trigger = event.target.closest("[data-type^='credentials-']");
+    if (!trigger) {
+        return;
+    }
+    const type = trigger.dataset.type;
+    if (type === "credentials-add-store-item") {
+        window.credentials.add(trigger.dataset.url);
+    } else if (type === "credentials-move" || type === "credentials-update"
+            || type === "credentials-new-domain" || type === "credentials-configure-domain") {
+        window.credentials._pendingRedirect = trigger.dataset.redirect || null;
+        window.credentials.openDialog(trigger.dataset.url);
+    }
 });
 Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
     e.addEventListener("click", window.credentials.add);
@@ -203,3 +379,10 @@ window.setTimeout(function() {
         Behaviour.applySubtree(controls[i], true);
     }
 },1);
+
+// Enable the "Next" button when a radio button is selected
+Behaviour.specify(".jenkins-choice-list__item input[type='radio']", 'choice-radio', 0, function (e) {
+    e.addEventListener("change", function () {
+        e.closest("form").querySelector("button").disabled = false;
+    })
+});

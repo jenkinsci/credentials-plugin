@@ -16,8 +16,10 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Restricted(NoExternalUse.class)
 public class ManageCredentialsConfiguration extends ManagementLink {
 
-    public String getCategoryName() {
-        return "SECURITY";
+    @NonNull
+    @Override
+    public Category getCategory() {
+        return Category.SECURITY;
     }
 
     @Override

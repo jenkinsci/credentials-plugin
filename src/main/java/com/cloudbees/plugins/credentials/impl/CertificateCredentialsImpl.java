@@ -232,6 +232,11 @@ public class CertificateCredentialsImpl extends BaseStandardCredentials implemen
             return Messages.CertificateCredentialsImpl_DisplayName();
         }
 
+        @Override
+        public String getDescription() {
+            return Messages.CertificateCredentialsImpl_description();
+        }
+
         /**
          * {@inheritDoc}
          */

@@ -29,6 +29,9 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import org.htmlunit.html.HtmlButton;
+import org.htmlunit.html.HtmlElementUtil;
+import org.htmlunit.html.HtmlForm;
 import org.htmlunit.html.HtmlPage;
 import hudson.model.ModelObject;
 import hudson.model.User;
@@ -47,6 +50,7 @@ import static hudson.util.FormValidation.Kind.OK;
 import static hudson.util.FormValidation.Kind.WARNING;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -139,7 +143,12 @@ class BaseStandardCredentialsTest {
         addCreds(store, CredentialsScope.GLOBAL, "test");
         // check there is no validation message about a duplicated ID when updating
         JenkinsRule.WebClient webClient = r.createWebClient();
-        HtmlPage htmlPage = webClient.goTo("credentials/store/system/domain/_/credential/test/update");
+        HtmlPage htmlPage = webClient.goTo("credentials/store/system/domain/_/credential/test");
+        HtmlButton updateButton = htmlPage.querySelector("button[data-type='credentials-update']");
+        HtmlElementUtil.click(updateButton);
+
+        HtmlForm form = htmlPage.querySelector("#credentials-dialog-form");
+        assertThat("Update dialog should be loaded", form, notNullValue());
         assertThat(htmlPage.asNormalizedText(), not(containsString("This ID is already in use")));
     }
 

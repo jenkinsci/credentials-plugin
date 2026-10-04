@@ -62,8 +62,11 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -82,6 +85,7 @@ import jenkins.model.Jenkins;
 import jenkins.util.xml.XMLUtils;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jenkins.ui.icon.IconSpec;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -124,6 +128,8 @@ public abstract class CredentialsStoreAction
      * Expose {@link CredentialsProvider#MANAGE_DOMAINS} for Jelly.
      */
     public static final Permission MANAGE_DOMAINS = CredentialsProvider.MANAGE_DOMAINS;
+
+    private static final Logger LOGGER = Logger.getLogger(CredentialsStoreAction.class.getName());
 
     /**
      * An {@link XStream2} that replaces {@link Secret} and {@link SecretBytes} instances with {@code <secret-redacted/>}
@@ -464,6 +470,9 @@ public abstract class CredentialsStoreAction
             throw new Failure("No Content-Type header set");
         }
 
+        String acceptHeader = req.getHeader("Accept");
+        boolean jsonResponse = acceptHeader != null && acceptHeader.contains("application/json");
+
         if (requestContentType.startsWith("application/xml") || requestContentType.startsWith("text/xml")) {
             final StringWriter out = new StringWriter();
             try {
@@ -485,8 +494,17 @@ public abstract class CredentialsStoreAction
             Domain domain = req.bindJSON(Domain.class, data);
             String domainName = domain.getName();
             if (domainName != null && getStore().addDomain(domain)) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Domain created")
+                            .element("notificationType", "SUCCESS"));
+                }
                 return HttpResponses.redirectTo("./domain/" + Util.rawEncode(domainName));
-
+            }
+            if (jsonResponse) {
+                return HttpResponses.okJSON(new JSONObject()
+                        .element("message", "Failed to create domain")
+                        .element("notificationType", "ERROR"));
             }
             return HttpResponses.redirectToDot();
         }
@@ -730,9 +748,12 @@ public abstract class CredentialsStoreAction
         public HttpResponse doCreateCredentials(StaplerRequest2 req) throws ServletException, IOException {
             getStore().checkPermission(CREATE);
             String requestContentType = req.getContentType();
+
+            String acceptHeader = req.getHeader("Accept");
             if (requestContentType == null) {
                 throw new Failure("No Content-Type header set");
             }
+            boolean jsonResponse = acceptHeader != null && acceptHeader.contains("application/json");
 
             if (requestContentType.startsWith("application/xml") || requestContentType.startsWith("text/xml")) {
                 final StringWriter out = new StringWriter();
@@ -751,10 +772,56 @@ public abstract class CredentialsStoreAction
                     return HttpResponses.status(HttpServletResponse.SC_CONFLICT);
                 }
             } else {
-                JSONObject data = req.getSubmittedForm();
-                Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
-                getStore().addCredentials(domain, credentials);
-                return HttpResponses.redirectTo("../../domain/" + getUrlName());
+                try {
+                    JSONObject data = req.getSubmittedForm();
+                    Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
+                    boolean credentialsWereAdded = getStore().addCredentials(domain, credentials);
+
+                    if (jsonResponse) {
+                        if (credentialsWereAdded) {
+                            return HttpResponses.okJSON(new JSONObject()
+                                    .element("message", "Credentials created")
+                                    .element("notificationType", "SUCCESS"));
+                        } else {
+                            String message;
+                            if (getStore().getDomains().contains(domain)) {
+                                message = "Credentials with specified ID already exist";
+                            } else {
+                                message = "Domain '" + getDisplayName() + "' does not exist";
+                            }
+                            return HttpResponses.okJSON(new JSONObject()
+                                    .element("message", message)
+                                    .element("notificationType", "ERROR"));
+                        }
+                    }
+                    return HttpResponses.redirectTo("../../domain/" + getUrlName());
+                } catch (LinkageError e) {
+                    /*
+                     * Descriptor#newInstanceImpl throws a LinkageError if the DataBoundConstructor or any DataBoundSetter
+                     * throw any exception other than RuntimeException implementing HttpResponse.
+                     *
+                     * Checked exceptions implementing HttpResponse like FormException are wrapped and
+                     * rethrown as HttpResponseException (a RuntimeException implementing HttpResponse) in
+                     * RequestImpl#invokeConstructor.
+                     *
+                     * This approach is taken to maintain backward compatibility, as throwing a FormException directly
+                     * from the constructor would result in a source-incompatible change, potentially breaking dependent plugins.
+                     *
+                     * Here, known exceptions are caught specifically to provide meaningful error response.
+                     */
+                    Throwable rootCause = ExceptionUtils.getRootCause(e);
+                    if (rootCause instanceof IOException || rootCause instanceof IllegalArgumentException
+                            || rootCause instanceof GeneralSecurityException) {
+                        LOGGER.log(Level.WARNING, "Failed to create Credentials", e);
+                        if (jsonResponse) {
+                            return HttpResponses.okJSON(new JSONObject()
+                                    .element("message", rootCause.getMessage())
+                                    .element("notificationType", "ERROR"));
+                        }
+                        return HttpResponses.redirectTo("../../domain/" + getUrlName());
+                    }
+                    throw e;
+                }
             }
         }
 
@@ -774,12 +841,24 @@ public abstract class CredentialsStoreAction
                 return HttpResponses.status(400);
             }
             getStore().checkPermission(MANAGE_DOMAINS);
+            String acceptHeader = req.getHeader("Accept");
+            boolean jsonResponse = acceptHeader != null && acceptHeader.contains("application/json");
+
             JSONObject data = req.getSubmittedForm();
             Domain domain = req.bindJSON(Domain.class, data);
             String domainName = domain.getName();
             if (domainName != null && getStore().updateDomain(this.domain, domain)) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Domain updated")
+                            .element("notificationType", "SUCCESS"));
+                }
                 return HttpResponses.redirectTo("../../domain/" + Util.rawEncode(domainName));
-
+            }
+            if (jsonResponse) {
+                return HttpResponses.okJSON(new JSONObject()
+                        .element("message", "Failed to update domain")
+                        .element("notificationType", "ERROR"));
             }
             return HttpResponses.redirectToDot();
         }
@@ -1037,6 +1116,16 @@ public abstract class CredentialsStoreAction
         }
 
         /**
+         * Description is useful for select drop down in the name but not in the credentials list.
+         * So remove the description so we have more control over how its displayed.
+         */
+        @Restricted(NoExternalUse.class)
+        @SuppressWarnings("unused") // jelly
+        public String getCleanedName() throws IOException {
+            return getDisplayName().replace("(" + getDescription() + ")", "");
+        }
+
+        /**
          * Gets the display name of the {@link CredentialsDescriptor}.
          *
          * @return the display name of the {@link CredentialsDescriptor}.
@@ -1160,8 +1249,21 @@ public abstract class CredentialsStoreAction
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoDelete(StaplerRequest2 req) throws IOException {
             getStore().checkPermission(DELETE);
+            String acceptHeader = req.getHeader("Accept");
+            boolean jsonResponse = acceptHeader != null && acceptHeader.contains("application/json");
+
             if (getStore().removeCredentials(domain.getDomain(), credentials)) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Credentials deleted")
+                            .element("notificationType", "SUCCESS"));
+                }
                 return HttpResponses.redirectTo("../..");
+            }
+            if (jsonResponse) {
+                return HttpResponses.okJSON(new JSONObject()
+                        .element("message", "Failed to delete credentials")
+                        .element("notificationType", "ERROR"));
             }
             return HttpResponses.redirectToDot();
         }
@@ -1178,7 +1280,15 @@ public abstract class CredentialsStoreAction
         @Restricted(NoExternalUse.class)
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doDoMove(StaplerRequest2 req, @QueryParameter String destination) throws IOException {
+            String acceptHeader = req.getHeader("Accept");
+            boolean jsonResponse = acceptHeader != null && acceptHeader.contains("application/json");
+
             if (getStore().getDomains().size() <= 1) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Cannot move credentials when there is only one domain")
+                            .element("notificationType", "ERROR"));
+                }
                 return HttpResponses.status(400);
             }
             Jenkins jenkins = Jenkins.get();
@@ -1186,6 +1296,11 @@ public abstract class CredentialsStoreAction
             final String splitKey = domain.getParent().getUrlName() + "/";
             int split = destination.lastIndexOf(splitKey);
             if (split == -1) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Invalid destination")
+                            .element("notificationType", "ERROR"));
+                }
                 return HttpResponses.status(400);
             }
             String contextName = destination.substring(0, split);
@@ -1209,17 +1324,25 @@ public abstract class CredentialsStoreAction
                 }
             }
             if (context == null) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Invalid destination")
+                            .element("notificationType", "ERROR"));
+                }
                 return HttpResponses.status(400);
             }
             CredentialsStore destinationStore = null;
             Domain destinationDomain = null;
             for (CredentialsStore store : CredentialsProvider.lookupStores(context)) {
                 if (store.getContext() == context) {
-                    for (Domain d : store.getDomains()) {
-                        if (domainName.equals("_") ? d.getName() == null : domainName.equals(d.getName())) {
-                            destinationStore = store;
-                            destinationDomain = d;
-                            break;
+                    String urlName = store.getStoreAction() != null ? store.getStoreAction().getUrlName() : null;
+                    if (urlName != null && urlName.equals(domain.getParent().getUrlName())) {
+                        for (Domain d : store.getDomains()) {
+                            if (domainName.equals("_") ? d.getName() == null : domainName.equals(d.getName())) {
+                                destinationStore = store;
+                                destinationDomain = d;
+                                break;
+                            }
                         }
                     }
                     if (destinationDomain != null) {
@@ -1228,22 +1351,53 @@ public abstract class CredentialsStoreAction
                 }
             }
             if (destinationDomain == null) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Destination domain not found")
+                            .element("notificationType", "ERROR"));
+                }
                 return HttpResponses.status(400);
             }
             if (!destinationStore.isDomainsModifiable()) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Destination store does not support domain modification")
+                            .element("notificationType", "ERROR"));
+                }
                 return HttpResponses.status(400);
             }
             destinationStore.checkPermission(CREATE);
             if (destinationDomain.equals(domain.getDomain())) {
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Credentials are already in this domain")
+                            .element("notificationType", "WARNING"));
+                }
                 return HttpResponses.redirectToDot();
             }
 
             if (destinationStore.addCredentials(destinationDomain, credentials)) {
                 if (getStore().removeCredentials(domain.getDomain(), credentials)) {
-                    return HttpResponses.redirectTo("../..");
+                    String name = destinationDomain.getName();
+                    String destDomainUrlName = name == null
+                            ? "_" : Util.rawEncode(name);
+                    String redirectUrl = "../../../" + destDomainUrlName
+                            + "/credential/" + getUrlName();
+                    if (jsonResponse) {
+                        return HttpResponses.okJSON(new JSONObject()
+                                .element("message", "Credentials moved")
+                                .element("notificationType", "SUCCESS")
+                                .element("redirectUrl", redirectUrl));
+                    }
+                    return HttpResponses.redirectTo(redirectUrl);
                 } else {
                     destinationStore.removeCredentials(destinationDomain, credentials);
                 }
+            }
+            if (jsonResponse) {
+                return HttpResponses.okJSON(new JSONObject()
+                        .element("message", "Failed to move credentials")
+                        .element("notificationType", "ERROR"));
             }
             return HttpResponses.redirectToDot();
         }
@@ -1261,12 +1415,53 @@ public abstract class CredentialsStoreAction
         @SuppressWarnings("unused") // stapler web method
         public HttpResponse doUpdateSubmit(StaplerRequest2 req) throws ServletException, IOException {
             getStore().checkPermission(UPDATE);
-            JSONObject data = req.getSubmittedForm();
-            Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data);
-            if (!getStore().updateCredentials(this.domain.domain, this.credentials, credentials)) {
-                return HttpResponses.redirectTo("concurrentModification");
+            String acceptHeader = req.getHeader("Accept");
+            boolean jsonResponse = acceptHeader != null && acceptHeader.contains("application/json");
+
+            try {
+                JSONObject data = req.getSubmittedForm();
+                Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data);
+                if (!getStore().updateCredentials(this.domain.domain, this.credentials, credentials)) {
+                    if (jsonResponse) {
+                        return HttpResponses.okJSON(new JSONObject()
+                                .element("message", "Credentials could not be updated due to a concurrent modification")
+                                .element("notificationType", "ERROR"));
+                    }
+                    return HttpResponses.redirectTo("concurrentModification");
+                }
+                if (jsonResponse) {
+                    return HttpResponses.okJSON(new JSONObject()
+                            .element("message", "Credentials updated")
+                            .element("notificationType", "SUCCESS"));
+                }
+                return HttpResponses.redirectToDot();
+            } catch (LinkageError e) {
+                /*
+                 * Descriptor#newInstanceImpl throws a LinkageError if the DataBoundConstructor or any DataBoundSetter
+                 * throw any exception other than RuntimeException implementing HttpResponse.
+                 *
+                 * Checked exceptions implementing HttpResponse like FormException are wrapped and
+                 * rethrown as HttpResponseException (a RuntimeException implementing HttpResponse) in
+                 * RequestImpl#invokeConstructor.
+                 *
+                 * This approach is taken to maintain backward compatibility, as throwing a FormException directly
+                 * from the constructor would result in a source-incompatible change, potentially breaking dependent plugins.
+                 *
+                 * Here, known exceptions are caught specifically to provide meaningful error response.
+                 */
+                Throwable rootCause = ExceptionUtils.getRootCause(e);
+                if (rootCause instanceof IOException || rootCause instanceof IllegalArgumentException
+                        || rootCause instanceof GeneralSecurityException) {
+                    LOGGER.log(Level.WARNING, "Failed to update Credentials", e);
+                    if (jsonResponse) {
+                        return HttpResponses.okJSON(new JSONObject()
+                                .element("message", rootCause.getMessage())
+                                .element("notificationType", "ERROR"));
+                    }
+                    return HttpResponses.redirectToDot();
+                }
+                throw e;
             }
-            return HttpResponses.redirectToDot();
         }
 
         /**
@@ -1357,6 +1552,11 @@ public abstract class CredentialsStoreAction
         @Override
         public boolean hasPermission(@NonNull Permission permission) {
             return getACL().hasPermission(permission);
+        }
+
+        @Restricted(NoExternalUse.class)
+        public boolean isMoveable() {
+            return getDomain().getParent().getDomains().size() > 1;
         }
 
         /**
