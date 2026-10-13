@@ -296,20 +296,27 @@ window.credentials.openDialog = function (url) {
 
 // Use event delegation for all credentials dialog triggers so that dynamically
 // created elements (e.g. dropdown menu items) are handled correctly
-document.addEventListener("click", function (event) {
-    const trigger = event.target.closest("[data-type^='credentials-']");
-    if (!trigger) {
-        return;
-    }
-    const type = trigger.dataset.type;
-    if (type === "credentials-add-store-item") {
-        window.credentials.add(trigger.dataset.url);
-    } else if (type === "credentials-move" || type === "credentials-update"
-            || type === "credentials-new-domain" || type === "credentials-configure-domain") {
-        window.credentials._pendingRedirect = trigger.dataset.redirect || null;
-        window.credentials.openDialog(trigger.dataset.url);
-    }
-});
+//
+// Added once only: an AJAX-injected form fragment runs this adjunct again, and a
+// second listener turns one click into two dialogs -- the extra one blank, since
+// both of them fill the first dialog in the page.
+if (!window.credentials._clickDelegationInstalled) {
+    window.credentials._clickDelegationInstalled = true;
+    document.addEventListener("click", function (event) {
+        const trigger = event.target.closest("[data-type^='credentials-']");
+        if (!trigger) {
+            return;
+        }
+        const type = trigger.dataset.type;
+        if (type === "credentials-add-store-item") {
+            window.credentials.add(trigger.dataset.url);
+        } else if (type === "credentials-move" || type === "credentials-update"
+                || type === "credentials-new-domain" || type === "credentials-configure-domain") {
+            window.credentials._pendingRedirect = trigger.dataset.redirect || null;
+            window.credentials.openDialog(trigger.dataset.url);
+        }
+    });
+}
 Behaviour.specify("BUTTON.credentials-add", 'credentials-select', 0, function (e) {
     e.addEventListener("click", window.credentials.add);
     e = null; // avoid memory leak
