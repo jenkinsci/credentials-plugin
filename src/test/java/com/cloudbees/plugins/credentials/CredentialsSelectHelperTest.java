@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cloudbees.plugins.credentials.common.CertificateCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 
@@ -14,6 +15,9 @@ import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
 import hudson.model.UnprotectedRootAction;
 import hudson.security.ACL;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import net.sf.json.JSONObject;
@@ -48,6 +52,11 @@ public class CredentialsSelectHelperTest {
 
     private static final String VALID_PASSWORD = "password";
     private static final String INVALID_PASSWORD = "bla";
+    private static final String ADD_CREDENTIALS_URL =
+            "descriptor/com.cloudbees.plugins.credentials.CredentialsSelectHelper"
+                    + "/resolver/com.cloudbees.plugins.credentials.CredentialsSelectHelper$SystemContextResolver"
+                    + "/provider/com.cloudbees.plugins.credentials.SystemCredentialsProvider$ProviderImpl"
+                    + "/context/jenkins/addCredentials";
 
     @BeforeEach
     void setup(JenkinsRule j) throws IOException {
@@ -95,6 +104,40 @@ public class CredentialsSelectHelperTest {
             assertThat(cred.getUsername(), is("bob"));
             assertThat(cred.getPassword().getPlainText(), is("secret"));
         }
+    }
+
+    @Test
+    @Issue("JENKINS-75943")
+    void doAddCredentialsRejectsIllegalId() throws Exception {
+        j.getInstance().setCrumbIssuer(null);
+
+        postAddCredentials("valid.id");
+        assertThat(systemCredentialIds(), is(List.of("valid.id")));
+
+        postAddCredentials("illegal?id");
+        assertThat(systemCredentialIds(), is(List.of("valid.id")));
+    }
+
+    private void postAddCredentials(String id) throws IOException {
+        String json = "{\"domain\": \"_\", \"credentials\": {"
+                + "\"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\", "
+                + "\"scope\": \"GLOBAL\", \"id\": \"" + id + "\", "
+                + "\"username\": \"bob\", \"password\": \"secret\"}}";
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(), ADD_CREDENTIALS_URL).openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+        con.setDoOutput(true);
+        con.getOutputStream()
+                .write(("json=" + URLEncoder.encode(json, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
+        con.getResponseCode();
+    }
+
+    private static List<String> systemCredentialIds() {
+        return CredentialsProvider
+                .lookupCredentialsInItem(StandardUsernamePasswordCredentials.class, null, ACL.SYSTEM2)
+                .stream()
+                .map(StandardUsernamePasswordCredentials::getId)
+                .toList();
     }
 
     @Test

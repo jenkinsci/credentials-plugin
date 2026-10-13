@@ -33,6 +33,7 @@ import hudson.cli.declarative.CLIResolver;
 import hudson.model.ComputerSet;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
+import hudson.model.Failure;
 import hudson.model.Item;
 import hudson.model.ManageJenkinsAction;
 import hudson.model.ModelObject;
@@ -656,6 +657,13 @@ public class CredentialsSelectHelper extends Descriptor<CredentialsSelectHelper>
             try {
                 Credentials credentials = Descriptor.bindJSON(req, Credentials.class,
                                                               data.getJSONObject("credentials"));
+                try {
+                    CredentialsStoreAction.checkCredentialsId(credentials);
+                } catch (Failure f) {
+                    return new JSONObject()
+                            .element("message", f.getMessage())
+                            .element("notificationType", "ERROR");
+                }
                 credentialsWereAdded = store.addCredentials(wrapper.getDomain(), credentials);
             } catch (LinkageError e) {
                 /*

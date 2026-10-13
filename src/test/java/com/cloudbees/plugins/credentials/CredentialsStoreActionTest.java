@@ -338,6 +338,27 @@ class CredentialsStoreActionTest {
         assertThat(data.getString("message"), notNullValue());
     }
 
+    @Test
+    @Issue("JENKINS-75943")
+    void createCredentialsFromFormRejectsIllegalId() throws Exception {
+        j.getInstance().setCrumbIssuer(null);
+        HttpURLConnection con = postCreateByForm(systemStore, null,
+                "{\"credentials\": {\"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\", "
+                        + "\"scope\": \"GLOBAL\", \"id\": \"valid.id\", \"description\": \"first\", "
+                        + "\"username\": \"bob\", \"password\": \"secret\"}}");
+        assertThat(con.getResponseCode(), is(HttpServletResponse.SC_FOUND));
+        assertThat(CredentialsMatchers.firstOrNull(systemStore.getCredentials(Domain.global()),
+                CredentialsMatchers.withId("valid.id")), notNullValue());
+
+        con = postCreateByForm(systemStore, null,
+                "{\"credentials\": {\"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\", "
+                        + "\"scope\": \"GLOBAL\", \"id\": \"illegal?id\", \"description\": \"second\", "
+                        + "\"username\": \"bob\", \"password\": \"secret\"}}");
+        assertThat(con.getResponseCode(), is(HttpServletResponse.SC_BAD_REQUEST));
+        assertThat(CredentialsMatchers.firstOrNull(systemStore.getCredentials(Domain.global()),
+                CredentialsMatchers.withId("illegal?id")), nullValue());
+    }
+
     private static String readResponseBody(HttpURLConnection con) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buf = new byte[4096];
@@ -348,6 +369,21 @@ class CredentialsStoreActionTest {
             }
         }
         return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+    private HttpURLConnection postCreateByForm(CredentialsStore store, String domainName, String json)
+            throws IOException {
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
+                "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
+                        .rawEncode(StringUtils.defaultIfBlank(domainName, "_")) + "/createCredentials")
+                .openConnection();
+        con.setRequestMethod("POST");
+        con.setInstanceFollowRedirects(false);
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+        con.setDoOutput(true);
+        con.getOutputStream()
+                .write(("json=" + URLEncoder.encode(json, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
+        return con;
     }
 
     private HttpURLConnection postCreateByXml(CredentialsStore store, String xml)
