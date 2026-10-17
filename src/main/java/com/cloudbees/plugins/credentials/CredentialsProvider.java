@@ -894,6 +894,58 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
+     * As {@link #findCredentialByIdInItemGroup(String, Class, ItemGroup, Authentication, List)}, additionally
+     * identifying the specific {@link Run} in whose context the lookup is being performed, if known - threaded
+     * down to {@link #getCredentialByIdInItemGroup(String, Class, ItemGroup, Authentication, List, Run)} for
+     * each registered provider. See {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List, Run)}
+     * for why this matters.
+     *
+     * @param id                 the ID of the credential to find.
+     * @param type               the type of credential to find.
+     * @param itemGroup          the item group (if {@code null} assume {@link Jenkins#get()}).
+     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM2}).
+     * @param domainRequirements the credential domains to match (if {@code null} assume empty list).
+     * @param run                the {@link Run} in whose context this lookup is being performed, or {@code null}
+     *                           if the caller has no such context.
+     * @param <C>                the credentials type.
+     * @return the credential or {@code null} if no credential with the specified ID is found.
+     * @since TODO
+     */
+    @CheckForNull
+    public static <C extends IdCredentials> C findCredentialByIdInItemGroup(@NonNull String id,
+                                                                            @NonNull Class<C> type,
+                                                                            @Nullable ItemGroup<?> itemGroup,
+                                                                            @Nullable Authentication authentication,
+                                                                            @Nullable List<DomainRequirement> domainRequirements,
+                                                                            @CheckForNull Run<?, ?> run) {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(type);
+        if (itemGroup == null) {
+            itemGroup = Jenkins.get();
+        }
+        if (authentication == null) {
+            authentication = ACL.SYSTEM2;
+        }
+        if (domainRequirements == null) {
+            domainRequirements = List.of();
+        }
+        var g = itemGroup;
+        LOGGER.fine(() -> "looking for " + id + " of " + type + " in " + g + " (run=" + run + ")");
+        for (CredentialsProvider provider : all()) {
+            if (provider.isEnabled(itemGroup) && provider.isApplicable(type)) {
+                LOGGER.fine(() -> "checking " + provider + " for " + id);
+                C credential = provider.getCredentialByIdInItemGroup(id, type, itemGroup, authentication, domainRequirements, run);
+                if (credential != null) {
+                    LOGGER.fine(() -> "found " + credential + " in " + provider);
+                    return credential;
+                }
+            }
+        }
+        LOGGER.fine(() -> "did not find " + id);
+        return null;
+    }
+
+    /**
      * Returns the credential with the specified ID which is available to the specified {@link Authentication}
      * for use by the specified {@link Item}.
      *
@@ -930,6 +982,61 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             if (provider.isEnabled(item) && provider.isApplicable(type)) {
                 LOGGER.fine(() -> "checking " + provider + " for " + id);
                 C credential = provider.getCredentialByIdInItem(id, type, item, authentication, domainRequirements);
+                if (credential != null) {
+                    LOGGER.fine(() -> "found " + credential + " in " + provider);
+                    return credential;
+                }
+            }
+        }
+        LOGGER.fine(() -> "did not find " + id);
+        return null;
+    }
+
+    /**
+     * As {@link #findCredentialByIdInItem(String, Class, Item, Authentication, List)}, additionally identifying
+     * the specific {@link Run} in whose context the lookup is being performed, if known - threaded down to
+     * {@link #getCredentialByIdInItem(String, Class, Item, Authentication, List, Run)} for each registered
+     * provider (or to {@link #findCredentialByIdInItemGroup(String, Class, ItemGroup, Authentication, List, Run)}
+     * if {@code item} is itself an {@link ItemGroup}). See
+     * {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List, Run)} for why this matters.
+     *
+     * @param id                 the ID of the credential to find.
+     * @param type               the type of credential to find.
+     * @param item               the item (if {@code null} assume {@link Jenkins#get()}).
+     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM2}).
+     * @param domainRequirements the credential domains to match (if {@code null} assume empty list).
+     * @param run                the {@link Run} in whose context this lookup is being performed, or {@code null}
+     *                           if the caller has no such context.
+     * @param <C>                the credentials type.
+     * @return the credential or {@code null} if no credential with the specified ID is found.
+     * @since TODO
+     */
+    @CheckForNull
+    public static <C extends IdCredentials> C findCredentialByIdInItem(@NonNull String id,
+                                                                       @NonNull Class<C> type,
+                                                                       @Nullable Item item,
+                                                                       @Nullable Authentication authentication,
+                                                                       @Nullable List<DomainRequirement> domainRequirements,
+                                                                       @CheckForNull Run<?, ?> run) {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(type);
+        if (item == null) {
+            return findCredentialByIdInItemGroup(id, type, Jenkins.get(), authentication, domainRequirements, run);
+        }
+        if (item instanceof ItemGroup<?> group) {
+            return findCredentialByIdInItemGroup(id, type, group, authentication, domainRequirements, run);
+        }
+        if (authentication == null) {
+            authentication = ACL.SYSTEM2;
+        }
+        if (domainRequirements == null) {
+            domainRequirements = List.of();
+        }
+        LOGGER.fine(() -> "looking for " + id + " of " + type + " in " + item + " (run=" + run + ")");
+        for (CredentialsProvider provider : all()) {
+            if (provider.isEnabled(item) && provider.isApplicable(type)) {
+                LOGGER.fine(() -> "checking " + provider + " for " + id);
+                C credential = provider.getCredentialByIdInItem(id, type, item, authentication, domainRequirements, run);
                 if (credential != null) {
                     LOGGER.fine(() -> "found " + credential + " in " + provider);
                     return credential;
@@ -1021,10 +1128,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // as you would have no way to configure it
             Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf2(run.getParent());
             // we want the credentials available to the user the build is running as
-            C credential = findCredentialByIdInItem(id, type, run.getParent(), runAuth, domainRequirements);
+            C credential = findCredentialByIdInItem(id, type, run.getParent(), runAuth, domainRequirements, run);
             // if that user can use the item's credentials, try those too
             if (credential == null && runAuth != ACL.SYSTEM2 && run.hasPermission2(runAuth, CredentialsProvider.USE_ITEM)) {
-                credential = findCredentialByIdInItem(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements);
+                credential = findCredentialByIdInItem(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements, run);
             }
             // TODO should this be calling track?
             return contextualize(type, credential, run);
@@ -1037,14 +1144,14 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // the user triggered this job directly and they are allowed to supply their own credentials, so
             // search those first. We do not want to follow the chain for the user's authentication
             // though, as there is no way to limit how far the passed-through parameters can be used
-            result = findCredentialByIdInItem(id, type, run.getParent(), a, domainRequirements);
+            result = findCredentialByIdInItem(id, type, run.getParent(), a, domainRequirements, run);
         }
         if (result == null && inputUserId != null) {
             final User inputUser = User.getById(inputUserId, false);
             if (inputUser != null) {
                 final Authentication inputAuth = inputUser.impersonate2();
                 if (run.hasPermission2(inputAuth, CredentialsProvider.USE_OWN)) {
-                    result = findCredentialByIdInItem(id, type, run.getParent(), inputAuth, domainRequirements);
+                    result = findCredentialByIdInItem(id, type, run.getParent(), inputAuth, domainRequirements, run);
                 }
             }
         }
@@ -1055,10 +1162,10 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
             // as you would have no way to configure it
             Authentication runAuth = CredentialsProvider.getDefaultAuthenticationOf2(run.getParent());
             // we want the credentials available to the user the build is running as
-            result = findCredentialByIdInItem(id, type, run.getParent(), runAuth, domainRequirements);
+            result = findCredentialByIdInItem(id, type, run.getParent(), runAuth, domainRequirements, run);
             // if that user can use the item's credentials, try those too
             if (result == null && runAuth != ACL.SYSTEM2 && run.hasPermission2(runAuth, CredentialsProvider.USE_ITEM)) {
-                result = findCredentialByIdInItem(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements);
+                result = findCredentialByIdInItem(id, type, run.getParent(), ACL.SYSTEM2, domainRequirements, run);
             }
         }
         // if the run has not completed yet then we can safely assume that the credential is being used for this run
@@ -1282,6 +1389,48 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
+     * Returns the credentials provided by this provider which are available to the specified {@link Authentication}
+     * for items in the specified {@link ItemGroup} and are appropriate for the specified {@link DomainRequirement}s,
+     * additionally identifying the specific {@link Run} in whose context the lookup is being performed, if known.
+     *
+     * <p>Most callers reach this indirectly via {@link #findCredentialById(String, Class, Run, List)}, which
+     * already has the {@link Run} in hand but historically discarded it before dispatching to any provider -
+     * providers had no way to distinguish "which build is asking" at all, only the build's containing
+     * {@link Item}/{@link ItemGroup} and effective {@link Authentication}. This matters specifically for
+     * providers whose credentials are scoped to an individual build rather than to a persisted
+     * {@link Item}/{@link ItemGroup} (for example, a build-scoped in-memory store populated interactively during
+     * a Pipeline run) - such a provider cannot answer "which build's cache should I consult" from the 4-argument
+     * overload alone, since many different concurrent builds of the same or sibling jobs share the same
+     * {@code itemGroup}.</p>
+     *
+     * <p>The default implementation ignores {@code run} entirely and delegates to the existing
+     * {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List)}, so this is fully backward
+     * compatible: providers that do not override this method behave exactly as before. A provider that does
+     * override it can consult {@code run} directly instead of having to reconstruct or guess at "which build"
+     * some other way.</p>
+     *
+     * @param type               the type of credentials to return.
+     * @param itemGroup          the item group (if {@code null} assume {@link Jenkins#get()}.
+     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM2}.
+     * @param domainRequirements the credential domains to match (if the {@link CredentialsProvider} does not support
+     *                           {@link DomainRequirement}s then it should
+     *                           assume the match is true).
+     * @param run                the {@link Run} in whose context this lookup is being performed, or {@code null}
+     *                           if the caller has no such context (e.g. a job configuration screen).
+     * @param <C>                the credentials type.
+     * @return the list of credentials.
+     * @since TODO
+     */
+    @NonNull
+    public <C extends Credentials> List<C> getCredentialsInItemGroup(@NonNull Class<C> type,
+                                                                     @Nullable ItemGroup itemGroup,
+                                                                     @Nullable Authentication authentication,
+                                                                     @NonNull List<DomainRequirement> domainRequirements,
+                                                                     @CheckForNull Run<?, ?> run) {
+        return getCredentialsInItemGroup(type, itemGroup, authentication, domainRequirements);
+    }
+
+    /**
      * @deprecated Use {@link #getCredentialIdsInItemGroup(Class, ItemGroup, Authentication, List, CredentialsMatcher)} instead.
      */
     @NonNull
@@ -1325,6 +1474,39 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     }
 
     /**
+     * As {@link #getCredentialByIdInItemGroup(String, Class, ItemGroup, Authentication, List)}, additionally
+     * identifying the specific {@link Run} in whose context the lookup is being performed, if known - see
+     * {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List, Run)} for why this matters.
+     * The default implementation filters {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List, Run)},
+     * so a provider only needs to override that method to become run-aware for ID-based lookups too; this
+     * overload only needs overriding directly if run-awareness can make ID-based lookup itself cheaper or more
+     * precise than filtering the full list would.
+     *
+     * @param <C>                the credentials type.
+     * @param id                 the ID of the credential to find.
+     * @param type               the type of credentials to return.
+     * @param itemGroup          the item group.
+     * @param authentication     the authentication.
+     * @param domainRequirements the credential domain to match.
+     * @param run                the {@link Run} in whose context this lookup is being performed, or {@code null}
+     *                           if the caller has no such context.
+     * @return the credential or {@code null} if no credential with the specified ID is found.
+     * @since TODO
+     */
+    @CheckForNull
+    public <C extends IdCredentials> C getCredentialByIdInItemGroup(@NonNull String id,
+                                                                    @NonNull Class<C> type,
+                                                                    @NonNull ItemGroup<?> itemGroup,
+                                                                    @NonNull Authentication authentication,
+                                                                    @NonNull List<DomainRequirement> domainRequirements,
+                                                                    @CheckForNull Run<?, ?> run) {
+        return CredentialsMatchers.firstOrNull(
+                getCredentialsInItemGroup(type, itemGroup, authentication, domainRequirements, run),
+                CredentialsMatchers.withId(id)
+        );
+    }
+
+    /**
      * Returns the credential with the specified ID provided by this provider which is available to the
      * specified {@link Authentication} for the specified {@link Item} and is appropriate for the
      * specified {@link DomainRequirement}s.
@@ -1349,6 +1531,36 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
                                                                @NonNull List<DomainRequirement> domainRequirements) {
         return CredentialsMatchers.firstOrNull(
                 getCredentialsInItem(type, item, authentication, domainRequirements),
+                CredentialsMatchers.withId(id)
+        );
+    }
+
+    /**
+     * As {@link #getCredentialByIdInItem(String, Class, Item, Authentication, List)}, additionally identifying
+     * the specific {@link Run} in whose context the lookup is being performed, if known - see
+     * {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List, Run)} for why this matters.
+     * The default implementation filters {@link #getCredentialsInItem(Class, Item, Authentication, List, Run)}.
+     *
+     * @param <C>                the credentials type.
+     * @param id                 the ID of the credential to find.
+     * @param type               the type of credentials to return.
+     * @param item               the item.
+     * @param authentication     the authentication.
+     * @param domainRequirements the credential domain to match.
+     * @param run                the {@link Run} in whose context this lookup is being performed, or {@code null}
+     *                           if the caller has no such context.
+     * @return the credential or {@code null} if no credential with the specified ID is found.
+     * @since TODO
+     */
+    @CheckForNull
+    public <C extends IdCredentials> C getCredentialByIdInItem(@NonNull String id,
+                                                               @NonNull Class<C> type,
+                                                               @NonNull Item item,
+                                                               @NonNull Authentication authentication,
+                                                               @NonNull List<DomainRequirement> domainRequirements,
+                                                               @CheckForNull Run<?, ?> run) {
+        return CredentialsMatchers.firstOrNull(
+                getCredentialsInItem(type, item, authentication, domainRequirements, run),
                 CredentialsMatchers.withId(id)
         );
     }
@@ -1441,6 +1653,62 @@ public abstract class CredentialsProvider extends Descriptor<CredentialsProvider
     private <C extends Credentials> List<C> getCredentialsInItemFallback(@NonNull Class<C> type, @NonNull Item item, @Nullable Authentication authentication, @NonNull List<DomainRequirement> domainRequirements) {
         return getCredentialsInItemGroup(type, item instanceof ItemGroup ? (ItemGroup) item : item.getParent(),
                 authentication, domainRequirements);
+    }
+
+    /**
+     * As {@link #getCredentialsInItem(Class, Item, Authentication, List)}, additionally identifying the specific
+     * {@link Run} in whose context the lookup is being performed, if known - see
+     * {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List, Run)} for why this matters.
+     *
+     * <p>Unlike the {@link ItemGroup} overload, this default implementation cannot simply delegate to the plain
+     * {@link #getCredentialsInItem(Class, Item, Authentication, List)} overload and rely on virtual dispatch alone:
+     * that overload is itself a legitimate, commonly-overridden extension point (for example
+     * {@code SystemCredentialsProvider.ProviderImpl} overrides it to unconditionally exclude
+     * {@link CredentialsScope#SYSTEM}-scoped credentials, a check that only applies at the {@link Item} level, not
+     * at the {@link ItemGroup} level where the root {@link Jenkins} instance is itself a valid, SYSTEM-scope-visible
+     * {@link ItemGroup}). If this method threaded {@code run} straight through to
+     * {@link #getCredentialsInItemGroup(Class, ItemGroup, Authentication, List, Run)} regardless, it would bypass
+     * any such override entirely - for a job directly under {@link Jenkins#get()}, {@code item.getParent()} is
+     * {@link Jenkins#get()}, so the {@link ItemGroup} overload would (correctly, for that overload's own contract)
+     * treat the lookup as a root-level, SYSTEM-scope-visible one, silently exposing SYSTEM-scoped credentials to
+     * item-level (i.e. build-level) callers that the {@link Item} overload was specifically written to hide them
+     * from. So: if a provider overrides the plain {@link Item} overload (or either older deprecated equivalent),
+     * that override - which knows nothing about {@code run} - is used as-is (run is not threaded through, exactly
+     * as if this new overload did not exist); only providers that have <em>not</em> customized the {@link Item}
+     * overload at all fall through to the {@link ItemGroup}-based, {@code run}-aware resolution below. This is
+     * fully backward compatible either way.</p>
+     *
+     * @param type               the type of credentials to return.
+     * @param item               the item.
+     * @param authentication     the authentication (if {@code null} assume {@link ACL#SYSTEM2}.
+     * @param domainRequirements the credential domain to match.
+     * @param run                the {@link Run} in whose context this lookup is being performed, or {@code null}
+     *                           if the caller has no such context.
+     * @param <C>                the credentials type.
+     * @return the list of credentials.
+     * @since TODO
+     */
+    @NonNull
+    @SuppressWarnings("deprecation")
+    public <C extends Credentials> List<C> getCredentialsInItem(@NonNull Class<C> type,
+                                                                @NonNull Item item,
+                                                                @Nullable Authentication authentication,
+                                                                @NonNull List<DomainRequirement> domainRequirements,
+                                                                @CheckForNull Run<?, ?> run) {
+        // NOTE: if we are here, the descendent class did not override this method
+        //  (assume it does not call super class method for implementation)
+        if (Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentialsInItem", Class.class, Item.class, Authentication.class, List.class)
+                || Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, Item.class, org.acegisecurity.Authentication.class, List.class)
+                || Util.isOverridden(CredentialsProvider.class, getClass(), "getCredentials", Class.class, Item.class, org.acegisecurity.Authentication.class)) {
+            return getCredentialsInItem(type, item, authentication, domainRequirements);
+        }
+        return getCredentialsInItemFallback(type, item, authentication, domainRequirements, run);
+    }
+
+    @NonNull
+    private <C extends Credentials> List<C> getCredentialsInItemFallback(@NonNull Class<C> type, @NonNull Item item, @Nullable Authentication authentication, @NonNull List<DomainRequirement> domainRequirements, @CheckForNull Run<?, ?> run) {
+        return getCredentialsInItemGroup(type, item instanceof ItemGroup ? (ItemGroup) item : item.getParent(),
+                authentication, domainRequirements, run);
     }
 
     /**
