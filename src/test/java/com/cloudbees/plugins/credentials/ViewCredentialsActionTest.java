@@ -124,6 +124,30 @@ class ViewCredentialsActionTest {
     }
 
     @Test
+    void systemScopeIsIndicated(JenkinsRule j) throws Exception {
+        CredentialsStore systemStore = CredentialsProvider.lookupStores(j.jenkins).iterator().next();
+        systemStore.addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(CredentialsScope.SYSTEM,
+                "system-cred", null, "user", "secret"));
+        systemStore.addCredentials(Domain.global(), new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL,
+                "global-cred", null, "user", "secret"));
+
+        JenkinsRule.WebClient wc = j.createWebClient();
+        for (String url : List.of("manage/credentials/", "manage/credentials/store/system/domain/_/")) {
+            HtmlPage page = wc.goTo(url);
+            assertEquals("System scope", scopeBadgeText(page, "system-cred"), url);
+            assertNull(scopeBadgeText(page, "global-cred"), url);
+        }
+    }
+
+    private static String scopeBadgeText(HtmlPage page, String id) {
+        DomNode title = page.getFirstByXPath(
+                "//div[contains(@class,'credentials-card__title')][a[normalize-space()='" + id + "']]");
+        assertNotNull(title, id);
+        DomNode badge = title.getFirstByXPath("span[contains(@class,'jenkins-badge')]");
+        return badge == null ? null : badge.getTextContent().trim();
+    }
+
+    @Test
     void isVisibleShouldReturnTrueForFolders(JenkinsRule j) throws Exception {
         // For a folder (with store)
         MockFolder folder = j.createFolder("test-folder");
