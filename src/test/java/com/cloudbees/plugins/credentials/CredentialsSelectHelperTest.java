@@ -2,11 +2,14 @@ package com.cloudbees.plugins.credentials;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cloudbees.plugins.credentials.common.CertificateCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImpl;
 
@@ -14,6 +17,9 @@ import com.cloudbees.plugins.credentials.impl.CertificateCredentialsImplTest;
 import hudson.model.UnprotectedRootAction;
 import hudson.security.ACL;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import net.sf.json.JSONObject;
@@ -48,6 +54,11 @@ public class CredentialsSelectHelperTest {
 
     private static final String VALID_PASSWORD = "password";
     private static final String INVALID_PASSWORD = "bla";
+    private static final String ADD_CREDENTIALS_URL =
+            "descriptor/com.cloudbees.plugins.credentials.CredentialsSelectHelper"
+                    + "/resolver/com.cloudbees.plugins.credentials.CredentialsSelectHelper$SystemContextResolver"
+                    + "/provider/com.cloudbees.plugins.credentials.SystemCredentialsProvider$ProviderImpl"
+                    + "/context/jenkins/addCredentials";
 
     @BeforeEach
     void setup(JenkinsRule j) throws IOException {
@@ -95,6 +106,46 @@ public class CredentialsSelectHelperTest {
             assertThat(cred.getUsername(), is("bob"));
             assertThat(cred.getPassword().getPlainText(), is("secret"));
         }
+    }
+
+    @Test
+    @Issue("JENKINS-75943")
+    void doAddCredentialsRejectsIllegalId() throws Exception {
+        j.getInstance().setCrumbIssuer(null);
+
+        postAddCredentials("valid.id");
+        assertThat(systemCredentialIds(), is(List.of("valid.id")));
+
+        HttpURLConnection con = postAddCredentials("illegal?id");
+        assertThat(con.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        JSONObject response = JSONObject.fromObject(
+                new String(con.getInputStream().readAllBytes(), StandardCharsets.UTF_8));
+        assertThat(response.getString("notificationType"), is("ERROR"));
+        assertThat(response.getString("message"), not(emptyString()));
+        assertThat(systemCredentialIds(), is(List.of("valid.id")));
+    }
+
+    private HttpURLConnection postAddCredentials(String id) throws IOException {
+        String json = "{\"domain\": \"_\", \"credentials\": {"
+                + "\"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\", "
+                + "\"scope\": \"GLOBAL\", \"id\": \"" + id + "\", "
+                + "\"username\": \"bob\", \"password\": \"secret\"}}";
+        HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(), ADD_CREDENTIALS_URL).openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+        con.setDoOutput(true);
+        con.getOutputStream()
+                .write(("json=" + URLEncoder.encode(json, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
+        assertThat(con.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        return con;
+    }
+
+    private static List<String> systemCredentialIds() {
+        return CredentialsProvider
+                .lookupCredentialsInItem(StandardUsernamePasswordCredentials.class, null, ACL.SYSTEM2)
+                .stream()
+                .map(StandardUsernamePasswordCredentials::getId)
+                .toList();
     }
 
     @Test
