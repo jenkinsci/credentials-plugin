@@ -2,7 +2,9 @@ package com.cloudbees.plugins.credentials;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cloudbees.plugins.credentials.common.CertificateCredentials;
@@ -114,11 +116,16 @@ public class CredentialsSelectHelperTest {
         postAddCredentials("valid.id");
         assertThat(systemCredentialIds(), is(List.of("valid.id")));
 
-        postAddCredentials("illegal?id");
+        HttpURLConnection con = postAddCredentials("illegal?id");
+        assertThat(con.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        JSONObject response = JSONObject.fromObject(
+                new String(con.getInputStream().readAllBytes(), StandardCharsets.UTF_8));
+        assertThat(response.getString("notificationType"), is("ERROR"));
+        assertThat(response.getString("message"), not(emptyString()));
         assertThat(systemCredentialIds(), is(List.of("valid.id")));
     }
 
-    private void postAddCredentials(String id) throws IOException {
+    private HttpURLConnection postAddCredentials(String id) throws IOException {
         String json = "{\"domain\": \"_\", \"credentials\": {"
                 + "\"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\", "
                 + "\"scope\": \"GLOBAL\", \"id\": \"" + id + "\", "
@@ -129,7 +136,8 @@ public class CredentialsSelectHelperTest {
         con.setDoOutput(true);
         con.getOutputStream()
                 .write(("json=" + URLEncoder.encode(json, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
-        con.getResponseCode();
+        assertThat(con.getResponseCode(), is(HttpURLConnection.HTTP_OK));
+        return con;
     }
 
     private static List<String> systemCredentialIds() {

@@ -31,8 +31,10 @@ import org.xmlunit.matchers.CompareMatcher;
 
 import static com.cloudbees.plugins.credentials.XmlMatchers.isSimilarToIgnoringPrivateAttrs;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -357,6 +359,19 @@ class CredentialsStoreActionTest {
         assertThat(con.getResponseCode(), is(HttpServletResponse.SC_BAD_REQUEST));
         assertThat(CredentialsMatchers.firstOrNull(systemStore.getCredentials(Domain.global()),
                 CredentialsMatchers.withId("illegal?id")), nullValue());
+
+        con = postCreateByForm(systemStore, null,
+                "{\"credentials\": {\"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\", "
+                        + "\"scope\": \"GLOBAL\", \"id\": \"illegal?id\", \"description\": \"third\", "
+                        + "\"username\": \"bob\", \"password\": \"secret\"}}", true);
+        assertThat(con.getResponseCode(), is(HttpServletResponse.SC_OK));
+        JSONObject response = JSONObject.fromObject(readResponseBody(con));
+        assertThat(response.getString("status"), is("ok"));
+        JSONObject data = response.getJSONObject("data");
+        assertThat(data.getString("notificationType"), is("ERROR"));
+        assertThat(data.getString("message"), not(emptyString()));
+        assertThat(CredentialsMatchers.firstOrNull(systemStore.getCredentials(Domain.global()),
+                CredentialsMatchers.withId("illegal?id")), nullValue());
     }
 
     private static String readResponseBody(HttpURLConnection con) throws IOException {
@@ -373,6 +388,11 @@ class CredentialsStoreActionTest {
 
     private HttpURLConnection postCreateByForm(CredentialsStore store, String domainName, String json)
             throws IOException {
+        return postCreateByForm(store, domainName, json, false);
+    }
+
+    private HttpURLConnection postCreateByForm(CredentialsStore store, String domainName, String json,
+            boolean acceptJson) throws IOException {
         HttpURLConnection con = (HttpURLConnection) new URL(j.getURL(),
                 "credentials/store/" + store.getStoreAction().getUrlName() + "/domain/" + Util
                         .rawEncode(StringUtils.defaultIfBlank(domainName, "_")) + "/createCredentials")
@@ -380,6 +400,9 @@ class CredentialsStoreActionTest {
         con.setRequestMethod("POST");
         con.setInstanceFollowRedirects(false);
         con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+        if (acceptJson) {
+            con.setRequestProperty("Accept", "application/json");
+        }
         con.setDoOutput(true);
         con.getOutputStream()
                 .write(("json=" + URLEncoder.encode(json, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8));
