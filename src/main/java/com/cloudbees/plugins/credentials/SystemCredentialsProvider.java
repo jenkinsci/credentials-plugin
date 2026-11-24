@@ -60,6 +60,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
+import jenkins.model.Loadable;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import org.springframework.security.core.Authentication;
@@ -75,7 +76,7 @@ import static com.cloudbees.plugins.credentials.CredentialsScope.SYSTEM;
  */
 @Extension
 public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCredentialsProvider>
-        implements Saveable {
+        implements Saveable, Loadable {
 
     /**
      * Our logger.
@@ -105,18 +106,38 @@ public class SystemCredentialsProvider extends AbstractDescribableImpl<SystemCre
     /**
      * Constructor.
      */
-    @SuppressWarnings("deprecation")
     public SystemCredentialsProvider() {
+        try {
+            loadConfigFile();
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read the existing credentials", e);
+        }
+    }
+
+    /**
+     * Reads {@link #getConfigFile()} again, replacing the credentials held, as when Jenkins starts: for example after
+     * the file was changed on disk by something other than this provider. If the file does not exist, the credentials
+     * held are kept. Nothing is saved.
+     *
+     * @throws IOException if the file could not be read
+     * @since TODO
+     */
+    @Override
+    public synchronized void load() throws IOException {
+        loadConfigFile();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void loadConfigFile() throws IOException {
         try {
             XmlFile xml = getConfigFile();
             if (xml.exists()) {
                 xml.unmarshal(this);
             }
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to read the existing credentials", e);
+        } finally {
+            domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
+            credentials = null;
         }
-        domainCredentialsMap = DomainCredentials.migrateListToMap(domainCredentialsMap, credentials);
-        credentials = null;
     }
     
     /**

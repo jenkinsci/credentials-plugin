@@ -39,6 +39,7 @@ import hudson.model.User;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
@@ -81,6 +82,34 @@ class SystemCredentialsProviderTest {
         assertFalse(new SystemCredentialsProvider().getCredentials().isEmpty());
         FileUtils.writeStringToFile(SystemCredentialsProvider.getConfigFile().getFile(), "<<barf>>", StandardCharsets.UTF_8);
         assertTrue(new SystemCredentialsProvider().getCredentials().isEmpty());
+    }
+
+    @Test
+    void loadReadsTheFileAgain(JenkinsRule r) throws Exception {
+        SystemCredentialsProvider p = SystemCredentialsProvider.getInstance();
+        p.getCredentials().add(new DummyIdCredentials("first", CredentialsScope.GLOBAL, "user", "secret", "one"));
+        p.save();
+        File file = SystemCredentialsProvider.getConfigFile().getFile();
+        // changed by something other than this provider: another Jenkins sharing the file, or an administrator
+        String xml = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+        FileUtils.writeStringToFile(file, xml.replace("<id>first</id>", "<id>second</id>"), StandardCharsets.UTF_8);
+        p.load();
+        assertEquals(1, p.getCredentials().size());
+        IdCredentials c = (IdCredentials) p.getCredentials().get(0);
+        assertEquals("second", c.getId());
+        assertEquals("secret", ((DummyIdCredentials) c).getPassword().getPlainText(), "the secret still decrypts");
+        assertSame(p, SystemCredentialsProvider.getInstance(), "loaded into the live provider");
+        assertEquals(1, CredentialsProvider.lookupCredentialsInItemGroup(IdCredentials.class, r.jenkins, null).size());
+    }
+
+    @Test
+    void loadKeepsTheCredentialsWithoutTheFile(JenkinsRule r) throws Exception {
+        SystemCredentialsProvider p = SystemCredentialsProvider.getInstance();
+        p.getCredentials().add(new DummyIdCredentials("kept", CredentialsScope.GLOBAL, "user", "secret", "one"));
+        p.save();
+        assertTrue(SystemCredentialsProvider.getConfigFile().getFile().delete());
+        p.load();
+        assertEquals(1, p.getCredentials().size());
     }
 
     @Test
