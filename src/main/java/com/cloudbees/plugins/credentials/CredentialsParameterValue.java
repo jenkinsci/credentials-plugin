@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.common.IdCredentials;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
 import hudson.Util;
@@ -24,6 +25,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.springframework.security.core.Authentication;
 
 /**
@@ -111,14 +113,26 @@ public class CredentialsParameterValue extends ParameterValue {
         return CredentialsMatchers.firstOrNull(candidates, CredentialsMatchers.withId(value));
     }
 
+    /**
+     * Looks the build up in the ancestors of the current request, see {@link #describe(Run)}.
+     */
     public String describe() {
+        return describe(null);
+    }
+
+    /**
+     * Describes the selected credentials, for {@code value.jelly}.
+     *
+     * @param build the build this parameter belongs to, or {@code null} to use the build the current request is for
+     * @return the name of the selected credentials
+     * @throws IllegalStateException if there is no build to use
+     * @since TODO
+     */
+    public String describe(@CheckForNull Run<?, ?> build) {
         if (StringUtils.isBlank(value)) {
             return "";
         }
-        final Run run = Stapler.getCurrentRequest2().findAncestorObject(Run.class);
-        if (run == null) {
-            throw new IllegalStateException("Should only be called from value.jelly");
-        }
+        final Run<?, ?> run = findRun(build);
         StandardCredentials c = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentialsInItem(StandardCredentials.class, run.getParent(), ACL.SYSTEM2,
                         Collections.emptyList()), CredentialsMatchers.withId(value));
@@ -135,14 +149,26 @@ public class CredentialsParameterValue extends ParameterValue {
         return Messages.CredentialsParameterValue_NotAvailableToCurrentUser();
     }
 
+    /**
+     * Looks the build up in the ancestors of the current request, see {@link #iconClassName(Run)}.
+     */
     public String iconClassName() {
+        return iconClassName(null);
+    }
+
+    /**
+     * The icon of the selected credentials, for {@code value.jelly}.
+     *
+     * @param build the build this parameter belongs to, or {@code null} to use the build the current request is for
+     * @return the icon class name of the selected credentials
+     * @throws IllegalStateException if there is no build to use
+     * @since TODO
+     */
+    public String iconClassName(@CheckForNull Run<?, ?> build) {
         if (StringUtils.isBlank(value)) {
             return "";
         }
-        final Run run = Stapler.getCurrentRequest2().findAncestorObject(Run.class);
-        if (run == null) {
-            throw new IllegalStateException("Should only be called from value.jelly");
-        }
+        final Run<?, ?> run = findRun(build);
         StandardCredentials c = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentialsInItem(StandardCredentials.class, run.getParent(), ACL.SYSTEM2,
                         Collections.emptyList()), CredentialsMatchers.withId(value));
@@ -159,24 +185,36 @@ public class CredentialsParameterValue extends ParameterValue {
         return "symbol-credentials plugin-credentials";
     }
 
+    /**
+     * Looks the build up in the ancestors of the current request, see {@link #url(Run)}.
+     */
     public String url() {
+        return url(null);
+    }
+
+    /**
+     * The link to the selected credentials, for {@code value.jelly}.
+     *
+     * @param build the build this parameter belongs to, or {@code null} to use the build the current request is for
+     * @return the link to the selected credentials, or {@code null} if there is none
+     * @throws IllegalStateException if there is no build to use
+     * @since TODO
+     */
+    public String url(@CheckForNull Run<?, ?> build) {
         if (StringUtils.isBlank(value)) {
             return null;
         }
-        final Run run = Stapler.getCurrentRequest2().findAncestorObject(Run.class);
-        if (run == null) {
-            throw new IllegalStateException("Should only be called from value.jelly");
-        }
+        final Run<?, ?> run = findRun(build);
         try (ACLContext ignored = ACL.as2(ACL.SYSTEM2)) {
             for (CredentialsStore store : CredentialsProvider.lookupStores(run.getParent())) {
-                String url = url(store);
+                String url = urlIn(store);
                 if (url != null) {
                     return url;
                 }
             }
         }
         for (CredentialsStore store: CredentialsProvider.lookupStores(User.current())) {
-            String url = url(store);
+            String url = urlIn(store);
             if (url != null) {
                 return url;
             }
@@ -184,7 +222,25 @@ public class CredentialsParameterValue extends ParameterValue {
         return null;
     }
 
-    private String url(CredentialsStore store) {
+    /**
+     * The build to show this parameter for.
+     *
+     * @param build the build this parameter belongs to, or {@code null} to use the build the current request is for
+     */
+    @NonNull
+    private static Run<?, ?> findRun(@CheckForNull Run<?, ?> build) {
+        if (build != null) {
+            return build;
+        }
+        final StaplerRequest2 request = Stapler.getCurrentRequest2();
+        final Run<?, ?> run = request == null ? null : request.findAncestorObject(Run.class);
+        if (run == null) {
+            throw new IllegalStateException("Should only be called from value.jelly");
+        }
+        return run;
+    }
+
+    private String urlIn(CredentialsStore store) {
         for (Domain d: store.getDomains()) {
             for (Credentials c: store.getCredentials(d)) {
                 if (c instanceof IdCredentials && value.equals(((IdCredentials) c).getId())) {
