@@ -291,8 +291,8 @@ public class CertificateCredentialsImplTest {
             HtmlElementUtil.click((HtmlElement) b);
         }
 
-        newCredentialsForm.getTextAreaByName("_.certChain").setTextContent(pemCert);
-        newCredentialsForm.getTextAreaByName("_.privateKey").setTextContent(pemKey);
+        newCredentialsForm.getTextAreaByName("_.certChain").setText(pemCert);
+        newCredentialsForm.getTextAreaByName("_.privateKey").setText(pemKey);
 
         // for all the types of credentials
         newCredentialsForm.getInputsByName("_.password").forEach(input -> input.setValue(VALID_PASSWORD));
