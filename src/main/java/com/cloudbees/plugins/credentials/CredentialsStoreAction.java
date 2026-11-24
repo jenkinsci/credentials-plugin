@@ -536,6 +536,17 @@ public abstract class CredentialsStoreAction
     }
 
     /**
+     * Checks that the id of the supplied credentials does not contain illegal characters.
+     *
+     * @param credentials the credentials to check.
+     */
+    static void checkCredentialsId(Credentials credentials) {
+        if (credentials instanceof IdCredentials) {
+            Jenkins.checkGoodName(((IdCredentials) credentials).getId());
+        }
+    }
+
+    /**
      * A wrapper object to bind and expose {@link Domain} instances into the web UI.
      */
     @ExportedBean
@@ -775,6 +786,16 @@ public abstract class CredentialsStoreAction
                 try {
                     JSONObject data = req.getSubmittedForm();
                     Credentials credentials = Descriptor.bindJSON(req, Credentials.class, data.getJSONObject("credentials"));
+                    try {
+                        checkCredentialsId(credentials);
+                    } catch (Failure f) {
+                        if (jsonResponse) {
+                            return HttpResponses.okJSON(new JSONObject()
+                                    .element("message", f.getMessage())
+                                    .element("notificationType", "ERROR"));
+                        }
+                        throw f;
+                    }
                     boolean credentialsWereAdded = getStore().addCredentials(domain, credentials);
 
                     if (jsonResponse) {
