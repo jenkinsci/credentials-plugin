@@ -25,18 +25,18 @@ package com.cloudbees.plugins.credentials.matchers;
 
 import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Matches all of the supplied matchers.
  *
  * @since 1.5
  */
-public class AllOfMatcher implements CredentialsMatcher {
+public record AllOfMatcher(@NonNull List<CredentialsMatcher> matchers) implements CredentialsMatcher {
     /**
      * Standardize serialization.
      *
@@ -45,59 +45,18 @@ public class AllOfMatcher implements CredentialsMatcher {
     private static final long serialVersionUID = 2161005681083022432L;
 
     /**
-     * The matchers to match.
+     * Compact constructor that defensively copies and makes the list unmodifiable.
      */
-    @NonNull
-    private final List<CredentialsMatcher> matchers;
-
-    /**
-     * Creates a new instance.
-     *
-     * @param matchers the matchers to match.
-     */
-    public AllOfMatcher(@CheckForNull List<CredentialsMatcher> matchers) {
-        this.matchers = new ArrayList<>(matchers == null ? Collections.emptyList() : matchers);
+    public AllOfMatcher {
+        Objects.requireNonNull(matchers);
+        matchers = Collections.unmodifiableList(new ArrayList<>(matchers));
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean matches(@NonNull Credentials item) {
         return matchers.stream().allMatch(matcher -> matcher.matches(item));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return matchers.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        AllOfMatcher that = (AllOfMatcher) o;
-
-        return matchers.equals(that.matchers);
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return "AllMatcher{" + "matchers=" + matchers +
-                '}';
     }
 }
