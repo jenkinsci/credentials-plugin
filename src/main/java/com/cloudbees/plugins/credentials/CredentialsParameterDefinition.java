@@ -165,16 +165,26 @@ public class CredentialsParameterDefinition extends SimpleParameterDefinition {
         }
 
         public StandardListBoxModel doFillDefaultValueItems(@AncestorInPath Item context,
-                                                            @QueryParameter(required = true) String credentialType) {
-            Jenkins jenkins = Jenkins.get();
-            final ACL acl = context == null ? jenkins.getACL() : context.getACL();
+                                                            @QueryParameter(required = true) String credentialType,
+                                                            @QueryParameter String defaultValue) {
             final Class<? extends StandardCredentials> typeClass = decodeType(credentialType);
             final List<DomainRequirement> domainRequirements = Collections.emptyList();
             final StandardListBoxModel result = new StandardListBoxModel();
+            if (context == null) {
+                if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+                    result.includeCurrentValue(defaultValue);
+                    return result;
+                }
+            } else if (!context.hasPermission(Item.EXTENDED_READ) && !context.hasPermission(CredentialsProvider.USE_ITEM)) {
+                result.includeCurrentValue(defaultValue);
+                return result;
+            }
+            final ACL acl = context == null ? Jenkins.get().getACL() : context.getACL();
             result.includeEmptyValue();
             if (acl.hasPermission(CredentialsProvider.USE_ITEM)) {
                 result.includeAs(CredentialsProvider.getDefaultAuthenticationOf2(context), context, typeClass, domainRequirements);
             }
+            result.includeCurrentValue(defaultValue);
             return result;
         }
 
