@@ -39,6 +39,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionList;
 import hudson.Util;
+import hudson.model.Failure;
 import hudson.model.Item;
 import hudson.model.ModelObject;
 import hudson.model.User;
@@ -198,8 +199,10 @@ public abstract class BaseStandardCredentials extends BaseCredentials implements
             if (value.isEmpty()) {
                 return FormValidation.ok();
             }
-            if (!value.matches("[a-zA-Z0-9_.-]+")) { // anything else considered kosher?
-                return FormValidation.error("Unacceptable characters");
+            try {
+                Jenkins.checkGoodName(value);
+            } catch (Failure e) {
+                return FormValidation.error(e.getMessage());
             }
             FormValidation problem = checkForDuplicates(value, context, context);
             if (problem != null) {
